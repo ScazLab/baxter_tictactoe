@@ -1,0 +1,22 @@
+<package>
+  <description brief="my_ik_test">
+
+     my_ik_test
+
+  </description>
+  <author>alvaro</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/my_ik_test</url>
+  <depend package="std_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="inverse_kinematics"/>
+  <depend package="baxter_msgs"/>
+  <depend package="moveit_core"/>
+  <depend package="moveit_ros_move_group"/>
+  <depend package="moveit_ros_planning_interface"/>  
+  <depend package="moveit_ros_robot_interaction"/>
+  <depend package="actionlib"/>
+</package>
+
+
