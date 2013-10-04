@@ -1,0 +1,72 @@
+#ifndef TRAJECTORY_PLAYER_H
+#define TRAJECTORY_PLAYER_H
+
+/**
+ * \brief Execution of different types of trajectories
+ * \author Alvaro Castro Gonzalez, acgonzal@ing.uc3m.es
+ *
+ * This class will execute trajectories and inform about the result.
+ */
+
+#include <ros/ros.h>
+#include <ros/duration.h>
+#include <sensor_msgs/Range.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+
+#include "src/utils/T_ThreadSafe.h"
+
+namespace ttt
+{
+
+typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> Client;
+
+typedef actionlib::SimpleClientGoalState Goal_State;
+
+class Trajectory_Player
+{
+    Client* _client; //! a client to play the trajectories
+
+    ThreadSafeVariable<bool> _tip_collision; //! indicates a potential collision of the left hand tip
+
+    ros::NodeHandle _n; //! ROS node handle
+
+    ros::Subscriber _left_ir_range_sub; //! subscriber to receive the messages comming from the ir range on the left hand
+
+    /**
+     * Check the value returned by the ir range from the left hand.
+     * If it is below a specific threshold this is considered as a potential collision and it is informed using the flag variable _tip_collision.
+     * \param msg the message with the value of the left range
+     **/
+    void check_left_ir_range(const sensor_msgs::RangeConstPtr& msg);
+
+    const static double IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
+
+public:
+    /**
+     * Constructor where trajectories will be executed using an action server.
+     * \param service_name the action server that will be in charge of executing the trajectories
+     **/
+    Trajectory_Player(const char * service_name);
+
+    /**
+     * Play a trajectory without considering any possible collision. This is a blocking funtion.
+     * \param t trajectory to be played
+     * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
+     **/
+    bool run_trajectory(trajectory_msgs::JointTrajectory t);
+
+    /**
+     * Play a trajectory considering collisions of the tip. This is a blocking funtion.
+     * Once the collision is detected, the trajectory is cancelled.
+     * \param t trajectory to be played
+     * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
+     **/
+    bool run_save_trajectory(trajectory_msgs::JointTrajectory t);
+};
+
+const double Trajectory_Player::IR_RANGE_THRESHOLD = 0.083;
+
+}
+#endif // TRAJECTORY_PLAYER_H

@@ -41,3 +41,9 @@ target_link_libraries(trajectory_xml_parser ${QT_LIBRARIES})
 
 rosbuild_add_executable(test_trajectory_xml_parser src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
 target_link_libraries(test_trajectory_xml_parser trajectory_xml_parser)
+
+rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp)
+
+#tests at utils
+rosbuild_add_executable(test_thread_safe_variable src/utils/test_thread_safe_variable.cpp)
+rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp)

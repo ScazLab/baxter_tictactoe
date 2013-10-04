@@ -1,5 +1,8 @@
 #include "trajectory_xml_parser.h"
 
+namespace ttt
+{
+
 bool trajectory_xml_parser::write_to_file( trajectory_msgs::JointTrajectory traj, std::string filename, std::string trajectory_id)
 {
     QFile outstream(filename.c_str());
@@ -156,7 +159,7 @@ bool trajectory_xml_parser::read_from_file(std::string filename, std::vector<tra
     return true;
 }
 
-std::vector<trajectory_msgs::JointTrajectoryPoint> trajectory_xml_parser::trajectory_xml_parser::get_points_from_file(std::string filename, int n_joints, double time_gap)
+std::vector<trajectory_msgs::JointTrajectoryPoint> trajectory_xml_parser::trajectory_xml_parser::read_points_from_raw_file(std::string filename, int n_joints, double time_gap)
 {
     ROS_DEBUG_STREAM("Reading positions from " << filename);
     QFile file(filename.c_str());
@@ -226,4 +229,6 @@ bool trajectory_xml_parser::read_joint_names_from_file(std::string filename, std
         return false;
     }
     return false;
+}
+
 }
