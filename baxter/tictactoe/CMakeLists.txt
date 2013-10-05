@@ -31,19 +31,23 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 
 include_directories($(tictactoe_INCLUDE_DIRS))
+include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils)
 
 find_package(Qt4 COMPONENTS QtCore QtGui)
 INCLUDE(${QT_USE_FILE})
 ADD_DEFINITIONS(${QT_DEFINITIONS})
 
-rosbuild_add_library(trajectory_xml_parser src/trajectory_xml_parser/trajectory_xml_parser.cpp)
+rosbuild_add_library(trajectory_xml_parser src/trajectory_xml_parser/trajectory_xml_parser.cpp src/trajectory_xml_parser/trajectory_xml_parser.h)
 target_link_libraries(trajectory_xml_parser ${QT_LIBRARIES})
 
 rosbuild_add_executable(test_trajectory_xml_parser src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
 target_link_libraries(test_trajectory_xml_parser trajectory_xml_parser)
 
-rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp)
+rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp src/trajectory_player/trajectory_player.h)
+
+rosbuild_add_library(move_maker src/move_maker/move_maker.cpp src/move_maker/move_maker.h)
+target_link_libraries(move_maker trajectory_player trajectory_xml_parser)
 
 #tests at utils
-rosbuild_add_executable(test_thread_safe_variable src/utils/test_thread_safe_variable.cpp)
-rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp)
+rosbuild_add_executable(test_thread_safe_variable src/utils/test_thread_safe_variable.cpp src/utils/T_ThreadSafe.h)
+rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/utils/BufferToggle.h)

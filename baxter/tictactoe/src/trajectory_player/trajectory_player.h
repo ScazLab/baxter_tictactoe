@@ -58,12 +58,20 @@ public:
     bool run_trajectory(trajectory_msgs::JointTrajectory t);
 
     /**
-     * Play a trajectory considering collisions of the tip. This is a blocking funtion.
-     * Once the collision is detected, the trajectory is cancelled.
+     * Play a trajectory and hold an item using the vaccum gripper when a collisions of the tip is detected. This is a blocking funtion.
+     * Once the collision is detected, the trajectory is cancelled, and the vacuum gripper is used to grasp an item.
      * \param t trajectory to be played
      * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
      **/
-    bool run_save_trajectory(trajectory_msgs::JointTrajectory t);
+    bool run_trajectory_and_grasp(trajectory_msgs::JointTrajectory t);
+
+    /**
+     * Play a trajectory and release the item holded at the vacuum gripper. This is a blocking funtion.
+     * Once the trajectory has successfully ended, the held item is disposed. If the trajectory does not success, the item is not released.
+     * \param t trajectory to be played
+     * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
+     **/
+    bool run_trajectory_and_release(trajectory_msgs::JointTrajectory t);
 };
 
 const double Trajectory_Player::IR_RANGE_THRESHOLD = 0.083;
