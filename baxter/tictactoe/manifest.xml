@@ -14,6 +14,8 @@
   <depend package="moveit_ros_move_group"/>
   <depend package="moveit_ros_planning_interface"/>
   <depend package="moveit_ros_robot_interaction"/>
+  <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
 
 </package>
 

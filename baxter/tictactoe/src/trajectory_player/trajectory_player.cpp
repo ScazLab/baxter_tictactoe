@@ -6,9 +6,9 @@ namespace ttt
 Trajectory_Player::Trajectory_Player(const char * service_name)
 {
     _client = new Client(service_name, true);
-    ROS_INFO("Waiting to connect with the server...");
+    ROS_INFO_STREAM("Waiting to connect to service " << service_name);
     ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"Timeout. Server not available.");
-    ROS_INFO("...CONNECTED");
+    ROS_INFO("Service CONNECTED");
     _tip_collision.set(false);
 }
 

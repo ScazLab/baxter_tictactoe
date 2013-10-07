@@ -1,18 +1,27 @@
 #ifndef MOVE_MAKER_H
 #define MOVE_MAKER_H
 
+#include <ros/ros.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
+
+#include <tictactoe/PlaceTokenAction.h>
+#include <actionlib/server/simple_action_server.h>
+
 #include "trajectory_player.h"
 #include "trajectory_xml_parser.h"
+#include "src/utils/my_ros_utils.h"
+#include "ttt_moves_trajectories.h"
 
 namespace ttt
 {
+
+typedef actionlib::SimpleActionServer<tictactoe::PlaceTokenAction> Server;
 
 class TTT_Trajectory
 {
 public:
     TTT_Trajectory(trajectory_msgs::JointTrajectory t, std::string id):trajectory(t),name(id){}
-    TTT_Trajectory();
+    TTT_Trajectory():name("noname"){}
     trajectory_msgs::JointTrajectory trajectory;
     std::string name;
 
@@ -33,7 +42,20 @@ class Move_Maker
 
     Trajectory_Player* _traj_player;
 
+    ros::NodeHandle _n;
+
+    Server _place_token;
+    void execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal);
+    tictactoe::PlaceTokenFeedback _place_token_feedback;
+    tictactoe::PlaceTokenResult _place_token_result;
+
     bool get_ttt_trajectory(std::string traj_name, TTT_Trajectory& traj);
+
+    bool is_preempted();
+
+    std::string* get_trajectories_to_cell(std::string cell_id);
+
+    void execute_single_trajectory(std::string traj_id);
 
 public:
     Move_Maker(const char * trajectory_file, const char * service);

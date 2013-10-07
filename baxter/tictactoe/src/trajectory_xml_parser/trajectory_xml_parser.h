@@ -47,6 +47,7 @@ public:
 
     /**
      * Write a trajectory to a xml file.
+     * If the file doesn't exist, it is created. If the file exists, the content is added at the end of the file.
      * \param traj trajectory to be written
      * \param filename name or path for the xml file
      * \param trajectory_id trajectory id/name. It must be unique but this is not checked in the code.
@@ -56,6 +57,7 @@ public:
 
     /**
      * Write several trajectories to a xml file.
+     * If the file doesn't exist, it is created. If the file exists, the content is added at the end of the file.
      * \param trajs vector of trajectories to be written
      * \param filename name or path for the xml file
      * \param trajectory_ids vector of trajectory ids/names. Ids/names must be unique but this is not checked in the code.

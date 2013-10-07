@@ -6,7 +6,11 @@ namespace ttt
 bool trajectory_xml_parser::write_to_file( trajectory_msgs::JointTrajectory traj, std::string filename, std::string trajectory_id)
 {
     QFile outstream(filename.c_str());
-    if(!outstream.open(QIODevice::WriteOnly | QIODevice::Text))
+    bool new_file = !outstream.exists();
+    QIODevice::OpenMode om;
+    if(new_file) om = QIODevice::WriteOnly | QIODevice::Text;   // if file does not exist, we create it
+    else om = QIODevice::Append | QIODevice::Text;              // else we add data to the end of the file
+    if(!outstream.open(om))
     {
         ROS_ERROR_STREAM("Error openning file (" << filename << ") to write trajectory");
         return false;
@@ -14,7 +18,7 @@ bool trajectory_xml_parser::write_to_file( trajectory_msgs::JointTrajectory traj
 
     QXmlStreamWriter xmlstream(&outstream);
     xmlstream.setAutoFormatting(true);
-    xmlstream.writeStartDocument();
+    if(new_file) xmlstream.writeStartDocument();
     xmlstream.writeStartElement("trajectory");
     xmlstream.writeAttribute("id",trajectory_id.c_str());
     xmlstream.writeAttribute("time_to_start", QString::number(traj.header.stamp.toSec())); //the time to start is converted to seconds and then to a string
@@ -40,14 +44,18 @@ bool trajectory_xml_parser::write_to_file( trajectory_msgs::JointTrajectory traj
 bool trajectory_xml_parser::write_to_file(std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename, std::vector<std::string> trajectory_ids)
 {
     QFile outstream(filename.c_str());
-    if(!outstream.open(QIODevice::WriteOnly | QIODevice::Text))
+    bool new_file = !outstream.exists();
+    QIODevice::OpenMode om;
+    if(new_file) om = QIODevice::WriteOnly | QIODevice::Text;   // if file does not exist, we create it
+    else om = QIODevice::Append | QIODevice::Text;              // else we add data to the end of the file
+    if(!outstream.open(om))
     {
         ROS_ERROR_STREAM("Error openning file (" << filename << ") to write trajectory");
         return false;
     }
     QXmlStreamWriter xmlstream(&outstream);
     xmlstream.setAutoFormatting(true);
-    xmlstream.writeStartDocument();
+    if(new_file) xmlstream.writeStartDocument();
     for (size_t i = 0; i < trajs.size(); ++i)
     {
         trajectory_msgs::JointTrajectory& traj=trajs[i];
