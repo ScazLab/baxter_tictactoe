@@ -14,9 +14,11 @@ int main(int argc, char ** argv)
         ROS_ERROR("Error reading from file");
         return -1;
     }
+    ROS_ASSERT_MSG(trajs.size()==traj_ids.size(),"#trajs != #traj_ids");
     ROS_INFO_STREAM(trajs.size() << " trajectories read");
-    foreach (std::string t_id, traj_ids) {
-        ROS_INFO_STREAM("Trajectory " << t_id);
+
+    for (size_t i = 0; i < traj_ids.size(); ++i) {
+        ROS_INFO_STREAM(i+1 << "." << traj_ids[i] << std::endl << trajs[i]);
     }
 
     return 0;

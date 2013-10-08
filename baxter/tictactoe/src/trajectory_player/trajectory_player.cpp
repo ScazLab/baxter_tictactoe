@@ -14,10 +14,12 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
 
 void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& msg)
 {
+    ROS_DEBUG_STREAM("Left IR range=" << msg->range << " (" << msg->min_range << ".." << msg->max_range << ")");
     // if the distance is between the min and max values and it is below the threshold
     if(msg->range<=msg->max_range && msg->range>=msg->min_range && msg->range<Trajectory_Player::IR_RANGE_THRESHOLD)
-    {
+    {        
         _tip_collision.set(true);
+        ROS_INFO("Obstacle on the field of the left hand gripper");
     }
 }
 

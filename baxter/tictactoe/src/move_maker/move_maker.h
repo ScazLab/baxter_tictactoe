@@ -31,6 +31,13 @@ public:
         this->trajectory=t.trajectory;
         return *this;
     }
+
+    inline std::string get_ttt_trajectory_description()
+    {
+        std::stringstream description;
+        description << "TTT Trajectory called " << this->name << " has " << this->trajectory.points.size() << " points";
+        return description.str();
+    }
 };
 
 enum Trajectory_Type { PLAIN, GRASP, RELEASE};
@@ -60,7 +67,7 @@ class Move_Maker
 public:
     Move_Maker(const char * trajectory_file, const char * service);
 
-    bool make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> types);
+    bool make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> modes);
 
     void print_trajectory_repository_details();
 };

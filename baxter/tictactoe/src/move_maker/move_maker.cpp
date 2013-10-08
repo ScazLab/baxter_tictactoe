@@ -11,8 +11,12 @@ bool Move_Maker::get_ttt_trajectory(std::string traj_name, TTT_Trajectory& traj)
         return false;
     }
     foreach (TTT_Trajectory t, _trajectory_repository) {
-        if(t.name==traj_name) traj=t;
-        return true;
+        if(t.name==traj_name)
+        {
+            ROS_DEBUG_STREAM("Trajectory " << t.name << " exists with " << t.trajectory.points.size() << " points");
+            traj=t;
+            return true;
+        }
     }
     return false;
 }
@@ -75,25 +79,26 @@ Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
     for (size_t i = 0; i < _ttt_traj_n; ++i) {
         _trajectory_repository.push_back(TTT_Trajectory(trajs[i],traj_ids[i]));
     }
-    this->print_trajectory_repository_details();
+    //this->print_trajectory_repository_details();
 
     _traj_player = new Trajectory_Player(service);
 
     _place_token.start(); //starting the action server
 }
 
-bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> types)
+bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> modes)
 {
-    if(traj_names.size()!=types.size()) {
-        ROS_ERROR_STREAM("Move not possible: " << traj_names.size() << " trajs. != " << types.size() << " types.");
+    if(traj_names.size()!=modes.size()) {
+        ROS_ERROR_STREAM("Move not possible: " << traj_names.size() << " trajs. != " << modes.size() << " types.");
         return false;
     }
-    size_t n=types.size();
+    size_t n=modes.size();
     TTT_Trajectory t;
     for (size_t i = 0; i < n; ++i) {
         if(this->get_ttt_trajectory(traj_names[i],t))
         {
-            switch(types[i])
+            ROS_DEBUG_STREAM("Trajectory found. " << t.get_ttt_trajectory_description());
+            switch(modes[i])
             {
             case PLAIN:
                 ROS_INFO_STREAM("Playing PLAIN trajectory " << t.name);
@@ -108,7 +113,7 @@ bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Tr
                 if(!_traj_player->run_trajectory_and_release(t.trajectory)) return false;
                 break;
             default:
-                ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << types[i] << "?");
+                ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << modes[i] << "?");
                 return false;
             }
             ros::Duration(1.0).sleep(); // Let's wait 1s after each trajectory to be sure that the trajectory is done

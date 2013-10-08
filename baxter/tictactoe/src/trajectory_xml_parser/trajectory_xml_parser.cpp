@@ -206,21 +206,27 @@ bool trajectory_xml_parser::read_joint_names_from_file(std::string filename, std
     }
     joint_names.clear();//we delete possible joint names
     QXmlStreamReader xmlstream(&instream);
-    while (!xmlstream.atEnd()) {
-        if (xmlstream.isStartElement() && xmlstream.name()=="point") {
-            while (!xmlstream.isEndElement() && xmlstream.name()!="point") {
-                if (xmlstream.name()=="joint") {
+    while (!xmlstream.atEnd() && !xmlstream.hasError())
+    {
+        QXmlStreamReader::TokenType token = xmlstream.readNext();
+        if (token!=QXmlStreamReader::StartDocument && token==QXmlStreamReader::StartElement && xmlstream.name()=="point")
+        {
+            ROS_DEBUG_STREAM("We found a point starting on " << xmlstream.attributes().value("time_from_start").toString().toStdString());
+            while (token!=QXmlStreamReader::EndElement || xmlstream.name()!="point")
+            {
+                if (token==QXmlStreamReader::StartElement && xmlstream.name()=="joint")
+                {
                     if(xmlstream.attributes().value("name").isEmpty()) {
                         ROS_ERROR("Empty joint name");
                         return false;
                     }
+                    ROS_DEBUG_STREAM("Adding joint name " << xmlstream.attributes().value("name").toString().toStdString());
                     joint_names.push_back(xmlstream.attributes().value("name").toString().toStdString());
                 }
-                xmlstream.readNextStartElement();
+                token = xmlstream.readNext();
             }
             return true;
         }
-        xmlstream.readNextStartElement();
     }
     if (xmlstream.hasError()) {
         ROS_ERROR_STREAM("Error reading joint names from " << filename << ": " << xmlstream.errorString().toStdString() << " on line " << xmlstream.lineNumber() << ", colum " << xmlstream.columnNumber());

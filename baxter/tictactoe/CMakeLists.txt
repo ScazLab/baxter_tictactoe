@@ -49,13 +49,14 @@ rosbuild_add_executable(test_trajectory_xml_parser src/trajectory_xml_parser/tes
 target_link_libraries(test_trajectory_xml_parser trajectory_xml_parser)
 rosbuild_add_executable(test_loading_trajectory_xml src/trajectory_xml_parser/test_loading_trajectory_xml.cpp)
 target_link_libraries(test_loading_trajectory_xml trajectory_xml_parser)
-
 # conversor from raw to xml trajectory files
 rosbuild_add_executable(trajectory_from_raw_to_xml src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
 target_link_libraries(trajectory_from_raw_to_xml trajectory_xml_parser)
 
 # trajectory player library
 rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp src/trajectory_player/trajectory_player.h)
+rosbuild_add_executable(test_trajectory_player src/trajectory_player/test_trajectory_player.cpp)
+target_link_libraries(test_trajectory_player trajectory_player trajectory_xml_parser)
 
 # move_maker
 rosbuild_add_library(move_maker src/move_maker/move_maker.cpp src/move_maker/move_maker.h src/utils/my_ros_utils.h src/move_maker/ttt_moves_trajectories.h)
