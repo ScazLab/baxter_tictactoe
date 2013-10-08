@@ -1,0 +1,795 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<trajectory id="grasp" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-1.9704" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46434" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.58077" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.278418" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49563" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.97845" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0632767" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.73877" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.88986" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.620112" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.0655777" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.57463" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.72573" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.686456" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.51787" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.91709" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.686073" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.202102" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.79322" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.48221" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.866699" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.64711" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.93128" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.643121" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.436034" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.03636" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.75411" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.18423" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@1x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.02946" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.90942" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.19635" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.40382" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.93742" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09082" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.64634" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.08315" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.65401" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.0905049" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.429898" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.07548" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.0517" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.94049" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-2.17864" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.05231" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.467481" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.347063" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.21699" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.8845" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.11613" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-2.16943" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.992869" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.467097" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.390782" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.23731" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.79399" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.10884" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="12">
+        <joint name="left_e0" position="-2.11076" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.14243" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.391165" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.49701" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.30519" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.7008" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.22811" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@1x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95352" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.530757" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8519" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06474" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.13131" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.06934" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.70234" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.148413" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.411107" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.97615" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.08775" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.11076" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.161" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.872835" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.696044" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.315617" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.21162" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.75602" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.92438" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-2.1422" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.956054" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.646189" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.444854" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.26301" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.659" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.93665" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@1x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.12188" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.76868" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.333257" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.446005" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.00913" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.08008" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.31746" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.21468" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.50468" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-1.00514" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.222044" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.24728" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.59457" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.00261" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-2.25802" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.465947" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-1.02048" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.308714" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.30711" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.51135" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.99533" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@2x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.11536" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.65977" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.263078" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.530374" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.16253" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.0889" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.27259" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.10654" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.66092" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.233549" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.758553" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.36655" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.31248" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@2x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.01105" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.91326" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.126937" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.409956" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.86647" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.34124" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.07854" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.54012" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.517719" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.411874" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.1004" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.02485" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.42292" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.98344" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.49755" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.445621" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.587131" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.21353" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.8519" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.31708" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@2x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.05093" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.83963" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.22818" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.399218" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.91633" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.08967" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.15716" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.13147" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.27014" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.793452" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.361636" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.13607" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.95429" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.46204" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-2.09887" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.24904" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.812626" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.553384" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.34316" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.83733" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.37499" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@3x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.93051" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.16713" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.0230097" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.595185" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.99034" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09388" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.37844" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.7775" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.07356" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.0249272" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.765073" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.21392" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.04671" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.24843" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@3x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.94355" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.24191" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.342845" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.42683" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.81317" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.0889" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.92706" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.97845" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.26339" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.0306796" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.487422" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.87261" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.47163" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.96618" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.05285" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.33249" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.57601" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.99533" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09273" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.68025" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-1.8937" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.97999" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.347063" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.664981" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.14297" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.07394" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.54909" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="12">
+        <joint name="left_e0" position="-1.81355" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.99034" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.269981" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.763155" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.26262" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.99187" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.51343" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="put@3x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.00951" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.95237" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.385413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.8542" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.06435" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.1455" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.00261" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.32935" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.319451" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.531908" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.88488" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09388" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.84845" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.01143" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.30442" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.0636602" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.563354" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.92093" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.50154" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-2.02025" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.08775" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.46518" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.573709" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.03713" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.49617" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-2.06244" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.79092" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.719437" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.526155" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.0866" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.45744" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="12">
+        <joint name="left_e0" position="-1.89868" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.75104" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.664981" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.532291" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.12495" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.95506" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.71169" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="14">
+        <joint name="left_e0" position="-1.88028" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.76523" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.608223" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.663447" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.20701" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.89332" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.6116" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@1x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.15333" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.06995" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.435267" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.45099" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.24767" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.7729" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.04786" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.24" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.31155" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.376592" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.37084" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.2166" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.97577" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.04825" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-2.0076" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46434" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.423762" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.558753" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.76868" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09005" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.24421" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.91134" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.59626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.48489" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.515034" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.63177" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.0912" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.02102" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-1.96848" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46511" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57962" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.27535" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49678" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.97768" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@1x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.16023" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.872835" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.696044" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.316767" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.21238" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.75602" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.92515" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.93895" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.4072" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.250039" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.433733" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.68968" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.3282" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@1x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.21584" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="0.505447" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-1.00476" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.222427" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.24805" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.59419" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.00338" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-2.02025" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.90597" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.386563" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.48167" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.01067" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.08851" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.42216" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.91556" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.54756" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.695277" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.567189" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.71806" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09082" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.87146" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@2x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.11498" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.66015" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.263078" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.52999" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.16138" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.0889" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.27298" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.87913" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.53644" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.566039" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.59135" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.81508" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.09695" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@2x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.07854" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.54127" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.516952" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.411874" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.10117" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.02485" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.42177" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.95621" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.52263" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.503529" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.501228" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.66437" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.93358" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@2x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.13108" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.26975" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.793452" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.361636" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.13568" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.95468" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.46242" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.93013" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.43519" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.297592" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.447922" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.70924" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.52762" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@3x1" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-1.93051" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.16636" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.0222427" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.594801" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.98957" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09388" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.37805" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.88219" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.61927" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.59135" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.619345" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.75334" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09388" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.06627" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.88756" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.62081" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.16544" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.621262" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.78018" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09043" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.58614" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.81777" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.63154" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.70885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.625481" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.73953" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09235" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.16046" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@3x2" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-1.9658" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.05285" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.333257" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.575626" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.99571" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.67948" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.91671" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.4187" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.0249272" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.592117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.83234" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09503" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.47584" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.89677" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.61697" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.644272" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.596335" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.69428" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09465" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.06551" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.88641" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.61697" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.3499" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.597102" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.67319" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.08813" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.52669" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
+
+<trajectory id="back@3x3" time_to_start="0">
+    <point time_from_start="2">
+        <joint name="left_e0" position="-2.06244" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="1.79131" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.718287" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.525772" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.08698" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09312" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.45744" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="4">
+        <joint name="left_e0" position="-1.95276" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.18861" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="-0.327888" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.542262" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="2.03176" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09427" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.37652" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="6">
+        <joint name="left_e0" position="-1.8914" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.61966" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.153398" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.543796" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.77903" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09273" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-2.37077" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="8">
+        <joint name="left_e0" position="-1.85957" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.60163" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="0.779646" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.543413" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.60723" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09235" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.90827" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="10">
+        <joint name="left_e0" position="-1.83656" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.61735" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.40206" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.543796" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.67817" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="2.09043" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-1.55392" velocity="0" acceleration="0"/>
+    </point>
+    <point time_from_start="12">
+        <joint name="left_e0" position="-1.96925" velocity="0" acceleration="0"/>
+        <joint name="left_e1" position="2.46626" velocity="0" acceleration="0"/>
+        <joint name="left_s0" position="1.57885" velocity="0" acceleration="0"/>
+        <joint name="left_s1" position="0.276117" velocity="0" acceleration="0"/>
+        <joint name="left_w0" position="1.49601" velocity="0" acceleration="0"/>
+        <joint name="left_w1" position="1.9773" velocity="0" acceleration="0"/>
+        <joint name="left_w2" position="-0.0609757" velocity="0" acceleration="0"/>
+    </point>
+</trajectory>
