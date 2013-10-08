@@ -47,6 +47,8 @@ rosbuild_add_library(trajectory_xml_parser src/trajectory_xml_parser/trajectory_
 target_link_libraries(trajectory_xml_parser ${QT_LIBRARIES})
 rosbuild_add_executable(test_trajectory_xml_parser src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
 target_link_libraries(test_trajectory_xml_parser trajectory_xml_parser)
+rosbuild_add_executable(test_loading_trajectory_xml src/trajectory_xml_parser/test_loading_trajectory_xml.cpp)
+target_link_libraries(test_loading_trajectory_xml trajectory_xml_parser)
 
 # conversor from raw to xml trajectory files
 rosbuild_add_executable(trajectory_from_raw_to_xml src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)

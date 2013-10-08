@@ -3,66 +3,45 @@
 namespace ttt
 {
 
-bool trajectory_xml_parser::write_to_file( trajectory_msgs::JointTrajectory traj, std::string filename, std::string trajectory_id)
+bool trajectory_xml_parser::write_to_file(const trajectory_msgs::JointTrajectory traj, std::string filename, const std::string trajectory_id)
 {
-    QFile outstream(filename.c_str());
-    bool new_file = !outstream.exists();
-    QIODevice::OpenMode om;
-    if(new_file) om = QIODevice::WriteOnly | QIODevice::Text;   // if file does not exist, we create it
-    else om = QIODevice::Append | QIODevice::Text;              // else we add data to the end of the file
-    if(!outstream.open(om))
-    {
-        ROS_ERROR_STREAM("Error openning file (" << filename << ") to write trajectory");
-        return false;
-    }
-
-    QXmlStreamWriter xmlstream(&outstream);
-    xmlstream.setAutoFormatting(true);
-    if(new_file) xmlstream.writeStartDocument();
-    xmlstream.writeStartElement("trajectory");
-    xmlstream.writeAttribute("id",trajectory_id.c_str());
-    xmlstream.writeAttribute("time_to_start", QString::number(traj.header.stamp.toSec())); //the time to start is converted to seconds and then to a string
-    std::vector<trajectory_msgs::JointTrajectoryPoint>& points=traj.points;
-    foreach (trajectory_msgs::JointTrajectoryPoint p, points) {
-        xmlstream.writeStartElement("point");
-        xmlstream.writeAttribute("time_from_start",QString::number(p.time_from_start.toSec())); //the time to reach this point sice the trajectory started
-        for (size_t i = 0; i < p.positions.size(); ++i) {
-            xmlstream.writeStartElement("joint");
-            xmlstream.writeAttribute("name",traj.joint_names[i].c_str());
-            xmlstream.writeAttribute("position",QString::number(p.positions[i]));
-            xmlstream.writeAttribute("velocity",QString::number(p.velocities[i]));
-            xmlstream.writeAttribute("acceleration",QString::number(p.accelerations[i]));
-            xmlstream.writeEndElement();
-        }
-        xmlstream.writeEndElement();
-    }
-    xmlstream.writeEndElement();
-    xmlstream.writeEndDocument();
-    return true;
+    return trajectory_xml_parser::write_to_file(std::vector<trajectory_msgs::JointTrajectory>(1,traj),filename,std::vector<std::string>(1,trajectory_id));
 }
 
-bool trajectory_xml_parser::write_to_file(std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename, std::vector<std::string> trajectory_ids)
+bool trajectory_xml_parser::write_to_file(const std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename,const std::vector<std::string> traj_ids)
 {
     QFile outstream(filename.c_str());
     bool new_file = !outstream.exists();
-    QIODevice::OpenMode om;
-    if(new_file) om = QIODevice::WriteOnly | QIODevice::Text;   // if file does not exist, we create it
-    else om = QIODevice::Append | QIODevice::Text;              // else we add data to the end of the file
-    if(!outstream.open(om))
+
+    std::vector<trajectory_msgs::JointTrajectory> existing_trajs;
+    std::vector<std::string> existing_traj_ids;
+    if(!new_file)
+    {
+        if(!trajectory_xml_parser::read_from_file(filename,existing_trajs,existing_traj_ids))
+        {
+            ROS_ERROR_STREAM("Impossible to access already existing trajectories in the file " << filename);
+            return false;
+        }
+    }
+    existing_trajs.insert(existing_trajs.end(),trajs.begin(),trajs.end()); //concat previous and new trajectories
+    existing_traj_ids.insert(existing_traj_ids.end(),traj_ids.begin(),traj_ids.end()); //concat previous and new traj. ids
+
+    if(!outstream.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         ROS_ERROR_STREAM("Error openning file (" << filename << ") to write trajectory");
         return false;
     }
     QXmlStreamWriter xmlstream(&outstream);
     xmlstream.setAutoFormatting(true);
-    if(new_file) xmlstream.writeStartDocument();
+    xmlstream.writeStartDocument();
+    xmlstream.writeStartElement("trajectories");
     for (size_t i = 0; i < trajs.size(); ++i)
     {
-        trajectory_msgs::JointTrajectory& traj=trajs[i];
+        const trajectory_msgs::JointTrajectory& traj=trajs[i];
         xmlstream.writeStartElement("trajectory");
-        xmlstream.writeAttribute("id",trajectory_ids[i].c_str());
+        xmlstream.writeAttribute("id",traj_ids[i].c_str());
         xmlstream.writeAttribute("time_to_start", QString::number(traj.header.stamp.toSec())); //the time to start is converted to seconds and then to a string
-        std::vector<trajectory_msgs::JointTrajectoryPoint>& points=traj.points;
+        const std::vector<trajectory_msgs::JointTrajectoryPoint>& points=traj.points;
         foreach (trajectory_msgs::JointTrajectoryPoint p, points) {
             xmlstream.writeStartElement("point");
             xmlstream.writeAttribute("time_from_start",QString::number(p.time_from_start.toSec())); //the time to reach this point sice the trajectory started
@@ -94,76 +73,87 @@ bool trajectory_xml_parser::read_from_file(std::string filename, std::vector<tra
         ROS_ERROR_STREAM("Error openning file (" << filename << ") to read trajectories");
         return false;
     }
-    trajs.clear();//we delete possible trajectories
-    traj_ids.clear();    
+    trajs.clear();      // We delete all previous trajectories
+    traj_ids.clear();   // and its names
     QXmlStreamReader xmlstream(&instream);
-    while (!xmlstream.atEnd() && xmlstream.readNextStartElement()) {
+    while (!xmlstream.atEnd() && !xmlstream.hasError()) {
+        QXmlStreamReader::TokenType token = xmlstream.readNext();
         std::string aux;
         bool ok=true;
-        if (xmlstream.name()=="trajectory") {
-            if(xmlstream.attributes().value("id").isEmpty()) {
-                ROS_ERROR("Empty id for a trajectory");
-                return false;
+        if (token!=QXmlStreamReader::StartDocument && token==QXmlStreamReader::StartElement)
+        {
+            if (xmlstream.name()=="trajectory")
+            {
+                ROS_DEBUG_STREAM("Parsing TRAJECTORY element with id " << xmlstream.attributes().value("id").toString().toStdString());
+                if(xmlstream.attributes().value("id").isEmpty()) {
+                    ROS_ERROR("Empty id for a trajectory");
+                    return false;
+                }
+                traj_ids.push_back(xmlstream.attributes().value("id").toString().toStdString());
+                trajectory_msgs::JointTrajectory t;
+                t.header.stamp = ros::Time(xmlstream.attributes().value("time_to_start").toString().toDouble(&ok));
+                if (xmlstream.attributes().value("time_to_start").isEmpty() || !ok) {
+                    ROS_ERROR_STREAM("Error parsing trajectory time_to_start. Error converting \"" << xmlstream.attributes().value("time_to_start").toString().toStdString() << "\" to double.");
+                    return false;
+                }
+                if(!trajectory_xml_parser::read_joint_names_from_file(filename,t.joint_names)) {
+                    ROS_ERROR_STREAM("Error reading joint names from " << filename);
+                    return false;
+                }
+                trajs.push_back(t);
             }
-            traj_ids.push_back(xmlstream.attributes().value("id").toString().toStdString());
-            trajectory_msgs::JointTrajectory t;            
-            t.header.stamp = ros::Time(xmlstream.attributes().value("time_to_start").toString().toDouble(&ok));
-            if (xmlstream.attributes().value("time_to_start").isEmpty() || !ok) {
-                ROS_ERROR_STREAM("Error parsing trajectory time_to_start. Error converting \"" << xmlstream.attributes().value("time_to_start").toString().toStdString() << "\" to double.");
-                return false;
-            }            
-            if(!trajectory_xml_parser::read_joint_names_from_file(filename,t.joint_names)) {
-                ROS_ERROR_STREAM("Error reading joint names from " << filename);
-                return false;
+            else if (xmlstream.name()=="point")
+            {
+                ROS_DEBUG_STREAM("Parsing POINT element with starting time " << xmlstream.attributes().value("time_from_start").toString().toStdString());
+                trajectory_msgs::JointTrajectoryPoint p;
+                if(xmlstream.attributes().value("time_from_start").isEmpty()) {
+                    ROS_ERROR("Empty time_from_start for a poing");
+                    return false;
+                }
+                p.time_from_start=ros::Duration(xmlstream.attributes().value("time_from_start").toString().toDouble(&ok));
+                if (xmlstream.attributes().value("time_from_start").isEmpty() || !ok) {
+                    ROS_ERROR_STREAM("Error parsing point time_from_start. Error converting \"" << xmlstream.attributes().value("time_from_start").toString().toStdString() << "\" to double.");
+                    return false;
+                }
+                if (trajs.empty()) {
+                    ROS_ERROR("Trying to access point from an empty trajectory");
+                    return false;
+                }
+                trajs[trajs.size()-1].points.push_back(p); //adding the point to the last trajectory in the vector
             }
-            trajs.push_back(t);
-        }
-        else if (xmlstream.name()=="point") {
-            trajectory_msgs::JointTrajectoryPoint p;
-            if(xmlstream.attributes().value("time_from_start").isEmpty()) {
-                ROS_ERROR("Empty time_from_start for a poing");
-                return false;
+            else if (xmlstream.name()=="joint")
+            {
+                ROS_DEBUG_STREAM("Parsing JOINT element named " << xmlstream.attributes().value("name").toString().toStdString());
+                if (trajs.empty()) {
+                    ROS_ERROR("Trying to access joint from an empty trajectory");
+                    return false;
+                }
+                trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].positions.push_back(xmlstream.attributes().value("position").toString().toDouble(&ok));
+                if(xmlstream.attributes().value("position").isEmpty() || !ok) {
+                    ROS_ERROR_STREAM("Error parsing joint position. Error converting \"" << xmlstream.attributes().value("position").toString().toStdString() << "\" to double.");
+                    return false;
+                }
+                trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].velocities.push_back(xmlstream.attributes().value("velocity").toString().toDouble(&ok));
+                if(xmlstream.attributes().value("velocity").isEmpty() || !ok) {
+                    ROS_ERROR_STREAM("Error parsing joint velocity. Error converting \"" << xmlstream.attributes().value("velocity").toString().toStdString() << "\" to double.");
+                    return false;
+                }
+                trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].accelerations.push_back(xmlstream.attributes().value("acceleration").toString().toDouble(&ok));
+                if(xmlstream.attributes().value("acceleration").isEmpty() || !ok) {
+                    ROS_ERROR_STREAM("Error parsing joint acceleration. Error converting \"" << xmlstream.attributes().value("acceleration").toString().toStdString() << "\" to double.");
+                    return false;
+                }
             }
-            p.time_from_start=ros::Duration(xmlstream.attributes().value("time_from_start").toString().toDouble(&ok));
-            if (xmlstream.attributes().value("time_from_start").isEmpty() || !ok) {
-                ROS_ERROR_STREAM("Error parsing point time_from_start. Error converting \"" << xmlstream.attributes().value("time_from_start").toString().toStdString() << "\" to double.");
-                return false;
+            else {
+                ROS_WARN_STREAM("Unparsed element: " << xmlstream.name().toString().toStdString());
             }
-            if (trajs.empty()) {
-                ROS_ERROR("Trying to access point from an empty trajectory");
-                return false;
-            }
-            trajs[trajs.size()-1].points.push_back(p); //adding the point to the last trajectory in the vector
-        }
-        else if (xmlstream.name()=="joint") {
-            if (trajs.empty()) {
-                ROS_ERROR("Trying to access joint from an empty trajectory");
-                return false;
-            }
-            trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].positions.push_back(xmlstream.attributes().value("position").toString().toDouble(&ok));
-            if(xmlstream.attributes().value("position").isEmpty() || !ok) {
-                ROS_ERROR_STREAM("Error parsing joint position. Error converting \"" << xmlstream.attributes().value("position").toString().toStdString() << "\" to double.");
-                return false;
-            }
-            trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].velocities.push_back(xmlstream.attributes().value("velocity").toString().toDouble(&ok));
-            if(xmlstream.attributes().value("velocity").isEmpty() || !ok) {
-                ROS_ERROR_STREAM("Error parsing joint velocity. Error converting \"" << xmlstream.attributes().value("velocity").toString().toStdString() << "\" to double.");
-                return false;
-            }
-            trajs[trajs.size()-1].points[trajs[trajs.size()-1].points.size()-1].accelerations.push_back(xmlstream.attributes().value("acceleration").toString().toDouble(&ok));
-            if(xmlstream.attributes().value("acceleration").isEmpty() || !ok) {
-                ROS_ERROR_STREAM("Error parsing joint acceleration. Error converting \"" << xmlstream.attributes().value("acceleration").toString().toStdString() << "\" to double.");
-                return false;
-            }
-        } else {
-            ROS_WARN_STREAM("Unknown element: " << xmlstream.name().toString().toStdString());
         }
     }
     if (xmlstream.hasError()) {
         ROS_ERROR_STREAM("Error reading from input xml stream from " << filename << ": " << xmlstream.errorString().toStdString() << " on line " << xmlstream.lineNumber() << ", colum " << xmlstream.columnNumber());
         return false;
     }
-
+    xmlstream.clear();
     return true;
 }
 

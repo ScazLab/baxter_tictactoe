@@ -61,6 +61,8 @@ public:
     Move_Maker(const char * trajectory_file, const char * service);
 
     bool make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> types);
+
+    void print_trajectory_repository_details();
 };
 
 }

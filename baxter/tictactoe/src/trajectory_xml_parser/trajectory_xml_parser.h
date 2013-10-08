@@ -53,7 +53,7 @@ public:
      * \param trajectory_id trajectory id/name. It must be unique but this is not checked in the code.
      * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
      **/
-    static bool write_to_file(trajectory_msgs::JointTrajectory traj, std::string filename, std::string trajectory_id);
+    static bool write_to_file(const trajectory_msgs::JointTrajectory traj, std::string filename,const std::string trajectory_id);
 
     /**
      * Write several trajectories to a xml file.
@@ -63,7 +63,7 @@ public:
      * \param trajectory_ids vector of trajectory ids/names. Ids/names must be unique but this is not checked in the code.
      * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
      **/
-    static bool write_to_file(std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename, std::vector<std::string> trajectory_ids);
+    static bool write_to_file(const std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename,const std::vector<std::string> traj_ids);
 
     /**
      * Read all the trajectories from a xml file.
