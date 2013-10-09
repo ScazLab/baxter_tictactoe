@@ -12,8 +12,8 @@ int main (int argc, char **argv)
 
     ROS_INFO("Waiting for TTT Move Maker action server to start.");
     ROS_ASSERT_MSG(move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
+    ROS_INFO("TTT Move Maker action server is started. We are ready for sending goals.");
 
-    ROS_INFO("Action server started. We are ready for sending goals.");
     tictactoe::PlaceTokenGoal goal;
     int i=0;
     while(true){
@@ -35,7 +35,7 @@ int main (int argc, char **argv)
         case 7:goal.cell="3x1"; break;
         case 8:goal.cell="3x2"; break;
         case 9:goal.cell="3x3"; break;
-        default: ros::shutdown();
+        default: return 0;//ros::shutdown();
         }
         move_commander.sendGoal(goal);
         bool finished_before_timeout = move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return

@@ -62,7 +62,7 @@ class Move_Maker
 
     std::string* get_trajectories_to_cell(std::string cell_id);
 
-    void execute_single_trajectory(std::string traj_id);
+    void execute_single_trajectory(std::string traj_id, Trajectory_Type mode);
 
 public:
     Move_Maker(const char * trajectory_file, const char * service);

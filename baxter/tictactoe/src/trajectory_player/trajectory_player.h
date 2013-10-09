@@ -41,7 +41,7 @@ class Trajectory_Player
      **/
     void check_left_ir_range(const sensor_msgs::RangeConstPtr& msg);
 
-    const static double IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
+    const static float IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
 
 public:
     /**
@@ -74,7 +74,7 @@ public:
     bool run_trajectory_and_release(trajectory_msgs::JointTrajectory t);
 };
 
-const double Trajectory_Player::IR_RANGE_THRESHOLD = 0.083;
+const float Trajectory_Player::IR_RANGE_THRESHOLD = 0.085;
 
 }
 #endif // TRAJECTORY_PLAYER_H

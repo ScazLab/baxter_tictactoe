@@ -19,9 +19,10 @@ int main(int argc, char** argv)
     ROS_ASSERT_MSG(trajs.size()==traj_ids.size(),"#trajs != #traj_ids");
     ROS_INFO_STREAM(trajs.size() << " trajectories read");
 
-
     ros::init(argc, argv, "test_trajectory_player");
     ttt::Trajectory_Player tp(service.c_str());
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
 
     while(true)
     {
@@ -32,7 +33,24 @@ int main(int argc, char** argv)
         size_t option;
         std::cin >> option;
         if (option<1 || option>traj_ids.size()) break;
-        tp.run_trajectory_and_grasp(trajs[option-1]); //executing plain trajectory
+        ROS_INFO("1. Plain | 2. Grasp | 3. Release");
+        size_t type_traj=0;
+        std::cin >> type_traj;
+        if (type_traj>=1 && type_traj<=3) {
+            switch(type_traj)
+            {
+            case 1:
+                tp.run_trajectory(trajs[option-1]); //executing plain trajectory
+                break;
+            case 2:
+                tp.run_trajectory_and_grasp(trajs[option-1]); //executing grasp trajectory
+                break;
+            case 3:
+                tp.run_trajectory_and_release(trajs[option-1]); //executing release trajectory
+            }
+        }
+        else ROS_WARN("Trajectory type not available");
+
     }
 
     ros::shutdown();

@@ -46,7 +46,7 @@ std::string *Move_Maker::get_trajectories_to_cell(std::string cell_id)
     else return NULL;
 }
 
-void Move_Maker::execute_single_trajectory(std::string traj_id)
+void Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type mode)
 {
     TTT_Trajectory t;
     if(!this->get_ttt_trajectory(traj_id,t))
@@ -55,7 +55,27 @@ void Move_Maker::execute_single_trajectory(std::string traj_id)
         return;
     }
     if (this->is_preempted() || !my_ros_utils::is_ros_ok()) return;
-    if(!_traj_player->run_trajectory_and_grasp(t.trajectory))
+    ROS_DEBUG_STREAM("Trajectory found. " << t.get_ttt_trajectory_description());
+    bool success=true;
+    switch(mode)
+    {
+    case PLAIN:
+        ROS_INFO_STREAM("Playing PLAIN trajectory " << t.name);
+        success=_traj_player->run_trajectory(t.trajectory);
+        break;
+    case GRASP:
+        ROS_INFO_STREAM("Playing GRASP trajectory " << t.name);
+        success=_traj_player->run_trajectory_and_grasp(t.trajectory);
+        break;
+    case RELEASE:
+        ROS_INFO_STREAM("Playing RELEASE trajectory " << t.name);
+        success=_traj_player->run_trajectory_and_release(t.trajectory);
+        break;
+    default:
+        ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << mode << "?");
+        return;
+    }
+    if(!success)
     {
         _place_token.setAborted(_place_token_result,traj_id + " trajectory failed");
         return;
@@ -143,17 +163,17 @@ void Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     _place_token.publishFeedback(_place_token_feedback);
 
     // The first trajectory is always to grasp a new token from the heap
-    this->execute_single_trajectory(traj_ids[0]);
+    this->execute_single_trajectory(traj_ids[0],GRASP);
     _place_token_feedback.percent_complete=0.33;
     _place_token.publishFeedback(_place_token_feedback);
 
     // The second trajectory is used to place the token in the corresponding cell
-    this->execute_single_trajectory(traj_ids[1]);
+    this->execute_single_trajectory(traj_ids[1],RELEASE);
     _place_token_feedback.percent_complete=0.66;
     _place_token.publishFeedback(_place_token_feedback);
 
     // The third trajectory moves the arm to the initial position
-    this->execute_single_trajectory(traj_ids[2]);
+    this->execute_single_trajectory(traj_ids[2],PLAIN);
     _place_token_feedback.percent_complete=0.99;
     _place_token.publishFeedback(_place_token_feedback);
 

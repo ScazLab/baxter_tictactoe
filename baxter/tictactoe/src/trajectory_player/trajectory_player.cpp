@@ -14,9 +14,16 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
 
 void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& msg)
 {
-    ROS_DEBUG_STREAM("Left IR range=" << msg->range << " (" << msg->min_range << ".." << msg->max_range << ")");
+    // ROS_DEBUG_STREAM("Left IR range=" << msg->range << " (" << msg->min_range << ".." << msg->max_range << ")");
+    // if(msg->range<=msg->max_range) ROS_DEBUG("msg->range<=msg->max_range");
+    // else ROS_DEBUG("NO msg->range<=msg->max_range");
+    // if(msg->range>=msg->min_range) ROS_DEBUG("msg->range>=msg->min_range");
+    // else ROS_DEBUG("NO msg->range>=msg->min_range");
+    // if(msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD) ROS_DEBUG("msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD");
+    // else ROS_DEBUG("NO msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD");
+
     // if the distance is between the min and max values and it is below the threshold
-    if(msg->range<=msg->max_range && msg->range>=msg->min_range && msg->range<Trajectory_Player::IR_RANGE_THRESHOLD)
+    if(msg->range<=msg->max_range && msg->range>=msg->min_range && msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD)
     {        
         _tip_collision.set(true);
         ROS_INFO("Obstacle on the field of the left hand gripper");
@@ -65,6 +72,7 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
         /*********************/
         /* Code for grasping */
         /*********************/
+        ROS_ERROR("GRASP HERE");
         return true;
     }
     else if(goal_state==Goal_State::SUCCEEDED) //the trajectory has succesfully ended
@@ -75,6 +83,7 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
             /*********************/
             /* Code for grasping */
             /*********************/
+            ROS_ERROR("GRASP HERE");
             return true;
         }
         return false; //the trajectory has successfully ended but there is not item to grasp
@@ -94,6 +103,7 @@ bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTraject
         /**********************/
         /* Code for releasing */
         /**********************/
+        ROS_ERROR("RELEASE HERE");
         return true;
     }
     return false;
