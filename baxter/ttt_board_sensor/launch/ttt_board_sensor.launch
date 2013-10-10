@@ -1,0 +1,5 @@
+<!-- An online display running on real-time to show the state of the board -->
+<launch>
+  <include file="$(find tictactoe_board_sensor)/launch/board_state_sensor.launch" />
+  <include file="$(find tictactoe_board_sensor)/launch/board_display.launch" />
+</launch>

@@ -1,0 +1,22 @@
+<package>
+  <description brief="tictactoe_board_sensor">
+
+     tictactoe_board_sensor
+
+  </description>
+  <author>Alvaro</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/tictactoe_board_sensor</url>
+  <depend package="sensor_msgs"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="image_transport"/>
+
+  <rosdep name="libqt4-dev"/>
+
+</package>
+
+

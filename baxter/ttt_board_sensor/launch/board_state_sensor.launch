@@ -1,0 +1,28 @@
+
+<launch>
+    <include file="$(find tictactoe_board_sensor)/launch/usb_cam_node.launch" />
+
+    <!-- xml file containing the cells of the board -->
+    <param name="board_file" textfile="$(find tictactoe_board_sensor)/tttboard1.xml" />
+
+    <!-- Range thresholds for the red tokes -->
+    <param name="h_low_red" type="int" value="168" />
+    <param name="s_low_red" type="int" value="95" />
+    <param name="v_low_red" type="int" value="49" />
+    <param name="h_high_red" type="int" value="180" />
+    <param name="s_high_red" type="int" value="256" />
+    <param name="v_high_red" type="int" value="171" />
+
+    <!-- Range thresholds for the blue tokes -->
+    <param name="h_low_blue" type="int" value="95" />
+    <param name="s_low_blue" type="int" value="162" />
+    <param name="v_low_blue" type="int" value="66" />
+    <param name="h_high_blue" type="int" value="119" />
+    <param name="s_high_blue" type="int" value="256" />
+    <param name="v_high_blue" type="int" value="176" />
+
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find tictactoe_board_sensor)/custom_rosconsole.conf"/>
+
+    <include file="$(find tictactoe_board_sensor)/launch/board_state_sensor_node.launch" />
+
+</launch>

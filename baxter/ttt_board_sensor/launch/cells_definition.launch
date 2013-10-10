@@ -1,0 +1,11 @@
+<!--defining the area of the cells in the game-->
+<launch>
+  <include file="$(find tictactoe_board_sensor)/launch/usb_cam_node.launch" />
+
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find tictactoe_board_sensor)/custom_rosconsole.conf"/>
+
+  <node name="cells_delimitation" pkg="tictactoe_board_sensor" type="cells_delimitation" respawn="false" output="screen">
+    <remap from="/in" to="/usb_cam/image_raw"/>
+  </node>
+ 
+</launch>

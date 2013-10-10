@@ -1,0 +1,10 @@
+<!--
+ This node receives the state of the tic tac toe board and creates an image that represents it.
+ It receives a /new_board topic with the information about each cell in a tictactoe_board_sensor/ttt_board message.
+ It publishes a image attached to the /new_board_scheme with a scheme of the board.
+-->
+
+<launch>
+  <node name="board_scheme" pkg="tictactoe_board_sensor" type="board_scheme" respawn="false" output="screen">
+  </node>
+</launch>
