@@ -4,7 +4,7 @@ It identifies the state of each cell: red, blue, or empty.
 
 <launch>
 
-    <node name="board_state_sensor" pkg="tictactoe_board_sensor" type="board_state_sensing" respawn="false" output="screen">
+    <node name="board_state_sensor" pkg="ttt_board_sensor" type="board_state_sensing" respawn="false" output="screen">
         <remap from="/image_in" to="/usb_cam/image_raw"/>
     </node>
 

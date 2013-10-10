@@ -1,7 +1,7 @@
 <!--
  Display of the state of the cells in the board. A Tic Tac Toe board appears on the screen waiting for the /new_board topic with the information about each cell.
  To test it independently, once this file is launched, send a topic like this:
-    rostopic pub -1 /new_board tictactoe_board_sensor/ttt_board "header:
+    rostopic pub -1 /new_board ttt_board_sensor/ttt_board "header:
       seq: 0
       stamp: {secs: 0, nsecs: 0}
       frame_id: ''
@@ -10,12 +10,12 @@
 -->
 
 <launch>
-  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find tictactoe_board_sensor)/custom_rosconsole.conf"/>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
 
   <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
     <remap from="image" to="new_board_scheme"/>
     <param name="autosize" value="true" />
   </node>
 
-  <include file="$(find tictactoe_board_sensor)/launch/board_scheme_node.launch" />
+  <include file="$(find ttt_board_sensor)/launch/board_scheme_node.launch" />
 </launch>

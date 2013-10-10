@@ -6,7 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "tictactoe_board_sensor/ttt_board.h"
+#include "ttt_board_sensor/ttt_board.h"
 
 namespace ttt
 {
@@ -24,7 +24,7 @@ private:
     ros::Subscriber sub;
 
 
-    cv::Mat draw_board(const tictactoe_board_sensor::ttt_board::ConstPtr& msg) const
+    cv::Mat draw_board(const ttt_board_sensor::ttt_board::ConstPtr& msg) const
     {
         ROS_DEBUG("@display_board");
 
@@ -80,7 +80,7 @@ private:
         cv::destroyAllWindows();
     }
 
-    void publish_draw_board(const tictactoe_board_sensor::ttt_board::ConstPtr& msg) const
+    void publish_draw_board(const ttt_board_sensor::ttt_board::ConstPtr& msg) const
     {
         cv::Mat img_board = this->draw_board(msg);
         //this->show_board_temporary(img_board,30000);

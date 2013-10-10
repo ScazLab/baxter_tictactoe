@@ -12,7 +12,7 @@
 
 #include "ttt_definitions.h"
 #include "ttt_cells.h"
-#include "tictactoe_board_sensor/ttt_board.h"
+#include "ttt_board_sensor/ttt_board.h"
 
 namespace ttt
 {
@@ -74,7 +74,7 @@ public:
         : it_(nh_),TOKEN_AREA_THRESHOLD(1000)
     {
         this->image_sub_ = this->it_.subscribe("image_in", 1, &BoardState::imageCb, this);
-        this->board_pub_ = this->nh_.advertise<tictactoe_board_sensor::ttt_board>("/new_board", 1);
+        this->board_pub_ = this->nh_.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
         ROS_ASSERT_MSG(this->board_pub_,"Empty publisher");
 
         /* Reading cells definition data from the parameter server */
@@ -133,7 +133,7 @@ public:
             return;
         }
 
-        tictactoe_board_sensor::ttt_board msg_board;
+        ttt_board_sensor::ttt_board msg_board;
         msg_board.header.stamp = msg->header.stamp;
         msg_board.header.frame_id = msg->header.frame_id;
         short unsigned int counter=0;

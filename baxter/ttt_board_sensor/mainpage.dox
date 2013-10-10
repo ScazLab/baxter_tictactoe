@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b tictactoe_board_sensor 
+\b ttt_board_sensor
 
 <!-- 
 Provide an overview of your package.

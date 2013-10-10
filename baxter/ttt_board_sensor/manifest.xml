@@ -1,13 +1,13 @@
 <package>
-  <description brief="tictactoe_board_sensor">
+  <description brief="ttt_board_sensor">
 
-     tictactoe_board_sensor
+     ttt_board_sensor
 
   </description>
   <author>Alvaro</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/tictactoe_board_sensor</url>
+  <url>http://ros.org/wiki/ttt_board_sensor</url>
   <depend package="sensor_msgs"/>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>

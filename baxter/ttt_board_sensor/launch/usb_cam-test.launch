@@ -1,6 +1,6 @@
 <!--http://pharos.ece.utexas.edu/wiki/index.php/How_to_Use_a_Webcam_in_ROS_with_the_usb_cam_Package-->
 <launch>
-  <include file="$(find tictactoe_board_sensor)/launch/usb_cam_node.launch" />
+  <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
 
   <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
     <remap from="image" to="/usb_cam/image_raw"/>

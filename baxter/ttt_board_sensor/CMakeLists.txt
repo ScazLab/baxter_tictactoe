@@ -21,9 +21,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-
-include_directories (${tictactoe_board_sensor_SOURCE_DIR}/hsv_range_finder)
-include_directories (${tictactoe_board_sensor_SOURCE_DIR}/tictactoe_board_display)
+include_directories ($(ttt_board_sensor_INCLUDE_DIRS))
+include_directories (${ttt_board_sensor_SOURCE_DIR}/hsv_range_finder)
+include_directories (${ttt_board_sensor_SOURCE_DIR}/tictactoe_board_display)
 
 #uncomment if you have defined messages
 rosbuild_genmsg()
@@ -38,11 +38,9 @@ rosbuild_genmsg()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-include_directories($(tictactoe_board_sensor_INCLUDE_DIRS))
+rosbuild_add_library(ttt src/ttt_cells.cpp src/ttt_cells.h)
 
-rosbuild_add_library(ttt src/ttt_cells.cpp)
-
-rosbuild_add_executable(cells_delimitation src/board_cells_delimitation.cpp)
+rosbuild_add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
 TARGET_LINK_LIBRARIES(cells_delimitation ttt)
 TARGET_LINK_LIBRARIES(cells_delimitation ${QT_LIBRARIES})
 
