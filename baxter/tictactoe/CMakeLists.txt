@@ -70,3 +70,7 @@ target_link_libraries(move_maker_simpleclient move_maker)
 #tests for utils
 rosbuild_add_executable(test_thread_safe_variable src/utils/test_thread_safe_variable.cpp src/utils/T_ThreadSafe.h)
 rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/utils/BufferToggle.h)
+
+# ttt brain
+include_directories($(ttt_board_sensor_INCLUDE_DIRS))
+rosbuild_add_library(ttt_brain src/brain/ttt_brain.cpp)

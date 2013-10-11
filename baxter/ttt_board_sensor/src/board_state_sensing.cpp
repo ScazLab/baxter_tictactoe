@@ -2,11 +2,6 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-//#include <opencv2/imgproc/imgproc.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-
-//#include <QFile>
-//#include <QXmlStreamReader>
 
 #include <boost/lexical_cast.hpp>
 
@@ -17,6 +12,17 @@
 namespace ttt
 {
 
+bool operator==(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
+{
+    if (msg1.data.size()!=msg2.data.size()) return false;
+
+    for (size_t i = 0; i < msg1.data.size(); ++i) {
+        if (msg1.data[i]!=msg2.data[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 class BoardState
 {
@@ -31,7 +37,7 @@ private:
 
     t_Board board; // A vector of cells representing the board game
 
-    const double TOKEN_AREA_THRESHOLD;
+    double TOKEN_AREA_THRESHOLD;
 
     int H_LOWER_RED, S_LOWER_RED, V_LOWER_RED, H_HIGHER_RED, S_HIGHER_RED, V_HIGHER_RED;
     int H_LOWER_BLUE, S_LOWER_BLUE, V_LOWER_BLUE, H_HIGHER_BLUE, S_HIGHER_BLUE, V_HIGHER_BLUE;
@@ -67,11 +73,23 @@ private:
         return segmented_moments.m00; //m00 represents the area
     }
 
+    ttt_board_sensor::ttt_board last_msg_board; //! Last TTT board state message sent. This is used to avoid the publication of the same board state messages.
 
+    bool same_board_state(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
+    {
+        if (msg1.data.size()!=msg2.data.size()) return false;
+
+        for (size_t i = 0; i < msg1.data.size(); ++i) {
+            if (msg1.data[i]!=msg2.data[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 public:
     BoardState()
-        : it_(nh_),TOKEN_AREA_THRESHOLD(1000)
+        : it_(nh_)
     {
         this->image_sub_ = this->it_.subscribe("image_in", 1, &BoardState::imageCb, this);
         this->board_pub_ = this->nh_.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
@@ -113,6 +131,9 @@ public:
         ROS_INFO_STREAM("Blue tokens in H=[" << this->H_LOWER_BLUE<< ".." << this->H_HIGHER_BLUE <<
                         "] S=[" << this->S_LOWER_BLUE << ".." << this->S_HIGHER_BLUE <<
                         "] V=[" << this->V_LOWER_BLUE << ".." << this->V_HIGHER_BLUE<< "]");
+
+        ROS_ASSERT_MSG(this->nh_.hasParam("color_area_threshold"),"No color area threshold!");
+        this->nh_.getParam("color_area_threshold",this->TOKEN_AREA_THRESHOLD);
     }
 
     ~BoardState()

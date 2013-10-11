@@ -16,6 +16,7 @@
   <depend package="moveit_ros_robot_interaction"/>
   <depend package="actionlib"/>
   <depend package="actionlib_msgs"/>
+  <depend package="ttt_board_sensor"/>
 
 </package>
 

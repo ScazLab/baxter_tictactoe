@@ -38,7 +38,7 @@ rosbuild_genmsg()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_library(ttt src/ttt_cells.cpp src/ttt_cells.h)
+rosbuild_add_library(ttt src/ttt_cells.cpp src/ttt_cells.h src/ttt_definitions.h)
 
 rosbuild_add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
 TARGET_LINK_LIBRARIES(cells_delimitation ttt)
