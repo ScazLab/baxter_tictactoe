@@ -55,3 +55,5 @@ rosbuild_add_executable(board_scheme src/tictactoe_board_display/board_scheme.cp
 rosbuild_add_executable(board_state_sensing src/board_state_sensing.cpp)
 TARGET_LINK_LIBRARIES(board_state_sensing ttt)
 TARGET_LINK_LIBRARIES(board_state_sensing ${QT_LIBRARIES})
+
+rosbuild_add_executable(board_motion_detection src/motion_detection/board_motion_detection.cpp src/motion_detection/board_motion_detection.h)

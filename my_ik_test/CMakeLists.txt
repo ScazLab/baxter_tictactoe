@@ -76,3 +76,5 @@ ADD_DEFINITIONS(${QT_DEFINITIONS})
 
 rosbuild_add_executable(play_trajectory_from_file src/play_trajectory_from_file.cpp)
 TARGET_LINK_LIBRARIES(play_trajectory_from_file ${QT_LIBRARIES})
+
+rosbuild_add_executable(motion_detection src/motion_detection.cpp)
