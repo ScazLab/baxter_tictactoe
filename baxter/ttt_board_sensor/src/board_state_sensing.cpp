@@ -155,7 +155,8 @@ public:
         }
 
         ttt_board_sensor::ttt_board msg_board;
-        msg_board.data.assign(undefined); // initialy the state of each cell is undefined
+//        msg_board.data.assign(undefined); // initialy the state of each cell is undefined
+        msg_board.data.assign(ttt_board_sensor::ttt_board::UNDEFINED); // initialy the state of each cell is undefined
         msg_board.header.stamp = msg->header.stamp;
         msg_board.header.frame_id = msg->header.frame_id;
         short unsigned int counter=0;
@@ -177,13 +178,18 @@ public:
             t_Cell_State cell_state;
             if (red_cell_area > this->TOKEN_AREA_THRESHOLD || blue_cell_area > this->TOKEN_AREA_THRESHOLD)
             {
-                red_cell_area>blue_cell_area?cell_state=red:cell_state=blue;
+//                red_cell_area>blue_cell_area?cell_state=red:cell_state=blue;
+                red_cell_area>blue_cell_area?cell_state=ttt_board_sensor::ttt_board::RED:cell_state=ttt_board_sensor::ttt_board::BLUE;
             }
-            else cell_state=empty;
+//            else cell_state=empty;
+            else cell_state=ttt_board_sensor::ttt_board::EMPTY;
 
-            ROS_DEBUG_STREAM_COND(cell_state==empty, "Cell " << counter+1 << " is EMPTY");
-            ROS_DEBUG_STREAM_COND(cell_state==red, "Cell " << counter+1 << " is RED");
-            ROS_DEBUG_STREAM_COND(cell_state==blue, "Cell " << counter+1 << " is BLUE");
+//            ROS_DEBUG_STREAM_COND(cell_state==empty, "Cell " << counter+1 << " is EMPTY");
+//            ROS_DEBUG_STREAM_COND(cell_state==red, "Cell " << counter+1 << " is RED");
+//            ROS_DEBUG_STREAM_COND(cell_state==blue, "Cell " << counter+1 << " is BLUE");
+            ROS_DEBUG_STREAM_COND(cell_state==ttt_board_sensor::ttt_board::EMPTY, "Cell " << counter+1 << " is EMPTY");
+            ROS_DEBUG_STREAM_COND(cell_state==ttt_board_sensor::ttt_board::RED, "Cell " << counter+1 << " is RED");
+            ROS_DEBUG_STREAM_COND(cell_state==ttt_board_sensor::ttt_board::BLUE, "Cell " << counter+1 << " is BLUE");
 
             msg_board.data[counter]=cell_state;
 

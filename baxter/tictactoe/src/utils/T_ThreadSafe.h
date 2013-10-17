@@ -43,7 +43,7 @@ public:
     /*!
         This function returns the value of the variable.
         It is thread safe accessed.
-        \return The current value of the variable
+        \return A copy of the current value of the variable
     */
     T get(){
         T aux;

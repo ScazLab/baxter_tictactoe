@@ -13,4 +13,10 @@ Header header
 #       0=empty cell
 #       1=blue token (X)
 #       2=red token (O)
+
+uint8 EMPTY=0
+uint8 BLUE=1
+uint8 RED=2
+uint8 UNDEFINED=3
+
 uint8[9] data

@@ -73,4 +73,5 @@ rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/
 
 # ttt brain
 include_directories($(ttt_board_sensor_INCLUDE_DIRS))
-rosbuild_add_library(ttt_brain src/brain/ttt_brain.cpp)
+rosbuild_add_executable(ttt_brain src/brain/ttt_brain.cpp)
+target_link_libraries(ttt_brain ttt ${QT_LIBRARIES})

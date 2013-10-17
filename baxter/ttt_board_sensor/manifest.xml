@@ -22,7 +22,10 @@ This package offers functionalities for sensing a Tic Tac Toe board from a camer
     Pressing 's' key you get different images for each cell.
     $>roslaunch ttt_board_sensor display_board_cells.launch
 
-    Testing the TTT board perception: it opens a window with a representation of the TTT board and the current state of each cell.
+    Running the board state sensor.
+    $>roslaunch ttt_board_sensor board_state_sensor.launch
+
+    Testing the TTT board perception: it opens a window with a representation of the TTT board and the current state of each cell. It also launches the board state sensor.
     $>roslaunch ttt_board_sensor ttt_board_sensor.launch
 
 
@@ -43,7 +46,7 @@ This package offers functionalities for sensing a Tic Tac Toe board from a camer
 
   <export>
         <!--<cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>-->
-        <cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include"/>
+        <cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
   </export>
 
 </package>
