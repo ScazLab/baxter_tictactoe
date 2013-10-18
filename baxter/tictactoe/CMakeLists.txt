@@ -75,3 +75,8 @@ rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/
 include_directories($(ttt_board_sensor_INCLUDE_DIRS))
 rosbuild_add_executable(ttt_brain src/brain/ttt_brain.cpp)
 target_link_libraries(ttt_brain ttt ${QT_LIBRARIES})
+
+# vacuum gripper
+rosbuild_add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/vacuum_gripper/vacuum_gripper.h)
+rosbuild_add_executable(test_vacuum_gripper src/vacuum_gripper/test_vacuum_gripper.cpp)
+target_link_libraries(test_vacuum_gripper vacuum_gripper)
