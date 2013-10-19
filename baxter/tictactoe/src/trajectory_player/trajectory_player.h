@@ -16,6 +16,7 @@
 #include <actionlib/client/terminal_state.h>
 
 #include "src/utils/T_ThreadSafe.h"
+#include "src/vacuum_gripper/vacuum_gripper.h"
 
 namespace ttt
 {
@@ -42,6 +43,20 @@ class Trajectory_Player
     void check_left_ir_range(const sensor_msgs::RangeConstPtr& msg);
 
     const static float IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
+
+    Vacuum_Gripper * _gripper; //! This is used in the trajectories that imply grasping or releasing
+
+    /**
+     * It performs the necessary operations to ensure a correct grasping of an object.
+     * \return true if the grasping is successful, false otherwise.
+     **/
+    bool grasp();
+
+    /**
+     * It performs the necessary operations to ensure a correct release of an object.
+     * \return true if the grasping is successful, false otherwise.
+     **/
+    bool release();
 
 public:
     /**

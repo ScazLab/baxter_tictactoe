@@ -36,7 +36,7 @@ rosbuild_genmsg()
 
 
 include_directories($(tictactoe_INCLUDE_DIRS))
-include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils $(PROJECT_SOURCE_DIR)/src/move_maker)
+include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils $(PROJECT_SOURCE_DIR)/src/move_maker $(PROJECT_SOURCE_DIR)/src/vacuum_gripper)
 
 find_package(Qt4 COMPONENTS QtCore QtGui)
 INCLUDE(${QT_USE_FILE})
@@ -53,8 +53,14 @@ target_link_libraries(test_loading_trajectory_xml trajectory_xml_parser)
 rosbuild_add_executable(trajectory_from_raw_to_xml src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
 target_link_libraries(trajectory_from_raw_to_xml trajectory_xml_parser)
 
+# vacuum gripper
+rosbuild_add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/vacuum_gripper/vacuum_gripper.h)
+rosbuild_add_executable(test_vacuum_gripper src/vacuum_gripper/test_vacuum_gripper.cpp)
+target_link_libraries(test_vacuum_gripper vacuum_gripper)
+
 # trajectory player library
 rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp src/trajectory_player/trajectory_player.h)
+target_link_libraries(trajectory_player vacuum_gripper)
 rosbuild_add_executable(test_trajectory_player src/trajectory_player/test_trajectory_player.cpp)
 target_link_libraries(test_trajectory_player trajectory_player trajectory_xml_parser)
 
@@ -74,9 +80,4 @@ rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/
 # ttt brain
 include_directories($(ttt_board_sensor_INCLUDE_DIRS))
 rosbuild_add_executable(ttt_brain src/brain/ttt_brain.cpp)
-target_link_libraries(ttt_brain ttt ${QT_LIBRARIES})
-
-# vacuum gripper
-rosbuild_add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/vacuum_gripper/vacuum_gripper.h)
-rosbuild_add_executable(test_vacuum_gripper src/vacuum_gripper/test_vacuum_gripper.cpp)
-target_link_libraries(test_vacuum_gripper vacuum_gripper)
+target_link_libraries(ttt_brain ttt vacuum_gripper ${QT_LIBRARIES})

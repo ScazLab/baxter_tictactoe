@@ -10,6 +10,9 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
     ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"Timeout. Service not available.");
     ROS_INFO("Service CONNECTED");
     _tip_collision.set(false);
+
+    if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper(left);
+    else _gripper = new Vacuum_Gripper(right);
 }
 
 void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& msg)
@@ -28,6 +31,38 @@ void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& ms
         _tip_collision.set(true);
         ROS_INFO("Obstacle on the field of the left hand gripper");
     }
+}
+
+bool Trajectory_Player::grasp()
+{
+    if (_gripper->is_enabled() && _gripper->is_calibrated() && _gripper->is_ready_to_grip()) _gripper->suck();
+    else {
+        ROS_ERROR("Unexpected gripper state does not allow to grasp");
+        return false;
+    }
+    ros::Duration(1).sleep(); //waiting 1s to achieve the grasping
+    if (!_gripper->is_gripping())
+    {
+        ROS_ERROR("Attempt to grasp failed");
+        return false;
+    }
+    return true;
+}
+
+bool Trajectory_Player::release()
+{
+    if (_gripper->is_enabled() && _gripper->is_calibrated() && _gripper->is_gripping()) _gripper->blow();
+    else {
+        ROS_ERROR("Unexpected gripper state does not allow to release");
+        return false;
+    }
+    ros::Duration(1).sleep(); //waiting 1s to perform the releasing
+    if (_gripper->is_gripping())
+    {
+        ROS_ERROR("Attempt to release failed");
+        return false;
+    }
+    return true;
 }
 
 bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
@@ -68,23 +103,15 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
     if (goal_state==Goal_State::PENDING || goal_state==Goal_State::ACTIVE) //there is a collision: _tip_collision.get()==true
     {
         _client->cancelGoal();
-        ROS_WARN("The left hand tip has collided with an obstacle");
-        /*********************/
-        /* Code for grasping */
-        /*********************/
-        ROS_ERROR("GRASP HERE");
-        return true;
+        ROS_WARN("The left hand tip has collided with an obstacle");        
+        return this->grasp();
     }
     else if(goal_state==Goal_State::SUCCEEDED) //the trajectory has succesfully ended
     {
         ROS_DEBUG_STREAM("Successful trajectory");
         if(_tip_collision.get()){
             ROS_WARN("The left hand tip has collided with an obstacle");
-            /*********************/
-            /* Code for grasping */
-            /*********************/
-            ROS_ERROR("GRASP HERE");
-            return true;
+            return this->grasp();
         }
         return false; //the trajectory has successfully ended but there is not item to grasp
     }
@@ -100,11 +127,7 @@ bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTraject
 {
     if(this->run_trajectory(t) && _client->getState()==Goal_State::SUCCEEDED)
     {
-        /**********************/
-        /* Code for releasing */
-        /**********************/
-        ROS_ERROR("RELEASE HERE");
-        return true;
+        return this->release();
     }
     return false;
 }

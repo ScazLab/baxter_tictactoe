@@ -17,6 +17,7 @@
   <depend package="actionlib"/>
   <depend package="actionlib_msgs"/>
   <depend package="ttt_board_sensor"/>
+  <depend package="baxter_msgs"/>
 
 </package>
 

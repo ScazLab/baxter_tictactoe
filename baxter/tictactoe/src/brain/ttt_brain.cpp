@@ -9,6 +9,7 @@
 #include "ttt_definitions.h"
 #include "src/utils/T_ThreadSafe.h"
 #include "tictactoe/PlaceTokenAction.h"
+#include "src/vacuum_gripper/vacuum_gripper.h"
 
 namespace ttt
 {
@@ -50,31 +51,28 @@ private:
     int random_move()
     {
         int r;
+        boost::array<uint8_t,NUMBER_OF_CELLS> aux = _ttt_state.get();
         do {
             r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
             ROS_INFO_STREAM("randon number = " << r);
+            ROS_INFO("Cell %d is in state %d ==? %d || %d", r, aux[r-1], ttt_board_sensor::ttt_board::EMPTY, ttt_board_sensor::ttt_board::UNDEFINED);
         }
-//        while(_ttt_state.get()[r-1]==empty || _ttt_state.get()[r-1]==undefined);
-        while(_ttt_state.get()[r-1]==ttt_board_sensor::ttt_board::EMPTY || _ttt_state.get()[r-1]==ttt_board_sensor::ttt_board::UNDEFINED);
+        while(aux[r-1]!=empty && aux[r-1]!=undefined);
 
         ROS_INFO_STREAM("Random cell with number " << r);
         return r;
     }
 
 public:
-//    TTT_Brain(std::string strategy, t_Cell_State robot_color=blue) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
-    TTT_Brain(std::string strategy, t_Cell_State robot_color=ttt_board_sensor::ttt_board::BLUE) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
+    TTT_Brain(std::string strategy, t_Cell_State robot_color=blue) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
     {
         _number_of_tokens_on_board.set(0);
 
-//        ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
-//        _oponent_color=_robot_color==blue?red:blue;
-        ROS_ASSERT_MSG(_robot_color==ttt_board_sensor::ttt_board::BLUE || _robot_color==ttt_board_sensor::ttt_board::RED, "Wrong color for robot's tokens");
-        _oponent_color=(_robot_color==ttt_board_sensor::ttt_board::BLUE? ttt_board_sensor::ttt_board::RED : ttt_board_sensor::ttt_board::BLUE);
+        ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
+        _oponent_color=_robot_color==blue?red:blue;
 
         TTT_State_type aux;
-//        aux.assign(undefined);
-        aux.assign(ttt_board_sensor::ttt_board::UNDEFINED);
+        aux.assign(undefined);
         _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
         _ttt_state_sub = _nh.subscribe("/new_board", 1, &TTT_Brain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
@@ -136,7 +134,7 @@ public:
     {
         unsigned short int counter=0;
         foreach (unsigned short int c, _ttt_state.get()) {
-            if(c!=0) counter++;
+            if(c!=empty && c!=undefined) counter++;
         }
         return counter;
     }
@@ -150,8 +148,7 @@ public:
     bool three_in_a_row(const t_Cell_State& cell_color)
     {
         ROS_DEBUG("@three in a row");
-//        if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
-        if(cell_color!=ttt_board_sensor::ttt_board::BLUE && cell_color!=ttt_board_sensor::ttt_board::RED) return false; // There are only red and blue tokens
+        if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
 
         if(_ttt_state.get()[1]==cell_color && _ttt_state.get()[2]==cell_color && _ttt_state.get()[3]==cell_color) return true; // 3 in a row in the first row
         if(_ttt_state.get()[4]==cell_color && _ttt_state.get()[5]==cell_color && _ttt_state.get()[6]==cell_color) return true; // 3 in a row in the second row
