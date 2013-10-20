@@ -24,6 +24,11 @@ bool operator==(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg
     return true;
 }
 
+bool operator!=(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
+{
+    return !(msg1==msg2);
+}
+
 class BoardState
 {
 private:
@@ -74,18 +79,6 @@ private:
     }
 
     ttt_board_sensor::ttt_board last_msg_board; //! Last TTT board state message sent. This is used to avoid the publication of the same board state messages.
-
-    bool same_board_state(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
-    {
-        if (msg1.data.size()!=msg2.data.size()) return false;
-
-        for (size_t i = 0; i < msg1.data.size(); ++i) {
-            if (msg1.data[i]!=msg2.data[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
 
 public:
     BoardState()
@@ -190,7 +183,12 @@ public:
 
             counter++;
         }
-        this->board_pub_.publish(msg_board);
+        if(last_msg_board!=msg_board)
+        {
+            this->board_pub_.publish(msg_board);
+            last_msg_board=msg_board;
+            ROS_DEBUG("NEW TTT BOARD STATE PUBLISHED");
+        }
     }
 };
 
