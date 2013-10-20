@@ -148,8 +148,7 @@ public:
         }
 
         ttt_board_sensor::ttt_board msg_board;
-//        msg_board.data.assign(undefined); // initialy the state of each cell is undefined
-        msg_board.data.assign(ttt_board_sensor::ttt_board::UNDEFINED); // initialy the state of each cell is undefined
+        msg_board.data.assign(undefined); // initialy the state of each cell is undefined
         msg_board.header.stamp = msg->header.stamp;
         msg_board.header.frame_id = msg->header.frame_id;
         short unsigned int counter=0;

@@ -14,7 +14,7 @@ namespace ttt
 typedef std::vector<cv::Point> t_Cell;    // vector of points delimiting a cell
 typedef std::vector<t_Cell> t_Board;   // vector of cells, i.e. a vector of vectors of points
 
-typedef enum {empty=0, blue, red, undefined} t_Cell_State; // used to determine the three possible states of a cell. Undefined is just used when it is created and non state has been asigned.
+typedef enum {empty=ttt_board_sensor::ttt_board::EMPTY, blue=ttt_board_sensor::ttt_board::BLUE, red=ttt_board_sensor::ttt_board::RED, undefined=ttt_board_sensor::ttt_board::UNDEFINED} t_Cell_State; // used to determine the three possible states of a cell. Undefined is just used when it is created and non state has been asigned.
 
 std::string cell_state_to_str(t_Cell_State c_s)
 {

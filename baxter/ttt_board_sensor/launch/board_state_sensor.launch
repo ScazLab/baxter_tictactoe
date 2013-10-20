@@ -6,14 +6,6 @@
     <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab.xml" />
 
     <!-- Range thresholds for the red tokes -->
-<!--
-    <param name="h_low_red" type="int" value="168" />
-    <param name="s_low_red" type="int" value="95" />
-    <param name="v_low_red" type="int" value="49" />
-    <param name="h_high_red" type="int" value="180" />
-    <param name="s_high_red" type="int" value="256" />
-    <param name="v_high_red" type="int" value="171" />
--->
     <param name="h_low_red" type="int" value="164" />
     <param name="s_low_red" type="int" value="108" />
     <param name="v_low_red" type="int" value="85" />
@@ -22,14 +14,6 @@
     <param name="v_high_red" type="int" value="175" />
 
     <!-- Range thresholds for the blue tokes -->
-<!--
-    <param name="h_low_blue" type="int" value="95" />
-    <param name="s_low_blue" type="int" value="162" />
-    <param name="v_low_blue" type="int" value="66" />
-    <param name="h_high_blue" type="int" value="119" />
-    <param name="s_high_blue" type="int" value="256" />
-    <param name="v_high_blue" type="int" value="176" />
--->
     <param name="h_low_blue" type="int" value="82" />
     <param name="s_low_blue" type="int" value="78" />
     <param name="v_low_blue" type="int" value="85" />

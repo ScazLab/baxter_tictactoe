@@ -40,6 +40,8 @@ This package offers functionalities for sensing a Tic Tac Toe board from a camer
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="image_transport"/>
+  <depend package="image_view" />
+  <depend package="usb_cam" />
 
   <rosdep name="libqt4-dev"/>
   <rosdep name="usb_cam"/>
