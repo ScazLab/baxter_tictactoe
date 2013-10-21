@@ -18,7 +18,7 @@
   <depend package="actionlib_msgs"/>
   <depend package="ttt_board_sensor"/>
   <depend package="baxter_msgs"/>
-
+  <depend package="sound_play"/>
 </package>
 
 

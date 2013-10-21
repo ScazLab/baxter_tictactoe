@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
-
+#include <sound_play/sound_play.h>
 #include <QtGlobal> //required for qrand
 
 #include "ttt_board_sensor/ttt_board.h"
@@ -32,6 +32,8 @@ private:
     t_Cell_State _robot_color;   //! It represents the color of the tokens the robot is playing with.
     t_Cell_State _oponent_color; //! It represents the color of the tokens the oponent is playing with.
 
+    sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
+
     /**
      * It handles the message published when the state of a cell has changed. The new TTT board state is stored in the thread-safe private attribute called _ttt_state.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
@@ -43,6 +45,9 @@ private:
             _ttt_state.set(msg->data);
         }
     }
+
+
+    std::string _voice_type; //! It determines the type of voice.
 
     Place_Token_Client_type _move_commander; //! This is the incharge of sending the command to place a new token in a cell of the TTT board
 
@@ -78,9 +83,7 @@ private:
         if ((next_cell_id = greedy_move()) != -1) return next_cell_id;
         if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
         return random_move();
-    }
-
-
+    }    
 
     /**
      * It determines if the robot can win in this turn, without considering the oponent's token.
@@ -130,9 +133,14 @@ private:
     }
 
 public:
+
     TTT_Brain(std::string strategy, t_Cell_State robot_color=blue) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
     {
         _number_of_tokens_on_board.set(0);
+
+        ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
+        ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retreive from the parameter server");
+        ROS_INFO_STREAM("Using voice " << _voice_type);
 
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
         _oponent_color=_robot_color==blue?red:blue;
@@ -308,6 +316,18 @@ public:
         return true;
     }
 
+    /**
+     * This function synthetizes sentence and waits t seconds.
+     * @param sentence string corresponding with the sentence to synthetize.
+     * @param t number of seconds to block.
+     **/
+    void say_sentence(std::string sentence, int t)
+    {
+        _voice_synthesizer.say(sentence, _voice_type);
+        if(_nh.ok()) ros::Duration(t).sleep();
+        else ROS_WARN("Nodel handle is not ok. Don't sleeping during the synthetitation.");
+    }
+
 };
 
 }
@@ -320,8 +340,9 @@ int main(int argc, char** argv)
     spinner.start();
 
     ttt::TTT_Brain brain("smart");
+    ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
     ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the oponent with " << brain.get_oponent_color_str());
-
+    brain.say_sentence("Let's play Tic Tac Toe.   I start.",6);
     //TODO: Move the arms to a neutral position
 
     bool robot_turm=true;
@@ -330,6 +351,7 @@ int main(int argc, char** argv)
     {
         if (robot_turm) // Robot's turn
         {
+            brain.say_sentence("It is my turn",3);
             int cell_to_move = brain.get_next_move();
             ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
             actionlib::SimpleClientGoalState goal_state = brain.execute_move(cell_to_move);
@@ -343,6 +365,7 @@ int main(int argc, char** argv)
         else // Participant's turn
         {
             ROS_INFO("Waiting for the participant's move.");
+            brain.say_sentence("It is your turn",3);
             brain.wait_for_oponent_turn(); // Waiting for my turn: the participant has to place one token, so we wait until the number of tokens on the board increases.
         }
         robot_turm=!robot_turm;
@@ -352,12 +375,15 @@ int main(int argc, char** argv)
     {
     case 1:
         ROS_INFO("ROBOT's VICTORY!");
+        brain.say_sentence("Looooooser", 4);
         break;
     case 2:
         ROS_INFO("OPONENT's VICTORY!");
+        brain.say_sentence("You win this time",4);
         break;
     default:
         ROS_INFO("TIE!");
+        brain.say_sentence("That's a tie!",5);
     }
 
     //TODO: Move the arms to a neutral position

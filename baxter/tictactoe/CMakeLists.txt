@@ -58,6 +58,11 @@ rosbuild_add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/va
 rosbuild_add_executable(test_vacuum_gripper src/vacuum_gripper/test_vacuum_gripper.cpp)
 target_link_libraries(test_vacuum_gripper vacuum_gripper)
 
+# robot state
+rosbuild_add_library(robot_state src/robot_state/robot_state.cpp src/robot_state/robot_state.h)
+rosbuild_add_executable(test_robot_state src/robot_state/test_robot_state.cpp)
+target_link_libraries(test_robot_state robot_state)
+
 # trajectory player library
 rosbuild_add_library(trajectory_player src/trajectory_player/trajectory_player.cpp src/trajectory_player/trajectory_player.h)
 target_link_libraries(trajectory_player vacuum_gripper)
@@ -79,5 +84,6 @@ rosbuild_add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/
 
 # ttt brain
 include_directories($(ttt_board_sensor_INCLUDE_DIRS))
+include_directories($(sound_play_INCLUDE_DIRS))
 rosbuild_add_executable(ttt_brain src/brain/ttt_brain.cpp)
-target_link_libraries(ttt_brain ttt vacuum_gripper ${QT_LIBRARIES})
+target_link_libraries(ttt_brain ttt vacuum_gripper robot_state ${QT_LIBRARIES})
