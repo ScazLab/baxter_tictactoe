@@ -10,7 +10,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "ttt_move_maker");
     ttt::Move_Maker baxter_moves(file.c_str(),service.c_str());
     ROS_INFO("Moving the left arm to home position.");
-    baxter_moves.make_a_move(std::vector<std::string> (1,"home_2steps"), std::vector<ttt::Trajectory_Type> (1,ttt::PLAIN));
+    baxter_moves.make_a_move(std::vector<std::string> (1,"home"), std::vector<ttt::Trajectory_Type> (1,ttt::PLAIN));
 
     ros::spin();       
 

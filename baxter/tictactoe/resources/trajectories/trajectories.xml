@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <trajectories>
+    <trajectory id="home" time_to_start="0.5">
+        <point time_from_start="3">
+            <joint name="left_e0" position="-2.18631" velocity="0" acceleration="0"/>
+            <joint name="left_e1" position="1.2222" velocity="0" acceleration="0"/>
+            <joint name="left_s0" position="1.46188" velocity="0" acceleration="0"/>
+            <joint name="left_s1" position="0.86133" velocity="0" acceleration="0"/>
+            <joint name="left_w0" position="0.952602" velocity="0" acceleration="0"/>
+            <joint name="left_w1" position="1.40398" velocity="0" acceleration="0"/>
+            <joint name="left_w2" position="1.55354" velocity="0" acceleration="0"/>
+        </point>
+        <point time_from_start="4">
+            <joint name="left_e0" position="-2.18631" velocity="0" acceleration="0"/>
+            <joint name="left_e1" position="1.2222" velocity="0" acceleration="0"/>
+            <joint name="left_s0" position="1.46188" velocity="0" acceleration="0"/>
+            <joint name="left_s1" position="0.86133" velocity="0" acceleration="0"/>
+            <joint name="left_w0" position="0.952602" velocity="0" acceleration="0"/>
+            <joint name="left_w1" position="1.40398" velocity="0" acceleration="0"/>
+            <joint name="left_w2" position="1.55354" velocity="0" acceleration="0"/>
+        </point>
+    </trajectory>
     <trajectory id="grasp" time_to_start="0">
         <point time_from_start="2">
             <joint name="left_e0" position="-2.23271" velocity="0" acceleration="0"/>

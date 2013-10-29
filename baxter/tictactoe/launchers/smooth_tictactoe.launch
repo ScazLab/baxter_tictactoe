@@ -3,6 +3,6 @@
 
     <param name="smooth" type="bool" value="true" /> <!-- smooth movements -->
 
-    <include file="$(find tictactoe)/launch/tictactoe.launch" />
+    <include file="$(find tictactoe)/launchers/tictactoe.launch" />
 
 </launch>

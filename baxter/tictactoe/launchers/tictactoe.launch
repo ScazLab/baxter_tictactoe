@@ -3,12 +3,14 @@
 
 <!--    <node name="baxtertrajectorycontroller" pkg="baxter_interface" type="trajectory_controller.py" respawn="false" output="screen"/> -->
 
+    <node name="img_screen" pkg="head_control" type="xdisplay_image.py" args="$(find tictactoe)/resources/img/blank.jpg" respawn="false" output="screen" required="true"/>
+
     <include file="$(find ttt_board_sensor)/launch/ttt_board_sensor.launch" />
 
     <!-- <include file="$(find sound_play)/soundplay_node.launch" /> We don't use the existing launch file because we want this node to be a must, i.e.required="true"-->
     <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 
-    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/ttt_trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>
+    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>
 
     <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
     <param name="voice" type="str" value="voice_kal_diphone" /> <!-- A robotic voice -->

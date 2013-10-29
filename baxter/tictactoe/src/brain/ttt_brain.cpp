@@ -56,14 +56,16 @@ private:
 
     Place_Token_Client_type _move_commander; //! This is the incharge of sending the command to place a new token in a cell of the TTT board
 
-    int (TTT_Brain::*_choose_next_move)(); //! This a pointer to the function that decides the next move. We use a pointer because we could have different strategies.
+    int (TTT_Brain::*_choose_next_move)(bool& cheating); //! This a pointer to the function that decides the next move. We use a pointer because we could have different strategies.
 
     /**
      * It determines randomly the next empty cell to place a token.
+     * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
-    int random_move()
+    int random_move(bool& cheating)
     {
+        cheating=false;
         int r;
         TTT_State_type aux = _ttt_state.get();
         do {
@@ -76,37 +78,81 @@ private:
         return r;
     }
 
+    /**
+     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat placing a token on top of an oponent's token.
+     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it. It will block oponent's victory.
+     * If it cannot win anyway, it will randomly choose a cell.
+     * \param cheating It indicates if cheating has happened.
+     * \return an integer representing the cell where to place the next token
+     **/
+    int cheating_to_win_random_move(bool& cheating)
+    {
+        int next_cell_id=-1;
+        if ((next_cell_id = victory_move()) != -1) return next_cell_id;
+        if ((next_cell_id = cheating_move()) != -1)
+        {
+            cheating=true;
+            return next_cell_id;
+        }
+        if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
+        return random_move(cheating);
+    }
+
+    /**
+     * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
+     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will try to block the oponent's victory. If this is not needed, it will randomly choose a cell.
+     * \param cheating It indicates if cheating has happened.
+     * \return an integer representing the cell where to place the next token
+     **/
+    int winning_defensive_random_move(bool& cheating)
+    {
+        cheating=false;
+        int next_cell_id=-1;
+        if ((next_cell_id = victory_move()) != -1) return next_cell_id;
+        if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
+        return random_move(cheating);
+    }
 
     /**
      * It determines the next cell to place a token. It always will try to win in this turn, even if there is an oponent's token already in that cell.
-     * If it cannot win in this turn, it will try to block the oponent's victory.
+     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it.
+     * If it cannot win in this turn anyway, it will try to block the oponent's victory. If this is not needed it will randomly choose a cell.
+     * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
-    int winning_defensive_random_move()
+    int smart_cheating_random_move(bool& cheating)
     {
         int next_cell_id=-1;
-        if ((next_cell_id = greedy_move()) != -1) return next_cell_id;
+        if ((next_cell_id = victory_move()) != -1) return next_cell_id;
+        if ((next_cell_id = cheating_move()) != -1)
+        {
+            cheating=true;
+            return next_cell_id;
+        }
         if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
-        return random_move();
-    }    
+        return random_move(cheating);
+    }
 
     /**
-     * It determines if the robot can win in this turn, without considering the oponent's token.
+     * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell occupied with an oponent's token.
      * \return -1 if the robot cannot win in the next move, or an integer corresponding to the cell where to place the next token to win, even if there is an oponent's token in that cell. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
-    int greedy_move()
+    int cheating_move()
     {
         TTT_State_type state = _ttt_state.get();
         uint8_t cell_state=undefined;
         for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
-            cell_state=state[i];
-            state[i]=_robot_color;
-            if (TTT_Brain::three_in_a_row(_robot_color, state))
+            if (state[i]==_oponent_color)
             {
-                ROS_INFO_STREAM("Greedy move to cell with number " << i+1);
-                return i+1;
+                cell_state=state[i];
+                state[i]=_robot_color;
+                if (TTT_Brain::three_in_a_row(_robot_color, state))
+                {
+                    ROS_INFO_STREAM("Cheating move to cell with number " << i+1);
+                    return i+1;
+                }
+                state[i]=cell_state;
             }
-            state[i]=cell_state;
         }
         ROS_INFO("No chance to win in this turn");
         return -1;
@@ -137,9 +183,67 @@ private:
         return -1;
     }
 
+    /**
+     * It determines if the robot can win in the next move.
+     * \return -1 if the robot cannot win in the next move, or an integer corresponding to the first found cell where a robot's token can be placed to win the game. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     **/
+    int victory_move()
+    {
+        TTT_State_type state = _ttt_state.get();
+        uint8_t cell_state=undefined;
+        for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
+            if (state[i]==empty || state[i]==undefined)
+            {
+                cell_state=state[i];
+                state[i]=_robot_color;
+                if (TTT_Brain::three_in_a_row(_oponent_color, state))
+                {
+                    ROS_INFO_STREAM("Defensive move to cell with number " << i+1);
+                    return i+1;
+                }
+                state[i]=cell_state;
+            }
+        }
+        ROS_INFO("No chance to win in this turn");
+        return -1;
+    }
+
+    /**
+     * It sets the kind of movements: smooth or mechanistic.
+     * \return true if there is no error, or false otherwise.
+     **/
+    bool set_smooth_movements(bool b)
+    {
+        _smooth=b;
+        tictactoe::SetTrajectoryType srv;
+        srv.request.smooth=(_smooth?true:false);
+
+        if(_clnt_movement_type.call(srv))
+        {
+            if (!srv.response.error)
+            {
+                ROS_INFO_STREAM("Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
+                return true;
+            }
+            ROS_ERROR_STREAM("Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
+            return false;
+        }
+        ROS_ERROR("Failed to call service set_movement_type");
+        return false;
+    }
+
+    /**
+     * It indicates if the robot moves smoothly. If not, it moves mechanisticaly.
+     * \return true if robot uses smooth movements, or false if it uses mechanistic movements.
+     **/
+    inline bool is_smooth_movements()
+    {
+        return _smooth;
+    }
+
 public:
 
-    TTT_Brain(std::string strategy, t_Cell_State robot_color=blue) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
+    TTT_Brain(t_Cell_State robot_color=blue, std::string strategy="random") : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
     {
         _number_of_tokens_on_board.set(0);
 
@@ -151,11 +255,7 @@ public:
         ROS_ASSERT_MSG(_nh.getParam("smooth",_smooth), "The sort of movements has not been retreived from the parameter server");
         ROS_INFO_STREAM("Using " << _smooth << " movements");
         _clnt_movement_type = _nh.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
-        tictactoe::SetTrajectoryType srv;
-        srv.request.smooth=(_smooth==true?true:false);
-        ROS_ASSERT_MSG(_clnt_movement_type.call(srv), "Failed to call service set_movement_type");
-        if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth==0?"smooth":"mechanistic"));
-        else ROS_ERROR_STREAM("Error setting movements to " << (srv.request.smooth==0?"smooth":"mechanistic"));
+        this->set_smooth_movements(_smooth);
 
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
         _oponent_color=_robot_color==blue?red:blue;
@@ -166,18 +266,8 @@ public:
 
         _ttt_state_sub = _nh.subscribe("/new_board", 1, &TTT_Brain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
 
-        if (strategy=="random")
-        {
-            qsrand(ros::Time::now().nsec);
-            _choose_next_move=&TTT_Brain::random_move;
-        } else if (strategy=="smart")
-        {
-            qsrand(ros::Time::now().nsec);
-            _choose_next_move=&TTT_Brain::winning_defensive_random_move;
-        }
-        else {
-            ROS_ERROR_STREAM(strategy << " is not an available strategy");
-        }
+        qsrand(ros::Time::now().nsec);
+        this->set_strategy(strategy);
 
         ROS_INFO("Waiting for TTT Move Maker action server to start.");
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
@@ -190,10 +280,11 @@ public:
 
     /**
      * Returns the cell where the next token is gonna be placed.
+     * @param cheating It indicates if cheating happens
      * @return The return value is between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
-    int get_next_move() {
-        return (this->*_choose_next_move)();
+    int get_next_move(bool& cheating) {
+        return (this->*_choose_next_move)(cheating);
     }
 
     /**
@@ -336,72 +427,158 @@ public:
      * @param sentence string corresponding with the sentence to synthetize.
      * @param t number of seconds to block.
      **/
-    void say_sentence(std::string sentence, int t)
+    void say_sentence(std::string sentence, double t)
     {
         _voice_synthesizer.say(sentence, _voice_type);
         if(_nh.ok()) ros::Duration(t).sleep();
         else ROS_WARN("Nodel handle is not ok. Don't sleeping during the synthetitation.");
     }
 
+    /**
+     * This function sets an strategy.
+     * @param strategy string corresponding with a particular strategy.
+     **/
+    void set_strategy(std::string strategy)
+    {
+
+        if (strategy=="random")
+        {
+            _choose_next_move=&TTT_Brain::random_move;
+            ROS_INFO("New strategy: Baxter randomly places tokens");
+        } else if (strategy=="smart")
+        {
+            _choose_next_move=&TTT_Brain::winning_defensive_random_move;
+            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance, or blocks oponent's victory");
+        }
+        else if (strategy=="cheating")
+        {
+            _choose_next_move=&TTT_Brain::cheating_to_win_random_move;
+            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required");
+        }
+        else if (strategy=="smart-cheating")
+        {
+            _choose_next_move=&TTT_Brain::smart_cheating_random_move;
+            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required, or blocks oponent's victory");
+        }
+        else {
+            ROS_ERROR_STREAM(strategy << " is not an available strategy");
+        }
+    }
+
+    unsigned short int play_one_game(bool& cheating)
+    {
+        bool robot_turm=true;
+        unsigned short int winner=0; // no winner
+
+        this->say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
+        this->say_sentence(" and the red tokens in the red square on the left side of the board",6);
+
+        ROS_ERROR("PRESS ENTER TO START THE GAME");
+        std::cin.get();
+
+        while ((winner=this->get_winner())==0 && !this->full_board())
+        {
+            if (robot_turm) // Robot's turn
+            {
+                this->say_sentence("It is my turn",0.3);
+                int cell_to_move = this->get_next_move(cheating);
+                ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
+                actionlib::SimpleClientGoalState goal_state = this->execute_move(cell_to_move);
+                if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED) {
+                    ROS_INFO("Last move successfully performed.");
+                } else {
+                    ROS_ERROR_STREAM("Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
+                    //What do we do now?
+                }
+            }
+            else // Participant's turn
+            {
+                ROS_INFO("Waiting for the participant's move.");
+                this->say_sentence("It is your turn",0.1);
+                this->wait_for_oponent_turn(); // Waiting for my turn: the participant has to place one token, so we wait until the number of tokens on the board increases.
+            }
+            robot_turm=!robot_turm;
+        }
+
+        switch(winner)
+        {
+        case 1:
+            ROS_INFO("ROBOT's VICTORY!");
+            this->say_sentence("I win", 3);
+            break;
+        case 2:
+            ROS_INFO("OPONENT's VICTORY!");
+            this->say_sentence("You win this time",4);
+            break;
+        default:
+            ROS_INFO("TIE!");
+            this->say_sentence("That's a tie!",4);
+        }
+        return winner;
+    }
+
+    static uint NUM_GAMES;
+    static uint CHEATING_GAME;
 };
+
+uint TTT_Brain::NUM_GAMES=10;
+uint TTT_Brain::CHEATING_GAME=5;
 
 }
 
 int main(int argc, char** argv)
 {    
-    ROS_INFO("Playing RANDOM TIC TAC TOE");
+    ROS_INFO("Playing TIC TAC TOE");
     ros::init(argc, argv, "ttt_brain");
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ttt::TTT_Brain brain("smart");
+    ttt::TTT_Brain brain; //random strategy by default
+    brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
     ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the oponent with " << brain.get_oponent_color_str());
-    brain.say_sentence("Let's play Tic Tac Toe.   I start.",6);
-    //TODO: Move the arms to a neutral position
+    brain.say_sentence("Let's play Tic Tac Toe.   I start the game.",5);
+    brain.say_sentence("Wait to place your token until I say that it's your turn",5);
 
-    bool robot_turm=true;
-    short int winner=0; // no winner
-    while ((winner=brain.get_winner())==0 && !brain.full_board())
+    uint robot_victories=0, participant_victories=0, ties=0;
+    uint i=1;
+    bool cheating=false;
+    ROS_INFO_STREAM("Let's play " << ttt::TTT_Brain::NUM_GAMES << " times Tic Tac Toe");
+    unsigned short game_result=0;
+    while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
-        if (robot_turm) // Robot's turn
+        ROS_INFO_STREAM("Game " << i);
+        if (i==ttt::TTT_Brain::CHEATING_GAME) //In the fifth game, Baxter cheats
         {
-            brain.say_sentence("It is my turn",3);
-            int cell_to_move = brain.get_next_move();
-            ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
-            actionlib::SimpleClientGoalState goal_state = brain.execute_move(cell_to_move);
-            if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED) {
-                ROS_INFO("Last move successfully performed.");
+            brain.set_strategy("smart-cheating");
+        }
+        game_result=brain.play_one_game(cheating);
+        switch(game_result)
+        {
+        case 1: robot_victories++;
+            break;
+        case 2: participant_victories++;
+            break;
+        case 3: ties++;
+            break;
+        default: ROS_ERROR_STREAM("Unexpected return value for the game: " << game_result << " ???");
+        }
+        if (i==ttt::TTT_Brain::CHEATING_GAME)
+        {
+            if (!cheating) {
+                ROS_INFO("Game ended but no cheating. Game counter does not increase.");
+                continue;
             } else {
-                ROS_ERROR_STREAM("Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
-                //What do we do now?
+                ROS_INFO("Game ended cheating. Back to random strategy");
+                brain.set_strategy("smart");
             }
         }
-        else // Participant's turn
-        {
-            ROS_INFO("Waiting for the participant's move.");
-            brain.say_sentence("It is your turn",3);
-            brain.wait_for_oponent_turn(); // Waiting for my turn: the participant has to place one token, so we wait until the number of tokens on the board increases.
-        }
-        robot_turm=!robot_turm;
+        i++;
     }
 
-    switch(winner)
-    {
-    case 1:
-        ROS_INFO("ROBOT's VICTORY!");
-        brain.say_sentence("Looooooser", 4);
-        break;
-    case 2:
-        ROS_INFO("OPONENT's VICTORY!");
-        brain.say_sentence("You win this time",4);
-        break;
-    default:
-        ROS_INFO("TIE!");
-        brain.say_sentence("That's a tie!",5);
-    }
+    brain.say_sentence("Game over. It was my pleasure to play with you. Thanks for participating in the experiment.",10);
 
-    //TODO: Move the arms to a neutral position
+    ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);
 
     return 0;
 }

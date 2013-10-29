@@ -14,6 +14,8 @@
 
 #include <tictactoe/SetTrajectoryType.h>
 
+#define INTER_TRAJ_GAP 0.5 // 0.5s
+
 namespace ttt
 {
 

@@ -80,7 +80,7 @@ void Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type 
         _place_token.setAborted(_place_token_result,traj_id + " trajectory failed");
         return;
     }
-    ros::Duration(1.0).sleep(); // Let's wait 1s after each trajectory to be sure that the trajectory is done
+    ros::Duration(INTER_TRAJ_GAP).sleep(); // Let's wait after each trajectory to be sure that the trajectory is done
 }
 
 Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
@@ -139,7 +139,7 @@ bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Tr
                 ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << modes[i] << "?");
                 return false;
             }
-            ros::Duration(1.0).sleep(); // Let's wait 1s after each trajectory to be sure that the trajectory is done
+            ros::Duration(INTER_TRAJ_GAP).sleep(); // Let's wait after each trajectory to be sure that the trajectory is done
         }
         else {
             ROS_WARN_STREAM("Trajectory " << traj_names[i] << " not found.");
