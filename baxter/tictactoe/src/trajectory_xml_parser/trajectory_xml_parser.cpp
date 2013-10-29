@@ -10,6 +10,7 @@ bool trajectory_xml_parser::write_to_file(const trajectory_msgs::JointTrajectory
 
 bool trajectory_xml_parser::write_to_file(const std::vector<trajectory_msgs::JointTrajectory> trajs, std::string filename,const std::vector<std::string> traj_ids)
 {
+    ROS_DEBUG_STREAM(trajs.size() << " trajectories and " << traj_ids.size() << " will be added to the file " << filename);
     QFile outstream(filename.c_str());
     bool new_file = !outstream.exists();
 
@@ -22,9 +23,12 @@ bool trajectory_xml_parser::write_to_file(const std::vector<trajectory_msgs::Joi
             ROS_ERROR_STREAM("Impossible to access already existing trajectories in the file " << filename);
             return false;
         }
+        ROS_DEBUG_STREAM(existing_trajs.size() << " trajectories and " << existing_traj_ids.size() << " ids already exist at " << filename);
     }
     existing_trajs.insert(existing_trajs.end(),trajs.begin(),trajs.end()); //concat previous and new trajectories
     existing_traj_ids.insert(existing_traj_ids.end(),traj_ids.begin(),traj_ids.end()); //concat previous and new traj. ids
+
+    ROS_DEBUG_STREAM(existing_trajs.size() << " trajectories and " << existing_traj_ids.size() << " ids will be written to " << filename);
 
     if(!outstream.open(QIODevice::WriteOnly | QIODevice::Text))
     {
@@ -35,11 +39,11 @@ bool trajectory_xml_parser::write_to_file(const std::vector<trajectory_msgs::Joi
     xmlstream.setAutoFormatting(true);
     xmlstream.writeStartDocument();
     xmlstream.writeStartElement("trajectories");
-    for (size_t i = 0; i < trajs.size(); ++i)
+    for (size_t i = 0; i < existing_trajs.size(); ++i)
     {
-        const trajectory_msgs::JointTrajectory& traj=trajs[i];
+        const trajectory_msgs::JointTrajectory& traj=existing_trajs[i];
         xmlstream.writeStartElement("trajectory");
-        xmlstream.writeAttribute("id",traj_ids[i].c_str());
+        xmlstream.writeAttribute("id",existing_traj_ids[i].c_str());
         xmlstream.writeAttribute("time_to_start", QString::number(traj.header.stamp.toSec())); //the time to start is converted to seconds and then to a string
         const std::vector<trajectory_msgs::JointTrajectoryPoint>& points=traj.points;
         foreach (trajectory_msgs::JointTrajectoryPoint p, points) {
@@ -51,10 +55,11 @@ bool trajectory_xml_parser::write_to_file(const std::vector<trajectory_msgs::Joi
                 xmlstream.writeAttribute("position",QString::number(p.positions[i]));
                 xmlstream.writeAttribute("velocity",QString::number(p.velocities[i]));
                 xmlstream.writeAttribute("acceleration",QString::number(p.accelerations[i]));
-                xmlstream.writeEndElement();
+                xmlstream.writeEndElement(); //</joint>
             }
-            xmlstream.writeEndElement();
+            xmlstream.writeEndElement(); //</point>
         }
+        xmlstream.writeEndElement(); //</trajectory>
     }
     xmlstream.writeEndElement();
     xmlstream.writeEndDocument();

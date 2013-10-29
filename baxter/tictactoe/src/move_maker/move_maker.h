@@ -12,6 +12,8 @@
 #include "src/utils/my_ros_utils.h"
 #include "ttt_moves_trajectories.h"
 
+#include <tictactoe/SetTrajectoryType.h>
+
 namespace ttt
 {
 
@@ -47,9 +49,14 @@ class Move_Maker
     std::vector<TTT_Trajectory> _trajectory_repository;
     size_t _ttt_traj_n;
 
-    Trajectory_Player* _traj_player;
-
     ros::NodeHandle _n;
+
+    std::string _prefix_traj; //! This variable is used to identified between smooth and mechanistic trajectories. It will be put ahead of the trajectory names. Possible values are "mech_" or "".
+
+    bool set_movement_type(tictactoe::SetTrajectoryType::Request& req, tictactoe::SetTrajectoryType::Response& res);
+    ros::ServiceServer _srv_set_traj_type;
+
+    Trajectory_Player* _traj_player;    
 
     Server _place_token;
     void execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal);
@@ -64,12 +71,23 @@ class Move_Maker
 
     void execute_single_trajectory(std::string traj_id, Trajectory_Type mode);
 
+    inline void set_mechanistic_trajectories()
+    {
+        _prefix_traj="mech_";
+    }
+
+    inline void set_smooth_trajectories()
+    {
+        _prefix_traj="";
+    }
+
 public:
     Move_Maker(const char * trajectory_file, const char * service);
 
     bool make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> modes);
 
     void print_trajectory_repository_details();
+
 };
 
 }

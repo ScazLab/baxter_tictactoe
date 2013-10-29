@@ -7,7 +7,7 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
 {
     _client = new Client(service_name, true);
     ROS_INFO_STREAM("Waiting to connect to service " << service_name);
-    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"Timeout. Service not available.");
+    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"Timeout. Service not available. Is the trajectory controller running?");
     ROS_INFO("Service CONNECTED");
     _tip_collision.set(false);
 
@@ -113,6 +113,7 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
             ROS_WARN("The left hand tip has collided with an obstacle");
             return this->grasp();
         }
+        ROS_WARN("Item to grasp not found");
         return false; //the trajectory has successfully ended but there is not item to grasp
     }
     else // if(goal_state==Goal_State::ABORTED || goal_state==Goal_State::LOST || goal_state==Goal_State::PREEMPTED || goal_state==Goal_State::RECALLED || goal_state==Goal_State::REJECTED)

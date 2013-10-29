@@ -11,6 +11,8 @@
 #include "tictactoe/PlaceTokenAction.h"
 #include "src/vacuum_gripper/vacuum_gripper.h"
 
+#include <tictactoe/SetTrajectoryType.h>
+
 namespace ttt
 {
 
@@ -46,8 +48,11 @@ private:
         }
     }
 
+    ros::ServiceClient _clnt_movement_type;
 
     std::string _voice_type; //! It determines the type of voice.
+
+    bool _smooth; //! It determines the type of movements: smooth and natural or more mechanistic and robotic.
 
     Place_Token_Client_type _move_commander; //! This is the incharge of sending the command to place a new token in a cell of the TTT board
 
@@ -141,6 +146,16 @@ public:
         ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retreive from the parameter server");
         ROS_INFO_STREAM("Using voice " << _voice_type);
+
+        ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
+        ROS_ASSERT_MSG(_nh.getParam("smooth",_smooth), "The sort of movements has not been retreived from the parameter server");
+        ROS_INFO_STREAM("Using " << _smooth << " movements");
+        _clnt_movement_type = _nh.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
+        tictactoe::SetTrajectoryType srv;
+        srv.request.smooth=(_smooth==true?true:false);
+        ROS_ASSERT_MSG(_clnt_movement_type.call(srv), "Failed to call service set_movement_type");
+        if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth==0?"smooth":"mechanistic"));
+        else ROS_ERROR_STREAM("Error setting movements to " << (srv.request.smooth==0?"smooth":"mechanistic"));
 
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
         _oponent_color=_robot_color==blue?red:blue;

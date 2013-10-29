@@ -1,0 +1,6 @@
+<!-- Launching all required nodes for playing Tic Tac Toe with Baxter -->
+<launch>
+
+    <node name="baxtertrajectorycontroller" pkg="baxter_interface" type="trajectory_controller.py" respawn="true" output="screen"/>
+
+</launch>

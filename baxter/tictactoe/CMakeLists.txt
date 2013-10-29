@@ -24,7 +24,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined messages
 rosbuild_genmsg()
 #uncomment if you have defined services
-#rosbuild_gensrv()
+rosbuild_gensrv()
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
@@ -52,6 +52,9 @@ target_link_libraries(test_loading_trajectory_xml trajectory_xml_parser)
 # conversor from raw to xml trajectory files
 rosbuild_add_executable(trajectory_from_raw_to_xml src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
 target_link_libraries(trajectory_from_raw_to_xml trajectory_xml_parser)
+# concat several xml trajectory files
+rosbuild_add_executable(concat_trajectory_xml_files src/trajectory_xml_parser/concat_trajectory_xml_files.cpp)
+target_link_libraries(concat_trajectory_xml_files trajectory_xml_parser)
 
 # vacuum gripper
 rosbuild_add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/vacuum_gripper/vacuum_gripper.h)

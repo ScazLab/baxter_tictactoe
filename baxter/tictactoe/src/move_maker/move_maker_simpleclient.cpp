@@ -2,6 +2,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <tictactoe/PlaceTokenAction.h>
+#include <tictactoe/SetTrajectoryType.h>
 
 int main (int argc, char **argv)
 {
@@ -13,6 +14,10 @@ int main (int argc, char **argv)
     ROS_INFO("Waiting for TTT Move Maker action server to start.");
     ROS_ASSERT_MSG(move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
     ROS_INFO("TTT Move Maker action server is started. We are ready for sending goals.");
+
+    ros::NodeHandle n;
+    ros::ServiceClient client = n.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
+    tictactoe::SetTrajectoryType srv;
 
     tictactoe::PlaceTokenGoal goal;
     int i=0;
@@ -37,6 +42,22 @@ int main (int argc, char **argv)
         case 9:goal.cell="3x3"; break;
         default: return 0;//ros::shutdown();
         }
+        ROS_INFO("Smooth (0) or mechanistic (other)");
+        std::cin >> i;
+        switch(i){
+        case 0:srv.request.smooth=true; break;
+        default: srv.request.smooth=false;
+        }
+
+        if (client.call(srv)) {
+            if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth==0?"smooth":"mechanistic"));
+            else ROS_INFO_STREAM("Error setting movements to " << (srv.request.smooth==0?"smooth":"mechanistic"));
+        }
+        else {
+            ROS_ERROR("Failed to call service set_movement_type");
+            continue;
+        }
+
         move_commander.sendGoal(goal);
         bool finished_before_timeout = move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
         if (finished_before_timeout) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished!");
