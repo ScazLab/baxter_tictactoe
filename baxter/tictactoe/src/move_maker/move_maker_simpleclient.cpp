@@ -50,8 +50,8 @@ int main (int argc, char **argv)
         }
 
         if (client.call(srv)) {
-            if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth==0?"smooth":"mechanistic"));
-            else ROS_INFO_STREAM("Error setting movements to " << (srv.request.smooth==0?"smooth":"mechanistic"));
+            if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
+            else ROS_INFO_STREAM("Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
         }
         else {
             ROS_ERROR("Failed to call service set_movement_type");

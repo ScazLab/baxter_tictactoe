@@ -158,6 +158,7 @@ void Move_Maker::print_trajectory_repository_details()
 
 bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, tictactoe::SetTrajectoryType::Response& res)
 {
+    ROS_INFO("@Move_Maker::set_movement_type");
     if (req.smooth) {
         this->set_smooth_trajectories();
         ROS_INFO("Using smooth trajectories");
@@ -165,7 +166,8 @@ bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, t
         this->set_mechanistic_trajectories();
         ROS_INFO("Using mechanistic trajectories");
     }
-    return false;
+    res.error=false;
+    return true;
 }
 
 void Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal)

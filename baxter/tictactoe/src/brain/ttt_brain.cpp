@@ -196,9 +196,9 @@ private:
             {
                 cell_state=state[i];
                 state[i]=_robot_color;
-                if (TTT_Brain::three_in_a_row(_oponent_color, state))
+                if (TTT_Brain::three_in_a_row(_robot_color, state))
                 {
-                    ROS_INFO_STREAM("Defensive move to cell with number " << i+1);
+                    ROS_INFO_STREAM("Victory move to cell with number " << i+1);
                     return i+1;
                 }
                 state[i]=cell_state;
@@ -317,12 +317,31 @@ public:
         return _move_commander.getState();
     }
 
+    /**
+     * This function counts the total number of tokens on the board. That is, the number of cells that are not empty or undefined.
+     * @return The number of cells where there is a red or blue token.
+     **/
     unsigned short int get_number_of_tokens_on_board()
     {
         unsigned short int counter=0;
         TTT_State_type state = _ttt_state.get();
         foreach (unsigned short int c, state) {
             if(c!=empty && c!=undefined) counter++;
+        }
+        return counter;
+    }
+
+    /**
+     * This function counts the number of a particular type of tokens on the board. That is, the number of cells that occupied by these kind of tikens.
+     * @param token_type The kind of tokens we are counting
+     * @return The number of cells where there is a token_type token.
+     **/
+    unsigned short int get_number_of_tokens_on_board(t_Cell_State token_type)
+    {
+        unsigned short int counter=0;
+        TTT_State_type state = _ttt_state.get();
+        foreach (unsigned short int c, state) {
+            if(c==token_type) counter++;
         }
         return counter;
     }
@@ -395,16 +414,16 @@ public:
 
     /**
      * This function blocks until the oponent has done his move.
-     * This is detected considering the number of tokens on the board. The function waits until the number of tokens in the board increases.
+     * This is detected considering the number of the oponent's tokens on the board. The function waits until the number of oponent's tokens in the board increases.
+     * @param number of oponent's token at the beginning
      **/
-    void wait_for_oponent_turn()
-    {
-        unsigned short int n_tokens=this->get_number_of_tokens_on_board();
-        unsigned short int aux_n_tokens=n_tokens;
-        while(n_tokens<=aux_n_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number of tokens on the board increases.
+    void wait_for_oponent_turn(const uint8_t& n_oponent_tokens)
+    {        
+        uint8_t aux_n_oponent_tokens=n_oponent_tokens;
+        while(aux_n_oponent_tokens<=n_oponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number oponent's tokens increase.
         {
             ros::Duration(1).sleep();
-            n_tokens=this->get_number_of_tokens_on_board();
+            aux_n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color);
         }
     }
 
@@ -472,14 +491,17 @@ public:
 
         this->say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
         this->say_sentence(" and the red tokens in the red square on the left side of the board",6);
+        this->say_sentence("I start the game.",2);
+        this->set_smooth_movements(_smooth);
 
-        ROS_ERROR("PRESS ENTER TO START THE GAME");
-        std::cin.get();
-
+        ROS_WARN("PRESS ENTER TO START THE GAME");
+        std::cin.get();        
+        uint8_t n_oponent_tokens=0;
         while ((winner=this->get_winner())==0 && !this->full_board())
         {
             if (robot_turm) // Robot's turn
             {
+                n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color); //number of oponent's tokens befor the robot's turn
                 this->say_sentence("It is my turn",0.3);
                 int cell_to_move = this->get_next_move(cheating);
                 ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
@@ -495,7 +517,7 @@ public:
             {
                 ROS_INFO("Waiting for the participant's move.");
                 this->say_sentence("It is your turn",0.1);
-                this->wait_for_oponent_turn(); // Waiting for my turn: the participant has to place one token, so we wait until the number of tokens on the board increases.
+                this->wait_for_oponent_turn(n_oponent_tokens); // Waiting for my turn: the participant has to place one token, so we wait until the number of the oponent's tokens increases.
             }
             robot_turm=!robot_turm;
         }
@@ -537,8 +559,11 @@ int main(int argc, char** argv)
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
     ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the oponent with " << brain.get_oponent_color_str());
-    brain.say_sentence("Let's play Tic Tac Toe.   I start the game.",5);
-    brain.say_sentence("Wait to place your token until I say that it's your turn",5);
+
+    ROS_WARN("PRESS ENTER TO START WITH A NEW PARTICIPANT");
+    std::cin.get();
+    brain.say_sentence("  Welcome!  Let's play Tic Tac Toe.",4);
+    brain.say_sentence("Do not grasp your token before I say that it is your turn",5);
 
     uint robot_victories=0, participant_victories=0, ties=0;
     uint i=1;

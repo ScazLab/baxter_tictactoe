@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<trajectories>
+    <trajectory id="over_heap_safe" time_to_start="0">
+        <point time_from_start="2">
+            <joint name="left_e0" position="-2.26569" velocity="0" acceleration="0"/>
+            <joint name="left_e1" position="1.47607" velocity="0" acceleration="0"/>
+            <joint name="left_s0" position="0.448689" velocity="0" acceleration="0"/>
+            <joint name="left_s1" position="0.420311" velocity="0" acceleration="0"/>
+            <joint name="left_w0" position="2.15026" velocity="0" acceleration="0"/>
+            <joint name="left_w1" position="2.05822" velocity="0" acceleration="0"/>
+            <joint name="left_w2" position="0.133073" velocity="0" acceleration="0"/>
+        </point>
+    </trajectory>
+</trajectories>
