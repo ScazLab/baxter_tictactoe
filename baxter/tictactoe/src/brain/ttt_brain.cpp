@@ -4,6 +4,9 @@
 #include <actionlib/client/terminal_state.h>
 #include <sound_play/sound_play.h>
 #include <QtGlobal> //required for qrand
+#include <QDateTime>
+#include <QFile>
+#include <QTextStream>
 
 #include "ttt_board_sensor/ttt_board.h"
 #include "ttt_definitions.h"
@@ -235,18 +238,6 @@ private:
     }
 
     /**
-     * It indicates if the robot moves smoothly. If not, it moves mechanisticaly.
-     * \return true if robot uses smooth movements, or false if it uses mechanistic movements.
-     **/
-    inline bool is_smooth_movements()
-    {
-        return _smooth;
-    }
-
-
-
-
-    /**
      * It sets the cheating field
      * \return true if there is can cheats, or false otherwise.
      **/
@@ -314,6 +305,16 @@ public:
     {
         return _can_cheat;
     }
+
+    /**
+     * It indicates if the robot moves smoothly. If not, it moves mechanisticaly.
+     * \return true if robot uses smooth movements, or false if it uses mechanistic movements.
+     **/
+    inline bool is_smooth_movements()
+    {
+        return _smooth;
+    }
+
 
     /**
      * This function sends the command to place a token in a particular cell.
@@ -572,8 +573,8 @@ public:
     static uint CHEATING_GAME;
 };
 
-uint TTT_Brain::NUM_GAMES=10;
-uint TTT_Brain::CHEATING_GAME=5;
+uint TTT_Brain::NUM_GAMES=8;
+uint TTT_Brain::CHEATING_GAME=4;
 
 }
 
@@ -632,7 +633,15 @@ int main(int argc, char** argv)
 
     brain.say_sentence("Game over. It was my pleasure to play with you. Thanks for participating in the experiment.",10);
 
-    ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);
+    ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);    
+    std::string filepath = "/home/alvaro/ttt " + QDateTime::currentDateTime().toString().toStdString() + ".txt";
+    QFile file(filepath.c_str());
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&file);
+    out << (brain.can_cheat()? "cheats" : "does not cheat") << "\n";
+    out << (brain.is_smooth_movements()? "smooth" : "mechanistic") << "\n";
+    out << "Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties;
+    file.close();
 
     return 0;
 }
