@@ -54,6 +54,8 @@ private:
 
     bool _smooth; //! It determines the type of movements: smooth and natural or more mechanistic and robotic.
 
+    bool _can_cheat; //! It determines if the robot can cheat or not.
+
     Place_Token_Client_type _move_commander; //! This is the incharge of sending the command to place a new token in a cell of the TTT board
 
     int (TTT_Brain::*_choose_next_move)(bool& cheating); //! This a pointer to the function that decides the next move. We use a pointer because we could have different strategies.
@@ -241,6 +243,19 @@ private:
         return _smooth;
     }
 
+
+
+
+    /**
+     * It sets the cheating field
+     * \return true if there is can cheats, or false otherwise.
+     **/
+    inline void set_can_cheat(bool b)
+    {
+        _can_cheat=b;
+    }
+
+
 public:
 
     TTT_Brain(t_Cell_State robot_color=blue, std::string strategy="random") : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
@@ -250,6 +265,10 @@ public:
         ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retreive from the parameter server");
         ROS_INFO_STREAM("Using voice " << _voice_type);
+
+        ROS_ASSERT_MSG(_nh.hasParam("cheating"),"No cheating parameter found in the parameter server!");
+        ROS_ASSERT_MSG(_nh.getParam("cheating",_can_cheat), "The cheating possibility has not been retreived from the parameter server");
+        ROS_INFO_STREAM("Robot " << (_can_cheat?"can":"cannot") << " cheat");
 
         ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("smooth",_smooth), "The sort of movements has not been retreived from the parameter server");
@@ -285,6 +304,15 @@ public:
      **/
     int get_next_move(bool& cheating) {
         return (this->*_choose_next_move)(cheating);
+    }
+
+    /**
+     * It indicates if the robot can cheats.
+     * \return true if robot can cheats, or false if it does not.
+     **/
+    inline bool can_cheat()
+    {
+        return _can_cheat;
     }
 
     /**
@@ -535,6 +563,7 @@ public:
         default:
             ROS_INFO("TIE!");
             this->say_sentence("That's a tie!",4);
+            winner=3;
         }
         return winner;
     }
@@ -573,7 +602,7 @@ int main(int argc, char** argv)
     while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
         ROS_INFO_STREAM("Game " << i);
-        if (i==ttt::TTT_Brain::CHEATING_GAME) //In the fifth game, Baxter cheats
+        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat()) //In the fifth game, Baxter cheats
         {
             brain.set_strategy("smart-cheating");
         }
@@ -588,7 +617,7 @@ int main(int argc, char** argv)
             break;
         default: ROS_ERROR_STREAM("Unexpected return value for the game: " << game_result << " ???");
         }
-        if (i==ttt::TTT_Brain::CHEATING_GAME)
+        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat())
         {
             if (!cheating) {
                 ROS_INFO("Game ended but no cheating. Game counter does not increase.");
