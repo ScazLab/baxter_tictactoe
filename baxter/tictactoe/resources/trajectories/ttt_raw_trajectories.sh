@@ -247,15 +247,15 @@ cat mech_back@0x0.rawt >> mech_back@3x3.rawt
 
 #Smoothly from bottom heap to cell 3x2
 cat over_heap.raw > put@3x2.rawt
-cat over_3x2.raw >> put@3x2.rawt
+cat over_3x2_1.raw >> put@3x2.rawt
 cat bottom_3x2.raw >> put@3x2.rawt
 
 #Mechanistic from bottom heap to cell 3x2
 cat over_heap.raw > mech_put@3x2.rawt
 cat over_heap.raw >> mech_put@3x2.rawt
 cat over_3x1.raw >> mech_put@3x2.rawt
-cat over_3x2.raw >> mech_put@3x2.rawt
-cat over_3x2.raw >> mech_put@3x2.rawt
+cat over_3x2_1.raw >> mech_put@3x2.rawt
+cat over_3x2_1.raw >> mech_put@3x2.rawt
 cat bottom_3x2.raw >> mech_put@3x2.rawt
 
 #Smoothly from cell 3x2 to home
