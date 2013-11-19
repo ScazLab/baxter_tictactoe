@@ -30,6 +30,7 @@ int main(int argc, char** argv)
         for (size_t i = 0; i < traj_ids.size(); ++i) {
             ROS_INFO_STREAM(i+1 << "." << traj_ids[i]);
         }
+        ROS_INFO("Any other number to exit");
         size_t option;
         std::cin >> option;
         if (option<1 || option>traj_ids.size()) break;
