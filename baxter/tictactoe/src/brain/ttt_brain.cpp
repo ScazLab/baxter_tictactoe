@@ -451,7 +451,9 @@ public:
         uint8_t aux_n_oponent_tokens=n_oponent_tokens;
         while(aux_n_oponent_tokens<=n_oponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number oponent's tokens increase.
         {
-            ros::Duration(1).sleep();
+//            ros::Duration(1).sleep();
+            ROS_WARN("Press ENTER when the oponent's turn is done");
+            std::cin.get();
             aux_n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color);
         }
     }
@@ -526,10 +528,12 @@ public:
         ROS_WARN("PRESS ENTER TO START THE GAME");
         std::cin.get();        
         uint8_t n_oponent_tokens=0;
+//        uint8_t n_robot_tokens=0;
         while ((winner=this->get_winner())==0 && !this->full_board())
         {
             if (robot_turm) // Robot's turn
             {
+//                n_robot_tokens=this->get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
                 n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color); //number of oponent's tokens befor the robot's turn
                 this->say_sentence("It is my turn",0.3);
                 int cell_to_move = this->get_next_move(cheating);
@@ -541,6 +545,11 @@ public:
                     ROS_ERROR_STREAM("Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
                     //What do we do now?
                 }
+//                if(n_robot_tokens==this->get_number_of_tokens_on_board(_robot_color)) //the number of robot tokens haven't increased so we try again.
+//                {
+//                    ROS_ERROR("Somehow there is still %ud robot tokens.",n_robot_tokens);
+//                    continue;
+//                }
             }
             else // Participant's turn
             {
@@ -603,7 +612,7 @@ int main(int argc, char** argv)
     while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
         ROS_INFO_STREAM("Game " << i);
-        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat()) //In the fifth game, Baxter cheats
+        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat()) //In the fourth game, Baxter cheats
         {
             brain.set_strategy("smart-cheating");
         }
