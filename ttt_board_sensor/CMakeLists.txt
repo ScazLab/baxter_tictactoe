@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(ttt_board_sensor)
+find_package(catkin REQUIRED message_generation)
 
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
@@ -8,8 +9,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
-
-rosbuild_init()
 
 find_package(Qt4 REQUIRED)
 SET(QT_USE_QTXML 1)
@@ -25,35 +24,32 @@ include_directories ($(ttt_board_sensor_INCLUDE_DIRS))
 include_directories (${ttt_board_sensor_SOURCE_DIR}/hsv_range_finder)
 include_directories (${ttt_board_sensor_SOURCE_DIR}/tictactoe_board_display)
 
-#uncomment if you have defined messages
-rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+add_message_files(FILES
+    ttt_board.msg
+)
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+catkin_package(
+    DEPENDS message_runtime
+)
 
-rosbuild_add_library(ttt src/ttt_cells.cpp src/ttt_cells.h src/ttt_definitions.h)
+# Targets
 
-rosbuild_add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
+add_library(ttt src/ttt_cells.cpp src/ttt_cells.h src/ttt_definitions.h)
+
+add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
 TARGET_LINK_LIBRARIES(cells_delimitation ttt)
 TARGET_LINK_LIBRARIES(cells_delimitation ${QT_LIBRARIES})
 
-rosbuild_add_executable(show_board_cells src/show_board_cells.cpp)
+add_executable(show_board_cells src/show_board_cells.cpp)
 TARGET_LINK_LIBRARIES(show_board_cells ttt)
 TARGET_LINK_LIBRARIES(show_board_cells ${QT_LIBRARIES})
 
-rosbuild_add_executable(hsv_range_finder src/hsv_range_finder/hsv_range_finder.cpp)
+add_executable(hsv_range_finder src/hsv_range_finder/hsv_range_finder.cpp)
 
-rosbuild_add_executable(board_scheme src/tictactoe_board_display/board_scheme.cpp)
+add_executable(board_scheme src/tictactoe_board_display/board_scheme.cpp)
 
-rosbuild_add_executable(board_state_sensing src/board_state_sensing.cpp)
+add_executable(board_state_sensing src/board_state_sensing.cpp)
 TARGET_LINK_LIBRARIES(board_state_sensing ttt)
 TARGET_LINK_LIBRARIES(board_state_sensing ${QT_LIBRARIES})
 
-rosbuild_add_executable(board_motion_detection src/motion_detection/board_motion_detection.cpp src/motion_detection/board_motion_detection.h)
+add_executable(board_motion_detection src/motion_detection/board_motion_detection.cpp src/motion_detection/board_motion_detection.h)
