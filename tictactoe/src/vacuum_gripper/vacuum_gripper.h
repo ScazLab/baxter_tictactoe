@@ -5,8 +5,8 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
 
-#include <baxter_msgs/GripperState.h>
-#include <baxter_msgs/GripperCommand.h>
+#include <baxter_core_msgs/EndEffectorState.h>
+#include <baxter_core_msgs/EndEffectorCommand.h>
 
 #include "src/utils/T_ThreadSafe.h"
 
@@ -27,8 +27,8 @@ private:
     ros::Publisher _pub_command_grip;   //! publisher for gripping by sucking
     ros::Publisher _pub_command_release;//! publisher for releasing by blowing
 
-    ThreadSafeVariable<baxter_msgs::GripperState> _state; //! it is update every time a new message with information about the gripper state arrives
-    void new_state_msg_handler(const baxter_msgs::GripperStateConstPtr& msg); //! function handling gripper state messages. We keep updated our internal variable related to the gripper state
+    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; //! it is update every time a new message with information about the gripper state arrives
+    void new_state_msg_handler(const baxter_core_msgs::EndEffectorStateConstPtr& msg); //! function handling gripper state messages. We keep updated our internal variable related to the gripper state
 
 public:
     /**

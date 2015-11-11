@@ -3,7 +3,7 @@
 namespace ttt
 {
 
-void Robot_State::robot_state_handler(const baxter_msgs::AssemblyStateConstPtr &msg)
+void Robot_State::robot_state_handler(const baxter_core_msgs::AssemblyStateConstPtr &msg)
 {
     _robot_state.set(*msg);
 }
@@ -48,8 +48,8 @@ bool Robot_State::reset()
     return this->disable() && \
           !this->has_error() && \
            !this->is_stopped() && \
-           _robot_state.get().estop_button==baxter_msgs::AssemblyState::ESTOP_BUTTON_UNPRESSED && \
-           _robot_state.get().estop_source==baxter_msgs::AssemblyState::ESTOP_SOURCE_NONE;
+           _robot_state.get().estop_button==baxter_core_msgs::AssemblyState::ESTOP_BUTTON_UNPRESSED && \
+           _robot_state.get().estop_source==baxter_core_msgs::AssemblyState::ESTOP_SOURCE_NONE;
 }
 
 bool Robot_State::is_enabled()

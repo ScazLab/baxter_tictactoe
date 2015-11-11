@@ -2,7 +2,7 @@
 #define ROBOT_STATE_H
 
 #include <ros/ros.h>
-#include <baxter_msgs/AssemblyState.h>
+#include <baxter_core_msgs/AssemblyState.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 
@@ -18,13 +18,13 @@ private:
 
     ros::Subscriber _sub_robot_state; //! subscriber to receive the messages about the robot state
 
-    ThreadSafeVariable<baxter_msgs::AssemblyState> _robot_state; //! Internal variable where the state of the robot is stored. This value is updated every time a /sdk/robot/state topic is received.
+    ThreadSafeVariable<baxter_core_msgs::AssemblyState> _robot_state; //! Internal variable where the state of the robot is stored. This value is updated every time a /sdk/robot/state topic is received.
 
     /**
      * It handles the message published about the state of the robot. It updates the internal variable where the state of the robot is stored.
      * \param msg the message with the robot state: enabled, stopped, error, estop_button, and estop_source.
      **/
-    void robot_state_handler(const baxter_msgs::AssemblyStateConstPtr & msg);
+    void robot_state_handler(const baxter_core_msgs::AssemblyStateConstPtr & msg);
 
     ros::Publisher _pub_enable;   //! publisher to enable/disable the robot
 

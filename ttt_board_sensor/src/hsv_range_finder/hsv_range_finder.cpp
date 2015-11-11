@@ -7,7 +7,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "src/board_cells_delimitation.h"
+#include "src/ttt_definitions.h"
+
 
 namespace ttt
 {
@@ -69,7 +70,7 @@ public:
         cv_bridge::CvImageConstPtr cv_ptr;
         try
         {
-            cv_ptr = cv_bridge::toCvShare(msg, enc::BGR8);
+            cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::enc::BGR8);
         }
         catch (cv_bridge::Exception& e)
         {

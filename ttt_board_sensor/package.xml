@@ -40,6 +40,7 @@
   <depend>opencv2</depend>
   <depend>cv_bridge</depend>
   <depend>roscpp</depend>
+  <depend>rosconsole</depend>
   <depend>std_msgs</depend>
   <depend>image_transport</depend>
   <depend>image_vi</depend>

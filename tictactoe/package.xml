@@ -10,6 +10,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>std_msgs</depend>
   <depend>roscpp</depend>
+  <depend>rosconsole</depend>
   <depend>moveit_core</depend>
   <depend>moveit_ros_move_group</depend>
   <depend>moveit_ros_planning_interface</depend>
@@ -17,7 +18,7 @@
   <depend>actionlib</depend>
   <depend>actionlib_msgs</depend>
   <depend>ttt_board_sensor</depend>
-  <depend>baxter_msgs</depend>
+  <depend>baxter_core_msgs</depend>
   <depend>sound_play</depend>
 </package>
 

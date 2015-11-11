@@ -23,6 +23,7 @@
 #include <qt4/Qt/QtCore>
 // ROS includes
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <ros/duration.h>
 // Baxter includes
 #include <control_msgs/FollowJointTrajectoryAction.h>

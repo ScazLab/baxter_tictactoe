@@ -1,6 +1,6 @@
 
+#include "src/ttt_definitions.h"
 #include "board_motion_detection.h"
-
 
 namespace ttt
 {
