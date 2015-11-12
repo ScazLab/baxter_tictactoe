@@ -1,7 +1,7 @@
 <!-- Launching all required nodes for playing Tic Tac Toe with Baxter -->
 <launch>
 
-    <include file="$(find tictactoe)/launchers/screen.launch" />
+    <include file="$(find tictactoe)/launch/screen.launch" />
 
     <include file="$(find ttt_board_sensor)/launch/ttt_board_sensor.launch" />
 
