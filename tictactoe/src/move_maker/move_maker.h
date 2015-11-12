@@ -7,8 +7,8 @@
 #include <tictactoe/PlaceTokenAction.h>
 #include <actionlib/server/simple_action_server.h>
 
-#include "trajectory_player.h"
-#include "trajectory_xml_parser.h"
+#include "src/trajectory_player/trajectory_player.h"
+#include "src/trajectory_xml_parser/trajectory_xml_parser.h"
 #include "src/utils/my_ros_utils.h"
 #include "ttt_moves_trajectories.h"
 
