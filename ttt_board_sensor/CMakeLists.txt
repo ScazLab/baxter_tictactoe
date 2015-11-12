@@ -21,6 +21,8 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ttt
     DEPENDS message_runtime
 )
 

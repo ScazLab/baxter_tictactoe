@@ -8,8 +8,9 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "ttt_board_sensor/ttt_board.h"
-#include "ttt_board_sensor/ttt_definitions.h"
+#include <ttt_board_sensor/ttt_board.h>
+#include <ttt/ttt_definitions.h>
+
 #include "src/utils/T_ThreadSafe.h"
 #include "tictactoe/PlaceTokenAction.h"
 #include "src/vacuum_gripper/vacuum_gripper.h"

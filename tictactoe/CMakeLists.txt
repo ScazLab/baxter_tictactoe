@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(tictactoe)
 
-find_package(catkin REQUIRED
+find_package(catkin REQUIRED COMPONENTS
     message_generation genmsg
     actionlib_msgs actionlib
     rosconsole
@@ -21,12 +21,15 @@ generate_messages(DEPENDENCIES actionlib_msgs std_msgs)
 ## Set the default path for built libraries to the "lib" directory
 #set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-include_directories($(tictactoe_INCLUDE_DIRS))
-include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils $(PROJECT_SOURCE_DIR)/src/move_maker $(PROJECT_SOURCE_DIR)/src/vacuum_gripper)
+#include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils $(PROJECT_SOURCE_DIR)/src/move_maker $(PROJECT_SOURCE_DIR)/src/vacuum_gripper)
 
+include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+# QT 4 stuff
 find_package(Qt4 COMPONENTS QtCore QtGui)
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
 
 catkin_package()
 
@@ -82,4 +85,6 @@ add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/utils/Buf
 
 # ttt brain
 add_executable(ttt_brain src/brain/ttt_brain.cpp)
-target_link_libraries(ttt_brain ttt vacuum_gripper robot_state ${QT_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(ttt_brain
+                      vacuum_gripper robot_state
+                      ${QT_LIBRARIES} ${catkin_LIBRARIES})
