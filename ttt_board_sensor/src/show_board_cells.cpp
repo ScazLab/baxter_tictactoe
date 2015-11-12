@@ -12,7 +12,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "ttt_definitions.h"
+#include "ttt/ttt_definitions.h"
 #include "ttt_cells.h"
 
 namespace ttt

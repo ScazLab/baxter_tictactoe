@@ -18,7 +18,7 @@
 #include <QFileDialog>
 #include <QApplication>
 
-#include "ttt_definitions.h"
+#include "ttt/ttt_definitions.h"
 
 namespace ttt {
 

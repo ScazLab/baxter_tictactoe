@@ -5,7 +5,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "ttt_definitions.h"
+#include "ttt/ttt_definitions.h"
 #include "ttt_cells.h"
 #include "ttt_board_sensor/ttt_board.h"
 

@@ -7,7 +7,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "src/ttt_definitions.h"
+#include "ttt/ttt_definitions.h"
 
 
 namespace ttt

@@ -17,10 +17,6 @@ add_message_files(FILES
 )
 generate_messages(DEPENDENCIES std_msgs)
 
-#include_directories ($(ttt_board_sensor_INCLUDE_DIRS))
-#include_directories (${ttt_board_sensor_SOURCE_DIR}/hsv_range_finder)
-#include_directories (${ttt_board_sensor_SOURCE_DIR}/tictactoe_board_display)
-
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -30,8 +26,17 @@ catkin_package(
 
 # Targets
 
-add_library(ttt src/ttt_cells.cpp src/ttt_cells.h src/ttt_definitions.h)
+add_library(ttt src/ttt_cells.cpp)
 add_dependencies(ttt ${catkin_EXPORTED_TARGETS})
+target_include_directories(ttt PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    PRIVATE src)
+install(TARGETS ttt
+    ARCHIVE  DESTINATION lib
+    LIBRARY  DESTINATION lib
+    RUNTIME  DESTINATION bin)  # This is for Windows
+install(DIRECTORY include/ DESTINATION include)
 
 add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
 target_link_libraries(cells_delimitation ttt ${QT_LIBRARIES} ${catkin_LIBRARIES})
