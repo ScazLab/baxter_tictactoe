@@ -13,6 +13,8 @@
 
     <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
     <param name="voice" type="str" value="voice_kal_diphone" /> <!-- A robotic voice -->
+    <param name="cheating" type="bool" value="true" />
+    <param name="smooth" type="bool" value="true" />
 
     <node name="ttt_brain" pkg="tictactoe" type="ttt_brain" respawn="false" output="screen" required="true"/>
 
