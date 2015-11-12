@@ -16,13 +16,6 @@ add_service_files(FILES
 add_action_files(DIRECTORY action FILES PlaceToken.action)
 generate_messages(DEPENDENCIES actionlib_msgs std_msgs)
 
-## Set the default path for built executables to the "bin" directory
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-## Set the default path for built libraries to the "lib" directory
-#set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-
-#include_directories($(PROJECT_SOURCE_DIR)/src/trajectory_player $(PROJECT_SOURCE_DIR)/src/trajectory_xml_parser $(PROJECT_SOURCE_DIR)/src/utils $(PROJECT_SOURCE_DIR)/src/move_maker $(PROJECT_SOURCE_DIR)/src/vacuum_gripper)
-
 include_directories(include ${catkin_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -88,3 +81,8 @@ add_executable(ttt_brain src/brain/ttt_brain.cpp)
 target_link_libraries(ttt_brain
                       vacuum_gripper robot_state
                       ${QT_LIBRARIES} ${catkin_LIBRARIES})
+
+# Launchers
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
