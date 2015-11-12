@@ -22,6 +22,7 @@ generate_messages(DEPENDENCIES std_msgs)
 #include_directories (${ttt_board_sensor_SOURCE_DIR}/tictactoe_board_display)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 catkin_package(
     DEPENDS message_runtime
