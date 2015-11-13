@@ -87,6 +87,11 @@ public:
      * \return false if an error happens; true otherwise. In case of error the correcteness of the operation is not guarranted.
      **/
     bool run_trajectory_and_release(trajectory_msgs::JointTrajectory t);
+
+    /**
+     * Destructor
+     **/
+    ~Trajectory_Player();
 };
 
 const float Trajectory_Player::IR_RANGE_THRESHOLD = 0.085;

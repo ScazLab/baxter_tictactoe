@@ -83,9 +83,11 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
         return true;
     }
     else
+    {
         ROS_ERROR("Goal not reached.");
+        ROS_ERROR("Current State: %s", _client->getState().toString().c_str());
+    }
 
-    printf("Current State: %s\n", _client->getState().toString().c_str());    
     return false;
 }
 
@@ -139,6 +141,20 @@ bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTraject
         return this->release();
     }
     return false;
+}
+
+Trajectory_Player::~Trajectory_Player()
+{
+    if (_client)
+    {
+        delete _client;
+        _client = 0;
+    }
+    if (_gripper)
+    {
+        delete _gripper;
+        _gripper = 0;
+    }
 }
 
 }
