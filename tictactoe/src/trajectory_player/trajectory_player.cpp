@@ -74,11 +74,19 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
     _client->sendGoal(goal);
     if(!_client->waitForResult(ros::Duration(40.0))) //timeout for complete the trajectory
     {
-        ROS_ERROR("Goal not reached.");
+        ROS_ERROR("Timeout! Goal not reached.");
         return false;
     }
-    ROS_INFO("Goal reached. Ready for next trajectory");
-    return true;
+    if (client->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        ROS_INFO("Goal reached. Ready for next trajectory");
+        return true;
+    }
+    else
+        ROS_ERROR("Goal not reached.")
+
+    ROS_WARN("Current State: %s\n", client->getState().toString().c_str());    
+    return false;
 }
 
 bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajectory t)
