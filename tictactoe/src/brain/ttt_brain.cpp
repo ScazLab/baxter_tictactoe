@@ -341,8 +341,11 @@ public:
             return actionlib::SimpleClientGoalState::LOST;
         }
         _move_commander.sendGoal(goal);
-        bool finished_before_timeout = _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
-        if (finished_before_timeout) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished successfully!");
+        _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
+	bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
+        //bool finished_before_timeout = _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
+        //if (finished_before_timeout) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished successfully!");
+        if (_success) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished successfully!");
         else ROS_WARN_STREAM("Action moving to " << goal.cell << " did not finish before the time out.");
         return _move_commander.getState();
     }
