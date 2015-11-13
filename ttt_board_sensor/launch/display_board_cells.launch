@@ -7,7 +7,7 @@
   <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
 
   <!-- xml file containing the cells of the board -->
-  <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab.xml" />
+  <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab_B.xml" />
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
 
