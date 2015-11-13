@@ -83,9 +83,11 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
         return true;
     }
     else
+    {
         ROS_ERROR("Goal not reached.");
+        ROS_ERROR("Current State: %s", _client->getState().toString().c_str());
+    }
 
-    printf("Current State: %s\n", _client->getState().toString().c_str());    
     return false;
 }
 
