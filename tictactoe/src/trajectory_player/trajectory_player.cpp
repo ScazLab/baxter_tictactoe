@@ -143,4 +143,18 @@ bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTraject
     return false;
 }
 
+Trajectory_Player::~Trajectory_Player()
+{
+    if (_client)
+    {
+        delete _client;
+        _client = 0;
+    }
+    if (_gripper)
+    {
+        delete _gripper;
+        _gripper = 0;
+    }
+}
+
 }
