@@ -9,7 +9,7 @@
     <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 
 <!--    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>-->
-    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>
+    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml /robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>
 
     <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
     <param name="voice" type="str" value="voice_kal_diphone" /> <!-- A robotic voice -->
