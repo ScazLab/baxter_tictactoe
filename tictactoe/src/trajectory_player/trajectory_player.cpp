@@ -77,15 +77,15 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
         ROS_ERROR("Timeout! Goal not reached.");
         return false;
     }
-    if (client->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    if (_client->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
         ROS_INFO("Goal reached. Ready for next trajectory");
         return true;
     }
     else
-        ROS_ERROR("Goal not reached.")
+        ROS_ERROR("Goal not reached.");
 
-    printf("Current State: %s\n", client->getState().toString().c_str());    
+    printf("Current State: %s\n", _client->getState().toString().c_str());    
     return false;
 }
 
