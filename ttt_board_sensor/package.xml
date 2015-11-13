@@ -9,7 +9,7 @@
       Testing the camera: it opens a window where the image from the camera is displayed.
       $>roslaunch ttt_board_sensor usb_cam-test.launch
 
-      Defining the thresholds for the color filtering: it opens a window where you can change the lower and upper values of the Huge, Saturation, and Value components.
+      Defining the thresholds for the color filtering: it opens a window where you can change the lower and upper values of the Hue, Saturation, and Value components.
       The resulting image is updated in the bottom part of the window. Once the color you desire is filetered (white regions), you have to write down the ranges for H, S, and V.
       These values have to be loaded to the parameter server. In order to do that, you have to include them on the board_state_sensor.launch file.
       In order to close the window, press ESC key and the current values will be displayed in the console.
