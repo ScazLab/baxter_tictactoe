@@ -20,6 +20,7 @@
   <depend>ttt_board_sensor</depend>
   <depend>baxter_core_msgs</depend>
   <depend>sound_play</depend>
+  <exec_depend>usb_cam</exec_depend>
 </package>
 
 
