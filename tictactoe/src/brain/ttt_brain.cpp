@@ -33,10 +33,10 @@ private:
 
     ThreadSafeVariable<TTT_State_type> _ttt_state; //! it stores the state of the board. It is the same type than the data received when a new TTT board state is detected (ttt_board_sensor::ttt_board.data)
 
-    ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; //! It stores the total number of cells on the board. This is used to detect the end of the oponent's turn
+    ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; //! It stores the total number of cells on the board. This is used to detect the end of the opponent's turn
 
     t_Cell_State _robot_color;   //! It represents the color of the tokens the robot is playing with.
-    t_Cell_State _oponent_color; //! It represents the color of the tokens the oponent is playing with.
+    t_Cell_State _opponent_color; //! It represents the color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
@@ -85,8 +85,8 @@ private:
     }
 
     /**
-     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat placing a token on top of an oponent's token.
-     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it. It will block oponent's victory.
+     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat placing a token on top of an opponent's token.
+     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it. It will block opponent's victory.
      * If it cannot win anyway, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
@@ -106,7 +106,7 @@ private:
 
     /**
      * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
-     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will try to block the oponent's victory. If this is not needed, it will randomly choose a cell.
+     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will try to block the opponent's victory. If this is not needed, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
@@ -120,9 +120,9 @@ private:
     }
 
     /**
-     * It determines the next cell to place a token. It always will try to win in this turn, even if there is an oponent's token already in that cell.
+     * It determines the next cell to place a token. It always will try to win in this turn, even if there is an opponent's token already in that cell.
      * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it.
-     * If it cannot win in this turn anyway, it will try to block the oponent's victory. If this is not needed it will randomly choose a cell.
+     * If it cannot win in this turn anyway, it will try to block the opponent's victory. If this is not needed it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
@@ -140,15 +140,15 @@ private:
     }
 
     /**
-     * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell occupied with an oponent's token.
-     * \return -1 if the robot cannot win in the next move, or an integer corresponding to the cell where to place the next token to win, even if there is an oponent's token in that cell. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell occupied with an opponent's token.
+     * \return -1 if the robot cannot win in the next move, or an integer corresponding to the cell where to place the next token to win, even if there is an opponent's token in that cell. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
     int cheating_move()
     {
         TTT_State_type state = _ttt_state.get();
         uint8_t cell_state=undefined;
         for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
-            if (state[i]==_oponent_color)
+            if (state[i]==_opponent_color)
             {
                 cell_state=state[i];
                 state[i]=_robot_color;
@@ -165,8 +165,8 @@ private:
     }
 
     /**
-     * It determines if the oponent can win in the next move.
-     * \return -1 if the oponent cannot win in the next move, or an integer corresponding to the first found cell where an oponent's token can be placed to win the game. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * It determines if the opponent can win in the next move.
+     * \return -1 if the opponent cannot win in the next move, or an integer corresponding to the first found cell where an opponent's token can be placed to win the game. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
     int defensive_move()
     {
@@ -176,8 +176,8 @@ private:
             if (state[i]==empty || state[i]==undefined)
             {
                 cell_state=state[i];
-                state[i]=_oponent_color;
-                if (TTT_Brain::three_in_a_row(_oponent_color, state))
+                state[i]=_opponent_color;
+                if (TTT_Brain::three_in_a_row(_opponent_color, state))
                 {
                     ROS_INFO_STREAM("Defensive move to cell with number " << i+1);
                     return i+1;
@@ -269,7 +269,7 @@ public:
         this->set_smooth_movements(_smooth);
 
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
-        _oponent_color=_robot_color==blue?red:blue;
+        _opponent_color=_robot_color==blue?red:blue;
 
         TTT_State_type aux;
         aux.assign(undefined);
@@ -419,9 +419,9 @@ public:
         return _robot_color;
     }
 
-    inline t_Cell_State get_oponent_color()
+    inline t_Cell_State get_opponent_color()
     {
-        return _oponent_color;
+        return _opponent_color;
     }
 
     inline std::string get_robot_color_str()
@@ -429,36 +429,36 @@ public:
         return cell_state_to_str(_robot_color);
     }
 
-    inline std::string get_oponent_color_str()
+    inline std::string get_opponent_color_str()
     {
-        return cell_state_to_str(_oponent_color);
+        return cell_state_to_str(_opponent_color);
     }
 
     /**
      * This function returns the winner of the game.
-     * @return 0 if there is not winner, 1 if the winner is the robot, or 2 if the winner is the oponent.
+     * @return 0 if there is not winner, 1 if the winner is the robot, or 2 if the winner is the opponent.
      **/
     inline unsigned short int get_winner()
     {
         if (TTT_Brain::three_in_a_row(_robot_color,_ttt_state.get())) return 1;
-        if (TTT_Brain::three_in_a_row(_oponent_color, _ttt_state.get())) return 2;
+        if (TTT_Brain::three_in_a_row(_opponent_color, _ttt_state.get())) return 2;
         return 0;
     }
 
     /**
-     * This function blocks until the oponent has done his move.
-     * This is detected considering the number of the oponent's tokens on the board. The function waits until the number of oponent's tokens in the board increases.
-     * @param number of oponent's token at the beginning
+     * This function blocks until the opponent has done his move.
+     * This is detected considering the number of the opponent's tokens on the board. The function waits until the number of opponent's tokens in the board increases.
+     * @param number of opponent's token at the beginning
      **/
-    void wait_for_oponent_turn(const uint8_t& n_oponent_tokens)
+    void wait_for_opponent_turn(const uint8_t& n_opponent_tokens)
     {        
-        uint8_t aux_n_oponent_tokens=n_oponent_tokens;
-        while(aux_n_oponent_tokens<=n_oponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number oponent's tokens increase.
+        uint8_t aux_n_opponent_tokens=n_opponent_tokens;
+        while(aux_n_opponent_tokens<=n_opponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number opponent's tokens increase.
         {
 //            ros::Duration(1).sleep();
-            ROS_WARN("Press ENTER when the oponent's turn is done");
+            ROS_WARN("Press ENTER when the opponent's turn is done");
             std::cin.get();
-            aux_n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color);
+            aux_n_opponent_tokens=this->get_number_of_tokens_on_board(_opponent_color);
         }
     }
 
@@ -502,7 +502,7 @@ public:
         } else if (strategy=="smart")
         {
             _choose_next_move=&TTT_Brain::winning_defensive_random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance, or blocks oponent's victory");
+            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance, or blocks opponent's victory");
         }
         else if (strategy=="cheating")
         {
@@ -512,7 +512,7 @@ public:
         else if (strategy=="smart-cheating")
         {
             _choose_next_move=&TTT_Brain::smart_cheating_random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required, or blocks oponent's victory");
+            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required, or blocks opponent's victory");
         }
         else {
             ROS_ERROR_STREAM(strategy << " is not an available strategy");
@@ -531,14 +531,14 @@ public:
 
         ROS_WARN("PRESS ENTER TO START THE GAME");
         std::cin.get();        
-        uint8_t n_oponent_tokens=0;
+        uint8_t n_opponent_tokens=0;
 //        uint8_t n_robot_tokens=0;
         while ((winner=this->get_winner())==0 && !this->full_board())
         {
             if (robot_turm) // Robot's turn
             {
 //                n_robot_tokens=this->get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
-                n_oponent_tokens=this->get_number_of_tokens_on_board(_oponent_color); //number of oponent's tokens befor the robot's turn
+                n_opponent_tokens=this->get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
                 this->say_sentence("It is my turn",0.3);
                 int cell_to_move = this->get_next_move(cheating);
                 ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
@@ -559,7 +559,7 @@ public:
             {
                 ROS_INFO("Waiting for the participant's move.");
                 this->say_sentence("It is your turn",0.1);
-                this->wait_for_oponent_turn(n_oponent_tokens); // Waiting for my turn: the participant has to place one token, so we wait until the number of the oponent's tokens increases.
+                this->wait_for_opponent_turn(n_opponent_tokens); // Waiting for my turn: the participant has to place one token, so we wait until the number of the opponent's tokens increases.
             }
             robot_turm=!robot_turm;
         }
@@ -601,7 +601,7 @@ int main(int argc, char** argv)
     ttt::TTT_Brain brain; //random strategy by default
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
-    ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the oponent with " << brain.get_oponent_color_str());
+    ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 
     ROS_WARN("PRESS ENTER TO START WITH A NEW PARTICIPANT");
     std::cin.get();
