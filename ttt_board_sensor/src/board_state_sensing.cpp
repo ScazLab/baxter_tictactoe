@@ -51,14 +51,16 @@ private:
     {
         /* we extract the cell from the original image */
         cv::Mat cropped_cell = Cells::masked_cell_image(img,cell);
-        //cv::namedWindow("cropped");
-        //cv::imshow("cropped",cropped_cell);
+        // cv::namedWindow("cropped", CV_WINDOW_AUTOSIZE);
+        // cv::imshow("cropped",cropped_cell);
+        // cv::waitKey();
 
         /* converting to hsv color space */
         cv::Mat aux_img;
         cv::cvtColor(cropped_cell,aux_img,CV_BGR2HSV);
-        //cv::namedWindow("hsv");
-        //cv::imshow("hsv",aux_img);
+        // cv::namedWindow("hsv", CV_WINDOW_AUTOSIZE);
+        // cv::imshow("hsv",aux_img);
+        // cv::waitKey();
 
         /* extracting just the pixeles within the hsv range values */
         cv::inRange(aux_img.clone(),lower_values,higher_values,aux_img);
@@ -72,7 +74,7 @@ private:
 
         /* the area formed by the remaining pixeles are computed based on the moments*/
         cv::Moments segmented_moments = cv::moments(aux_img,true);
-        ROS_DEBUG_STREAM("segmented area=" << segmented_moments.m00);
+        // ROS_DEBUG_STREAM("segmented area=" << segmented_moments.m00);
 
         //cv::waitKey(0);
         return segmented_moments.m00; //m00 represents the area
