@@ -3,21 +3,21 @@
     <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
 
     <!-- xml file containing the cells of the board -->
-    <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab.xml" />
+    <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab_B.xml" />
 
     <!-- Range thresholds for the red tokes -->
-    <param name="h_low_red" type="int" value="164" />
-    <param name="s_low_red" type="int" value="108" />
-    <param name="v_low_red" type="int" value="85" />
+    <param name="h_low_red" type="int" value="165" />
+    <param name="s_low_red" type="int" value="100" />
+    <param name="v_low_red" type="int" value="0" />
     <param name="h_high_red" type="int" value="180" />
     <param name="s_high_red" type="int" value="256" />
-    <param name="v_high_red" type="int" value="175" />
+    <param name="v_high_red" type="int" value="256" />
 
     <!-- Range thresholds for the blue tokes -->
-    <param name="h_low_blue" type="int" value="82" />
-    <param name="s_low_blue" type="int" value="78" />
-    <param name="v_low_blue" type="int" value="85" />
-    <param name="h_high_blue" type="int" value="135" />
+    <param name="h_low_blue" type="int" value="90" />
+    <param name="s_low_blue" type="int" value="0" />
+    <param name="v_low_blue" type="int" value="0" />
+    <param name="h_high_blue" type="int" value="130" />
     <param name="s_high_blue" type="int" value="256" />
     <param name="v_high_blue" type="int" value="256" />
 
