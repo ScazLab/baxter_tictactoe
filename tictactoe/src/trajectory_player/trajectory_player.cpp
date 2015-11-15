@@ -70,7 +70,7 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
     // Action goal
     control_msgs::FollowJointTrajectoryGoal goal;
     goal.trajectory = t;
-    //goal.trajectory.header.stamp = ros::Time::now(); // start now
+    goal.trajectory.header.stamp = ros::Time::now(); // start now
     _client->sendGoal(goal);
     if(!_client->waitForResult(ros::Duration(40.0))) //timeout for complete the trajectory
     {
