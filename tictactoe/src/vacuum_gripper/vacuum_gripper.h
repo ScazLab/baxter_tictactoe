@@ -27,7 +27,7 @@ private:
     ros::Publisher _pub_command_grip;   //! publisher for gripping by sucking
     ros::Publisher _pub_command_release;//! publisher for releasing by blowing
 
-    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; //! it is update every time a new message with information about the gripper state arrives
+    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; //! it is updated every time a new message with information about the gripper state arrives
     void new_state_msg_handler(const baxter_core_msgs::EndEffectorStateConstPtr& msg); //! function handling gripper state messages. We keep updated our internal variable related to the gripper state
 
 public:
@@ -46,6 +46,8 @@ public:
      * It makes the vacuum gripper to blow air so, in case it has an object graspped, it will release it.
      **/
     void blow();
+
+    int get_id();
 
     /**
      * Returns a value indicating if the vacuum gripper is enable, so it can be operated.

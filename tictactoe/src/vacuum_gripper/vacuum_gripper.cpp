@@ -5,14 +5,12 @@ namespace ttt
 
 Vacuum_Gripper::Vacuum_Gripper(vacuum_gripper_type gripper)
 {
+    ROS_INFO("Vacuum_Gripper constructor");
     _gripper=gripper;
 
-    _pub_command_grip = _nh.advertise<std_msgs::Float32>("/robot/limb/" + Vacuum_Gripper::type_to_str(_gripper) + "/accessory/gripper/command_grip", 1);
-    ROS_ASSERT_MSG(_pub_command_grip,"Empty publisher for gripping");
-    _pub_command_release = _nh.advertise<std_msgs::Empty>("/robot/limb/" + Vacuum_Gripper::type_to_str(_gripper) + "/accessory/gripper/command_release", 1);
-    ROS_ASSERT_MSG(_pub_command_release,"Empty publisher for releasing");
+    _pub_command_grip = _nh.advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/command", 1);
 
-    _sub_state = _nh.subscribe("/sdk/robot/limb/" + Vacuum_Gripper::type_to_str(_gripper) + "/accessory/gripper/state", 1, &Vacuum_Gripper::new_state_msg_handler, this);
+    _sub_state = _nh.subscribe("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/state", 1, &Vacuum_Gripper::new_state_msg_handler, this);
 
     baxter_core_msgs::EndEffectorState initial_gripper_state; //Initially all the interesting properties of the state are unknown
     initial_gripper_state.calibrated=   \
@@ -31,23 +29,30 @@ void Vacuum_Gripper::new_state_msg_handler(const baxter_core_msgs::EndEffectorSt
     _state.set(*msg);
 }
 
-
 void Vacuum_Gripper::suck()
 {
-    std_msgs::Float32 sucking_position;
-    sucking_position.data=baxter_core_msgs::EndEffectorState::POSITION_CLOSED;
-    _pub_command_grip.publish(sucking_position);
+    baxter_core_msgs::EndEffectorCommand sucking_command;
+    sucking_command.id=get_id();
+    sucking_command.command=baxter_core_msgs::EndEffectorCommand::CMD_GO;
+    sucking_command.args="{\"grip_attempt_seconds\": 5.0}";
+    _pub_command_grip.publish(sucking_command);
 }
 
 void Vacuum_Gripper::blow()
 {
-    std_msgs::Empty em;
-    _pub_command_release.publish(em);
+    baxter_core_msgs::EndEffectorCommand release_command;
+    release_command.id=get_id();
+    release_command.command=baxter_core_msgs::EndEffectorCommand::CMD_RELEASE;
+    _pub_command_grip.publish(release_command);
+}
+
+int Vacuum_Gripper::get_id()
+{
+    return _state.get().id;
 }
 
 bool Vacuum_Gripper::is_enabled()
 {
-    baxter_core_msgs::EndEffectorState aux=_state.get();
     return _state.get().enabled==baxter_core_msgs::EndEffectorState::STATE_TRUE;
 }
 
@@ -78,6 +83,7 @@ bool Vacuum_Gripper::is_blowing()
 
 bool Vacuum_Gripper::is_gripping()
 {
+    return true;
     return _state.get().gripping==baxter_core_msgs::EndEffectorState::STATE_TRUE;
 }
 
