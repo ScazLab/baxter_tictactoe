@@ -524,8 +524,8 @@ public:
         bool robot_turm=true;
         unsigned short int winner=0; // no winner
 
-        this->say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
-        this->say_sentence(" and the red tokens in the red square on the left side of the board",6);
+        // this->say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
+        // this->say_sentence(" and the red tokens in the red square on the left side of the board",6);
         this->say_sentence("I start the game.",2);
         this->set_smooth_movements(_smooth);
 
