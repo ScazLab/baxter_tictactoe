@@ -11,6 +11,7 @@
 #include <ros/ros.h>
 #include <ros/duration.h>
 #include <sensor_msgs/Range.h>
+#include <sensor_msgs/JointState.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
@@ -34,6 +35,9 @@ class Trajectory_Player
     ros::NodeHandle _n; //! ROS node handle
 
     ros::Subscriber _left_ir_range_sub; //! subscriber to receive the messages comming from the ir range on the left hand
+    ros::Subscriber _left_joint_states; // subscriber to get the joints state
+
+    std::map<std::string,double> left_arm_state;
 
     /**
      * Check the value returned by the ir range from the left hand.
@@ -41,6 +45,8 @@ class Trajectory_Player
      * \param msg the message with the value of the left range
      **/
     void check_left_ir_range(const sensor_msgs::RangeConstPtr& msg);
+
+    void check_joint_states(const sensor_msgs::JointState& msg);
 
     const static float IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
 
@@ -57,6 +63,11 @@ class Trajectory_Player
      * \return true if the grasping is successful, false otherwise.
      **/
     bool release();
+
+    /**
+     * Takes care of prepending current position to trajectory and setting goal headers.
+     */
+    control_msgs::FollowJointTrajectoryGoal trajectory_to_goal(trajectory_msgs::JointTrajectory t);
 
 public:
     /**
