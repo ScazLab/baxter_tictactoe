@@ -46,15 +46,15 @@ std::string *Move_Maker::get_trajectories_to_cell(std::string cell_id)
     else return NULL;
 }
 
-void Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type mode)
+bool Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type mode)
 {
     TTT_Trajectory t;
     if(!this->get_ttt_trajectory(traj_id,t))
     {
         _place_token.setAborted(_place_token_result,traj_id + " trajectory not found");
-        return;
+        return false;
     }
-    if (this->is_preempted() || !my_ros_utils::is_ros_ok()) return;
+    if (this->is_preempted() || !my_ros_utils::is_ros_ok()) return false;
     ROS_DEBUG_STREAM("Trajectory found. " << t.get_ttt_trajectory_description());
     bool success=true;
     switch(mode)
@@ -73,14 +73,14 @@ void Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type 
         break;
     default:
         ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << mode << "?");
-        return;
     }
     if(!success)
     {
         _place_token.setAborted(_place_token_result,traj_id + " trajectory failed");
-        return;
+        return success;
     }
     ros::Duration(INTER_TRAJ_GAP).sleep(); // Let's wait after each trajectory to be sure that the trajectory is done
+    return success;
 }
 
 Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
@@ -170,7 +170,7 @@ bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, t
     return true;
 }
 
-void Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal)
+bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal)
 {
     ROS_INFO_STREAM("Executing the action to place a token to " << goal->cell);
     std::string* traj_ids = this->get_trajectories_to_cell(goal->cell); //It always returns a vector of 3 strings
@@ -180,22 +180,37 @@ void Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     _place_token.publishFeedback(_place_token_feedback);
 
     // The first trajectory is always to grasp a new token from the heap
-    this->execute_single_trajectory(_prefix_traj+traj_ids[0],GRASP);
+    _place_token_result.success=this->execute_single_trajectory(_prefix_traj+traj_ids[0],GRASP);
     _place_token_feedback.percent_complete=0.33;
     _place_token.publishFeedback(_place_token_feedback);
+    if (!_place_token_result.success)
+    {
+        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        return false;
+    }
 
     // The second trajectory is used to place the token in the corresponding cell
-    this->execute_single_trajectory(_prefix_traj+traj_ids[1],RELEASE);
+    _place_token_result.success=this->execute_single_trajectory(_prefix_traj+traj_ids[1],RELEASE);
     _place_token_feedback.percent_complete=0.66;
     _place_token.publishFeedback(_place_token_feedback);
+    if (!_place_token_result.success)
+    {
+        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        return false;
+    }
 
     // The third trajectory moves the arm to the initial position
-    this->execute_single_trajectory(_prefix_traj+traj_ids[2],PLAIN);
+    _place_token_result.success=this->execute_single_trajectory(_prefix_traj+traj_ids[2],PLAIN);
     _place_token_feedback.percent_complete=0.99;
     _place_token.publishFeedback(_place_token_feedback);
+    if (!_place_token_result.success)
+    {
+        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        return false;
+    }
 
-    _place_token_result.success=true;
     _place_token.setSucceeded(_place_token_result);
+    return _place_token_result.success;
 }
 
 }

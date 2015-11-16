@@ -61,7 +61,7 @@ class Move_Maker
     Trajectory_Player* _traj_player;    
 
     Server _place_token;
-    void execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal);
+    bool execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal);
     tictactoe::PlaceTokenFeedback _place_token_feedback;
     tictactoe::PlaceTokenResult _place_token_result;
 
@@ -71,7 +71,7 @@ class Move_Maker
 
     std::string* get_trajectories_to_cell(std::string cell_id);
 
-    void execute_single_trajectory(std::string traj_id, Trajectory_Type mode);
+    bool execute_single_trajectory(std::string traj_id, Trajectory_Type mode);
 
     inline void set_mechanistic_trajectories()
     {
