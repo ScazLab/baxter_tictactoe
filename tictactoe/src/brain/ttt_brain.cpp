@@ -155,6 +155,7 @@ private:
                 if (TTT_Brain::three_in_a_row(_robot_color, state))
                 {
                     ROS_INFO_STREAM("Cheating move to cell with number " << i+1);
+                    this->say_sentence("You humans are so easy to beat!",5);
                     return i+1;
                 }
                 state[i]=cell_state;
@@ -571,7 +572,7 @@ public:
             this->say_sentence("I win", 3);
             break;
         case 2:
-            ROS_INFO("OPONENT's VICTORY!");
+            ROS_INFO("OPPONENT's VICTORY!");
             this->say_sentence("You win this time",4);
             break;
         default:
@@ -583,11 +584,13 @@ public:
     }
 
     static uint NUM_GAMES;
-    static uint CHEATING_GAME;
+    static uint CHEATING_GAME_A;
+    static uint CHEATING_GAME_B;
 };
 
-uint TTT_Brain::NUM_GAMES=8;
-uint TTT_Brain::CHEATING_GAME=4;
+uint TTT_Brain::NUM_GAMES=3;
+uint TTT_Brain::CHEATING_GAME_A=2;
+uint TTT_Brain::CHEATING_GAME_B=3;
 
 }
 
@@ -616,7 +619,7 @@ int main(int argc, char** argv)
     while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
         ROS_INFO_STREAM("Game " << i);
-        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat()) //In the fourth game, Baxter cheats
+        if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat()) //In the fourth game, Baxter cheats
         {
             brain.set_strategy("smart-cheating");
         }
@@ -631,7 +634,7 @@ int main(int argc, char** argv)
             break;
         default: ROS_ERROR_STREAM("Unexpected return value for the game: " << game_result << " ???");
         }
-        if (i==ttt::TTT_Brain::CHEATING_GAME && brain.can_cheat())
+        if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat())
         {
             if (!cheating) {
                 ROS_INFO("Game ended but no cheating. Game counter does not increase.");
@@ -644,7 +647,7 @@ int main(int argc, char** argv)
         i++;
     }
 
-    brain.say_sentence("Game over. It was my pleasure to play with you. Thanks for participating in the experiment.",10);
+    brain.say_sentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
 
     ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);    
     std::string filepath = "/home/alvaro/ttt " + QDateTime::currentDateTime().toString().toStdString() + ".txt";
