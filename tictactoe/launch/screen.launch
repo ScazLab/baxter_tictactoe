@@ -1,0 +1,4 @@
+<!-- Loading an image on the screen -->
+<launch>
+    <node name="img_screen" pkg="baxter_examples" type="xdisplay_image.py" args="--file=$(find tictactoe)/resources/img/blank.jpg" respawn="false" output="screen"/>
+</launch>

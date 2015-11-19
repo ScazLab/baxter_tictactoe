@@ -1,0 +1,18 @@
+<!--Display for checking the areas defined as cells.
+    Pressing the 's' key, the filtered images for each cell are displayed too.
+    The information is read from an xml file loaded in the parameter server.
+-->
+
+<launch>
+  <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
+
+  <!-- xml file containing the cells of the board -->
+  <param name="board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab_B.xml" />
+
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
+
+  <node name="show_board_cells" pkg="ttt_board_sensor" type="show_board_cells" respawn="false" output="screen">
+    <remap from="/image_in" to="/usb_cam/image_raw"/>        
+  </node>
+ 
+</launch>

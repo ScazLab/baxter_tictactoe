@@ -1,7 +1,0 @@
-<launch>
-
-    <node name="kinematics_demo" pkg="my_ik_test" type="kinematics_demo" respawn="false" output="screen">
-        <rosparam command="load" file="$(find baxter_moveit_config)/config/kinematics.yaml"/>
-    </node>
-
-</launch>

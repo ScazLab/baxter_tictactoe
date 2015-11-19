@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<board>
+    <cell id="0">
+        <vertex x="170" y="241"/>
+        <vertex x="260" y="239"/>
+        <vertex x="245" y="311"/>
+        <vertex x="154" y="311"/>
+    </cell>
+    <cell id="1">
+        <vertex x="271" y="239"/>
+        <vertex x="348" y="238"/>
+        <vertex x="343" y="304"/>
+        <vertex x="260" y="305"/>
+    </cell>
+    <cell id="2">
+        <vertex x="371" y="240"/>
+        <vertex x="443" y="240"/>
+        <vertex x="448" y="298"/>
+        <vertex x="363" y="304"/>
+    </cell>
+    <cell id="3">
+        <vertex x="157" y="327"/>
+        <vertex x="239" y="326"/>
+        <vertex x="228" y="400"/>
+        <vertex x="137" y="402"/>
+    </cell>
+    <cell id="4">
+        <vertex x="256" y="329"/>
+        <vertex x="343" y="327"/>
+        <vertex x="338" y="399"/>
+        <vertex x="247" y="399"/>
+    </cell>
+    <cell id="5">
+        <vertex x="364" y="326"/>
+        <vertex x="449" y="322"/>
+        <vertex x="450" y="398"/>
+        <vertex x="355" y="400"/>
+    </cell>
+    <cell id="6">
+        <vertex x="133" y="423"/>
+        <vertex x="225" y="417"/>
+        <vertex x="215" y="512"/>
+        <vertex x="113" y="517"/>
+    </cell>
+    <cell id="7">
+        <vertex x="244" y="421"/>
+        <vertex x="335" y="419"/>
+        <vertex x="336" y="509"/>
+        <vertex x="232" y="512"/>
+    </cell>
+    <cell id="8">
+        <vertex x="356" y="421"/>
+        <vertex x="449" y="420"/>
+        <vertex x="447" y="507"/>
+        <vertex x="349" y="505"/>
+    </cell>
+</board>

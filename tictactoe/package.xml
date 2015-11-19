@@ -1,0 +1,26 @@
+<package format="2">
+  <name>tictactoe</name>
+  <version>0.1.0</version>
+  <description>
+     tictactoe
+  </description>
+  <author>alvaro</author>
+  <maintainer email="olivier.mangin@yale.edu">olivier</maintainer>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>std_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>rosconsole</depend>
+  <depend>moveit_core</depend>
+  <depend>moveit_ros_move_group</depend>
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_ros_robot_interaction</depend>
+  <depend>actionlib</depend>
+  <depend>actionlib_msgs</depend>
+  <depend>ttt_board_sensor</depend>
+  <depend>baxter_core_msgs</depend>
+  <depend>sound_play</depend>
+  <exec_depend>usb_cam</exec_depend>
+</package>
+
+
