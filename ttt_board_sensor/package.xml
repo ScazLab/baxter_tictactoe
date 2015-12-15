@@ -2,21 +2,21 @@
     <name>ttt_board_sensor</name>
     <!-- "Tic Tac Toe board detector" -->
     <description>
-      This package offers functionalities for sensing a Tic Tac Toe board from a camera placed over the board.
+      This package offers functionalities for sensing a tictactoe board from a camera placed over the board.
 
-      Several tools have been developed to achieve a reliable TTT board sensor:
+      Several tools have been developed to achieve a reliable tictactoe board sensor:
 
       Testing the camera: it opens a window where the image from the camera is displayed.
-      $>roslaunch ttt_board_sensor usb_cam-test.launch
+      $>roslaunch ttt_board_sensor usb_cam_test.launch
 
       Defining the thresholds for the color filtering: it opens a window where you can change the lower and upper values of the Hue, Saturation, and Value components.
-      The resulting image is updated in the bottom part of the window. Once the color you desire is filetered (white regions), you have to write down the ranges for H, S, and V.
+      The resulting image is updated in the bottom part of the window. Once the color you desire is filtered (white regions), you have to write down the ranges for H, S, and V.
       These values have to be loaded to the parameter server. In order to do that, you have to include them on the board_state_sensor.launch file.
       In order to close the window, press ESC key and the current values will be displayed in the console.
       $>roslaunch ttt_board_sensor hsv_range_finder.launch
 
-      Defining the cells: it opens a window to define all possible cells in the board (9 cells). You make a poligon for each cell.
-      Double left click to add a vertex to the poligon, space bar to close a poligon (a cell), 's' to save to a xml file the poligons, and 'r' to show the result.
+      Defining the cells: it opens a window to define all possible cells in the board (9 cells). You make a polygon for each cell.
+      Double left click to add a vertex to the polygon, space bar to close a polygon (a cell), 's' to save to a xml file the polygons, and 'r' to show the result.
       The xml file will be loaded by other launchers (e.g. board_state_sensor.launch, or display_board_cells.launch) so you will have to update this files the first time and in case you change the file name or path.
       $>roslaunch ttt_board_sensor cells_definition.launch
 
@@ -44,11 +44,10 @@
   <depend>std_msgs</depend>
   <depend>image_transport</depend>
   <depend>image_vi</depend>
-  <depend>usb_c</depend>
-  <exec_depend>message_runtime</exec_depend>
-
   <depend>libqt4-dev</depend>
   <depend>usb_cam</depend>
+
+  <exec_depend>message_runtime</exec_depend>
 
   <export>
         <!--<cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>-->
