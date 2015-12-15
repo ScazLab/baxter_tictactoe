@@ -54,9 +54,9 @@
 
   </description>
   <version>0.1.0</version>
-  <author>Alvaro</author>
+  <author>Álvaro Castro González ‎[acgonzal@ing.uc3m.es]‎</author>
   <maintainer email="olivier.mangin@yale.edu">olivier</maintainer>
-  <license>BSD</license>
+  <license>GNU GPL v2</license>
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>
   <depend>sensor_msgs</depend>
