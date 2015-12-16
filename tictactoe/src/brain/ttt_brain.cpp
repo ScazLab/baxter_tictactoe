@@ -9,7 +9,7 @@
 #include <QTextStream>
 
 #include <ttt_board_sensor/ttt_board.h>
-#include <ttt/ttt_definitions.h>
+#include <ttt/tictactoe_utils.h>
 
 #include "src/utils/T_ThreadSafe.h"
 #include "tictactoe/PlaceTokenAction.h"

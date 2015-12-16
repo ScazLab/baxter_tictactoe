@@ -1,25 +1,6 @@
 #include "ttt_cells.h"
 
-
-namespace ttt {
-
-const std::string Cells::CELLS_DATA_PARAM_NAME = "/board_file";
-
-/**
- Writes the contours of all the cells in a board to a file.
- The name of the file is asked to the user by means of a dialog window.
- The format of the file is as follows:
-        <board>
-            <cell id="0">
-                <vertex x="195" y="50"/>
-                [...]
-            </cell>
-            [...]
-        </board>
- @param board where all the contours are stored
- @return true if cell data have been successfully saved, false otherwise.
- */
-bool Cells::save_to_file(const t_Board& board)
+bool ttt::save(const t_Board& board)
 {
 
     if (!board.empty())
@@ -68,22 +49,7 @@ bool Cells::save_to_file(const t_Board& board)
     return true;
 }
 
-/**
- Reads the contours of the cells from the parameter server.
- The contours are stored in the parameter server, in a param named cells_param.
- @param board where the contours are gonna be stored
- @param cells_param the name of the parameter where the raw data from the cells is stored. This data is formated as a xml file.
- The format of the data is as follows:
-            <board>
-                <cell id="0">
-                    <vertex x="195" y="50"/>
-                    [...]
-                </cell>
-                [...]
-            </board>
- @return true if cell data have been successfully loaded, false otherwise.
- */
-bool Cells::read_from_parameter_server(t_Board& board, std::string cells_param)
+bool ttt::load(t_Board& board, std::string cells_param)
 {
     ROS_DEBUG("Ready to read xml data of cells");
 
@@ -137,13 +103,7 @@ bool Cells::read_from_parameter_server(t_Board& board, std::string cells_param)
     }
 }
 
-/**
- Computes the centroid of a cell, i.e. the center point considering all the points in the contour.
- @param cell the cell whose centroid is going to be computed
- @param centroid the central point. This is used like an output param in the function.
- @return true if the centroid has been successfully computed, false otherwise. In this case, it returns false if the number of points in the contour is 0.
- */
-bool Cells::get_centroid_of_cell(const t_Cell& cell, cv::Point& centroid)
+bool ttt::get_cell_centroid(const t_Cell& cell, cv::Point& centroid)
 {
     uint sumX = 0, sumY = 0;
     size_t size = cell.size();
@@ -162,14 +122,7 @@ bool Cells::get_centroid_of_cell(const t_Cell& cell, cv::Point& centroid)
         return false;
 }
 
-/**
- Returns a mask for a cell.
- That is, a new image that keeps just the portion of the oringinal image corresponding to a cell. The rest of the image is set to black.
- @param img the original image, where the mask will be extracted from.
- @param cell the cell delimiting the mask, that is, the portion of the original image that will be preserved.
- @return the mask for a cell. It has the same size than the original image img.
- */
-cv::Mat Cells::masked_cell_image(const cv::Mat img, const t_Cell cell)
+cv::Mat ttt::mask_image(const cv::Mat img, const t_Cell cell)
 {
     cv::Mat mask = cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
     cv::drawContours(mask, t_Board(1,cell), -1, cv::Scalar(255), CV_FILLED);  // CV_FILLED fills the connected components found with white (white RGB value = 255,255,255)
@@ -185,6 +138,4 @@ cv::Mat Cells::masked_cell_image(const cv::Mat img, const t_Cell cell)
     cv::imshow("masked cell", im_crop);*/
 
     return im_crop;
-}
-
 }

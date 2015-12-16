@@ -12,7 +12,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "ttt/ttt_definitions.h"
+#include "ttt/tictactoe_utils.h"
 #include "ttt_cells.h"
 
 namespace ttt
@@ -41,7 +41,7 @@ public:
     {
         image_sub_ = it_.subscribe("image_in", 1, &CellDisplay::imageCb, this);
 
-        if(!Cells::read_from_parameter_server(this->board,"/board_file"))
+        if(!ttt::load(this->board,"/board_file"))
         {
             ROS_FATAL_STREAM("No cell data to display!");
             ROS_BREAK();
@@ -77,7 +77,7 @@ public:
         for(size_t i=0;i!=this->board.size();++i)
         {
             cv::Point cell_centroid;
-            Cells::get_centroid_of_cell(this->board[i],cell_centroid);
+            ttt::get_cell_centroid(this->board[i],cell_centroid);
             //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
             cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_DUPLEX, 1,cv::Scalar(255,255,0));
         }

@@ -163,7 +163,7 @@ namespace ttt
             this->cropping_cells(cv_ptr, this->board);
         }
         else if ((char)c=='s') { // 'S' key pressed
-            Cells::save_to_file(this->board);
+            ttt::save(this->board);
         }
 
     }    

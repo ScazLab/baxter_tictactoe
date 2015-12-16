@@ -1,5 +1,5 @@
 
-#include "ttt/ttt_definitions.h"
+#include "ttt/tictactoe_utils.h"
 #include "board_motion_detection.h"
 
 namespace ttt

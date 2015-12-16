@@ -14,7 +14,7 @@
 #include <QFileDialog>
 #include <QApplication>
 
-#include "ttt/ttt_definitions.h"
+#include "ttt/tictactoe_utils.h"
 #include "ttt_cells.h"
 
 namespace ttt

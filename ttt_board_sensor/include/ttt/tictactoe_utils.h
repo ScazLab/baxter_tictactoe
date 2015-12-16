@@ -33,7 +33,8 @@ std::string cell_state_to_str(t_Cell_State c_s)
     }
 }
 
-const std::size_t NUMBER_OF_CELLS = 9;
+const std::size_t NUMBER_OF_CELLS=9;
+const std::string CELLS_DATA_PARAM_NAME="/baxter_tictactoe/board_file";
 
 }
 
