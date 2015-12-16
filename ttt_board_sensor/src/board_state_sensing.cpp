@@ -117,9 +117,9 @@ public:
         node_handle.getParam("s_high_red",red_params.S.max);
         ROS_ASSERT_MSG(node_handle.hasParam("v_high_red"),"No V HIGH threshold for RED tokens!");
         node_handle.getParam("v_high_red",red_params.V.max);
-        ROS_INFO_STREAM("Red tokens in H=[" << red_params.H.min<< ".." << red_params.H.max <<
-                        "] S=[" << red_params.S.min << ".." << red_params.S.max <<
-                        "] V=[" << red_params.V.min << ".." << red_params.V.max<< "]");
+        ROS_INFO("Red tokens in\tH=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", red_params.H.min, red_params.H.max,
+                                                                     red_params.S.min, red_params.S.max,
+                                                                     red_params.V.min, red_params.V.max );
 
         /* Reading the segmentation thresholds for blue tokens */
         ROS_ASSERT_MSG(node_handle.hasParam("h_low_blue"),"No H LOW threshold for BLUE tokens!");
@@ -134,9 +134,9 @@ public:
         node_handle.getParam("s_high_blue",blue_params.S.max);
         ROS_ASSERT_MSG(node_handle.hasParam("v_high_blue"),"No V HIGH threshold for BLUE tokens!");
         node_handle.getParam("v_high_blue",blue_params.V.max);
-        ROS_INFO_STREAM("Blue tokens in H=[" << blue_params.H.min<< ".." << blue_params.H.max <<
-                        "] S=[" << blue_params.S.min << ".." << blue_params.S.max <<
-                        "] V=[" << blue_params.V.min << ".." << blue_params.V.max<< "]");
+        ROS_INFO("Blue tokens in\tH=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", blue_params.H.min, blue_params.H.max,
+                                                                       blue_params.S.min, blue_params.S.max,
+                                                                       blue_params.V.min, blue_params.V.max );
 
         ROS_ASSERT_MSG(node_handle.hasParam("color_area_threshold"),"No color area threshold!");
         node_handle.getParam("color_area_threshold",TOKEN_AREA_THRESHOLD);
