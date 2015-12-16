@@ -1,4 +1,6 @@
-
+<!--Processes the whole state of the board.
+It identifies the state of each cell: red, blue, or empty.
+-->
 <launch>
     <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
 
@@ -26,6 +28,8 @@
 
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
 
-    <include file="$(find ttt_board_sensor)/launch/board_state_sensor_node.launch" />
+    <node name="board_state_sensor" pkg="ttt_board_sensor" type="board_state_sensing" respawn="false" output="screen" required="true">
+        <remap from="/image_in" to="/usb_cam/image_raw"/>
+    </node>
 
 </launch>
