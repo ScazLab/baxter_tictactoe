@@ -4,12 +4,16 @@
   <description>
      tictactoe
   </description>
-  <author>alvaro</author>
-  <maintainer email="olivier.mangin@yale.edu">olivier</maintainer>
+  <author>Álvaro Castro González ‎[acgonzal@ing.uc3m.es]‎</author>
+  <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
+  <maintainer email="alessandro.roncone@yale.edu">Alessandro Roncone</maintainer>
   <license>GNU GPL v2</license>
+
   <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>roscpp</build_depend>
+  
   <depend>std_msgs</depend>
-  <depend>roscpp</depend>
   <depend>rosconsole</depend>
   <depend>moveit_core</depend>
   <depend>moveit_ros_move_group</depend>

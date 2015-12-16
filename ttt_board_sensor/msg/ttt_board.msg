@@ -1,4 +1,4 @@
-# Message with the info of the ticatactoe board
+# Message with the info of the tictactoe board
 
 Header header
 

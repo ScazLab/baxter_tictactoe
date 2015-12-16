@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ttt_board_sensor)
-find_package(catkin REQUIRED std_msgs message_generation rosconsole cv_bridge image_transport)
+find_package(catkin REQUIRED COMPONENTS
+             std_msgs
+             message_generation
+             rosconsole
+             cv_bridge
+             image_transport)
 
 find_package(Qt4 REQUIRED)
 SET(QT_USE_QTXML 1)
@@ -12,19 +17,26 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+include_directories(include
+                    ${catkin_INCLUDE_DIRS}
+                    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 add_message_files(FILES
     ttt_board.msg
 )
-generate_messages(DEPENDENCIES std_msgs)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+generate_messages(
+    DEPENDENCIES
+    std_msgs
+)
 
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ttt
-    DEPENDS message_runtime
+    CATKIN_DEPENDS message_runtime
 )
+
 
 # Targets
 
