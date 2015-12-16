@@ -1,13 +1,23 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(tictactoe)
 
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    message_generation genmsg
-    actionlib_msgs actionlib
-    rosconsole
-    sound_play
-    ttt_board_sensor
+             message_generation
+             genmsg
+             actionlib_msgs
+             actionlib
+             rosconsole
+             sound_play
+             ttt_board_sensor
+             baxter_core_msgs
 )
+
+find_package(Qt4 COMPONENTS QtCore QtGui)
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
 
 add_service_files(FILES
     SetTrajectoryType.srv
@@ -16,16 +26,22 @@ add_service_files(FILES
 add_action_files(DIRECTORY action FILES PlaceToken.action)
 generate_messages(DEPENDENCIES actionlib_msgs std_msgs)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(include
+                    ${catkin_INCLUDE_DIRS}
+                    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# QT 4 stuff
-find_package(Qt4 COMPONENTS QtCore QtGui)
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
+###################################################
+## Declare things to be passed to other projects ##
+###################################################
 
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package()
 
+MESSAGE(${catkin_INCLUDE_DIRS})
+MESSAGE(${catkin_LIBRARIES})
 # Targets
 
 # trajectory xml parser
