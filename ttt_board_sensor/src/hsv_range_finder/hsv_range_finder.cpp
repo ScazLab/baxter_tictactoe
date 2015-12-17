@@ -39,19 +39,19 @@ public:
 
         cv::namedWindow(window);
 
-        this->lowerH=0;
-        this->lowerS=0;
-        this->lowerV=0;
-        this->upperH=180;
-        this->upperS=256;
-        this->upperV=256;
+        lowerH=0;
+        lowerS=0;
+        lowerV=0;
+        upperH=180;
+        upperS=256;
+        upperV=256;
 
-        cv::createTrackbar("LowerH", window, &this->lowerH, 180, NULL);
-        cv::createTrackbar("UpperH", window, &this->upperH, 180, NULL);
-        cv::createTrackbar("LowerS", window, &this->lowerS, 256, NULL);
-        cv::createTrackbar("UpperS", window, &this->upperS, 256, NULL);
-        cv::createTrackbar("LowerV", window, &this->lowerV, 256, NULL);
-        cv::createTrackbar("UpperV", window, &this->upperV, 256, NULL);
+        cv::createTrackbar("LowerH", window, &lowerH, 180, NULL);
+        cv::createTrackbar("UpperH", window, &upperH, 180, NULL);
+        cv::createTrackbar("LowerS", window, &lowerS, 256, NULL);
+        cv::createTrackbar("UpperS", window, &upperS, 256, NULL);
+        cv::createTrackbar("LowerV", window, &lowerV, 256, NULL);
+        cv::createTrackbar("UpperV", window, &upperV, 256, NULL);
     }
 
     ~HsvRangeFinder()
@@ -76,14 +76,14 @@ public:
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
         cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV); //Change the color format from BGR to HSV
 
-        cv::Mat img_thresh = GetThresholdedImage(img_hsv, cv::Scalar(this->lowerH,this->lowerS,this->lowerV), cv::Scalar(this->upperH,this->upperS,this->upperV));
+        cv::Mat img_thresh = GetThresholdedImage(img_hsv, cv::Scalar(lowerH,lowerS,lowerV), cv::Scalar(upperH,upperS,upperV));
 
         cv::imshow(window, img_thresh);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
         {
-            ROS_INFO_STREAM("H=[" << this->lowerH << ".." << this->upperH << "] S=[" << this->lowerS << ".." << this->upperS << "] V=[" << this->lowerV << ".." << this->upperV << "]");
+            ROS_INFO_STREAM("H=[" << lowerH << ".." << upperH << "] S=[" << lowerS << ".." << upperS << "] V=[" << lowerV << ".." << upperV << "]");
             ros::shutdown();
         }        
     }
