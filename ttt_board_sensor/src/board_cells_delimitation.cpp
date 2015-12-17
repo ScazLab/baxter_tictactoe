@@ -14,13 +14,13 @@ namespace ttt
 
     bool cellDelimitation::remove_point(const cv::Point & p)
     {
-        for(t_Cell::iterator image_transportpoints = points.begin() ; image_transportpoints != points.end(); ++image_transportpoints)
+        for(t_Cell::iterator it_points = cell.contours.begin() ; it_points != cell.contours.end(); ++it_points)
         {
 
-            if(image_transportpoints->x > (p.x-cellDelimitation::point_radius) && image_transportpoints->x < (p.x+cellDelimitation::point_radius) &&
-                    image_transportpoints->y > (p.y-cellDelimitation::point_radius) && image_transportpoints->y < (p.y+cellDelimitation::point_radius))
+            if(it_points->x > (p.x-cellDelimitation::point_radius) && it_points->x < (p.x+cellDelimitation::point_radius) &&
+                    it_points->y > (p.y-cellDelimitation::point_radius) && it_points->y < (p.y+cellDelimitation::point_radius))
             {
-                points.erase(image_transportpoints);
+                cell.contours.erase(it_points);
                 return true;
             }
         }
@@ -29,11 +29,11 @@ namespace ttt
 
     bool cellDelimitation::point_is_inside_cell(const cv::Point & p)
     {
-        for(std::vector<Cell>::iterator image_transportcell = board.cells.begin() ; image_transportcell != board.cells.end(); ++image_transportcell)
+        for(std::vector<Cell>::iterator it_cell = board.cells.begin() ; it_cell != board.cells.end(); ++it_cell)
         {
-            if (cv::pointPolygonTest(image_transportcell->contours,p,false)>0) // the point is inside the polygon
+            if (cv::pointPolygonTest(it_cell->contours,p,false)>0) // the point is inside the polygon
             {
-                board.cells.erase(image_transportcell);
+                board.cells.erase(it_cell);
                 return true;
             }
         }
@@ -89,12 +89,12 @@ namespace ttt
 
         // If the point corresponds to an already selected point, the point is removed
         if(img_conv->remove_point(p)) {
-            ROS_INFO_STREAM("Point removed. Remaining " << img_conv->points.size() << " points");
+            ROS_INFO_STREAM("Point removed. Remaining " << img_conv->cell.contours.size() << " points");
         }
         // If the point is new, it is added to the current cell
         else {
-            img_conv->points.push_back(p);
-            ROS_INFO_STREAM("Point added: " << p.x << " , " << p.y << ". Total points in this cell: "  << img_conv->points.size() );
+            img_conv->cell.contours.push_back(p);
+            ROS_INFO_STREAM("Point added: " << p.x << " , " << p.y << ". Total points in this cell: "  << img_conv->cell.contours.size() );
         }
 
         return;
@@ -121,13 +121,13 @@ namespace ttt
         show_tutorial(img_aux);
 
         // drawing all points of the current cell
-        for (t_Cell::iterator image_transportdrawing = points.begin();image_transportdrawing != points.end();++image_transportdrawing) {
+        for (t_Cell::iterator image_transportdrawing = cell.contours.begin();image_transportdrawing != cell.contours.end();++image_transportdrawing) {
             cv::circle(img_aux,*image_transportdrawing,cellDelimitation::point_radius,cv::Scalar(0,0,255),-1);
         }
 
         // drawing all cells of the board game
-        for (std::vector<Cell>::iterator image_transportcell = board.cells.begin(); image_transportcell != board.cells.end(); ++image_transportcell) {
-            cv::fillConvexPoly(img_aux,image_transportcell->contours.data(),image_transportcell->contours.size(), cv::Scalar(0,0, 255));
+        for (std::vector<Cell>::iterator it_cell = board.cells.begin(); it_cell != board.cells.end(); ++it_cell) {
+            cv::fillConvexPoly(img_aux,it_cell->contours.data(),it_cell->contours.size(), cv::Scalar(0,0, 255));
         }
         std::vector<std::vector<cv::Point> > cntrs = board.as_vector_of_vectors();
         cv::drawContours(img_aux, cntrs,-1, cv::Scalar(123,125,0),2); // drawing the borders in a different color
@@ -142,10 +142,10 @@ namespace ttt
             ros::shutdown();
         }
         else if ((char)c == ' ') {  // SPACE bar pressed
-            if(!points.empty())
+            if(!cell.contours.empty())
             {
-                board.cells.push_back(points);
-                points.clear();
+                board.cells.push_back(cell);
+                cell.contours.clear();
                 ROS_INFO("Add points to the new cell"); 
             }
             else ROS_INFO_STREAM("The current cell is empty. Add points to it before you create a new one");

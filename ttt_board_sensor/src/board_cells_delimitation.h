@@ -30,17 +30,16 @@ private:
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber image_subscriber;
 
-    const short point_radius;
-
+    short point_radius;
     std::string window_name;
 
-    ttt::Cell points; // A vector of points delimiting a cell
+    ttt::Cell   cell; // A single cell being instantiated temporarily
     ttt::Board board; // A vector of cells representing the board game
 
     bool remove_point(const cv::Point & p);
     bool point_is_inside_cell(const cv::Point & p);
     void show_tutorial(cv::Mat& img);
-    static void crop_cells(cv_bridge::CvImageConstPtr& , const std::vector<std::vector<cv::Point> > );
+    void crop_cells(cv_bridge::CvImageConstPtr& , const std::vector<std::vector<cv::Point> > );
 
 public:
     cellDelimitation();
