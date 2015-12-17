@@ -5,15 +5,22 @@
 namespace ttt
 {
 
+    cellDelimitation::cellDelimitation() : image_transport(node_handle), point_radius(5), window_name("Cell Delimitation")
+    {
+        image_subscriber = image_transport.subscribe("in", 1, &cellDelimitation::imageCallback, this);
+
+        cv::namedWindow(cellDelimitation::window_name);
+    }
+
     bool cellDelimitation::remove_point(const cv::Point & p)
     {
-        for(t_Cell::iterator it_points = points.begin() ; it_points != points.end(); ++it_points)
+        for(t_Cell::iterator image_transportpoints = points.begin() ; image_transportpoints != points.end(); ++image_transportpoints)
         {
 
-            if(it_points->x > (p.x-cellDelimitation::POINT_RADIUS) && it_points->x < (p.x+cellDelimitation::POINT_RADIUS) &&
-                    it_points->y > (p.y-cellDelimitation::POINT_RADIUS) && it_points->y < (p.y+cellDelimitation::POINT_RADIUS))
+            if(image_transportpoints->x > (p.x-cellDelimitation::point_radius) && image_transportpoints->x < (p.x+cellDelimitation::point_radius) &&
+                    image_transportpoints->y > (p.y-cellDelimitation::point_radius) && image_transportpoints->y < (p.y+cellDelimitation::point_radius))
             {
-                points.erase(it_points);
+                points.erase(image_transportpoints);
                 return true;
             }
         }
@@ -22,18 +29,18 @@ namespace ttt
 
     bool cellDelimitation::point_is_inside_cell(const cv::Point & p)
     {
-        for(std::vector<Cell>::iterator it_cell = board.cells.begin() ; it_cell != board.cells.end(); ++it_cell)
+        for(std::vector<Cell>::iterator image_transportcell = board.cells.begin() ; image_transportcell != board.cells.end(); ++image_transportcell)
         {
-            if (cv::pointPolygonTest(it_cell->contours,p,false)>0) // the point is inside the polygon
+            if (cv::pointPolygonTest(image_transportcell->contours,p,false)>0) // the point is inside the polygon
             {
-                board.cells.erase(it_cell);
+                board.cells.erase(image_transportcell);
                 return true;
             }
         }
         return false;
     }
 
-    void cellDelimitation::show_how_to(cv::Mat& img)
+    void cellDelimitation::show_tutorial(cv::Mat& img)
     {
         cv::putText(img,"LEFT-CLICK to add/remove points and cells",    cv::Point(20,385),cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
         cv::putText(img,"Press SPACE bar to add the cell to the board", cv::Point(20,400),cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
@@ -60,17 +67,9 @@ namespace ttt
         cv::imshow("cropped", im_crop);
     }
 
-    cellDelimitation::cellDelimitation()
-        : it_(nh_),POINT_RADIUS(5)
-    {
-        image_sub_ = it_.subscribe("in", 1, &cellDelimitation::imageCallback, this);
-
-        cv::namedWindow(cellDelimitation::WINDOW);
-    }
-
     cellDelimitation::~cellDelimitation()
     {
-        cv::destroyWindow(cellDelimitation::WINDOW);
+        cv::destroyWindow(cellDelimitation::window_name);
     }
 
     /* mouse event handler function */
@@ -119,22 +118,22 @@ namespace ttt
         cv::Mat img_aux = cv_ptr->image.clone();
 
         // how-to on screen
-        show_how_to(img_aux);
+        show_tutorial(img_aux);
 
         // drawing all points of the current cell
-        for (t_Cell::iterator it_drawing = points.begin();it_drawing != points.end();++it_drawing) {
-            cv::circle(img_aux,*it_drawing,cellDelimitation::POINT_RADIUS,cv::Scalar(0,0,255),-1);
+        for (t_Cell::iterator image_transportdrawing = points.begin();image_transportdrawing != points.end();++image_transportdrawing) {
+            cv::circle(img_aux,*image_transportdrawing,cellDelimitation::point_radius,cv::Scalar(0,0,255),-1);
         }
 
         // drawing all cells of the board game
-        for (std::vector<Cell>::iterator it_cell = board.cells.begin(); it_cell != board.cells.end(); ++it_cell) {
-            cv::fillConvexPoly(img_aux,it_cell->contours.data(),it_cell->contours.size(), cv::Scalar(0,0, 255));
+        for (std::vector<Cell>::iterator image_transportcell = board.cells.begin(); image_transportcell != board.cells.end(); ++image_transportcell) {
+            cv::fillConvexPoly(img_aux,image_transportcell->contours.data(),image_transportcell->contours.size(), cv::Scalar(0,0, 255));
         }
         std::vector<std::vector<cv::Point> > cntrs = board.as_vector_of_vectors();
         cv::drawContours(img_aux, cntrs,-1, cv::Scalar(123,125,0),2); // drawing the borders in a different color
 
-        cv::setMouseCallback(cellDelimitation::WINDOW, onMouseClick, this);
-        cv::imshow(cellDelimitation::WINDOW, img_aux);
+        cv::setMouseCallback(cellDelimitation::window_name, onMouseClick, this);
+        cv::imshow(cellDelimitation::window_name, img_aux);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed

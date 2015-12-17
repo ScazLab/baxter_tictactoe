@@ -1,6 +1,8 @@
 #ifndef BOARD_CELLS_DELIMITATION_H
 #define BOARD_CELLS_DELIMITATION_H
 
+#include <string>
+
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <image_transport/image_transport.h>
@@ -24,20 +26,20 @@ class cellDelimitation
 {
 private:
 
-    ros::NodeHandle nh_;
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
+    ros::NodeHandle node_handle;
+    image_transport::ImageTransport image_transport;
+    image_transport::Subscriber image_subscriber;
 
-    const short POINT_RADIUS;
+    const short point_radius;
 
-    static const char WINDOW[];
+    std::string window_name;
 
     ttt::Cell points; // A vector of points delimiting a cell
     ttt::Board board; // A vector of cells representing the board game
 
     bool remove_point(const cv::Point & p);
     bool point_is_inside_cell(const cv::Point & p);
-    void show_how_to(cv::Mat& img);
+    void show_tutorial(cv::Mat& img);
     static void crop_cells(cv_bridge::CvImageConstPtr& , const std::vector<std::vector<cv::Point> > );
 
 public:
@@ -49,8 +51,6 @@ public:
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
 };
-
-const char cellDelimitation::WINDOW[] = "Cell delimitation";
 
 }
 
