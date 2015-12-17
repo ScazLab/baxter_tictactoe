@@ -17,7 +17,6 @@
 #include <QApplication>
 
 #include "ttt/tictactoe_utils.h"
-#include "ttt_cells.h"
 
 namespace ttt
 {

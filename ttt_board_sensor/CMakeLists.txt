@@ -54,7 +54,7 @@ include_directories(include
 )
 
 # Build a ttt_board_sensor library
-add_library(${PROJECT_NAME} src/ttt_cells.cpp)
+add_library(${PROJECT_NAME} src/tictactoe_utils.cpp)
 target_link_libraries(${PROJECT_NAME}
     ${QT_LIBRARIES}
     ${catkin_LIBRARIES}

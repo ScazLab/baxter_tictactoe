@@ -13,7 +13,6 @@
 #include <boost/lexical_cast.hpp>
 
 #include "ttt/tictactoe_utils.h"
-#include "ttt_cells.h"
 
 namespace ttt
 {
