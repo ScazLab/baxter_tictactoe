@@ -35,8 +35,8 @@ private:
 
     ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; //! It stores the total number of cells on the board. This is used to detect the end of the opponent's turn
 
-    t_Cell_State _robot_color;   //! It represents the color of the tokens the robot is playing with.
-    t_Cell_State _opponent_color; //! It represents the color of the tokens the opponent is playing with.
+    cellState _robot_color;   //! It represents the color of the tokens the robot is playing with.
+    cellState _opponent_color; //! It represents the color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
@@ -251,7 +251,7 @@ private:
 
 public:
 
-    TTT_Brain(t_Cell_State robot_color=blue, std::string strategy="random") : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
+    TTT_Brain(cellState robot_color=blue, std::string strategy="random") : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
     {
         _number_of_tokens_on_board.set(0);
 
@@ -370,7 +370,7 @@ public:
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
-    unsigned short int get_number_of_tokens_on_board(t_Cell_State token_type)
+    unsigned short int get_number_of_tokens_on_board(cellState token_type)
     {
         unsigned short int counter=0;
         TTT_State_type state = _ttt_state.get();
@@ -387,7 +387,7 @@ public:
      * @param tttboard TTT board where searching for three tokens of the same color in a row.
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const t_Cell_State& cell_color, const TTT_State_type& tttboard)
+    bool three_in_a_row(const cellState& cell_color, const TTT_State_type& tttboard)
     {
         ROS_DEBUG("@three in a row");
         if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
@@ -410,17 +410,17 @@ public:
      * @param cell_color It represents the color of the tokens in the row we are searching for.
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const t_Cell_State& cell_color)
+    bool three_in_a_row(const cellState& cell_color)
     {
         return this->three_in_a_row(cell_color,_ttt_state.get());
     }
 
-    inline t_Cell_State get_robot_color()
+    inline cellState get_robot_color()
     {
         return _robot_color;
     }
 
-    inline t_Cell_State get_opponent_color()
+    inline cellState get_opponent_color()
     {
         return _opponent_color;
     }
