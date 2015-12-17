@@ -66,7 +66,7 @@ target_link_libraries(cells_delimitation ${PROJECT_NAME} ${QT_LIBRARIES} ${catki
 add_executable(show_board_cells src/show_board_cells.cpp)
 target_link_libraries(show_board_cells ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(hsv_range_finder src/hsv_range_finder/hsv_range_finder.cpp)
+add_executable(hsv_range_finder src/hsv_range_finder.cpp)
 add_dependencies(hsv_range_finder ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hsv_range_finder ${PROJECT_NAME} ${catkin_LIBRARIES})
 

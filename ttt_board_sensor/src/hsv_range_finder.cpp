@@ -35,7 +35,7 @@ private:
 public:
     HsvRangeFinder() : it_(nh_), window("HSV Range Finder")
     {
-        image_sub_ = it_.subscribe("image_in", 1, &HsvRangeFinder::imageCb, this);
+        image_sub_ = it_.subscribe("image_in", 1, &HsvRangeFinder::image_callback, this);
 
         cv::namedWindow(window);
 
@@ -59,7 +59,7 @@ public:
         cv::destroyWindow(window);
     }
 
-    void imageCb(const sensor_msgs::ImageConstPtr& msg)
+    void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
         //converting ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
