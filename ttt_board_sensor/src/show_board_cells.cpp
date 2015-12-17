@@ -38,7 +38,7 @@ public:
     CellDisplay()
         : it_(nh_),POINT_RADIUS(5)
     {
-        image_sub_ = it_.subscribe("image_in", 1, &CellDisplay::imageCb, this);
+        image_sub_ = it_.subscribe("image_in", 1, &CellDisplay::image_callback, this);
 
         if(!board.load("/board_file"))
         {
@@ -55,7 +55,7 @@ public:
         cv::destroyWindow(CellDisplay::WINDOW);
     }
 
-    void imageCb(const sensor_msgs::ImageConstPtr& msg)
+    void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
         //converting ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
@@ -78,9 +78,10 @@ public:
             cv::Point cell_centroid;
             board.cells[i].get_cell_centroid(cell_centroid);
             //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
-            cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_DUPLEX, 1,cv::Scalar(255,255,0));
+            cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
         }
-        cv::putText(img_aux, "Press 's' key to see the filtered images for each cell", cv::Point(10,400), cv::FONT_HERSHEY_DUPLEX, 1,cv::Scalar(255,255,0));
+        cv::putText(img_aux, "Press 's' key to see the filtered images for each cell",
+                    cv::Point(10,400), cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
         cv::imshow(CellDisplay::WINDOW, img_aux);
 
         int c = cv::waitKey(3);
