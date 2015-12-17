@@ -1,5 +1,4 @@
-
-#include "board_cells_delimitation.h"
+#include "ttt/board_cells_delimitation.h"
 
 
 namespace ttt
