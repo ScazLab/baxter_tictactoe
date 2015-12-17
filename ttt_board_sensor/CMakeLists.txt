@@ -55,6 +55,10 @@ include_directories(include
 
 # Build a ttt_board_sensor library
 add_library(${PROJECT_NAME} src/ttt_cells.cpp)
+target_link_libraries(${PROJECT_NAME}
+    ${QT_LIBRARIES}
+    ${catkin_LIBRARIES}
+)
 
 add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
 target_link_libraries(cells_delimitation ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})

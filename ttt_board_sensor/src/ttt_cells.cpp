@@ -1,54 +1,5 @@
 #include "ttt_cells.h"
 
-bool ttt::save(const t_Board& board)
-{
-
-    if (!board.empty())
-    {
-        QApplication app(0,0);
-        QString fileName = QFileDialog::getSaveFileName(0, "Save File", QDir::currentPath(), "XML files (*.xml)", new QString("XML files (*.xml)"));
-        ROS_DEBUG_STREAM("File Name selected= " << fileName.toStdString());
-        if(!fileName.isEmpty())
-        {
-            QFile output(fileName);
-            if(!output.open(QIODevice::WriteOnly))
-            {
-                ROS_WARN("Error opening file to write cells data");
-                return false;
-            }
-
-            QXmlStreamWriter stream(&output);
-            stream.setAutoFormatting(true);
-            stream.writeStartDocument();
-
-            stream.writeStartElement("board");
-
-            for (size_t i=0; i< board.size();++i)
-            {
-                stream.writeStartElement("cell");
-                stream.writeAttribute("id", QString::number(i));
-                for (t_Cell::const_iterator it_vertex = board[i].begin(); it_vertex != board[i].end(); ++it_vertex) {
-                    stream.writeEmptyElement("vertex");
-                    stream.writeAttribute("x", QString::number(it_vertex->x));
-                    stream.writeAttribute("y", QString::number(it_vertex->y));
-                }
-                stream.writeEndElement(); // cell
-            }
-
-            stream.writeEndElement(); // board
-            stream.writeEndDocument();
-            output.close();
-        }
-        else return false;
-    }
-    else
-    {
-        ROS_INFO("No cells in the board to be saved.");
-        return false;
-    }
-    return true;
-}
-
 bool ttt::load(t_Board& board, std::string cells_param)
 {
     ROS_DEBUG("Ready to read xml data of cells");

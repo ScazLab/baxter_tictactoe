@@ -20,7 +20,7 @@
 namespace ttt
 {
 
-class CellDelimitation
+class cellDelimitation
 {
 private:
 
@@ -32,25 +32,25 @@ private:
 
     static const char WINDOW[];
 
-    t_Cell points; // A vector of points delimiting a cell
-    t_Board board; // A vector of cells representing the board game
+    ttt::Cell points; // A vector of points delimiting a cell
+    ttt::Board board; // A vector of cells representing the board game
 
     bool remove_point(const cv::Point & p);
-    bool remove_cell(const cv::Point & p);
+    bool point_is_inside_cell(const cv::Point & p);
     void show_how_to(cv::Mat& img);
-    static void cropping_cells(cv_bridge::CvImageConstPtr& cv_cp_img,const t_Board& a_board);    
+    static void crop_cells(cv_bridge::CvImageConstPtr& , const std::vector<std::vector<cv::Point> > );
 
 public:
-    CellDelimitation();
-    ~CellDelimitation();
+    cellDelimitation();
+    ~cellDelimitation();
 
     /* mouse event handler function */
-    static void onMouse( int event, int x, int y, int, void* param);
-    void imageCb(const sensor_msgs::ImageConstPtr& msg);
+    static void onMouseClick( int event, int x, int y, int, void* param);
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
 };
 
-const char CellDelimitation::WINDOW[] = "Cell delimitation";
+const char cellDelimitation::WINDOW[] = "Cell delimitation";
 
 }
 

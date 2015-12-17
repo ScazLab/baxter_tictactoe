@@ -180,7 +180,7 @@ public:
             ROS_DEBUG_STREAM("Blue area of cell " << counter+1 << " = " << blue_cell_area);
 
             /* determining the state of the cell considering that two tokens can be heaped */
-            t_Cell_State cell_state;
+            cellState cell_state;
             if (red_cell_area > area_threshold || blue_cell_area > area_threshold)
             {
                 red_cell_area>blue_cell_area?cell_state=red:cell_state=blue;

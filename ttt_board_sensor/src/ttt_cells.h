@@ -14,21 +14,6 @@
 #include "ttt/tictactoe_utils.h"
 
 namespace ttt {
-    
-    /**
-    Saves the board to file (whose name will be specified with a dialog window).
-    The format of the file is as follows:
-        <board>
-            <cell id="0">
-                <vertex x="195" y="50"/>
-                [...]
-            </cell>
-            [...]
-        </board>
-    @param board where all the Cells are stored
-    @return true/false if success/failure.
-     */
-    bool save(const t_Board& board);
 
     /**
     Reads the contours of the cells from the parameter server, in a param named cells_param.
