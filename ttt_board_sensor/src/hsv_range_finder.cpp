@@ -23,12 +23,7 @@ private:
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
 
-    int lowerH;
-    int lowerS;
-    int lowerV;
-    int upperH;
-    int upperS;
-    int upperV;
+    hsv_color hsv;
 
     std::string window;
 
@@ -39,19 +34,12 @@ public:
 
         cv::namedWindow(window);
 
-        lowerH=0;
-        lowerS=0;
-        lowerV=0;
-        upperH=180;
-        upperS=256;
-        upperV=256;
-
-        cv::createTrackbar("LowerH", window, &lowerH, 180, NULL);
-        cv::createTrackbar("UpperH", window, &upperH, 180, NULL);
-        cv::createTrackbar("LowerS", window, &lowerS, 256, NULL);
-        cv::createTrackbar("UpperS", window, &upperS, 256, NULL);
-        cv::createTrackbar("LowerV", window, &lowerV, 256, NULL);
-        cv::createTrackbar("UpperV", window, &upperV, 256, NULL);
+        cv::createTrackbar("LowerH", window, &hsv.H.min, 180, NULL);
+        cv::createTrackbar("UpperH", window, &hsv.H.max, 180, NULL);
+        cv::createTrackbar("LowerS", window, &hsv.S.min, 256, NULL);
+        cv::createTrackbar("UpperS", window, &hsv.S.max, 256, NULL);
+        cv::createTrackbar("LowerV", window, &hsv.V.min, 256, NULL);
+        cv::createTrackbar("UpperV", window, &hsv.V.max, 256, NULL);
     }
 
     ~HsvRangeFinder()
@@ -61,7 +49,7 @@ public:
 
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
-        //converting ROS image format to opencv image format
+        //convert ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
         try
         {
@@ -76,14 +64,16 @@ public:
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
         cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV); //Change the color format from BGR to HSV
 
-        cv::Mat img_thresh = GetThresholdedImage(img_hsv, cv::Scalar(lowerH,lowerS,lowerV), cv::Scalar(upperH,upperS,upperV));
+        cv::Mat img_thresh = GetThresholdedImage(img_hsv, hsv.get_hsv_min(), hsv.get_hsv_max());
 
         cv::imshow(window, img_thresh);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
         {
-            ROS_INFO_STREAM("H=[" << lowerH << ".." << upperH << "] S=[" << lowerS << ".." << upperS << "] V=[" << lowerV << ".." << upperV << "]");
+            ROS_INFO("H=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", hsv.H.min, hsv.H.max,
+                                                           hsv.S.min, hsv.S.max,
+                                                           hsv.V.min, hsv.V.max );
             ros::shutdown();
         }        
     }

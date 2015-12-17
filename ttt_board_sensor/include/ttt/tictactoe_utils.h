@@ -42,6 +42,28 @@ std::string cell_state_to_str(cellState c_s)
 const std::size_t NUMBER_OF_CELLS=9;
 const std::string CELLS_DATA_PARAM_NAME="/baxter_tictactoe/board_file";
 
+struct color_range {
+    int min;
+    int max;
+
+    color_range(): min(0), max(0) {};
+    color_range(int _min, int _max) : min(_min), max(_max) {};
+    color_range(const color_range &_cr): min(_cr.min), max(_cr.max) {};
+};
+
+struct hsv_color {
+    color_range H;
+    color_range S;
+    color_range V;
+
+    hsv_color(): H(0,180), S(0,256), V(0,256) {};
+    hsv_color(color_range &_H, color_range &_S, color_range &_V) :
+              H(_H), S(_S), V(_V) {};
+
+    cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
+    cv::Scalar get_hsv_max() { return cv::Scalar(H.max, S.max, V.max); };
+};
+
 struct Cell
 {
 public:
