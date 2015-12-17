@@ -14,7 +14,7 @@ namespace ttt
 
     bool cellDelimitation::remove_point(const cv::Point & p)
     {
-        for(t_Cell::iterator it_points = cell.contours.begin() ; it_points != cell.contours.end(); ++it_points)
+        for(std::vector<cv::Point>::iterator it_points = cell.contours.begin() ; it_points != cell.contours.end(); ++it_points)
         {
 
             if(it_points->x > (p.x-cellDelimitation::point_radius) && it_points->x < (p.x+cellDelimitation::point_radius) &&
@@ -121,7 +121,7 @@ namespace ttt
         show_tutorial(img_aux);
 
         // drawing all points of the current cell
-        for (t_Cell::iterator image_transportdrawing = cell.contours.begin();image_transportdrawing != cell.contours.end();++image_transportdrawing) {
+        for (std::vector<cv::Point>::iterator image_transportdrawing = cell.contours.begin();image_transportdrawing != cell.contours.end();++image_transportdrawing) {
             cv::circle(img_aux,*image_transportdrawing,cellDelimitation::point_radius,cv::Scalar(0,0,255),-1);
         }
 
@@ -129,8 +129,7 @@ namespace ttt
         for (std::vector<Cell>::iterator it_cell = board.cells.begin(); it_cell != board.cells.end(); ++it_cell) {
             cv::fillConvexPoly(img_aux,it_cell->contours.data(),it_cell->contours.size(), cv::Scalar(0,0, 255));
         }
-        std::vector<std::vector<cv::Point> > cntrs = board.as_vector_of_vectors();
-        cv::drawContours(img_aux, cntrs,-1, cv::Scalar(123,125,0),2); // drawing the borders in a different color
+        cv::drawContours(img_aux, board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing the borders in a different color
 
         cv::setMouseCallback(cellDelimitation::window_name, onMouseClick, this);
         cv::imshow(cellDelimitation::window_name, img_aux);

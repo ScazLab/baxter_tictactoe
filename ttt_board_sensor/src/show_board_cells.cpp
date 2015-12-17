@@ -32,7 +32,7 @@ private:
 
     std::string board_config;
 
-    t_Board board; // A vector of cells representing the board game
+    Board board; // A vector of cells representing the board game
 
 
 public:
@@ -41,7 +41,7 @@ public:
     {
         image_sub_ = it_.subscribe("image_in", 1, &CellDisplay::imageCb, this);
 
-        if(!ttt::load(this->board,"/board_file"))
+        if(!board.load("/board_file"))
         {
             ROS_FATAL_STREAM("No cell data to display!");
             ROS_BREAK();
@@ -73,11 +73,11 @@ public:
         cv::Mat img_aux = cv_ptr->image.clone();
 
         // drawing all cells of the board game
-        cv::drawContours(img_aux,this->board,-1, cv::Scalar(123,125,0),2); // drawing just the borders
-        for(size_t i=0;i!=this->board.size();++i)
+        cv::drawContours(img_aux,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
+        for(size_t i=0;i!=board.cells.size();++i)
         {
             cv::Point cell_centroid;
-            ttt::get_cell_centroid(this->board[i],cell_centroid);
+            board.cells[i].get_cell_centroid(cell_centroid);
             //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
             cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_DUPLEX, 1,cv::Scalar(255,255,0));
         }
@@ -87,7 +87,7 @@ public:
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
         {
-            ROS_INFO_STREAM("Exiting with ESC key ..." << this->board.size() << " cells selected");
+            ROS_INFO_STREAM("Exiting with ESC key ..." << board.cells.size() << " cells selected");
             ros::shutdown();
         }
         else if ((char)c =='s')
@@ -100,9 +100,9 @@ public:
     {
         ROS_DEBUG("@sensing_cells");
         short int counter=0;
-        foreach (t_Cell cell, this->board) {
+        foreach (Cell cell, board.cells) {
             cv::Mat mask = cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
-            cv::drawContours(mask, t_Board(1,cell), -1, cv::Scalar(255), CV_FILLED);  // CV_FILLED fills the connected components found with white (white RGB value = 255,255,255)
+            cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,cell.contours), -1, cv::Scalar(255), CV_FILLED);  // CV_FILLED fills the connected components found with white (white RGB value = 255,255,255)
 
             cv::Mat im_crop(img.rows, img.cols, CV_8UC3);                           // let's create a new 8-bit 3-channel image with the same dimensions
             im_crop.setTo(cv::Scalar(0));                                           // we fill the new image with a color, in this case we set background to black.

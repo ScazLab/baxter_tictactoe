@@ -51,17 +51,17 @@ private:
 
     std::string board_config;
 
-    t_Board board; // A vector of cells representing the board game
+    ttt::Board board;
 
     double area_threshold;
 
     hsv_color red_params;
     hsv_color blue_params;
 
-    double get_hsv_colored_area_in_cell(const cv::Mat& img, const t_Cell& cell, const hsv_color _hsv)
+    double get_hsv_colored_area_in_cell(const cv::Mat& img, Cell cell, const hsv_color _hsv)
     {
         // we extract the cell from the original image
-        cv::Mat cropped_cell = ttt::mask_image(img,cell);
+        cv::Mat cropped_cell = cell.mask_image(img);
         // cv::namedWindow("cropped", CV_WINDOW_AUTOSIZE);
         // cv::imshow("cropped",cropped_cell);
         // cv::waitKey();
@@ -103,7 +103,7 @@ public:
         ROS_ASSERT_MSG(board_publisher,"Empty publisher");
 
         /* Reading cells definition data from the parameter server */
-        ROS_ASSERT_MSG(ttt::load(board,ttt::CELLS_DATA_PARAM_NAME),"No cell data to display!");
+        ROS_ASSERT_MSG(board.load(ttt::CELLS_DATA_PARAM_NAME),"No cell data to display!");
 
         /* Reading the segmentation thresholds for red tokens */
         ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_low_red"),"No H LOW threshold for RED tokens!");
@@ -169,7 +169,7 @@ public:
         msg_board.header.stamp = msg->header.stamp;
         msg_board.header.frame_id = msg->header.frame_id;
         short unsigned int counter=0;
-        foreach (t_Cell cell, this->board)
+        foreach (Cell cell, board.cells)
         {
             /* computing the red area in the cell */
             double red_cell_area = get_hsv_colored_area_in_cell(cv_ptr->image, cell, red_params);

@@ -1,3 +1,4 @@
+#include <string>
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <ros/assert.h>
@@ -29,20 +30,14 @@ private:
     int upperS;
     int upperV;
 
-    static const char WINDOW[];
-
-    std::string board_config;
-
-    t_Board board; // A vector of cells representing the board game
-
+    std::string window;
 
 public:
-    HsvRangeFinder()
-        : it_(nh_)
+    HsvRangeFinder() : it_(nh_), window("HSV Range Finder")
     {
         image_sub_ = it_.subscribe("image_in", 1, &HsvRangeFinder::imageCb, this);
 
-        cv::namedWindow(HsvRangeFinder::WINDOW);
+        cv::namedWindow(window);
 
         this->lowerH=0;
         this->lowerS=0;
@@ -51,17 +46,17 @@ public:
         this->upperS=256;
         this->upperV=256;
 
-        cv::createTrackbar("LowerH", HsvRangeFinder::WINDOW, &this->lowerH, 180, NULL);
-        cv::createTrackbar("UpperH", HsvRangeFinder::WINDOW, &this->upperH, 180, NULL);
-        cv::createTrackbar("LowerS", HsvRangeFinder::WINDOW, &this->lowerS, 256, NULL);
-        cv::createTrackbar("UpperS", HsvRangeFinder::WINDOW, &this->upperS, 256, NULL);
-        cv::createTrackbar("LowerV", HsvRangeFinder::WINDOW, &this->lowerV, 256, NULL);
-        cv::createTrackbar("UpperV", HsvRangeFinder::WINDOW, &this->upperV, 256, NULL);
+        cv::createTrackbar("LowerH", window, &this->lowerH, 180, NULL);
+        cv::createTrackbar("UpperH", window, &this->upperH, 180, NULL);
+        cv::createTrackbar("LowerS", window, &this->lowerS, 256, NULL);
+        cv::createTrackbar("UpperS", window, &this->upperS, 256, NULL);
+        cv::createTrackbar("LowerV", window, &this->lowerV, 256, NULL);
+        cv::createTrackbar("UpperV", window, &this->upperV, 256, NULL);
     }
 
     ~HsvRangeFinder()
     {
-        cv::destroyWindow(HsvRangeFinder::WINDOW);
+        cv::destroyWindow(window);
     }
 
     void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -83,7 +78,7 @@ public:
 
         cv::Mat img_thresh = GetThresholdedImage(img_hsv, cv::Scalar(this->lowerH,this->lowerS,this->lowerV), cv::Scalar(this->upperH,this->upperS,this->upperV));
 
-        cv::imshow(HsvRangeFinder::WINDOW, img_thresh);
+        cv::imshow(window, img_thresh);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
@@ -104,8 +99,6 @@ public:
 
     }
 };
-
-const char HsvRangeFinder::WINDOW[] = "HSV Range Finder";
 
 }
 
