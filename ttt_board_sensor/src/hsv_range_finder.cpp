@@ -23,15 +23,16 @@ private:
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber image_subscriber;
 
-    hsv_color hsv;
+    hsvColorRange hsv;
 
     std::string window;
 
 public:
     HsvRangeFinder() : image_transport(node_handle), window("HSV Range Finder"),
-                       hsv(color_range(160, 20),color_range(40,200),color_range(40,200))
+                       hsv(colorRange(160, 20),colorRange(40,200),colorRange(40,200))
     {
-        image_subscriber = image_transport.subscribe("image_in", 1, &HsvRangeFinder::image_callback, this);
+        image_subscriber = image_transport.subscribe("image_in", 1,
+                            &HsvRangeFinder::image_callback, this);
 
         cv::namedWindow(window);
 
@@ -63,7 +64,7 @@ public:
         }
 
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
-        cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV); //Change the color format from BGR to HSV
+        cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV);
 
         cv::Mat img_thresh = ttt::hsv_threshold(img_hsv, hsv);
 

@@ -42,30 +42,41 @@ std::string cell_state_to_str(cellState c_s)
 }
 
 const std::size_t NUMBER_OF_CELLS=9;
-const std::string CELLS_DATA_PARAM_NAME="/baxter_tictactoe/board_file";
 
-struct color_range {
+struct colorRange {
     int min;
     int max;
 
-    color_range(): min(0), max(0) {};
-    color_range(int _min, int _max) : min(_min), max(_max) {};
-    color_range(const color_range &_cr): min(_cr.min), max(_cr.max) {};
+    colorRange(): min(0), max(0) {};
+    colorRange(int _min, int _max) : min(_min), max(_max) {};
+    colorRange(const colorRange &_cr): min(_cr.min), max(_cr.max) {};
+
+    /**
+    * Copy Operator
+    **/
+    colorRange &operator=(const colorRange &);
 };
 
-struct hsv_color {
-    color_range H;
-    color_range S;
-    color_range V;
+struct hsvColorRange {
+    colorRange H;
+    colorRange S;
+    colorRange V;
 
-    hsv_color(): H(0,180), S(0,256), V(0,256) {};
-    hsv_color(const color_range &_H, const color_range &_S, const color_range &_V) :
+    hsvColorRange(): H(0,180), S(0,256), V(0,256) {};
+    hsvColorRange(const colorRange &_H, const colorRange &_S, const colorRange &_V) :
               H(_H), S(_S), V(_V) {};
 
     cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
     cv::Scalar get_hsv_max() { return cv::Scalar(H.max, S.max, V.max); };
 
     std::string toString();
+
+    bool fromROSparam(XmlRpc::XmlRpcValue);
+
+    /**
+    * Copy Operator
+    **/
+    hsvColorRange &operator=(const hsvColorRange &);
 };
 
 struct Cell
@@ -98,6 +109,12 @@ public:
     @return true/false if success/failure.
     */
     bool get_cell_centroid(cv::Point& centroid);
+
+    /**
+     * prints some useful information from the cell
+     * @return the string with the information
+     */
+    std::string toString();
 };
 
 struct Board
@@ -162,7 +179,7 @@ public:
  * @param  upper   [description]
  * @return         [description]
  */
-cv::Mat hsv_threshold(const cv::Mat& _src, hsv_color _hsv)
+cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
 {
     cv::Mat res = _src.clone();
 

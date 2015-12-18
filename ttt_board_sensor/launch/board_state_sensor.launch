@@ -8,24 +8,21 @@ It identifies the state of each cell: red, blue, or empty.
     <param name="baxter_tictactoe/board_file" textfile="$(find ttt_board_sensor)/resources/ttt_board_lab.xml" />
 
     <!-- Range thresholds for the red tokens -->
-    <param name="baxter_tictactoe/h_low_red" type="int" value="165" />
-    <param name="baxter_tictactoe/s_low_red" type="int" value="100" />
-    <param name="baxter_tictactoe/v_low_red" type="int" value="0" />
-    <param name="baxter_tictactoe/h_high_red" type="int" value="15" />
-    <param name="baxter_tictactoe/s_high_red" type="int" value="256" />
-    <param name="baxter_tictactoe/v_high_red" type="int" value="256" />
+    <rosparam param = "baxter_tictactoe/hsv_red">
+        H: [165,  15]
+        S: [100, 256]
+        V: [  0, 256]
+    </rosparam>
 
     <!-- Range thresholds for the blue tokens -->
-    <param name="baxter_tictactoe/h_low_blue" type="int" value="90" />
-    <param name="baxter_tictactoe/s_low_blue" type="int" value="0" />
-    <param name="baxter_tictactoe/v_low_blue" type="int" value="0" />
-    <param name="baxter_tictactoe/h_high_blue" type="int" value="130" />
-    <param name="baxter_tictactoe/s_high_blue" type="int" value="256" />
-    <param name="baxter_tictactoe/v_high_blue" type="int" value="256" />
+    <rosparam param = "baxter_tictactoe/hsv_blue">
+        H: [ 90, 130]
+        S: [  0, 256]
+        V: [  0, 256]
+    </rosparam>
 
-    <!-- The colored area threshold specifies the minimum are size for which a cell is considered colored. -->
-    <!-- It depends on the distance between the camera and board. -->
-    <param name="baxter_tictactoe/color_area_threshold" type="int" value="100" />
+    <!-- The colored area threshold specifies the minimum are size for which a cell is considered colored. It depends on the distance between the camera and board. -->
+    <param name="baxter_tictactoe/area_threshold" type="int" value="100" />
 
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
 

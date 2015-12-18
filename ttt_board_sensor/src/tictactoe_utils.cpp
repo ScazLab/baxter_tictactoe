@@ -4,16 +4,53 @@ using namespace std;
 using namespace ttt;
 
 /**************************************************************************/
+/**                        COLOR_RANGE                                   **/
+/**************************************************************************/
+
+colorRange & colorRange::operator=(const colorRange &_cr)
+{
+    min=_cr.min;
+    max=_cr.max;
+    return *this;
+}
+
+/**************************************************************************/
 /**                         HSV_COLOR                                    **/
 /**************************************************************************/
 
-string hsv_color::toString()
+string hsvColorRange::toString()
 {
     stringstream res;
     res <<"H=["<<H.min<<"\t"<<H.max<<"]\t"
         <<"S=["<<S.min<<"\t"<<S.max<<"]\t"
         <<"V=["<<V.min<<"\t"<<V.max<<"]";
     return res.str();
+}
+
+bool hsvColorRange::fromROSparam(XmlRpc::XmlRpcValue _params)
+{
+    ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeStruct);
+
+    for (XmlRpc::XmlRpcValue::iterator i=_params.begin(); i!=_params.end(); ++i)
+    {
+        ROS_ASSERT(i->second.getType()==XmlRpc::XmlRpcValue::TypeArray);
+        for(int j=0; j<i->second.size(); ++j)
+        {
+            ROS_ASSERT(i->second[j].getType()==XmlRpc::XmlRpcValue::TypeInt);
+        }
+        // printf("%s %i %i\n", i->first.c_str(), static_cast<int>(i->second[0]), static_cast<int>(i->second[1]));
+        if (i->first == "H") H=colorRange(static_cast<int>(i->second[0]),static_cast<int>(i->second[1]));
+        if (i->first == "S") S=colorRange(static_cast<int>(i->second[0]),static_cast<int>(i->second[1]));
+        if (i->first == "V") V=colorRange(static_cast<int>(i->second[0]),static_cast<int>(i->second[1]));
+    }
+}
+
+hsvColorRange & hsvColorRange::operator=(const hsvColorRange &_hsvc)
+{
+    H=_hsvc.H;
+    S=_hsvc.S;
+    V=_hsvc.V;
+    return *this;
 }
 
 /**************************************************************************/
@@ -60,6 +97,30 @@ bool Cell::get_cell_centroid(cv::Point& centroid)
     }
     else
         return false;
+}
+
+string Cell::toString()
+{
+    stringstream res;
+
+    res<<"State:"<<cell_state_to_str(state)<<"\t";
+    res<<"Red  Area: "<<cell_area_red<<"\t";
+    res<<"Blue Area: "<<cell_area_blue<<"\t";
+
+    if (contours.size()==0)
+    {
+        res << "Points:\tNONE;\t";
+    }
+    else
+    {
+        res << "Points:\t";
+        for (int i = 0; i < contours.size(); ++i)
+        {
+            res <<"["<<contours[i].x<<"  "<<contours[i].y<<"]\t";
+        }
+    }
+
+    return res.str();
 }
 
 /**************************************************************************/
@@ -168,8 +229,6 @@ bool Board::load(std::string cells_param)
 
     if (ros::param::get(cells_param, xml_cells)) //reading the xml data from the parameter server
     {
-        ROS_INFO("xml cell data successfully loaded");
-
         cells.clear(); //cleaning all previous cells
 
         QXmlStreamReader xml;
@@ -204,7 +263,12 @@ bool Board::load(std::string cells_param)
         }
         ROS_WARN_COND(xml.hasError(),"Error parsing xml data (l.%d, c.%d):%s", (int)xml.lineNumber(), (int)xml.columnNumber(), xml.errorString().toStdString().c_str());
 
-        ROS_INFO("Xml data successfully loaded. %i cells loaded", (int)cells.size());
+        ROS_INFO("Xml data successfully loaded. %i cells loaded.", (int)cells.size());
+
+        for (int i = 0; i < cells.size(); ++i)
+        {
+            ROS_INFO("Cell %i:  %s",i,cells[i].toString().c_str());
+        }
         return true;
     }
     else

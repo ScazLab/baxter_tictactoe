@@ -43,8 +43,8 @@ private:
 
     double area_threshold;
 
-    hsv_color hsv_red;
-    hsv_color hsv_blue;
+    hsvColorRange hsv_red;
+    hsvColorRange hsv_blue;
 
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
     ttt_board_sensor::ttt_board last_msg_board; 
@@ -56,41 +56,54 @@ public:
         board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
         ROS_ASSERT_MSG(board_publisher,"Empty publisher");
 
-        /* Reading cells definition data from the parameter server */
-        ROS_ASSERT_MSG(board.load(ttt::CELLS_DATA_PARAM_NAME),"No cell data to display!");
+        // Reading cells definition data from the parameter server
+        ROS_ASSERT_MSG(board.load("/baxter_tictactoe/board_file"),"No cell data to display!");
 
-        /* Reading the segmentation thresholds for red tokens */
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_low_red"),"No H LOW threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/h_low_red",hsv_red.H.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/s_low_red"),"No S LOW threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/s_low_red",hsv_red.S.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_low_red"),"No V LOW threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/v_low_red",hsv_red.V.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_high_red"),"No H HIGH threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/h_high_red",hsv_red.H.max);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/s_high_red"),"No S HIGH threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/s_high_red",hsv_red.S.max);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_high_red"),"No V HIGH threshold for RED tokens!");
-        node_handle.getParam("baxter_tictactoe/v_high_red",hsv_red.V.max);
-        ROS_INFO("Red tokens in\t%s", hsv_red.toString().c_str() );
+        XmlRpc::XmlRpcValue hsv_red_symbols;
+        ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_red",hsv_red_symbols),
+                                                              "No HSV params for RED!");
+        hsv_red.fromROSparam(hsv_red_symbols);
 
-        /* Reading the segmentation thresholds for blue tokens */
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_low_blue"),"No H LOW threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/h_low_blue",hsv_blue.H.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/s_low_blue"),"No S LOW threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/s_low_blue",hsv_blue.S.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_low_blue"),"No V LOW threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/v_low_blue",hsv_blue.V.min);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_high_blue"),"No H HIGH threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/h_high_blue",hsv_blue.H.max);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/s_high_blue"),"No S HIGH threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/s_high_blue",hsv_blue.S.max);
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_high_blue"),"No V HIGH threshold for BLUE tokens!");
-        node_handle.getParam("baxter_tictactoe/v_high_blue",hsv_blue.V.max);
-        ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str() );
+        XmlRpc::XmlRpcValue hsv_blue_symbols;
+        ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_blue",hsv_blue_symbols),
+                                                               "No HSV params for BLUE!");
+        hsv_blue.fromROSparam(hsv_blue_symbols);
 
-        ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/color_area_threshold"),"No color area threshold!");
-        node_handle.getParam("baxter_tictactoe/color_area_threshold",area_threshold);
+        // // Reading the segmentation thresholds for red tokens
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/h_low_red",hsv_red.H.min),
+        //                                           "No H LOW threshold for RED tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/s_low_red",hsv_red.S.min),
+        //                                           "No S LOW threshold for RED tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/v_low_red",hsv_red.V.min),
+        //                                           "No V LOW threshold for RED tokens!");
+        
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/h_high_red",hsv_red.H.max),
+        //                                           "No H HIGH threshold for RED tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/s_high_red",hsv_red.S.max),
+        //                                           "No S HIGH threshold for RED tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/v_high_red",hsv_red.V.max),
+        //                                           "No V HIGH threshold for RED tokens!");
+
+        // Reading the segmentation thresholds for blue tokens 
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/h_low_blue",hsv_blue.H.min),
+        //                                            "No H LOW threshold for BLUE tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/s_low_blue",hsv_blue.S.min),
+        //                                            "No S LOW threshold for BLUE tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/v_low_blue",hsv_blue.V.min),
+        //                                            "No V LOW threshold for BLUE tokens!");
+
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/h_high_blue",hsv_blue.H.max),
+        //                                            "No H HIGH threshold for BLUE tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/s_high_blue",hsv_blue.S.max),
+        //                                            "No S HIGH threshold for BLUE tokens!");
+        // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/v_high_blue",hsv_blue.V.max),
+        //                                            "No V HIGH threshold for BLUE tokens!");
+
+        ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/area_threshold",area_threshold),
+                                                                        "No area threshold!");
+        
+        ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str() );
+        ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
         ROS_INFO("Area threshold: %g",area_threshold);
 
         // cv::namedWindow("red  masked image to board");
