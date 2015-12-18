@@ -60,7 +60,8 @@ target_link_libraries(${PROJECT_NAME}
     ${catkin_LIBRARIES}
 )
 
-add_executable(cells_delimitation src/board_cells_delimitation.cpp src/board_cells_delimitation.h)
+add_executable(cells_delimitation include/ttt/board_cells_delimitation.h
+                                  src/board_cells_delimitation.cpp)
 target_link_libraries(cells_delimitation ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(show_board_cells src/show_board_cells.cpp)
@@ -70,14 +71,15 @@ add_executable(hsv_range_finder src/hsv_range_finder.cpp)
 add_dependencies(hsv_range_finder ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hsv_range_finder ${PROJECT_NAME} ${catkin_LIBRARIES})
 
-add_executable(board_scheme src/tictactoe_board_display/board_scheme.cpp)
+add_executable(board_scheme src/board_scheme.cpp)
 add_dependencies(board_scheme ${catkin_EXPORTED_TARGETS})
 target_link_libraries(board_scheme ${catkin_LIBRARIES})
 
 add_executable(board_state_sensing src/board_state_sensing.cpp)
 target_link_libraries(board_state_sensing ${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(board_motion_detection src/motion_detection/board_motion_detection.cpp src/motion_detection/board_motion_detection.h)
+add_executable(board_motion_detection include/ttt/board_motion_detection.h
+                                      src/board_motion_detection.cpp)
 target_link_libraries(board_motion_detection ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 #############

@@ -14,7 +14,6 @@
 namespace ttt
 {
 
-
 class HsvRangeFinder
 {
 private:
@@ -73,9 +72,7 @@ public:
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
         {
-            ROS_INFO("H=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", hsv.H.min, hsv.H.max,
-                                                           hsv.S.min, hsv.S.max,
-                                                           hsv.V.min, hsv.V.max );
+            ROS_INFO("%s", hsv.toString().c_str());
             ros::shutdown();
         }        
     }

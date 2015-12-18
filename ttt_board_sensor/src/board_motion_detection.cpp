@@ -1,6 +1,6 @@
 
 #include "ttt/tictactoe_utils.h"
-#include "board_motion_detection.h"
+#include "ttt/board_motion_detection.h"
 
 namespace ttt
 {
