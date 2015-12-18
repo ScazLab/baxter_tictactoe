@@ -1,10 +1,26 @@
 #include "ttt/tictactoe_utils.h"
 
+using namespace std;
+using namespace ttt;
+
+/**************************************************************************/
+/**                         HSV_COLOR                                    **/
+/**************************************************************************/
+
+string hsv_color::toString()
+{
+    stringstream res;
+    res <<"H=["<<H.min<<"\t"<<H.max<<"]\t"
+        <<"S=["<<S.min<<"\t"<<S.max<<"]\t"
+        <<"V=["<<V.min<<"\t"<<V.max<<"]";
+    return res.str();
+}
+
 /**************************************************************************/
 /**                        CELL                                          **/
 /**************************************************************************/
 
-cv::Mat ttt::Cell::mask_image(const cv::Mat &_src)
+cv::Mat Cell::mask_image(const cv::Mat &_src)
 {
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 
@@ -27,7 +43,7 @@ cv::Mat ttt::Cell::mask_image(const cv::Mat &_src)
     return im_crop;
 }
 
-bool ttt::Cell::get_cell_centroid(cv::Point& centroid)
+bool Cell::get_cell_centroid(cv::Point& centroid)
 {
     uint sumX = 0, sumY = 0;
     size_t size = contours.size();
@@ -37,7 +53,7 @@ bool ttt::Cell::get_cell_centroid(cv::Point& centroid)
             sumX += it_point->x;
             sumY += it_point->y;
         }
-        // TODO through exception if size <= 0
+        // TODO throw exception if size <= 0
         centroid.x = sumX/size;
         centroid.y = sumY/size;
         return true;
@@ -50,7 +66,7 @@ bool ttt::Cell::get_cell_centroid(cv::Point& centroid)
 /**                                 BOARD                                **/
 /**************************************************************************/
 
-bool ttt::Board::resetState()
+bool Board::resetState()
 {
     if (cells.size()==0)
     {
@@ -67,24 +83,24 @@ bool ttt::Board::resetState()
     return true;
 }
 
-std::string ttt::Board::printState()
+string Board::stateToString()
 {
     if (cells.size()==0)
     {
         return "";
     }
 
-    std::string res = cell_state_to_str(cells[0].state);
+    stringstream res;
+    res << cell_state_to_str(cells[0].state);
     for (int i = 0; i < cells.size(); ++i)
     {
-        res += "\t";
-        res += cell_state_to_str(cells[i].state);
+        res << "\t" << cell_state_to_str(cells[i].state);
     }
 
-    return res;
+    return res.str();
 }
 
-std::vector<std::vector<cv::Point> > ttt::Board::as_vector_of_vectors()
+std::vector<std::vector<cv::Point> > Board::as_vector_of_vectors()
 {
     std::vector<std::vector<cv::Point> > result;
     
@@ -96,7 +112,7 @@ std::vector<std::vector<cv::Point> > ttt::Board::as_vector_of_vectors()
     return result;
 };
 
-bool ttt::Board::save() 
+bool Board::save() 
 {
     if (!cells.empty())
     {
@@ -144,7 +160,7 @@ bool ttt::Board::save()
     return true;
 };
 
-bool ttt::Board::load(std::string cells_param)
+bool Board::load(std::string cells_param)
 {
     ROS_DEBUG("Ready to read xml data of cells");
 
@@ -198,7 +214,7 @@ bool ttt::Board::load(std::string cells_param)
     }
 }
 
-cv::Mat ttt::Board::mask_image(const cv::Mat &_src)
+cv::Mat Board::mask_image(const cv::Mat &_src)
 {
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 

@@ -72,9 +72,7 @@ public:
         node_handle.getParam("baxter_tictactoe/s_high_red",hsv_red.S.max);
         ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_high_red"),"No V HIGH threshold for RED tokens!");
         node_handle.getParam("baxter_tictactoe/v_high_red",hsv_red.V.max);
-        ROS_INFO("Red tokens in\tH=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", hsv_red.H.min, hsv_red.H.max,
-                                                                      hsv_red.S.min, hsv_red.S.max,
-                                                                      hsv_red.V.min, hsv_red.V.max );
+        ROS_INFO("Red tokens in\t%s", hsv_red.toString().c_str() );
 
         /* Reading the segmentation thresholds for blue tokens */
         ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/h_low_blue"),"No H LOW threshold for BLUE tokens!");
@@ -89,9 +87,7 @@ public:
         node_handle.getParam("baxter_tictactoe/s_high_blue",hsv_blue.S.max);
         ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/v_high_blue"),"No V HIGH threshold for BLUE tokens!");
         node_handle.getParam("baxter_tictactoe/v_high_blue",hsv_blue.V.max);
-        ROS_INFO("Blue tokens in\tH=[%i\t%i]\tS=[%i\t%i]\tV=[%i\t%i]", hsv_blue.H.min, hsv_blue.H.max,
-                                                                       hsv_blue.S.min, hsv_blue.S.max,
-                                                                       hsv_blue.V.min, hsv_blue.V.max );
+        ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str() );
 
         ROS_ASSERT_MSG(node_handle.hasParam("baxter_tictactoe/color_area_threshold"),"No color area threshold!");
         node_handle.getParam("baxter_tictactoe/color_area_threshold",area_threshold);
@@ -169,7 +165,7 @@ public:
             msg_board.data[j]=cell->state;
         }
 
-        ROS_DEBUG("Board state is %s", board.printState().c_str());
+        ROS_DEBUG("Board state is %s", board.stateToString().c_str());
 
         if(last_msg_board!=msg_board)
         {

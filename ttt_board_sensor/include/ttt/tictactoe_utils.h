@@ -15,6 +15,8 @@
 
 #include "ttt_board_sensor/ttt_board.h"
 
+#include <sstream>
+
 namespace enc = sensor_msgs::image_encodings;
 
 namespace ttt
@@ -62,6 +64,8 @@ struct hsv_color {
 
     cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
     cv::Scalar get_hsv_max() { return cv::Scalar(H.max, S.max, V.max); };
+
+    std::string toString();
 };
 
 struct Cell
@@ -107,7 +111,7 @@ public:
 
     bool resetState();
 
-    std::string printState();
+    std::string stateToString();
 
     std::vector<std::vector<cv::Point> > as_vector_of_vectors();
 
