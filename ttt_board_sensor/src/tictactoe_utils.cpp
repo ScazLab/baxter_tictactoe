@@ -18,16 +18,7 @@ colorRange & colorRange::operator=(const colorRange &_cr)
 /**                         HSV_COLOR                                    **/
 /**************************************************************************/
 
-string hsvColorRange::toString()
-{
-    stringstream res;
-    res <<"H=["<<H.min<<"\t"<<H.max<<"]\t"
-        <<"S=["<<S.min<<"\t"<<S.max<<"]\t"
-        <<"V=["<<V.min<<"\t"<<V.max<<"]";
-    return res.str();
-}
-
-bool hsvColorRange::fromROSparam(XmlRpc::XmlRpcValue _params)
+hsvColorRange::hsvColorRange(XmlRpc::XmlRpcValue _params)
 {
     ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeStruct);
 
@@ -43,6 +34,15 @@ bool hsvColorRange::fromROSparam(XmlRpc::XmlRpcValue _params)
         if (i->first == "S") S=colorRange(static_cast<int>(i->second[0]),static_cast<int>(i->second[1]));
         if (i->first == "V") V=colorRange(static_cast<int>(i->second[0]),static_cast<int>(i->second[1]));
     }
+}
+
+string hsvColorRange::toString()
+{
+    stringstream res;
+    res <<"H=["<<H.min<<"\t"<<H.max<<"]\t"
+        <<"S=["<<S.min<<"\t"<<S.max<<"]\t"
+        <<"V=["<<V.min<<"\t"<<V.max<<"]";
+    return res.str();
 }
 
 hsvColorRange & hsvColorRange::operator=(const hsvColorRange &_hsvc)

@@ -63,15 +63,14 @@ struct hsvColorRange {
     colorRange V;
 
     hsvColorRange(): H(0,180), S(0,256), V(0,256) {};
-    hsvColorRange(const colorRange &_H, const colorRange &_S, const colorRange &_V) :
-              H(_H), S(_S), V(_V) {};
+    hsvColorRange(const colorRange &_H, const colorRange &_S,
+                 const colorRange &_V) : H(_H), S(_S), V(_V) {};
+    hsvColorRange(XmlRpc::XmlRpcValue);
 
     cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
     cv::Scalar get_hsv_max() { return cv::Scalar(H.max, S.max, V.max); };
 
     std::string toString();
-
-    bool fromROSparam(XmlRpc::XmlRpcValue);
 
     /**
     * Copy Operator
