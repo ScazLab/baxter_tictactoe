@@ -4,23 +4,23 @@
 /**                        CELL                                          **/
 /**************************************************************************/
 
-cv::Mat ttt::Cell::mask_image(const cv::Mat img)
+cv::Mat ttt::Cell::mask_image(const cv::Mat &_src)
 {
-    cv::Mat mask = cv::Mat::zeros(img.rows, img.cols, CV_8UC1);
+    cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 
     // CV_FILLED fills the connected components found with white
     cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,contours),
                                             -1, cv::Scalar(255), CV_FILLED);  
 
-    cv::Mat im_crop(img.rows, img.cols, CV_8UC3);                           
+    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);                           
     im_crop.setTo(cv::Scalar(0));
-    img.copyTo(im_crop, mask);                  
+    _src.copyTo(im_crop, mask);                  
 
     // normalize so imwrite(...)/imshow(...) shows the mask correctly
     //cv::normalize(mask.clone(), mask, 0.0, 255.0, CV_MINMAX, CV_8UC1);
 
     // show the images
-    // cv::imshow("original", img);
+    // cv::imshow("original", _src);
     // cv::imshow("mask", mask);
     // cv::imshow("masked cell", im_crop);
 
@@ -49,6 +49,40 @@ bool ttt::Cell::get_cell_centroid(cv::Point& centroid)
 /**************************************************************************/
 /**                                 BOARD                                **/
 /**************************************************************************/
+
+bool ttt::Board::resetState()
+{
+    if (cells.size()==0)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < cells.size(); ++i)
+    {
+        cells[i].state      = empty;
+        cells[i].cell_area_red  = 0;
+        cells[i].cell_area_blue = 0;
+    }
+
+    return true;
+}
+
+std::string ttt::Board::printState()
+{
+    if (cells.size()==0)
+    {
+        return "";
+    }
+
+    std::string res = cell_state_to_str(cells[0].state);
+    for (int i = 0; i < cells.size(); ++i)
+    {
+        res += "\t";
+        res += cell_state_to_str(cells[i].state);
+    }
+
+    return res;
+}
 
 std::vector<std::vector<cv::Point> > ttt::Board::as_vector_of_vectors()
 {
@@ -162,4 +196,19 @@ bool ttt::Board::load(std::string cells_param)
         ROS_FATAL_STREAM("xml cell data not loaded!");
         return false;
     }
+}
+
+cv::Mat ttt::Board::mask_image(const cv::Mat &_src)
+{
+    cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
+
+    // CV_FILLED fills the connected components found with white
+    cv::drawContours(mask, as_vector_of_vectors(),
+                     -1, cv::Scalar(255), CV_FILLED);  
+
+    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);                           
+    im_crop.setTo(cv::Scalar(0));
+    _src.copyTo(im_crop, mask);
+
+    return im_crop;
 }

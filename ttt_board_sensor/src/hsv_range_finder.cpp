@@ -19,18 +19,19 @@ class HsvRangeFinder
 {
 private:
 
-    ros::NodeHandle nh_;
-    image_transport::ImageTransport it_;
-    image_transport::Subscriber image_sub_;
+    ros::NodeHandle node_handle;
+    image_transport::ImageTransport image_transport;
+    image_transport::Subscriber image_subscriber;
 
     hsv_color hsv;
 
     std::string window;
 
 public:
-    HsvRangeFinder() : it_(nh_), window("HSV Range Finder")
+    HsvRangeFinder() : image_transport(node_handle), window("HSV Range Finder"),
+                       hsv(color_range(160, 20),color_range(40,200),color_range(40,200))
     {
-        image_sub_ = it_.subscribe("image_in", 1, &HsvRangeFinder::image_callback, this);
+        image_subscriber = image_transport.subscribe("image_in", 1, &HsvRangeFinder::image_callback, this);
 
         cv::namedWindow(window);
 
@@ -64,7 +65,7 @@ public:
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
         cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV); //Change the color format from BGR to HSV
 
-        cv::Mat img_thresh = GetThresholdedImage(img_hsv, hsv.get_hsv_min(), hsv.get_hsv_max());
+        cv::Mat img_thresh = ttt::hsv_threshold(img_hsv, hsv);
 
         cv::imshow(window, img_thresh);
 
@@ -76,17 +77,6 @@ public:
                                                            hsv.V.min, hsv.V.max );
             ros::shutdown();
         }        
-    }
-
-    //This function threshold the HSV image and create a binary image
-    static cv::Mat GetThresholdedImage(const cv::Mat& img_hsv, cv::Scalar lower, cv::Scalar upper)
-    {
-
-     cv::Mat img_thresh(img_hsv.rows,img_hsv.cols,CV_8U);
-     cv::inRange(img_hsv, lower, upper, img_thresh);
-
-     return img_thresh;
-
     }
 };
 

@@ -57,7 +57,7 @@ struct hsv_color {
     color_range V;
 
     hsv_color(): H(0,180), S(0,256), V(0,256) {};
-    hsv_color(color_range &_H, color_range &_S, color_range &_V) :
+    hsv_color(const color_range &_H, const color_range &_S, const color_range &_V) :
               H(_H), S(_S), V(_V) {};
 
     cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
@@ -69,22 +69,23 @@ struct Cell
 public:
     std::vector<cv::Point> contours;
     cellState state;
+    double cell_area_red;
+    double cell_area_blue;
 
 public:
-    Cell() {};
+    Cell() { state=empty; cell_area_red=0; cell_area_blue=0; };
     Cell(std::vector<cv::Point> _vec) : contours(_vec) {};
     ~Cell() {};
 
     std::vector<cv::Point> get_contours() { return contours; };
     
     /**
-    Returns a mask for a cell, i.e. a new image that preserves the size of the original one, but 
-    keeps only the portion delimited by the cell (the rest is set to black)
-    @param img  the original image, where the mask will be extracted from.
-    @param cell the cell defining the mask.
-    @return     the mask for a cell. It has the same size than the original image.
+     * Returns a mask for a cell, i.e. a new image that keeps only the portion
+     * delimited by the cell (the rest is set to black)
+     * @param      the original image, where the mask will be extracted from.
+     * @return     the mask. It has the same size than the original image.
      */
-    cv::Mat mask_image(const cv::Mat img);
+    cv::Mat mask_image(const cv::Mat &);
 
     /**
     Computes the centroid of a cell.
@@ -103,6 +104,10 @@ public:
 public:
     Board()  {};
     ~Board() {};
+
+    bool resetState();
+
+    std::string printState();
 
     std::vector<std::vector<cv::Point> > as_vector_of_vectors();
 
@@ -136,7 +141,52 @@ public:
     @return true/false if success/failure.
      */
     bool load(std::string cells_param);
+
+    /**
+     * Returns a mask for a board, i.e. a new image that keeps only the portion
+     * delimited by the board (the rest is set to black)
+     * @param      the original image, where the mask will be extracted from.
+     * @return     the mask. It has the same size than the original image.
+     */
+    cv::Mat mask_image(const cv::Mat &);
 };
+
+/**
+ * This function thresholds the HSV image and create a binary image
+ * @param  img_hsv [description]
+ * @param  lower   [description]
+ * @param  upper   [description]
+ * @return         [description]
+ */
+cv::Mat hsv_threshold(const cv::Mat& _src, hsv_color _hsv)
+{
+    cv::Mat res = _src.clone();
+
+    // If H.lower is higher than H.upper it means that we would like to
+    // detect something in the range [0-upper] & [lower-180] (i.e. the red)
+    // So the thresholded image will be made with two opencv calls to inRange
+    // and then the two will be merged into one
+    if (_hsv.H.min > _hsv.H.max)
+    {
+        cv::Mat resA = _src.clone();
+        cv::Mat resB = _src.clone();
+
+        cv::inRange(_src, cv::Scalar(         0, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(_hsv.H.max, _hsv.S.max, _hsv.V.max), resA);
+        cv::inRange(_src, cv::Scalar(_hsv.H.min, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(       180, _hsv.S.max, _hsv.V.max), resB);
+
+        cv::bitwise_or(resA,resB,res);
+    }
+    else
+    {
+        cv::inRange(_src, cv::Scalar(_hsv.get_hsv_min()),
+                          cv::Scalar(_hsv.get_hsv_max()), res);
+    }
+   
+
+    return res;
+}
 
 }
 

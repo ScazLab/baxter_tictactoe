@@ -46,42 +46,8 @@ private:
     hsv_color hsv_red;
     hsv_color hsv_blue;
 
-    double get_hsv_colored_area_in_cell(const cv::Mat& img, Cell cell, const hsv_color _hsv)
-    {
-        // we extract the cell from the original image
-        cv::Mat cropped_cell = cell.mask_image(img);
-        // cv::namedWindow("cropped", CV_WINDOW_AUTOSIZE);
-        // cv::imshow("cropped",cropped_cell);
-        // cv::waitKey();
-
-        // converting to hsv color space
-        cv::Mat aux_img;
-        cv::cvtColor(cropped_cell,aux_img,CV_BGR2HSV);
-        // cv::namedWindow("hsv", CV_WINDOW_AUTOSIZE);
-        // cv::imshow("hsv",aux_img);
-        // cv::waitKey();
-
-        /* extracting just the pixels within the hsv range values */
-        cv::inRange(aux_img.clone(),
-                    cv::Scalar(_hsv.H.min,_hsv.S.min,_hsv.V.min),
-                    cv::Scalar(_hsv.H.max,_hsv.S.max,_hsv.V.max),
-                    aux_img);
-        cv::imshow("red range",aux_img);
-
-        /* we smooth the image to reduce the noise */
-        cv::GaussianBlur(aux_img.clone(),aux_img,cv::Size(3,3),0,0);
-        // cv::namedWindow("smoothed");
-        // cv::imshow("smoothed",aux_img);
-
-        // the area formed by the remaining pixels is computed based on the moments
-        cv::Moments segmented_moments = cv::moments(aux_img,true);
-        // ROS_DEBUG_STREAM("segmented area=" << segmented_moments.m00);
-
-        cv::waitKey(50);
-        return segmented_moments.m00; //m00 represents the area
-    }
-
-    ttt_board_sensor::ttt_board last_msg_board; //! Last TTT board state message sent. This is used to avoid the publication of the same board state messages.
+    // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
+    ttt_board_sensor::ttt_board last_msg_board; 
 
 public:
     BoardState() : image_transport(node_handle)
@@ -131,7 +97,8 @@ public:
         node_handle.getParam("baxter_tictactoe/color_area_threshold",area_threshold);
         ROS_INFO("Area threshold: %g",area_threshold);
 
-        cv::namedWindow("red range");
+        // cv::namedWindow("red  masked image to board");
+        // cv::namedWindow("blue masked image to board");
     }
 
     ~BoardState()
@@ -140,6 +107,8 @@ public:
 
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
+        board.resetState();
+
         //converting ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
         try
@@ -156,39 +125,60 @@ public:
         msg_board.data.assign(undefined); // initially the state of each cell is undefined
         msg_board.header.stamp = msg->header.stamp;
         msg_board.header.frame_id = msg->header.frame_id;
-        short unsigned int counter=0;
-        foreach (Cell cell, board.cells)
+
+        // convert the original image to hsv color space
+        cv::Mat img_hsv;
+        cv::cvtColor(cv_ptr->image,img_hsv,CV_BGR2HSV);
+
+        // mask the original image to the board
+        cv::Mat img_hsv_mask = board.mask_image(img_hsv);
+
+        for (int i = 0; i < 2; ++i)
         {
-            /* computing the red area in the cell */
-            double red_cell_area = get_hsv_colored_area_in_cell(cv_ptr->image, cell, hsv_red);
-            ROS_DEBUG_STREAM("Red area of cell " << counter+1 << " = " << red_cell_area);
+            cv::Mat hsv_filt_mask = ttt::hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
+            // if (i==0) cv::imshow("red  masked image to board",hsv_filt_mask);
+            // if (i==1) cv::imshow("blue masked image to board",hsv_filt_mask);
 
-            /* computing the blue area in the cell */
-            double blue_cell_area = get_hsv_colored_area_in_cell(cv_ptr->image, cell, hsv_blue);
-            ROS_DEBUG_STREAM("Blue area of cell " << counter+1 << " = " << blue_cell_area);
-
-            /* determining the state of the cell considering that two tokens can be heaped */
-            cellState cell_state;
-            if (red_cell_area > area_threshold || blue_cell_area > area_threshold)
+            for (int j = 0; j < board.cells.size(); ++j)
             {
-                red_cell_area>blue_cell_area?cell_state=red:cell_state=blue;
+                Cell *cell = &(board.cells[j]);
+                cv::Mat crop = cell->mask_image(hsv_filt_mask);
+
+                /* we smooth the image to reduce the noise */
+                cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
+
+                // the area formed by the remaining pixels is computed based on the moments
+                double cell_area=cv::moments(crop,true).m00;
+
+                if (cell_area > area_threshold)
+                {
+                    if (i==0)  cell->cell_area_red =cell_area;
+                    else       cell->cell_area_blue=cell_area;
+                }
             }
-            else cell_state=empty;
-
-            ROS_DEBUG_STREAM_COND(cell_state==empty, "Cell " << counter+1 << " is EMPTY");
-            ROS_DEBUG_STREAM_COND(cell_state==red, "Cell " << counter+1 << " is RED");
-            ROS_DEBUG_STREAM_COND(cell_state==blue, "Cell " << counter+1 << " is BLUE");
-
-            msg_board.data[counter]=cell_state;
-
-            counter++;
         }
+
+        for (int j = 0; j < board.cells.size(); ++j)
+        {
+            Cell *cell = &(board.cells[j]);
+            if (cell->cell_area_red || cell->cell_area_blue)
+            {
+                cell->cell_area_red>cell->cell_area_blue?cell->state=red:cell->state=blue;
+            }
+
+            msg_board.data[j]=cell->state;
+        }
+
+        ROS_DEBUG("Board state is %s", board.printState().c_str());
+
         if(last_msg_board!=msg_board)
         {
             board_publisher.publish(msg_board);
             last_msg_board=msg_board;
             ROS_DEBUG("NEW TTT BOARD STATE PUBLISHED");
         }
+
+        // cv::waitKey(50);
     }
 };
 

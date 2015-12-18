@@ -11,7 +11,7 @@ It identifies the state of each cell: red, blue, or empty.
     <param name="baxter_tictactoe/h_low_red" type="int" value="165" />
     <param name="baxter_tictactoe/s_low_red" type="int" value="100" />
     <param name="baxter_tictactoe/v_low_red" type="int" value="0" />
-    <param name="baxter_tictactoe/h_high_red" type="int" value="180" />
+    <param name="baxter_tictactoe/h_high_red" type="int" value="15" />
     <param name="baxter_tictactoe/s_high_red" type="int" value="256" />
     <param name="baxter_tictactoe/v_high_red" type="int" value="256" />
 
