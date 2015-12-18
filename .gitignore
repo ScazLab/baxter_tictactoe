@@ -24,3 +24,9 @@ CMakeLists.txt.user
 
 # temporary files
 *~
+
+# files that are dependent from the local setup:
+ttt_board_sensor/custom_rosconsole.conf
+ttt_board_sensor/launch/usb_cam_node.launch
+ttt_board_sensor/resources/ttt_board_lab.xml
+
