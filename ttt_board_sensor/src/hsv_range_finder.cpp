@@ -31,7 +31,7 @@ public:
                        hsv(colorRange(160, 20),colorRange(40,200),colorRange(40,200))
     {
         image_subscriber = image_transport.subscribe("image_in", 1,
-                            &HsvRangeFinder::image_callback, this);
+                            &HsvRangeFinder::imageCallback, this);
 
         cv::namedWindow(window);
 
@@ -48,7 +48,7 @@ public:
         cv::destroyWindow(window);
     }
 
-    void image_callback(const sensor_msgs::ImageConstPtr& msg)
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         //convert ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
@@ -72,7 +72,11 @@ public:
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
         {
-            ROS_INFO("%s", hsv.toString().c_str());
+            ROS_INFO("Finished. HSV: %s .", hsv.toString().c_str());
+            ROS_INFO(" Copy this into the launch file:");
+            printf("        H: [ %i, %i]\n", hsv.H.min, hsv.H.max);
+            printf("        S: [ %i, %i]\n", hsv.S.min, hsv.S.max);
+            printf("        V: [ %i, %i]\n", hsv.V.min, hsv.V.max);
             ros::shutdown();
         }        
     }
