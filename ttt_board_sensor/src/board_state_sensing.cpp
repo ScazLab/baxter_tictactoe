@@ -46,11 +46,12 @@ private:
     hsvColorRange hsv_red;
     hsvColorRange hsv_blue;
 
+    bool doShow;
+
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
     ttt_board_sensor::ttt_board last_msg_board; 
 
-public:
-    BoardState() : image_transport(node_handle)
+    void init()
     {
         image_subscriber = image_transport.subscribe("image_in", 1, &BoardState::image_callback, this);
         board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
@@ -76,13 +77,26 @@ public:
         ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str() );
         ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
         ROS_INFO("Area threshold: %g",area_threshold);
+        ROS_INFO("Show param set to %i",doShow);
 
-        // cv::namedWindow("red  masked image to board");
-        // cv::namedWindow("blue masked image to board");
+        if (doShow)
+        {
+            cv::namedWindow("red  masked image of the board");
+            cv::namedWindow("blue masked image of the board");
+        }
     }
+
+public:
+    BoardState()          : image_transport(node_handle), doShow(false) { init(); };
+    BoardState(bool _show): image_transport(node_handle), doShow(_show) { init(); };
 
     ~BoardState()
     {
+        if (doShow)
+        {
+            cv::destroyWindow("red  masked image of the board");
+            cv::destroyWindow("blue masked image of the board");
+        }
     }
 
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
@@ -116,8 +130,12 @@ public:
         for (int i = 0; i < 2; ++i)
         {
             cv::Mat hsv_filt_mask = ttt::hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
-            // if (i==0) cv::imshow("red  masked image to board",hsv_filt_mask);
-            // if (i==1) cv::imshow("blue masked image to board",hsv_filt_mask);
+            if (doShow)
+            {
+                if (i==0) cv::imshow("red  masked image of the board",hsv_filt_mask);
+                if (i==1) cv::imshow("blue masked image of the board",hsv_filt_mask);
+            }
+
 
             for (int j = 0; j < board.cells.size(); ++j)
             {
@@ -158,7 +176,7 @@ public:
             ROS_DEBUG("NEW TTT BOARD STATE PUBLISHED");
         }
 
-        // cv::waitKey(50);
+        if (doShow) cv::waitKey(50);
     }
 };
 
@@ -167,7 +185,21 @@ public:
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "show_cells");
-    ttt::BoardState cd;
+
+    // Very dirty way to process command line arguments. It seems that
+    // there is not a straightforward standard ROS way, unfortunately.
+    // (by alecive, all the fault goes to him)
+    bool show=false;
+    if (argc>1)
+    {
+        if (std::string(argv[1])=="--show")
+        {
+            show=std::string(argv[2])=="true"?true:false;
+        }
+    }
+
+    ttt::BoardState cd(show);
     ros::spin();
+
     return 0;
 }
