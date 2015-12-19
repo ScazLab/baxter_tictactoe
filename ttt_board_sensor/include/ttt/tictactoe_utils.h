@@ -102,15 +102,14 @@ public:
     cv::Mat mask_image(const cv::Mat &);
 
     /**
-    Computes the centroid of a cell.
-    @param cell the cell whose centroid is going to be computed
-    @param centroid the central point.
-    @return true/false if success/failure.
-    */
+     * Computes the centroid of a cell.
+     * @param  centroid the centroid
+     * @return          true/false if success/failure.
+     */
     bool get_cell_centroid(cv::Point& centroid);
 
     /**
-     * prints some useful information from the cell
+     * Prints some useful information from the cell
      * @return the string with the information
      */
     std::string toString();
@@ -132,33 +131,31 @@ public:
     std::vector<std::vector<cv::Point> > as_vector_of_vectors();
 
     /**
-    Saves the board to file (whose name will be specified with a dialog window).
-    The format of the file is as follows:
-        <board>
-            <cell id="0">
-                <vertex x="195" y="50"/>
-                [...]
-            </cell>
-            [...]
-        </board>
-    @param board where all the Cells are stored
-    @return true/false if success/failure.
+     * Saves the board to file (whose name will be specified with a dialog window).
+     * The format of the file is as follows:
+     *   <board>
+     *     <cell id="0">
+     *       <vertex x="195" y="50"/>
+     *       [...]
+     *     </cell>
+     *     [...]
+     *  </board>
+     * @return true/false if success/failure.
      */
     bool save();
 
     /**
-    Reads the contours of the cells from the parameter server, in a param named cells_param.
-    @param board where the Cells are going to be stored
-    @param cells_param the name of the parameter where the raw data from the cells is stored. This data is formatted as a xml file.
-    The format of the data is as follows:
-            <board>
-                <cell id="0">
-                    <vertex x="195" y="50"/>
-                    [...]
-                </cell>
-                [...]
-            </board>
-    @return true/false if success/failure.
+     * Reads the contours of the cells from the parameter server,
+     * This data is formatted as a xml file, with the following format:
+     *   <board>
+     *     <cell id="0">
+     *       <vertex x="195" y="50"/>
+     *       [...]
+     *     </cell>
+     *     [...]
+     *  </board>
+     * @param  cells_param the name of the parameter where the raw data is stored. 
+     * @return true/false if success/failure.
      */
     bool load(std::string cells_param);
 
