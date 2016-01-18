@@ -23,25 +23,31 @@ private:
 
     ros::Subscriber sub;
 
+    int height;
+    int width;
+
+    int n_cols;
+    int n_rows;
+
+    cv::Scalar white;
+    cv::Scalar   red;
+    cv::Scalar  blue;
 
     cv::Mat draw_board(const ttt_board_sensor::ttt_board::ConstPtr& msg) const
     {
         ROS_DEBUG("@display_board");
 
-        cv::Mat img(480,640,CV_8UC3,cv::Scalar(255,255,255));
+        cv::Mat img(height,width,CV_8UC3,cv::Scalar(255,255,255));
 
         // 3x3 tic tac toe board
-        const unsigned short int COLS = 3;
-        const unsigned short int ROWS = 3;
-
         unsigned short int col, row;
 
         int cols_img = img.cols;
         int rows_img = img.rows;
         ROS_DEBUG_STREAM("cols_img=" << cols_img << " rows_img=" << rows_img);
 
-        unsigned int cols_cell_img = cols_img/COLS;
-        unsigned int rows_cell_img = rows_img/ROWS;
+        unsigned int cols_cell_img = cols_img/n_cols;
+        unsigned int rows_cell_img = rows_img/n_rows;
         ROS_DEBUG_STREAM("cols_cell_img=" << cols_cell_img << " rows_cell_img=" << rows_cell_img);
 
         this->draw_lines(img);
@@ -50,15 +56,28 @@ private:
             ROS_DEBUG_STREAM("Processing Cell " << i);
             if(msg->data[i]>0)
             {
-                col=i%COLS;
-                row=i/ROWS;
+                col=i%n_cols;
+                row=i/n_rows;
                 cv::Point center_cell(cols_cell_img/2 + cols_cell_img*col, rows_cell_img/2 + rows_cell_img*row);
+                cv::Point bottom_left_corner(cols_cell_img*1/6 + cols_cell_img*col, rows_cell_img*1/6 + rows_cell_img*row);
+                cv::Point   top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
                 ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
-                cv::putText(img,
-                            msg->data[i]==1?"X":"O",
-                            cv::Point(center_cell.x-25,center_cell.y+25), //we apply an offset of 25 to center the caracter in the cell
-                            cv::FONT_HERSHEY_TRIPLEX,
-                            3, msg->data[i]==1?cv::Scalar(255,0,0):cv::Scalar(0,0,255), 2);
+
+                cv::rectangle(img,bottom_left_corner,top_right_corner,msg->data[i]==1?red:blue,CV_FILLED);
+                if (msg->data[i]==1)
+                {
+                    /* Draw X */
+                    cv::line(img,
+                             cv::Point(cols_cell_img*3/12 + cols_cell_img*col, rows_cell_img*3/12 + rows_cell_img*row),
+                             cv::Point(cols_cell_img*9/12 + cols_cell_img*col, rows_cell_img*9/12 + rows_cell_img*row),
+                             white,16);
+                    cv::line(img,
+                             cv::Point(cols_cell_img*9/12 + cols_cell_img*col, rows_cell_img*3/12 + rows_cell_img*row),
+                             cv::Point(cols_cell_img*3/12 + cols_cell_img*col, rows_cell_img*9/12 + rows_cell_img*row),
+                             white,16);
+                } else {
+                    cv::circle(img,center_cell,rows_cell_img*3/12,white,16);
+                }
             }
         }
         return img;
@@ -66,10 +85,10 @@ private:
 
     void draw_lines(cv::Mat& img) const
     {
-        cv::line(img,cv::Point(img.cols/3,0),cv::Point(img.cols/3,480),cv::Scalar(0),2);
-        cv::line(img,cv::Point(2*img.cols/3,0),cv::Point(2*img.cols/3,480),cv::Scalar(22),2);
-        cv::line(img,cv::Point(0,img.rows/3),cv::Point(640,img.rows/3),cv::Scalar(0),2);
-        cv::line(img,cv::Point(0,2*img.rows/3),cv::Point(640,2*img.rows/3),cv::Scalar(0),2);
+        cv::line(img,cv::Point(img.cols/3,0),cv::Point(img.cols/3,height),cv::Scalar(0),8);
+        cv::line(img,cv::Point(2*img.cols/3,0),cv::Point(2*img.cols/3,height),cv::Scalar(22),8);
+        cv::line(img,cv::Point(0,img.rows/3),cv::Point(width,img.rows/3),cv::Scalar(0),8);
+        cv::line(img,cv::Point(0,2*img.rows/3),cv::Point(width,2*img.rows/3),cv::Scalar(0),8);
     }
 
     void show_board_temporary(cv::Mat& img, int msec) const
@@ -95,14 +114,22 @@ private:
 
 public:
 
-    BoardScheme() : it_(nh_)
+    BoardScheme(std::string channel) : it_(nh_)
     {
-        image_pub_ = it_.advertise("new_board_scheme", 1);
+        image_pub_ = it_.advertise(channel.c_str(), 1);
         sub = nh_.subscribe("/new_board", 1, &BoardScheme::publish_draw_board, this);
+
+        height=600;
+        width =1024;
+
+        n_cols = 3;
+        n_rows = 3;
+
+        white = cv::Scalar(255,255,255);
+        red   = cv::Scalar(180, 40, 40);
+        blue  = cv::Scalar( 40, 40,150);
+
     }
-
-
-
 };
 
 const char BoardScheme::WINDOW[] = "Tic Tac Toe Board Status";
@@ -111,8 +138,13 @@ const char BoardScheme::WINDOW[] = "Tic Tac Toe Board Status";
 
 int main(int argc, char** argv)
 {
+    std::string channel = "/board_scheme";
+    if (argc>1)
+    {
+        channel=std::string(argv[1]);
+    }
     ros::init(argc, argv, "board_display");
-    ttt::BoardScheme bd;
+    ttt::BoardScheme bd(channel);
     ros::spin();
     return 0;
 }
