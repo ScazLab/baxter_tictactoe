@@ -64,6 +64,7 @@ private:
 
     int (TTT_Brain::*_choose_next_move)(bool& cheating); //! This a pointer to the function that decides the next move. We use a pointer because we could have different strategies.
 
+    bool has_cheated;
     /**
      * It determines randomly the next empty cell to place a token.
      * \param cheating It indicates if cheating has happened.
@@ -155,7 +156,7 @@ private:
                 if (TTT_Brain::three_in_a_row(_robot_color, state))
                 {
                     ROS_INFO_STREAM("Cheating move to cell with number " << i+1);
-                    this->say_sentence("You humans are so easy to beat!",5);
+                    has_cheated=true;
                     return i+1;
                 }
                 state[i]=cell_state;
@@ -280,6 +281,8 @@ public:
 
         qsrand(ros::Time::now().nsec);
         this->set_strategy(strategy);
+
+        has_cheated=false;
 
         ROS_INFO("Waiting for TTT Move Maker action server to start.");
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
@@ -524,6 +527,7 @@ public:
     {
         bool robot_turm=true;
         unsigned short int winner=0; // no winner
+        has_cheated=false;
 
         // this->say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
         // this->say_sentence(" and the red tokens in the red square on the left side of the board",6);
@@ -569,15 +573,19 @@ public:
         {
         case 1:
             ROS_INFO("ROBOT's VICTORY!");
+            if (has_cheated)
+            {
+                this->say_sentence("You humans are so easy to beat!",5);
+            }
             this->say_sentence("I win", 3);
             break;
         case 2:
             ROS_INFO("OPPONENT's VICTORY!");
-            this->say_sentence("You win this time",4);
+            this->say_sentence("You won this time",4);
             break;
         default:
             ROS_INFO("TIE!");
-            this->say_sentence("That's a tie!",4);
+            this->say_sentence("That's a tie. I will win next time.",8);
             winner=3;
         }
         return winner;
