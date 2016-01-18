@@ -25,9 +25,7 @@ class Board:
     hdr = std_msgs.msg.Header()
     
     def __init__(self):
-        self.data = [EMPTY for _dummy in range(9)]
-        self._turn = X  # X always starts
-        self.send()
+        self.clear()
 
     def __repr__(self):
         line = '|{} {} {}|\n'
@@ -38,6 +36,14 @@ class Board:
         return s
 
     def __lt__(self, other):
+        """Set a value to cell.
+
+            >>> b = Board()
+            >>> b < (2, X)
+            >>> | |X| |
+            >>> | | | |
+            >>> | | | |
+        """
         c, v = other
         self.set(c, v)
 
@@ -63,6 +69,11 @@ class Board:
     def send(self):
         self.hdr.stamp = rospy.Time.now()
         pub.publish(self.hdr, self.data)
+
+    def clear(self):
+        self.data = [EMPTY for _dummy in range(9)]
+        self._turn = X  # X always starts
+        self.send()
 
 
 b = Board()
