@@ -2,7 +2,28 @@
   <name>tictactoe</name>
   <version>0.1.0</version>
   <description>
-     tictactoe
+    # How to run this demo : a step by step tutorial
+
+    ## Initialization
+
+      * Obvious stuff:
+        * make sure the Baxter is on
+        * make sure the computer is on
+        * make sure the Baxter and the computer are connected together
+        * make sure the computer has some working speakers
+      * Open a terminal:
+        * `cd` to `~/ros_ws`
+        * `source devel/setup.bash`
+        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
+        * `rosrun baxter_tools tuck_arms.py -u`
+        * `roslaunch tictactoe baxter_trajectory_controller.launch`
+      * Open a new terminal
+        * `cd` to `~/ros_ws`
+        * `source devel/setup.bash`
+        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
+        * `roslaunch tictactoe tictactoe.launch`
+
+
   </description>
   <author>Álvaro Castro González ‎[acgonzal@ing.uc3m.es]‎</author>
   <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
