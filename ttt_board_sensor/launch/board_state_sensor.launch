@@ -9,16 +9,16 @@ It identifies the state of each cell: red, blue, or empty.
 
     <!-- Range thresholds for the red tokens -->
     <rosparam param = "baxter_tictactoe/hsv_red">
-        H: [165,  15]
-        S: [100, 256]
-        V: [  0, 256]
+        H: [160,  20]
+        S: [ 40, 196]
+        V: [ 50, 196]
     </rosparam>
 
     <!-- Range thresholds for the blue tokens -->
     <rosparam param = "baxter_tictactoe/hsv_blue">
         H: [ 90, 130]
-        S: [  0, 256]
-        V: [  0, 256]
+        S: [ 70, 256]
+        V: [ 70, 256]
     </rosparam>
 
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
