@@ -25,9 +25,15 @@ private:
 
     int height;
     int width;
+    int minimum; // the minimum between height and width
+
+    cv::Point board_bottom_left; // the bottom left corner of the board
 
     int n_cols;
     int n_rows;
+
+    unsigned int cols_cell_img;
+    unsigned int rows_cell_img;
 
     cv::Scalar white;
     cv::Scalar   red;
@@ -37,18 +43,10 @@ private:
     {
         ROS_DEBUG("@display_board");
 
-        cv::Mat img(height,width,CV_8UC3,cv::Scalar(255,255,255));
+        cv::Mat img(height,width,CV_8UC3,white);
 
         // 3x3 tic tac toe board
         unsigned short int col, row;
-
-        int cols_img = img.cols;
-        int rows_img = img.rows;
-        ROS_DEBUG_STREAM("cols_img=" << cols_img << " rows_img=" << rows_img);
-
-        unsigned int cols_cell_img = cols_img/n_cols;
-        unsigned int rows_cell_img = rows_img/n_rows;
-        ROS_DEBUG_STREAM("cols_cell_img=" << cols_cell_img << " rows_cell_img=" << rows_cell_img);
 
         this->draw_lines(img);
 
@@ -59,36 +57,60 @@ private:
                 col=i%n_cols;
                 row=i/n_rows;
                 cv::Point center_cell(cols_cell_img/2 + cols_cell_img*col, rows_cell_img/2 + rows_cell_img*row);
-                cv::Point bottom_left_corner(cols_cell_img*1/6 + cols_cell_img*col, rows_cell_img*1/6 + rows_cell_img*row);
+                cv::Point bottom_left_corner;
                 cv::Point   top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
                 ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
 
-                cv::rectangle(img,bottom_left_corner,top_right_corner,msg->data[i]==1?red:blue,CV_FILLED);
-                if (msg->data[i]==1)
-                {
-                    /* Draw X */
-                    cv::line(img,
-                             cv::Point(cols_cell_img*3/12 + cols_cell_img*col, rows_cell_img*3/12 + rows_cell_img*row),
-                             cv::Point(cols_cell_img*9/12 + cols_cell_img*col, rows_cell_img*9/12 + rows_cell_img*row),
-                             white,16);
-                    cv::line(img,
-                             cv::Point(cols_cell_img*9/12 + cols_cell_img*col, rows_cell_img*3/12 + rows_cell_img*row),
-                             cv::Point(cols_cell_img*3/12 + cols_cell_img*col, rows_cell_img*9/12 + rows_cell_img*row),
-                             white,16);
-                } else {
-                    cv::circle(img,center_cell,rows_cell_img*3/12,white,16);
-                }
+                draw_tile(img,i,msg->data[i]);
             }
         }
         return img;
     }
 
+    void draw_tile(cv::Mat& img, size_t cell_number, unsigned int cell_data) const
+    {
+        cv::Point top_left =compute_cell_top_left(cell_number);
+        cv::Point diag_incr(cols_cell_img*1/12,rows_cell_img*1/12);
+
+        cv::rectangle(img,top_left+2*diag_incr,top_left+10*diag_incr,cell_data==ttt_board_sensor::ttt_board::RED?red:blue,CV_FILLED);
+
+        if (cell_data==ttt_board_sensor::ttt_board::RED)
+        {
+            cv::Point center=top_left+6*diag_incr;
+            cv::circle(img,center,rows_cell_img*3/12,white,16);
+        }
+        else
+        {
+            // Draw the white cross inside the rectangle
+            cv::Point cross_top_left    =top_left+3*diag_incr;
+            cv::Point cross_bottom_right=top_left+9*diag_incr;
+
+            cv::line(img, cross_top_left, cross_bottom_right, white,20);
+            cv::line(img,
+                     cv::Point(cross_top_left.x,cross_bottom_right.y),
+                     cv::Point(cross_bottom_right.x,cross_top_left.y),
+                     white,20);
+        }
+    }
+
+    cv::Point compute_cell_top_left(int cell_number) const
+    {
+        unsigned short int col=cell_number%n_cols;
+        unsigned short int row=cell_number/n_rows;
+        cv::Point result(cols_cell_img*col+board_bottom_left.x, rows_cell_img*row+board_bottom_left.y);
+
+        ROS_DEBUG("Cell #%i bottom left corner: %i %i\n",cell_number,result.x,result.y);
+
+        return result;
+    }
+
     void draw_lines(cv::Mat& img) const
     {
-        cv::line(img,cv::Point(img.cols/3,0),cv::Point(img.cols/3,height),cv::Scalar(0),8);
-        cv::line(img,cv::Point(2*img.cols/3,0),cv::Point(2*img.cols/3,height),cv::Scalar(22),8);
-        cv::line(img,cv::Point(0,img.rows/3),cv::Point(width,img.rows/3),cv::Scalar(0),8);
-        cv::line(img,cv::Point(0,2*img.rows/3),cv::Point(width,2*img.rows/3),cv::Scalar(0),8);
+        cv::line(img,compute_cell_top_left(3),compute_cell_top_left(5)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
+        cv::line(img,compute_cell_top_left(6),compute_cell_top_left(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
+        cv::line(img,compute_cell_top_left(1),compute_cell_top_left(7)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
+        cv::line(img,compute_cell_top_left(2),compute_cell_top_left(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
+
     }
 
     void show_board_temporary(cv::Mat& img, int msec) const
@@ -122,12 +144,22 @@ public:
         height=600;
         width =1024;
 
+        // Let's find the minimum between height and width
+        int minimum = height>width?width:height;
+
+        board_bottom_left.x = (width -minimum)/2;
+        board_bottom_left.y = (height-minimum)/2;
+
         n_cols = 3;
         n_rows = 3;
 
+        cols_cell_img = minimum/n_cols;
+        rows_cell_img = minimum/n_rows;
+        ROS_DEBUG_STREAM("cols_cell_img=" << cols_cell_img << " rows_cell_img=" << rows_cell_img);
+
         white = cv::Scalar(255,255,255);
-        red   = cv::Scalar(180, 40, 40);
-        blue  = cv::Scalar( 40, 40,150);
+        blue  = cv::Scalar(180, 40, 40);  // REMEMBER that this is in BGR color code!!
+        red   = cv::Scalar( 40, 40,150);  // REMEMBER that this is in BGR color code!!
 
     }
 };
