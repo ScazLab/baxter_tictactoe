@@ -19,7 +19,7 @@
 
       ## HSV calibration
         This opens a window where you can choose the lower and upper values of the HSV components used for detecting either the blue or the red tiles.
-          
+
           $>roslaunch ttt_board_sensor hsv_range_finder.launch
         
         The resulting image is updated in the bottom part of the window. Once the color you desire is filtered (white regions), you have to write down the ranges for H, S, and V.
