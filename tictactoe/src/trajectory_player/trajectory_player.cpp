@@ -6,9 +6,11 @@ namespace ttt
 Trajectory_Player::Trajectory_Player(const char * service_name)
 {
     _client = new Client(service_name, true);
-    ROS_INFO_STREAM("Waiting to connect to service " << service_name);
-    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"Timeout. Service not available. Is the trajectory controller running?");
-    ROS_INFO("Service CONNECTED");
+    ROS_INFO_STREAM("[Trajectory_Player] Waiting to connect to service " << service_name);
+
+    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"[Trajectory_Player] Timeout. Service not available. Is the trajectory controller running?");
+    
+    ROS_INFO("[Trajectory_Player] Service CONNECTED");
     _tip_collision.set(false);
 
     if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper(left);
@@ -31,17 +33,25 @@ void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& ms
     if(msg->range<=msg->max_range && msg->range>=msg->min_range && msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD)
     {        
         _tip_collision.set(true);
-        ROS_INFO("Obstacle on the field of the left hand gripper");
+        ROS_WARN("[Trajectory_Player] Obstacle on the field of the left hand gripper");
     }
 }
 
 void Trajectory_Player::check_joint_states(const sensor_msgs::JointState& msg)
 {
-    left_arm_state.clear();
+    ROS_DEBUG("[Trajectory_Player] Check Joint States - START");
+    pthread_mutex_lock(&this->mutex);
 
     for (int i = 0; i < 7; ++i)
     {
-        left_arm_state[msg.name[i+2]]=msg.position[i+2];
+        left_arm_state.clear();
+
+        // printf("size of the message %lu\n", msg.name.size());
+        for (int i = 0; i < 7; ++i)
+        {
+            // printf("joint state %i %s %g \n", i, msg.name[i+2].c_str(), msg.position[i+2]);
+            left_arm_state[msg.name[i+2]]=msg.position[i+2];
+        }   
     }
     
     // printf("I heard: ");
@@ -66,7 +76,7 @@ bool Trajectory_Player::grasp()
     ros::Duration(1).sleep(); //waiting 1s to achieve the grasping
     if (!_gripper->is_gripping())
     {
-        ROS_ERROR("Attempt to grasp failed");
+        ROS_ERROR("[Trajectory_Player] Attempt to grasp failed");
         return false;
     }
     return true;
@@ -101,13 +111,14 @@ control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(tr
     initial_point.effort.resize(n_joints,0.0);
     initial_point.time_from_start=ros::Duration(0.0);
 
-    printf("trajectory_to_goal: \n");
+    std::stringstream s;
     for (int i = 0; i < n_joints; ++i)
     {
         initial_point.positions[i]=left_arm_state[t.joint_names[i]];
-        printf("[%s %g %g]\t", t.joint_names[i].c_str(), initial_point.positions[i], left_arm_state[t.joint_names[i]]);
+        s << "[ " << t.joint_names[i].c_str() << " " << initial_point.positions[i] << " " << left_arm_state[t.joint_names[i]] << "] ";
     }
-    printf("\n");
+
+    ROS_INFO("[Trajectory_Player] Trajectory to goal: %s", s.str().c_str());
 
     full_t.header=t.header;
     full_t.joint_names=t.joint_names;
@@ -128,7 +139,7 @@ control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(tr
 
 bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
 {
-    ROS_INFO("test");
+    ROS_INFO("[Trajectory_Player] Running Trajectory..");
 
     // Action goal
     control_msgs::FollowJointTrajectoryGoal goal=trajectory_to_goal(t);
@@ -136,21 +147,20 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
 
     if(!_client->waitForResult(ros::Duration(40.0))) //timeout for complete the trajectory
     {
-        ROS_ERROR("Timeout! Goal not reached.");
+        ROS_ERROR("[Trajectory_Player] Timeout! Goal not reached.");
         return false;
     }
     if (_client->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        ROS_INFO("Goal reached. Ready for next trajectory");
+        ROS_INFO("[Trajectory_Player] Goal reached. Ready for next trajectory");
         return true;
     }
     else
     {
-        ROS_ERROR("Goal not reached.");
-        ROS_ERROR("Current State: %s", _client->getState().toString().c_str());
+        ROS_ERROR("[Trajectory_Player] Goal not reached. State is: %s", _client->getState().toString().c_str());
     }
 
-    return true; // THIS IS BAD
+    return true; // THIS IS BAD (by Ale & Olivier)
 
     return false;
 }

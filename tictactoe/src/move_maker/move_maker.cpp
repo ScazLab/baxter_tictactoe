@@ -55,24 +55,24 @@ bool Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type 
         return false;
     }
     if (this->is_preempted() || !my_ros_utils::is_ros_ok()) return false;
-    ROS_DEBUG_STREAM("Trajectory found. " << t.get_ttt_trajectory_description());
+    ROS_DEBUG_STREAM("[Move_Maker] Trajectory found. " << t.get_ttt_trajectory_description());
     bool success=true;
     switch(mode)
     {
     case PLAIN:
-        ROS_INFO_STREAM("Playing PLAIN trajectory " << t.name);
+        ROS_INFO_STREAM("[Move_Maker] Playing PLAIN trajectory " << t.name);
         success=_traj_player->run_trajectory(t.trajectory);
         break;
     case GRASP:
-        ROS_INFO_STREAM("Playing GRASP trajectory " << t.name);
+        ROS_INFO_STREAM("[Move_Maker] Playing GRASP trajectory " << t.name);
         success=_traj_player->run_trajectory_and_grasp(t.trajectory);
         break;
     case RELEASE:
-        ROS_INFO_STREAM("Playing RELEASE trajectory " << t.name);
+        ROS_INFO_STREAM("[Move_Maker] Playing RELEASE trajectory " << t.name);
         success=_traj_player->run_trajectory_and_release(t.trajectory);
         break;
     default:
-        ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << mode << "?");
+        ROS_ERROR_STREAM("[Move_Maker] Trajectory type unknown!! What kind of trajectory is " << mode << "?");
     }
     if(!success)
     {
@@ -95,7 +95,7 @@ Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
     ROS_ASSERT_MSG(trajectory_xml_parser::read_from_file(trajectory_file,trajs,traj_ids), "Error parsing trajectory xml file.");
     _ttt_traj_n=trajs.size();
     ROS_ASSERT_MSG(_ttt_traj_n==traj_ids.size(),"#trajectories != #trajectory_names");
-    ROS_DEBUG_STREAM(_ttt_traj_n << " trajectories loaded from xml file");
+    ROS_INFO_STREAM("[Move_Maker] " << _ttt_traj_n << " trajectories loaded from xml file");
 
     _trajectory_repository.reserve(_ttt_traj_n);
 
@@ -103,6 +103,7 @@ Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
         _trajectory_repository.push_back(TTT_Trajectory(trajs[i],traj_ids[i]));
     }
     //this->print_trajectory_repository_details();
+    ROS_INFO("[Move_Maker] Service is %s",service);
 
     _traj_player = new Trajectory_Player(service);
 
@@ -112,7 +113,7 @@ Move_Maker::Move_Maker(const char *trajectory_file, const char * service) :
 bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Trajectory_Type> modes)
 {
     if(traj_names.size()!=modes.size()) {
-        ROS_ERROR_STREAM("Move not possible: " << traj_names.size() << " trajs. != " << modes.size() << " types.");
+        ROS_ERROR_STREAM("[Move_Maker] Move not possible: " << traj_names.size() << " trajs. != " << modes.size() << " types.");
         return false;
     }
     size_t n=modes.size();
@@ -120,51 +121,51 @@ bool Move_Maker::make_a_move(std::vector<std::string> traj_names, std::vector<Tr
     for (size_t i = 0; i < n; ++i) {
         if(this->get_ttt_trajectory(traj_names[i],t))
         {
-            ROS_DEBUG_STREAM("Trajectory found. " << t.get_ttt_trajectory_description());
+            ROS_DEBUG_STREAM("[Move_Maker] Trajectory found. " << t.get_ttt_trajectory_description());
             switch(modes[i])
             {
             case PLAIN:
-                ROS_INFO_STREAM("Playing PLAIN trajectory " << t.name);
+                ROS_INFO_STREAM("[Move_Maker] Playing PLAIN trajectory " << t.name);
                 if(!_traj_player->run_trajectory(t.trajectory)) return false;
                 break;
             case GRASP:
-                ROS_INFO_STREAM("Playing GRASP trajectory " << t.name);
+                ROS_INFO_STREAM("[Move_Maker] Playing GRASP trajectory " << t.name);
                 if(!_traj_player->run_trajectory_and_grasp(t.trajectory)) return false;
                 break;
             case RELEASE:
-                ROS_INFO_STREAM("Playing RELEASE trajectory " << t.name);
+                ROS_INFO_STREAM("[Move_Maker] Playing RELEASE trajectory " << t.name);
                 if(!_traj_player->run_trajectory_and_release(t.trajectory)) return false;
                 break;
             default:
-                ROS_ERROR_STREAM("Trajectory type unknown!! What kind of trajectory is " << modes[i] << "?");
+                ROS_ERROR_STREAM("[Move_Maker] Trajectory type unknown!! What kind of trajectory is " << modes[i] << "?");
                 return false;
             }
             ros::Duration(INTER_TRAJ_GAP).sleep(); // Let's wait after each trajectory to be sure that the trajectory is done
         }
         else {
-            ROS_WARN_STREAM("Trajectory " << traj_names[i] << " not found.");
+            ROS_WARN_STREAM("[Move_Maker] Trajectory " << traj_names[i] << " not found.");
             return false;
         }
     }
+
     return true;
 }
 
 void Move_Maker::print_trajectory_repository_details()
 {
     foreach (TTT_Trajectory t, _trajectory_repository) {
-        ROS_INFO_STREAM("Trajectory " << t.name << " has " << t.trajectory.points.size() << " points.");
+        ROS_INFO_STREAM("[Move_Maker] Trajectory " << t.name << " has " << t.trajectory.points.size() << " points.");
     }
 }
 
 bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, tictactoe::SetTrajectoryType::Response& res)
 {
-    ROS_INFO("@Move_Maker::set_movement_type");
     if (req.smooth) {
         this->set_smooth_trajectories();
-        ROS_INFO("Using smooth trajectories");
+        ROS_INFO("[Move_Maker] Using smooth trajectories");
     } else {
         this->set_mechanistic_trajectories();
-        ROS_INFO("Using mechanistic trajectories");
+        ROS_INFO("[Move_Maker] Using mechanistic trajectories");
     }
     res.error=false;
     return true;
@@ -172,7 +173,7 @@ bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, t
 
 bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& goal)
 {
-    ROS_INFO_STREAM("Executing the action to place a token to " << goal->cell);
+    ROS_INFO_STREAM("[Move_Maker] Executing the action to place a token to " << goal->cell);
     std::string* traj_ids = this->get_trajectories_to_cell(goal->cell); //It always returns a vector of 3 strings
     _place_token_result.success=false; //initially the action is not successed
 
@@ -185,7 +186,7 @@ bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     _place_token.publishFeedback(_place_token_feedback);
     if (!_place_token_result.success)
     {
-        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        ROS_ERROR_STREAM("[Move_Maker] Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
         return false;
     }
 
@@ -195,7 +196,7 @@ bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     _place_token.publishFeedback(_place_token_feedback);
     if (!_place_token_result.success)
     {
-        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        ROS_ERROR_STREAM("[Move_Maker] Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
         return false;
     }
 
@@ -205,7 +206,7 @@ bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     _place_token.publishFeedback(_place_token_feedback);
     if (!_place_token_result.success)
     {
-        ROS_ERROR_STREAM("Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
+        ROS_ERROR_STREAM("[Move_Maker] Movement failed at " << _place_token_feedback.percent_complete*100 << "% of its completion!");
         return false;
     }
 

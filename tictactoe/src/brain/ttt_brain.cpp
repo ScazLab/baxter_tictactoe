@@ -47,7 +47,7 @@ private:
     void new_ttt_state(const ttt_board_sensor::ttt_boardConstPtr & msg)
     {
         if (msg->data!=_ttt_state.get()) {
-            ROS_DEBUG_STREAM("New TTT board state detected at ." << msg->header.stamp);
+            ROS_DEBUG_STREAM("[TTT_Brain] New TTT board state detected at ." << msg->header.stamp);
             _ttt_state.set(msg->data);
         }
     }
@@ -77,11 +77,11 @@ private:
         TTT_State_type aux = _ttt_state.get();
         do {
             r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
-            ROS_DEBUG("Cell %d is in state %d ==? %d || %d", r, aux[r-1], ttt_board_sensor::ttt_board::EMPTY, ttt_board_sensor::ttt_board::UNDEFINED);
+            ROS_DEBUG("[TTT_Brain] Cell %d is in state %d ==? %d || %d", r, aux[r-1], ttt_board_sensor::ttt_board::EMPTY, ttt_board_sensor::ttt_board::UNDEFINED);
         }
         while(aux[r-1]!=empty && aux[r-1]!=undefined);
 
-        ROS_INFO_STREAM("Random move to cell with number " << r);
+        ROS_INFO_STREAM("[TTT_Brain] Random move to cell with number " << r);
         return r;
     }
 
@@ -155,14 +155,14 @@ private:
                 state[i]=_robot_color;
                 if (TTT_Brain::three_in_a_row(_robot_color, state))
                 {
-                    ROS_INFO_STREAM("Cheating move to cell with number " << i+1);
+                    ROS_INFO_STREAM("[TTT_Brain] Cheating move to cell with number " << i+1);
                     has_cheated=true;
                     return i+1;
                 }
                 state[i]=cell_state;
             }
         }
-        ROS_INFO("No chance to win in this turn");
+        ROS_INFO("[TTT_Brain] No chance to win in this turn");
         return -1;
     }
 
@@ -181,13 +181,13 @@ private:
                 state[i]=_opponent_color;
                 if (TTT_Brain::three_in_a_row(_opponent_color, state))
                 {
-                    ROS_INFO_STREAM("Defensive move to cell with number " << i+1);
+                    ROS_INFO_STREAM("[TTT_Brain] Defensive move to cell with number " << i+1);
                     return i+1;
                 }
                 state[i]=cell_state;
             }
         }
-        ROS_INFO("No chance to lose in this turn");
+        ROS_INFO("[TTT_Brain] No chance to lose in this turn");
         return -1;
     }
 
@@ -206,13 +206,13 @@ private:
                 state[i]=_robot_color;
                 if (TTT_Brain::three_in_a_row(_robot_color, state))
                 {
-                    ROS_INFO_STREAM("Victory move to cell with number " << i+1);
+                    ROS_INFO_STREAM("[TTT_Brain] Victory move to cell with number " << i+1);
                     return i+1;
                 }
                 state[i]=cell_state;
             }
         }
-        ROS_INFO("No chance to win in this turn");
+        ROS_INFO("[TTT_Brain] No chance to win in this turn");
         return -1;
     }
 
@@ -230,13 +230,13 @@ private:
         {
             if (!srv.response.error)
             {
-                ROS_INFO_STREAM("Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
+                ROS_INFO_STREAM("[TTT_Brain] Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
                 return true;
             }
-            ROS_ERROR_STREAM("Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
+            ROS_ERROR_STREAM("[TTT_Brain] Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
             return false;
         }
-        ROS_ERROR("Failed to call service set_movement_type");
+        ROS_ERROR("[TTT_Brain] Failed to call service set_movement_type");
         return false;
     }
 
@@ -258,15 +258,15 @@ public:
 
         ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retreive from the parameter server");
-        ROS_INFO_STREAM("Using voice " << _voice_type);
+        ROS_INFO_STREAM("[TTT_Brain] Using voice " << _voice_type);
 
         ROS_ASSERT_MSG(_nh.hasParam("cheating"),"No cheating parameter found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("cheating",_can_cheat), "The cheating possibility has not been retreived from the parameter server");
-        ROS_INFO_STREAM("Robot " << (_can_cheat?"can":"cannot") << " cheat");
+        ROS_INFO_STREAM("[TTT_Brain] Robot " << (_can_cheat?"can":"cannot") << " cheat");
 
         ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
         ROS_ASSERT_MSG(_nh.getParam("smooth",_smooth), "The sort of movements has not been retreived from the parameter server");
-        ROS_INFO_STREAM("Using " << _smooth << " movements");
+        ROS_INFO_STREAM("[TTT_Brain] Using " << _smooth << " movements");
         _clnt_movement_type = _nh.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
         this->set_smooth_movements(_smooth);
 
@@ -284,9 +284,9 @@ public:
 
         has_cheated=false;
 
-        ROS_INFO("Waiting for TTT Move Maker action server to start.");
+        ROS_INFO("[TTT_Brain] Waiting for TTT Move Maker action server to start.");
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
-        ROS_INFO("TTT Move Maker action server is started. We are ready for sending goals.");
+        ROS_INFO("[TTT_Brain] TTT Move Maker action server is started. We are ready for sending goals.");
     }
 
     ~TTT_Brain()
@@ -341,16 +341,16 @@ public:
         case 8:goal.cell="3x2"; break;
         case 9:goal.cell="3x3"; break;
         default:
-            ROS_ERROR("Unknown cell to move, %d",cell_to_move);
+            ROS_ERROR("[TTT_Brain] Unknown cell to move, %d",cell_to_move);
             return actionlib::SimpleClientGoalState::LOST;
         }
         _move_commander.sendGoal(goal);
         _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
-	bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
+        bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
         //bool finished_before_timeout = _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
-        //if (finished_before_timeout) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished successfully!");
-        if (_success) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished successfully!");
-        else ROS_WARN_STREAM("Action moving to " << goal.cell << " did not finish before the time out.");
+        //if (finished_before_timeout) ROS_INFO_STREAM("[TTT_Brain] Action moving to " << goal.cell << " finished successfully!");
+        if (_success) ROS_INFO_STREAM("[TTT_Brain] Action moving to " << goal.cell << " finished successfully!");
+        else ROS_WARN_STREAM("[TTT_Brain] Action moving to " << goal.cell << " did not finish before the time out.");
         return _move_commander.getState();
     }
 
@@ -392,7 +392,7 @@ public:
      **/
     bool three_in_a_row(const cellState& cell_color, const TTT_State_type& tttboard)
     {
-        ROS_DEBUG("@three in a row");
+        ROS_DEBUG("[TTT_Brain] @three in a row");
         if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
 
         if(tttboard[0]==cell_color && tttboard[1]==cell_color && tttboard[2]==cell_color) return true; // 3 in a row in the first row
@@ -460,7 +460,7 @@ public:
         while(aux_n_opponent_tokens<=n_opponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number opponent's tokens increase.
         {
 //            ros::Duration(1).sleep();
-            ROS_WARN("Press ENTER when the opponent's turn is done");
+            ROS_WARN("[TTT_Brain] Press ENTER when the opponent's turn is done");
             std::cin.get();
             aux_n_opponent_tokens=this->get_number_of_tokens_on_board(_opponent_color);
         }
@@ -489,7 +489,7 @@ public:
     {
         _voice_synthesizer.say(sentence, _voice_type);
         if(_nh.ok()) ros::Duration(t).sleep();
-        else ROS_WARN("Nodel handle is not ok. Don't sleeping during the synthetitation.");
+        else ROS_WARN("[TTT_Brain] Nodel handle is not ok. Don't sleeping during the synthetitation.");
     }
 
     /**
@@ -502,21 +502,21 @@ public:
         if (strategy=="random")
         {
             _choose_next_move=&TTT_Brain::random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens");
+            ROS_INFO("[TTT_Brain] New strategy: Baxter randomly places tokens");
         } else if (strategy=="smart")
         {
             _choose_next_move=&TTT_Brain::winning_defensive_random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance, or blocks opponent's victory");
+            ROS_INFO("[TTT_Brain] New strategy: Baxter randomly places tokens but it wins, if there is a chance, or blocks opponent's victory");
         }
         else if (strategy=="cheating")
         {
             _choose_next_move=&TTT_Brain::cheating_to_win_random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required");
+            ROS_INFO("[TTT_Brain] New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required");
         }
         else if (strategy=="smart-cheating")
         {
             _choose_next_move=&TTT_Brain::smart_cheating_random_move;
-            ROS_INFO("New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required, or blocks opponent's victory");
+            ROS_INFO("[TTT_Brain] New strategy: Baxter randomly places tokens but it wins, if there is a chance even if cheating is required, or blocks opponent's victory");
         }
         else {
             ROS_ERROR_STREAM(strategy << " is not an available strategy");
@@ -534,35 +534,35 @@ public:
         this->say_sentence("I start the game.",2);
         this->set_smooth_movements(_smooth);
 
-        ROS_WARN("PRESS ENTER TO START THE GAME");
+        ROS_WARN("[TTT_Brain] PRESS ENTER TO START THE GAME");
         std::cin.get();        
         uint8_t n_opponent_tokens=0;
-//        uint8_t n_robot_tokens=0;
+        // uint8_t n_robot_tokens=0;
         while ((winner=this->get_winner())==0 && !this->full_board())
         {
             if (robot_turm) // Robot's turn
             {
-//                n_robot_tokens=this->get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
+                // n_robot_tokens=this->get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
                 n_opponent_tokens=this->get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
                 this->say_sentence("It is my turn",0.3);
                 int cell_to_move = this->get_next_move(cheating);
-                ROS_DEBUG_STREAM("Robot's token to " << cell_to_move);
+                ROS_DEBUG_STREAM("[TTT_Brain] Robot's token to " << cell_to_move);
                 actionlib::SimpleClientGoalState goal_state = this->execute_move(cell_to_move);
                 if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED) {
-                    ROS_INFO("Last move successfully performed.");
+                    ROS_INFO("[TTT_Brain] Last move successfully performed.");
                 } else {
-                    ROS_ERROR_STREAM("Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
+                    ROS_ERROR_STREAM("[TTT_Brain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
                     //What do we do now?
                 }
 //                if(n_robot_tokens==this->get_number_of_tokens_on_board(_robot_color)) //the number of robot tokens haven't increased so we try again.
 //                {
-//                    ROS_ERROR("Somehow there is still %ud robot tokens.",n_robot_tokens);
+//                    ROS_ERROR("[TTT_Brain] Somehow there is still %ud robot tokens.",n_robot_tokens);
 //                    continue;
 //                }
             }
             else // Participant's turn
             {
-                ROS_INFO("Waiting for the participant's move.");
+                ROS_INFO("[TTT_Brain] Waiting for the participant's move.");
                 this->say_sentence("It is your turn",0.1);
                 this->wait_for_opponent_turn(n_opponent_tokens); // Waiting for my turn: the participant has to place one token, so we wait until the number of the opponent's tokens increases.
             }
@@ -572,7 +572,7 @@ public:
         switch(winner)
         {
         case 1:
-            ROS_INFO("ROBOT's VICTORY!");
+            ROS_INFO("[TTT_Brain] ROBOT's VICTORY!");
             if (has_cheated)
             {
                 this->say_sentence("You humans are so easy to beat!",5);
@@ -580,11 +580,11 @@ public:
             this->say_sentence("I win", 3);
             break;
         case 2:
-            ROS_INFO("OPPONENT's VICTORY!");
+            ROS_INFO("[TTT_Brain] OPPONENT's VICTORY!");
             this->say_sentence("You won this time",4);
             break;
         default:
-            ROS_INFO("TIE!");
+            ROS_INFO("[TTT_Brain] TIE!");
             this->say_sentence("That's a tie. I will win next time.",8);
             winner=3;
         }
@@ -604,7 +604,7 @@ uint TTT_Brain::CHEATING_GAME_B=3;
 
 int main(int argc, char** argv)
 {    
-    ROS_INFO("Playing TIC TAC TOE");
+    ROS_INFO("[TTT_Brain] Playing TIC TAC TOE");
     ros::init(argc, argv, "ttt_brain");
     ros::AsyncSpinner spinner(1);
     spinner.start();
@@ -612,9 +612,9 @@ int main(int argc, char** argv)
     ttt::TTT_Brain brain; //random strategy by default
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
-    ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
+    ROS_INFO_STREAM("[TTT_Brain] Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 
-    ROS_WARN("PRESS ENTER TO START WITH A NEW PARTICIPANT");
+    ROS_WARN("[TTT_Brain] PRESS ENTER TO START WITH A NEW PARTICIPANT");
     std::cin.get();
     brain.say_sentence("  Welcome!  Let's play Tic Tac Toe.",4);
     brain.say_sentence("Do not grasp your token before I say that it is your turn",5);
@@ -622,11 +622,12 @@ int main(int argc, char** argv)
     uint robot_victories=0, participant_victories=0, ties=0;
     uint i=1;
     bool cheating=false;
-    ROS_INFO_STREAM("Let's play " << ttt::TTT_Brain::NUM_GAMES << " times Tic Tac Toe");
+    ROS_INFO_STREAM("[TTT_Brain] Let's play " << ttt::TTT_Brain::NUM_GAMES << " times Tic Tac Toe");
     unsigned short game_result=0;
+
     while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
-        ROS_INFO_STREAM("Game " << i);
+        ROS_INFO_STREAM("[TTT_Brain] Game " << i);
         if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat()) //In the fourth game, Baxter cheats
         {
             brain.set_strategy("smart-cheating");
@@ -640,15 +641,15 @@ int main(int argc, char** argv)
             break;
         case 3: ties++;
             break;
-        default: ROS_ERROR_STREAM("Unexpected return value for the game: " << game_result << " ???");
+        default: ROS_ERROR_STREAM("[TTT_Brain] Unexpected return value for the game: " << game_result << " ???");
         }
         if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat())
         {
             if (!cheating) {
-                ROS_INFO("Game ended but no cheating. Game counter does not increase.");
+                ROS_INFO("[TTT_Brain] Game ended but no cheating. Game counter does not increase.");
                 continue;
             } else {
-                ROS_INFO("Game ended cheating. Back to random strategy");
+                ROS_INFO("[TTT_Brain] Game ended cheating. Back to random strategy");
                 brain.set_strategy("smart");
             }
         }
@@ -657,7 +658,7 @@ int main(int argc, char** argv)
 
     brain.say_sentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
 
-    ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);    
+    ROS_INFO_STREAM("[TTT_Brain] Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);    
     std::string filepath = "/home/alvaro/ttt " + QDateTime::currentDateTime().toString().toStdString() + ".txt";
     QFile file(filepath.c_str());
     file.open(QIODevice::WriteOnly | QIODevice::Text);
