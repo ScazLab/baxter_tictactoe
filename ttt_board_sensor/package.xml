@@ -1,6 +1,6 @@
 <package format="2">
   <name>ttt_board_sensor</name>
-    <!-- "Tic Tac Toe board detector" -->
+  <version>0.8.0</version>
   <description>
     This package offers functionalities for sensing a tictactoe board from a camera placed over the board.
     Several tools have been developed to achieve a reliable tictactoe board sensor.
@@ -50,10 +50,9 @@
     
       This runs the tictactoe board sensor.
 
-        $>roslaunch ttt_board_sensor board_state_sensor.launch
+        $>roslaunch ttt_board_sensor board_state_sensor.launch show:=true
 
   </description>
-  <version>0.8.0</version>
   <author>Álvaro Castro González ‎[acgonzal@ing.uc3m.es]‎</author>
   <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
   <maintainer email="alessandro.roncone@yale.edu">Alessandro Roncone</maintainer>
