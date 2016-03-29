@@ -1,6 +1,6 @@
 <package format="2">
   <name>tictactoe</name>
-  <version>0.1.0</version>
+  <version>0.8.0</version>
   <description>
     # How to run this demo : a step by step tutorial
 
@@ -34,7 +34,6 @@
 
 
   </description>
-  <version>0.8.0</version>
   <author>Álvaro Castro González ‎[acgonzal@ing.uc3m.es]‎</author>
   <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
   <maintainer email="alessandro.roncone@yale.edu">Alessandro Roncone</maintainer>
