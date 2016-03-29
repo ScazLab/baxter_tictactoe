@@ -18,11 +18,6 @@
         * `source devel/setup.bash`
         * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
         * `rosrun baxter_tools tuck_arms.py -u`
-        * `roslaunch tictactoe baxter_trajectory_controller.launch`
-      * Open a new terminal
-        * `cd` to `~/ros_ws`
-        * `source devel/setup.bash`
-        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
         * `roslaunch tictactoe tictactoe.launch`
 
     ## Shut down the robot
