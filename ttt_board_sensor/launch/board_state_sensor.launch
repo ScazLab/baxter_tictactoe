@@ -25,7 +25,7 @@ It identifies the state of each cell: red, blue, or empty.
     <arg name="show" default="false" />
 
     <!-- The colored area threshold specifies the minimum are size for which a cell is considered colored. It depends on the distance between the camera and board. -->
-    <param name="baxter_tictactoe/area_threshold" type="int" value="100" />
+    <param name="baxter_tictactoe/area_threshold" type="int" value="150" />
 
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
 
