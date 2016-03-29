@@ -16,6 +16,7 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
     if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper(left);
     else _gripper = new Vacuum_Gripper(right);
 
+    pthread_mutex_init(&this->mutex, NULL);
     _left_joint_sub=_n.subscribe("/robot/joint_states", 1, &Trajectory_Player::check_joint_states, this);
 }
 
@@ -54,17 +55,14 @@ void Trajectory_Player::check_joint_states(const sensor_msgs::JointState& msg)
             left_arm_state[msg.name[i+2]]=msg.position[i+2];
         }   
     }
+    else
+    {
+        ROS_DEBUG("[Trajectory_Player] WARNING Received wrong left arm state from topic.");
+    }
 
     // ROS_INFO("[Trajectory_Player] Check Joint States - ENDING");
     
-    // printf("I heard: ");
-    // for (int i = 0; i < 7; ++i)
-    // {
-    //     printf("[%s %g]\t",msg.name[i+2].c_str(),left_arm_state[msg.name[i+2]]);
-    // }
-    // printf("\n");
-    // ROS_INFO("I heard: [%g %g %g %g %g %g %g]", left_arm_state[0], left_arm_state[1], left_arm_state[2],
-    //                           left_arm_state[3], left_arm_state[4], left_arm_state[5], left_arm_state[6]);
+    pthread_mutex_unlock(&this->mutex);
 }
 
 bool Trajectory_Player::grasp()
@@ -114,6 +112,7 @@ control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(tr
     initial_point.effort.resize(n_joints,0.0);
     initial_point.time_from_start=ros::Duration(0.0);
 
+    pthread_mutex_lock(&this->mutex);
     std::stringstream s;
     for (int i = 0; i < n_joints; ++i)
     {
@@ -121,6 +120,7 @@ control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(tr
         s << "[ " << t.joint_names[i].c_str() << " " << initial_point.positions[i] << " " << left_arm_state[t.joint_names[i]] << "] ";
     }
 
+    pthread_mutex_unlock(&this->mutex);
     ROS_INFO("[Trajectory_Player] Trajectory to goal: %s", s.str().c_str());
 
     full_t.header=t.header;
@@ -205,9 +205,12 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
     else // if(goal_state==Goal_State::ABORTED || goal_state==Goal_State::LOST || goal_state==Goal_State::PREEMPTED || goal_state==Goal_State::RECALLED || goal_state==Goal_State::REJECTED)
     {
         ROS_WARN_STREAM("Goal not reached. State is " << goal_state.toString());
-        return false;
+
     }    
-    return true; // This line never has to be executed
+
+    return true; // THIS IS BAD (by Ale & Olivier)
+
+    return false;
 }
 
 bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTrajectory t)

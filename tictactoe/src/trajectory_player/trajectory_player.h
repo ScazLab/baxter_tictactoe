@@ -8,6 +8,8 @@
  * This class will execute trajectories and inform about the result.
  */
 
+#include <pthread.h>
+
 #include <ros/ros.h>
 #include <ros/duration.h>
 #include <sensor_msgs/Range.h>
@@ -37,6 +39,7 @@ class Trajectory_Player
     ros::Subscriber _left_ir_range_sub; //! subscriber to receive the messages comming from the ir range on the left hand
     ros::Subscriber _left_joint_sub; // subscriber to get the joints state
 
+    pthread_mutex_t mutex;
     std::map<std::string,double> left_arm_state;
 
     /**
