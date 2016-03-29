@@ -153,7 +153,7 @@ string Board::stateToString()
 
     stringstream res;
     res << cell_state_to_str(cells[0].state);
-    for (int i = 0; i < cells.size(); ++i)
+    for (int i = 1; i < cells.size(); ++i)
     {
         res << "\t" << cell_state_to_str(cells[i].state);
     }
@@ -218,6 +218,7 @@ bool Board::save()
         ROS_INFO("No cells in the board to be saved.");
         return false;
     }
+    ROS_INFO("Board saved.");
     return true;
 };
 
