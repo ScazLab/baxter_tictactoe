@@ -35,7 +35,7 @@ class Trajectory_Player
     ros::NodeHandle _n; //! ROS node handle
 
     ros::Subscriber _left_ir_range_sub; //! subscriber to receive the messages comming from the ir range on the left hand
-    ros::Subscriber _left_joint_states; // subscriber to get the joints state
+    ros::Subscriber _left_joint_sub; // subscriber to get the joints state
 
     std::map<std::string,double> left_arm_state;
 

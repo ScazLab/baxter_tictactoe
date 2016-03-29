@@ -16,7 +16,7 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
     if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper(left);
     else _gripper = new Vacuum_Gripper(right);
 
-    _left_joint_states=_n.subscribe("/robot/joint_states", 1, &Trajectory_Player::check_joint_states, this);
+    _left_joint_sub=_n.subscribe("/robot/joint_states", 1, &Trajectory_Player::check_joint_states, this);
 }
 
 void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& msg)
@@ -42,7 +42,8 @@ void Trajectory_Player::check_joint_states(const sensor_msgs::JointState& msg)
     ROS_DEBUG("[Trajectory_Player] Check Joint States - START");
     pthread_mutex_lock(&this->mutex);
 
-    for (int i = 0; i < 7; ++i)
+    // TODO For some reasons, there are multiple publishers to the same topic. We need to investigate.
+    if (msg.name.size() == 17)
     {
         left_arm_state.clear();
 
@@ -53,6 +54,8 @@ void Trajectory_Player::check_joint_states(const sensor_msgs::JointState& msg)
             left_arm_state[msg.name[i+2]]=msg.position[i+2];
         }   
     }
+
+    // ROS_INFO("[Trajectory_Player] Check Joint States - ENDING");
     
     // printf("I heard: ");
     // for (int i = 0; i < 7; ++i)
@@ -219,7 +222,7 @@ bool Trajectory_Player::run_trajectory_and_release(trajectory_msgs::JointTraject
 
 Trajectory_Player::~Trajectory_Player()
 {
-    _left_joint_states.shutdown();
+    _left_joint_sub.shutdown();
 
     if (_client)
     {
