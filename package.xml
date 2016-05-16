@@ -1,0 +1,78 @@
+<package format="2">
+  <name>baxter_tictactoe</name>
+  <version>0.8.0</version>
+  <description>
+    # How to run this demo : a step by step tutorial
+
+    ## Initialization
+
+      * Obvious stuff:
+        * make sure the Baxter is on
+        * make sure the computer is on
+        * make sure the Baxter and the computer are connected together
+        * make sure the computer has some working speakers
+
+    ## Calibration 
+      * Open a new terminal
+        * `cd` to `~/ros_ws`
+        * `source devel/setup.bash`
+        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
+        * `roslaunch tictactoe tictactoe.launch`
+        * Move board to correct position via observation of right arm movement
+        * Exit program
+
+      * Open a terminal:
+        * 'roslaunch ttt_board_sensor cells_definition launch'. Select board area and save in '~/ros_devel_ws/src/baxter_tictactoe/ttt_board_sensor/resources' as 'ttt_board_lab.xml'
+        * 'roslaunch ttt_board_sensor display_board_cells.launch'
+        * 'roslaunch ttt_board_sensor board_state_sensor.launch show:=true'
+
+    ## Run the demo
+      * Open a new terminal
+        * `cd` to `~/ros_ws`
+        * `source devel/setup.bash`
+        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
+        * `roslaunch tictactoe tictactoe.launch`    
+
+    ## Shut down the robot
+      * Open a terminal:
+        * `cd` to `~/ros_ws`
+        * `source devel/setup.bash`
+        * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
+        * `rosrun baxter_tools tuck_arms.py -t`
+
+  </description>
+  <author>Álvaro Castro González [acgonzal@ing.uc3m.es]</author>
+  <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
+  <maintainer email="alessandro.roncone@yale.edu">Alessandro Roncone</maintainer>
+  <license>GNU GPL v2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>message_generation</build_depend> ## ttt_board_sensor
+  
+  <depend>std_msgs</depend>
+  <depend>rosconsole</depend>
+  <depend>actionlib</depend>
+  <depend>actionlib_msgs</depend>
+  <depend>ttt_board_sensor</depend>
+  <depend>baxter_core_msgs</depend>
+  <depend>sound_play</depend>
+
+  ## ttt_board_sensor
+  <depend>sensor_msgs</depend>  
+  <depend>opencv2</depend>  
+  <depend>cv_bridge</depend>
+  <depend>roscpp</depend>
+  <depend>image_transport</depend>
+  <depend>image_vi</depend>
+  <depend>libqt4-dev</depend>
+  <depend>usb_cam</depend>
+
+  <exec_depend>usb_cam</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  ## ttt_board_sensor
+  <export>
+    <cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
+  </export>
+</package>
