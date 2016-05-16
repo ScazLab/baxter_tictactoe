@@ -2,7 +2,7 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b ttt_board_sensor
+\b baxter_tictactoe 
 
 <!-- 
 Provide an overview of your package.
