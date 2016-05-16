@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(tictactoe)
+project(baxter_tictactoe)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,17 +11,43 @@ find_package(catkin REQUIRED COMPONENTS
              actionlib
              rosconsole
              sound_play
-             ttt_board_sensor
+             #ttt_board_sensor
              baxter_core_msgs
+	     std_msgs
+	     cv_bridge
+	     image_transport
 )
 
 find_package(Qt4 COMPONENTS QtCore QtGui)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
+find_package(Qt4 REQUIRED)
+SET(QT_USE_QTXML 1)
+SET(QT_DONT_USE_QTGUI 0)
+include(${QT_USE_FILE})
+
+find_package( OpenCV REQUIRED )
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+#set the default path for built executables to the "bin" directory
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+#set the default path for built libraries to the "lib" directory
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
 add_service_files(FILES
     SetTrajectoryType.srv
 )
+
+add_message_files(FILES
+    ttt_board.msg
+)
+
+#generate_messages(
+#    DEPENDENCIES
+#    std_msgs
+#)
+
 #Required for generating the messages related to actionlib
 add_action_files(DIRECTORY action FILES PlaceToken.action)
 generate_messages(DEPENDENCIES actionlib_msgs std_msgs)
@@ -38,7 +64,11 @@ include_directories(include
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package()
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+    CATKIN_DEPENDS message_runtime
+)
 
 MESSAGE(${catkin_INCLUDE_DIRS})
 MESSAGE(${catkin_LIBRARIES})
@@ -102,3 +132,60 @@ target_link_libraries(ttt_brain
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
+
+###########
+## Build ##
+###########
+
+include_directories(include
+    ${catkin_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Build a ttt_board_sensor library
+add_library(${PROJECT_NAME} src/board_sensor/tictactoe_utils.cpp)
+target_link_libraries(${PROJECT_NAME}
+    ${QT_LIBRARIES}
+    ${catkin_LIBRARIES}
+)
+
+add_executable(cells_delimitation include/ttt/board_cells_delimitation.h
+                                  src/board_sensor/board_cells_delimitation.cpp)
+target_link_libraries(cells_delimitation ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(show_board_cells src/board_sensor/show_board_cells.cpp)
+target_link_libraries(show_board_cells ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(hsv_range_finder src/board_sensor/hsv_range_finder.cpp)
+add_dependencies(hsv_range_finder ${catkin_EXPORTED_TARGETS})
+target_link_libraries(hsv_range_finder ${PROJECT_NAME} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+add_executable(board_scheme src/board_sensor/board_scheme.cpp)
+add_dependencies(board_scheme ${catkin_EXPORTED_TARGETS})
+target_link_libraries(board_scheme ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+add_executable(board_state_sensing src/board_sensor/board_state_sensing.cpp)
+target_link_libraries(board_state_sensing ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+
+add_executable(board_motion_detection include/ttt/board_motion_detection.h
+                                      src/board_sensor/board_motion_detection.cpp)
+target_link_libraries(board_motion_detection ${PROJECT_NAME} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+#############
+## Install ##
+#############
+
+install(
+        TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME  DESTINATION bin  # This is for Windows
+)
+
+install(DIRECTORY include/ 
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
+
+
+
+

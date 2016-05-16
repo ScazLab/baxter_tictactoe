@@ -5,6 +5,6 @@
 
     <param name="smooth" type="bool" value="false" /> <!-- mechanistic-robotic movements -->
 
-    <include file="$(find tictactoe)/launchers/tictactoe.launch" />
+    <include file="$(find baxter_tictactoe)/launchers/tictactoe.launch" />
 
 </launch>

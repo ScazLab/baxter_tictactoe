@@ -1,10 +1,10 @@
 <!--defining the area of the cells in the game-->
 <launch>
-  <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
+  <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
 
-  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
-  <node name="hsv_range_finder" pkg="ttt_board_sensor" type="hsv_range_finder" respawn="false" output="screen">
+  <node name="hsv_range_finder" pkg="baxter_tictactoe" type="hsv_range_finder" respawn="false" output="screen">
     <remap from="/image_in" to="/usb_cam/image_raw"/>        
   </node>
  

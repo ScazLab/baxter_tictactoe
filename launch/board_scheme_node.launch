@@ -1,10 +1,10 @@
 <!--
  This node receives the state of the tic tac toe board and creates an image that represents it.
- It receives a /new_board topic with the information about each cell in a ttt_board_sensor/ttt_board message.
+ It receives a /new_board topic with the information about each cell in a baxter_tictactoe/ttt_board message.
  It publishes a image attached by default to the /board_scheme with a scheme of the board.
 -->
 
 <launch>
-  <node name="board_scheme" pkg="ttt_board_sensor" type="board_scheme" respawn="false" output="screen" args="/robot/xdisplay">
+  <node name="board_scheme" pkg="baxter_tictactoe" type="board_scheme" respawn="false" output="screen" args="/robot/xdisplay">
   </node>
 </launch>

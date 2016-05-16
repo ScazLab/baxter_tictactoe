@@ -1,10 +1,10 @@
 <!--Listening for any movement on the TTT board region of the image -->
 <launch>
-  <include file="$(find ttt_board_sensor)/launch/usb_cam_node.launch" />
+  <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
 
-  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find ttt_board_sensor)/custom_rosconsole.conf"/>
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
-  <node name="board_motion_detection" pkg="ttt_board_sensor" type="board_motion_detection" respawn="false" output="screen">
+  <node name="board_motion_detection" pkg="baxter_tictactoe" type="board_motion_detection" respawn="false" output="screen">
     <remap from="/in" to="/usb_cam/image_raw"/>
   </node>
 

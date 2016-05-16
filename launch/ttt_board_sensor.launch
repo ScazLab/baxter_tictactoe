@@ -1,7 +1,7 @@
 <!-- An online display running on real-time to show the state of the board -->
 <launch>
-  <include file="$(find ttt_board_sensor)/launch/board_state_sensor.launch" />
-  <include file="$(find ttt_board_sensor)/launch/board_display.launch" />
+  <include file="$(find baxter_tictactoe)/launch/board_state_sensor.launch" />
+  <include file="$(find baxter_tictactoe)/launch/board_display.launch" />
 
   <node name="camera_view" pkg="image_view" type="image_view" respawn="false" output="screen">
     <remap from="image" to="/usb_cam/image_raw"/>
