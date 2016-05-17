@@ -18,6 +18,7 @@
         * `source devel/setup.bash`
         * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
         * `rosrun baxter_tools tuck_arms.py -u`
+        * Manually move right arm outside camera's field of view
         * `roslaunch tictactoe tictactoe.launch`
         * Move board to correct position via observation of right arm movement
         * Exit program
