@@ -5,8 +5,8 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "ttt/tictactoe_utils.h"
-#include "ttt_board_sensor/ttt_board.h"
+#include "tictactoe_utils.h"
+#include "baxter_tictactoe/ttt_board.h"
 
 namespace ttt
 {
@@ -135,7 +135,6 @@ public:
                 if (i==0) cv::imshow("red  masked image of the board",hsv_filt_mask);
                 if (i==1) cv::imshow("blue masked image of the board",hsv_filt_mask);
             }
-
 
             for (int j = 0; j < board.cells.size(); ++j)
             {

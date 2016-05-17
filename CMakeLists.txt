@@ -1,3 +1,14 @@
+################################### Vestigial ######################################
+#SET(QT_USE_QTXML 1)
+#SET(QT_DONT_USE_QTGUI 0)
+################################### Vestigial ######################################
+
+
+
+
+# Copyright: (C) 2016 Social Robotics Lab - Yale University
+# Authors: 
+# CopyPolicy: Released under the terms of the GNU GPL v3.0.
 cmake_minimum_required(VERSION 2.8.3)
 project(baxter_tictactoe)
 
@@ -11,181 +22,215 @@ find_package(catkin REQUIRED COMPONENTS
              actionlib
              rosconsole
              sound_play
-             #ttt_board_sensor
              baxter_core_msgs
-	     std_msgs
-	     cv_bridge
-	     image_transport
+    	     std_msgs
+    	     cv_bridge
+    	     image_transport
 )
 
-find_package(Qt4 COMPONENTS QtCore QtGui)
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
+find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
+find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
 
-find_package(Qt4 REQUIRED)
-SET(QT_USE_QTXML 1)
-SET(QT_DONT_USE_QTGUI 0)
-include(${QT_USE_FILE})
+## System dependencies are found with CMake's conventions
+# find_package(Boost REQUIRED COMPONENTS system)
 
-find_package( OpenCV REQUIRED )
-include_directories(${OpenCV_INCLUDE_DIRS})
+## Uncomment this if the package has a setup.py. This macro ensures
+## modules and global scripts declared therein get installed
+## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
+# catkin_python_setup()
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+################################################
+## Declare ROS messages, services and actions ##
+################################################
 
-add_service_files(FILES
-    SetTrajectoryType.srv
-)
+## To declare and build messages, services or actions from within this
+## package, follow these steps:
+## * Let MSG_DEP_SET be the set of packages whose message types you use in
+##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
+## * In the file package.xml:
+##   * add a build_depend tag for "message_generation"
+##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
+##     but can be declared for certainty nonetheless:
+##     * add a run_depend tag for "message_runtime"
+## * In this file (CMakeLists.txt):
+##   * add "message_generation" and every package in MSG_DEP_SET to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * add "message_runtime" and every package in MSG_DEP_SET to
+##     catkin_package(CATKIN_DEPENDS ...)
+##   * uncomment the add_*_files sections below as needed
+##     and list every .msg/.srv/.action file to be processed
+##   * uncomment the generate_messages entry below
+##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
+## Generate messages in the 'msg' folder
 add_message_files(FILES
     ttt_board.msg
 )
 
-#generate_messages(
-#    DEPENDENCIES
-#    std_msgs
-#)
-
-#Required for generating the messages related to actionlib
-add_action_files(DIRECTORY action FILES PlaceToken.action)
-generate_messages(DEPENDENCIES actionlib_msgs std_msgs)
-
-include_directories(include
-                    ${catkin_INCLUDE_DIRS}
-                    ${CMAKE_CURRENT_SOURCE_DIR}
+## Generate services in the 'srv' folder
+add_service_files(FILES
+    SetTrajectoryType.srv
 )
 
-###################################################
-## Declare things to be passed to other projects ##
-###################################################
+#Required for generating the messages related to actionlib
+add_action_files(DIRECTORY action FILES 
+    PlaceToken.action
+)
 
+## Generate added messages and services with any dependencies listed here
+generate_messages(DEPENDENCIES 
+    actionlib_msgs 
+    std_msgs
+)
+
+################################################
+## Declare ROS dynamic reconfigure parameters ##
+################################################
+
+## To declare and build dynamic reconfigure parameters within this
+## package, follow these steps:
+## * In the file package.xml:
+##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
+## * In this file (CMakeLists.txt):
+##   * add "dynamic_reconfigure" to
+##     find_package(catkin REQUIRED COMPONENTS ...)
+##   * uncomment the "generate_dynamic_reconfigure_options" section below
+##     and list every .cfg file to be processed
+
+## Generate dynamic reconfigure parameters in the 'cfg' folder
+# generate_dynamic_reconfigure_options(
+#   cfg/DynReconf1.cfg
+#   cfg/DynReconf2.cfg
+# )
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS lib/include/
     LIBRARIES ${PROJECT_NAME}
     CATKIN_DEPENDS message_runtime
-)
-
-MESSAGE(${catkin_INCLUDE_DIRS})
-MESSAGE(${catkin_LIBRARIES})
-# Targets
-
-# trajectory xml parser
-add_library(trajectory_xml_parser src/trajectory_xml_parser/trajectory_xml_parser.cpp src/trajectory_xml_parser/trajectory_xml_parser.h)
-target_link_libraries(trajectory_xml_parser ${QT_LIBRARIES} ${catkin_LIBRARIES})
-add_executable(test_trajectory_xml_parser src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
-target_link_libraries(test_trajectory_xml_parser trajectory_xml_parser)
-add_executable(test_loading_trajectory_xml src/trajectory_xml_parser/test_loading_trajectory_xml.cpp)
-target_link_libraries(test_loading_trajectory_xml trajectory_xml_parser)
-# conversor from raw to xml trajectory files
-add_executable(trajectory_from_raw_to_xml src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
-target_link_libraries(trajectory_from_raw_to_xml trajectory_xml_parser)
-# concat several xml trajectory files
-add_executable(concat_trajectory_xml_files src/trajectory_xml_parser/concat_trajectory_xml_files.cpp)
-target_link_libraries(concat_trajectory_xml_files trajectory_xml_parser)
-
-# vacuum gripper
-add_library(vacuum_gripper src/vacuum_gripper/vacuum_gripper.cpp src/vacuum_gripper/vacuum_gripper.h)
-add_executable(test_vacuum_gripper src/vacuum_gripper/test_vacuum_gripper.cpp)
-target_link_libraries(test_vacuum_gripper vacuum_gripper ${catkin_LIBRARIES})
-
-# robot state
-add_library(robot_state src/robot_state/robot_state.cpp src/robot_state/robot_state.h)
-add_executable(test_robot_state src/robot_state/test_robot_state.cpp)
-target_link_libraries(test_robot_state robot_state ${catkin_LIBRARIES})
-
-# trajectory player library
-add_library(trajectory_player src/trajectory_player/trajectory_player.cpp src/trajectory_player/trajectory_player.h)
-target_link_libraries(trajectory_player vacuum_gripper)
-add_executable(test_trajectory_player src/trajectory_player/test_trajectory_player.cpp)
-target_link_libraries(test_trajectory_player trajectory_player trajectory_xml_parser ${catkin_LIBRARIES})
-
-# move_maker
-add_library(move_maker src/move_maker/move_maker.cpp src/move_maker/move_maker.h src/utils/my_ros_utils.h src/move_maker/ttt_moves_trajectories.h)
-add_dependencies(move_maker ${catkin_EXPORTED_TARGETS})
-target_link_libraries(move_maker trajectory_player trajectory_xml_parser)
-add_executable(move_maker_server src/move_maker/move_maker_server.cpp)
-target_link_libraries(move_maker_server move_maker)
-add_executable(move_maker_simpleclient src/move_maker/move_maker_simpleclient.cpp)
-# Boost thread to move_maker_simpleclient
-find_package(Boost REQUIRED COMPONENTS thread)
-include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(move_maker_simpleclient ${Boost_LIBRARIES}) 
-
-target_link_libraries(move_maker_simpleclient move_maker)
-
-#tests for utils
-add_executable(test_thread_safe_variable src/utils/test_thread_safe_variable.cpp src/utils/T_ThreadSafe.h)
-add_executable(test_buffer_toggle src/utils/test_buffer_toggle.cpp src/utils/BufferToggle.h)
-
-# ttt brain
-add_executable(ttt_brain src/brain/ttt_brain.cpp)
-target_link_libraries(ttt_brain
-                      vacuum_gripper robot_state
-                      ${QT_LIBRARIES} ${catkin_LIBRARIES})
-
-# Launchers
-install(DIRECTORY launch/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
 ###########
 ## Build ##
 ###########
 
-include_directories(include
-    ${catkin_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(${OpenCV_INCLUDE_DIRS})
+include_directories(lib/include/
+                    ${catkin_INCLUDE_DIRS}
+                    ${CMAKE_CURRENT_SOURCE_DIR}
 )
+include_directories(${Boost_INCLUDE_DIRS})
 
-# Build a ttt_board_sensor library
-add_library(${PROJECT_NAME} src/board_sensor/tictactoe_utils.cpp)
-target_link_libraries(${PROJECT_NAME}
-    ${QT_LIBRARIES}
-    ${catkin_LIBRARIES}
-)
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
 
-add_executable(cells_delimitation include/ttt/board_cells_delimitation.h
-                                  src/board_sensor/board_cells_delimitation.cpp)
-target_link_libraries(cells_delimitation ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+## Add libraries
+add_subdirectory(lib)
 
-add_executable(show_board_cells src/board_sensor/show_board_cells.cpp)
-target_link_libraries(show_board_cells ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+## Declare a C++ executables
+# add_executable(test_trajectory_xml_parser       lib/src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
+# add_executable(test_loading_trajectory_xml      lib/src/trajectory_xml_parser/test_loading_trajectory_xml.cpp)
+# add_executable(trajectory_from_raw_to_xml       lib/src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
+# add_executable(concat_trajectory_xml_files      lib/src/trajectory_xml_parser/concat_trajectory_xml_files.cpp)
+# add_executable(test_vacuum_gripper              lib/src/vacuum_gripper/test_vacuum_gripper.cpp)
+# add_executable(test_robot_state                 lib/src/robot_state/test_robot_state.cpp)
+# add_executable(test_trajectory_player           lib/src/trajectory_player/test_trajectory_player.cpp)
+# add_executable(move_maker_server                lib/src/move_maker/move_maker_server.cpp)
+# add_executable(move_maker_simpleclient          lib/src/move_maker/move_maker_simpleclient.cpp)
+# add_executable(test_thread_safe_variable        lib/src/utils/test_thread_safe_variable.cpp                     lib/include/T_ThreadSafe.h)
+# add_executable(test_buffer_toggle               lib/src/utils/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
+# add_executable(ttt_brain                        lib/src/brain/ttt_brain.cpp)
+# add_executable(cells_delimitation               lib/include/board_cells_delimitation.h                          lib/src/board_sensor/board_cells_delimitation.cpp)
+# add_executable(show_board_cells                 lib/src/board_sensor/show_board_cells.cpp)
+# add_executable(hsv_range_finder                 lib/src/board_sensor/hsv_range_finder.cpp)
+# add_executable(board_scheme                     lib/src/board_sensor/board_scheme.cpp)
+# add_executable(board_state_sensing              lib/src/board_sensor/board_state_sensing.cpp)
+# add_executable(board_motion_detection           lib/include/board_motion_detection.h                            lib/src/board_sensor/board_motion_detection.cpp)
 
-add_executable(hsv_range_finder src/board_sensor/hsv_range_finder.cpp)
-add_dependencies(hsv_range_finder ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hsv_range_finder ${PROJECT_NAME} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+## Add cmake target dependencies of the executable
+## same as for the library above
+# add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_vacuum_gripper            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_robot_state               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(cells_delimitation             baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(board_motion_detection         baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(board_scheme src/board_sensor/board_scheme.cpp)
-add_dependencies(board_scheme ${catkin_EXPORTED_TARGETS})
-target_link_libraries(board_scheme ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-add_executable(board_state_sensing src/board_sensor/board_state_sensing.cpp)
-target_link_libraries(board_state_sensing ${PROJECT_NAME} ${OpenCV_LIBS} ${QT_LIBRARIES} ${catkin_LIBRARIES})
-
-add_executable(board_motion_detection include/ttt/board_motion_detection.h
-                                      src/board_sensor/board_motion_detection.cpp)
-target_link_libraries(board_motion_detection ${PROJECT_NAME} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+## Specify libraries to link a library or executable target against
+# target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
+# target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
+# target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
+# target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
+# target_link_libraries(test_vacuum_gripper               vacuum_gripper                                                      ${catkin_LIBRARIES})
+# target_link_libraries(test_robot_state                  robot_state                                                         ${catkin_LIBRARIES})
+# target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
+# target_link_libraries(move_maker_server                 move_maker)
+# ################################### Vestigial ######################################
+# #target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}) 
+# #target_link_libraries(move_maker_simpleclient           move_maker)
+# ####################################################################################
+# target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
+# target_link_libraries(ttt_brain                         vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(cells_delimitation                ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(show_board_cells                  ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(hsv_range_finder                  ${PROJECT_NAME}     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+# target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+# target_link_libraries(board_state_sensing               ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(board_motion_detection            ${PROJECT_NAME}     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
 #############
 
-install(
-        TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME  DESTINATION bin  # This is for Windows
-)
+# all install targets should use catkin DESTINATION variables
+# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
+
+## Mark executable scripts (Python etc.) for installation
+## in contrast to setup.py, you can choose the destination
+# install(PROGRAMS
+#   scripts/my_python_script
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+## Mark executables and/or libraries for installation
+
+#install(TARGETS ${PROJECT_NAME}
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 
 install(DIRECTORY include/ 
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
-
-
-
+## Mark other files for installation (e.g. launch and bag files, etc.)
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 

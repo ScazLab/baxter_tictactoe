@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdio>
-#include "src/utils/BufferToggle.h"
+#include "BufferToggle.h"
 
 int main()
 {

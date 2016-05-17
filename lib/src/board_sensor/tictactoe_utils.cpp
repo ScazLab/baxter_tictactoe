@@ -1,7 +1,19 @@
-#include "ttt/tictactoe_utils.h"
+#include "../../include/tictactoe_utils.h"
 
 using namespace std;
 using namespace ttt;
+
+std::string cell_state_to_str(cellState c_s)
+{
+    switch(c_s)
+    {
+        case empty: return std::string("empty");
+        case blue: return std::string("blue");
+        case red: return std::string("red");
+        case undefined: return std::string("undefined");
+        default: return std::string("[value unknown]");
+    }
+}
 
 /**************************************************************************/
 /**                        COLOR_RANGE                                   **/
@@ -293,3 +305,33 @@ cv::Mat Board::mask_image(const cv::Mat &_src)
 
     return im_crop;
 }
+
+cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
+{
+    cv::Mat res = _src.clone();
+
+    // If H.lower is higher than H.upper it means that we would like to
+    // detect something in the range [0-upper] & [lower-180] (i.e. the red)
+    // So the thresholded image will be made with two opencv calls to inRange
+    // and then the two will be merged into one
+    if (_hsv.H.min > _hsv.H.max)
+    {
+        cv::Mat resA = _src.clone();
+        cv::Mat resB = _src.clone();
+
+        cv::inRange(_src, cv::Scalar(         0, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(_hsv.H.max, _hsv.S.max, _hsv.V.max), resA);
+        cv::inRange(_src, cv::Scalar(_hsv.H.min, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(       180, _hsv.S.max, _hsv.V.max), resB);
+
+        cv::bitwise_or(resA,resB,res);
+    }
+    else
+    {
+        cv::inRange(_src, cv::Scalar(_hsv.get_hsv_min()),
+                          cv::Scalar(_hsv.get_hsv_max()), res);
+    }
+
+    return res;
+}
+

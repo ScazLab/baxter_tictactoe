@@ -8,7 +8,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "ttt/tictactoe_utils.h"
+#include "../../include/tictactoe_utils.h"
 
 
 namespace ttt

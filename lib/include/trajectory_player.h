@@ -18,8 +18,8 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
-#include "src/utils/T_ThreadSafe.h"
-#include "src/vacuum_gripper/vacuum_gripper.h"
+#include "T_ThreadSafe.h"
+#include "vacuum_gripper.h"
 
 namespace ttt
 {

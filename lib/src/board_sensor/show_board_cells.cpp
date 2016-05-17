@@ -12,7 +12,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "ttt/tictactoe_utils.h"
+#include "../../include/tictactoe_utils.h"
 
 namespace ttt
 {

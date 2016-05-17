@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include "trajectory_player.h"
-#include "src/trajectory_xml_parser/trajectory_xml_parser.h"
+#include "trajectory_xml_parser.h"
 
 int main(int argc, char** argv)
 {

@@ -1,4 +1,4 @@
-#include "src/utils/T_ThreadSafe.h"
+#include "T_ThreadSafe.h"
 #include <iostream>
 
 /*! \file test_thread_safe_variable.cpp
