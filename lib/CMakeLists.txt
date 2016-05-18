@@ -25,9 +25,9 @@ add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp       
 add_dependencies(move_maker        ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}        ${catkin_LIBRARIES}           ${QT_LIBRARIES}          ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}          ${OpenCV_LIBRARIES}    ${catkin_LIBRARIES})
 target_link_libraries(trajectory_xml_parser  ${QT_LIBRARIES}               ${catkin_LIBRARIES})
-target_link_libraries(trajectory_player      vacuum_gripper)
+target_link_libraries(trajectory_player      vacuum_gripper ${catkin_LIBRARIES})
 target_link_libraries(move_maker             trajectory_player             trajectory_xml_parser)
 
 ## Mark libraries for installation

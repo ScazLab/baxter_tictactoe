@@ -108,7 +108,7 @@ generate_messages(DEPENDENCIES
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS lib/include/
-    LIBRARIES baxterTictactoe
+    LIBRARIES baxterTictactoe 
     CATKIN_DEPENDS message_runtime
 )
 
@@ -118,7 +118,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(lib/include/
+include_directories(lib/include
                     ${OpenCV_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
@@ -143,16 +143,15 @@ add_executable(move_maker_server                src/move_maker_server/move_maker
 add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
 add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp              lib/include/T_ThreadSafe.h)
 add_executable(test_buffer_toggle               src/test_buffer_toggle/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
-# add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
+add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
 add_executable(board_cells_delimitation         src/board_cells_delimitation/board_cells_delimitation.cpp                src/board_cells_delimitation/board_cells_delimitation.h)
-# add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
+add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 # add_executable(hsv_range_finder                 lib/src/board_sensor/hsv_range_finder.cpp)
 # add_executable(board_scheme                     lib/src/board_sensor/board_scheme.cpp)
 # add_executable(board_state_sensing              lib/src/board_sensor/board_state_sensing.cpp)
 # add_executable(board_motion_detection           lib/include/board_motion_detection.h                            lib/src/board_sensor/board_motion_detection.cpp)
 
 ## Add cmake target dependencies of the executable
-## same as for the library above
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -164,14 +163,13 @@ add_dependencies(move_maker_server              baxter_tictactoe_generate_messag
 add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-# add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_cells_delimitation       baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-# add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 # add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(board_motion_detection         baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
@@ -183,14 +181,14 @@ target_link_libraries(test_robot_state                  robot_state             
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-# target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-target_link_libraries(board_cells_delimitation          ${PROJECT_NAME}     baxterTictactoe ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-# target_link_libraries(show_board_cells                   ${PROJECT_NAME}      ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-# target_link_libraries(show_board_cells                  ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-# target_link_libraries(hsv_range_finder                  ${PROJECT_NAME}     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(board_cells_delimitation          baxterTictactoe     ${OpenCV_LIBS}      ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(show_board_cells                  baxterTictactoe      ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 # target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
-# target_link_libraries(board_state_sensing               ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-# target_link_libraries(board_motion_detection            ${PROJECT_NAME}     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+# target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(board_motion_detection            baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 
 #############
 ## Install ##

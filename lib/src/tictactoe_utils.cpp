@@ -3,7 +3,7 @@
 using namespace std;
 using namespace ttt;
 
-std::string cell_state_to_str(cellState c_s)
+std::string ttt::cell_state_to_str(ttt::cellState c_s)
 {
     switch(c_s)
     {
