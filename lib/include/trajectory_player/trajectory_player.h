@@ -19,7 +19,7 @@
 #include <actionlib/client/terminal_state.h>
 
 #include "T_ThreadSafe.h"
-#include "vacuum_gripper.h"
+#include "vacuum_gripper/vacuum_gripper.h"
 
 namespace ttt
 {

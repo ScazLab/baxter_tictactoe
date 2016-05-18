@@ -1,4 +1,4 @@
-#include "trajectory_xml_parser.h"
+#include "trajectory_xml_parser/trajectory_xml_parser.h"
 
 namespace ttt
 {

@@ -1,4 +1,4 @@
-#include "vacuum_gripper.h"
+#include "vacuum_gripper/vacuum_gripper.h"
 
 int main(int argc, char** argv)
 {    

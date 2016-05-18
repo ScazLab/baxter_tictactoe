@@ -1,13 +1,5 @@
-################################### Vestigial ######################################
-#SET(QT_USE_QTXML 1)
-#SET(QT_DONT_USE_QTGUI 0)
-################################### Vestigial ######################################
-
-
-
-
 # Copyright: (C) 2016 Social Robotics Lab - Yale University
-# Authors: 
+# Authors: Álvaro Castro González, Olivier Mangin, Alessandro Roncone
 # CopyPolicy: Released under the terms of the GNU GPL v3.0.
 cmake_minimum_required(VERSION 2.8.3)
 project(baxter_tictactoe)
@@ -116,7 +108,7 @@ generate_messages(DEPENDENCIES
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS lib/include/
-    LIBRARIES ${PROJECT_NAME}
+    LIBRARIES baxterTictactoe
     CATKIN_DEPENDS message_runtime
 )
 
@@ -126,12 +118,12 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(lib/include/
+                    ${OpenCV_INCLUDE_DIRS}
+                    ${Boost_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
                     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-include_directories(${Boost_INCLUDE_DIRS})
 
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
@@ -140,20 +132,20 @@ add_definitions(${QT_DEFINITIONS})
 add_subdirectory(lib)
 
 ## Declare a C++ executables
-# add_executable(test_trajectory_xml_parser       lib/src/trajectory_xml_parser/test_trajectory_xml_parser.cpp)
-# add_executable(test_loading_trajectory_xml      lib/src/trajectory_xml_parser/test_loading_trajectory_xml.cpp)
-# add_executable(trajectory_from_raw_to_xml       lib/src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp)
-# add_executable(concat_trajectory_xml_files      lib/src/trajectory_xml_parser/concat_trajectory_xml_files.cpp)
-# add_executable(test_vacuum_gripper              lib/src/vacuum_gripper/test_vacuum_gripper.cpp)
-# add_executable(test_robot_state                 lib/src/robot_state/test_robot_state.cpp)
-# add_executable(test_trajectory_player           lib/src/trajectory_player/test_trajectory_player.cpp)
-# add_executable(move_maker_server                lib/src/move_maker/move_maker_server.cpp)
-# add_executable(move_maker_simpleclient          lib/src/move_maker/move_maker_simpleclient.cpp)
-# add_executable(test_thread_safe_variable        lib/src/utils/test_thread_safe_variable.cpp                     lib/include/T_ThreadSafe.h)
-# add_executable(test_buffer_toggle               lib/src/utils/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
-# add_executable(ttt_brain                        lib/src/brain/ttt_brain.cpp)
-# add_executable(cells_delimitation               lib/include/board_cells_delimitation.h                          lib/src/board_sensor/board_cells_delimitation.cpp)
-# add_executable(show_board_cells                 lib/src/board_sensor/show_board_cells.cpp)
+add_executable(test_trajectory_xml_parser       src/test_trajectory_xml_parser/test_trajectory_xml_parser.cpp)
+add_executable(test_loading_trajectory_xml      src/test_loading_trajectory_xml/test_loading_trajectory_xml.cpp)
+add_executable(trajectory_from_raw_to_xml       src/trajectory_from_raw_to_xml/trajectory_from_raw_to_xml.cpp)
+add_executable(concat_trajectory_xml_files      src/concat_trajectory_xml_files/concat_trajectory_xml_files.cpp)
+add_executable(test_vacuum_gripper              src/test_vacuum_gripper/test_vacuum_gripper.cpp)
+add_executable(test_robot_state                 src/test_robot_state/test_robot_state.cpp)
+add_executable(test_trajectory_player           src/test_trajectory_player/test_trajectory_player.cpp)
+add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
+add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
+add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp              lib/include/T_ThreadSafe.h)
+add_executable(test_buffer_toggle               src/test_buffer_toggle/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
+# add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
+add_executable(board_cells_delimitation         src/board_cells_delimitation/board_cells_delimitation.cpp                src/board_cells_delimitation/board_cells_delimitation.h)
+# add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 # add_executable(hsv_range_finder                 lib/src/board_sensor/hsv_range_finder.cpp)
 # add_executable(board_scheme                     lib/src/board_sensor/board_scheme.cpp)
 # add_executable(board_state_sensing              lib/src/board_sensor/board_state_sensing.cpp)
@@ -161,20 +153,20 @@ add_subdirectory(lib)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_vacuum_gripper            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_robot_state               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(cells_delimitation             baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_vacuum_gripper            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_robot_state               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+# add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(board_cells_delimitation       baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+# add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 # add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 # add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -182,21 +174,18 @@ add_subdirectory(lib)
 
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
-# target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
-# target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
-# target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
-# target_link_libraries(test_vacuum_gripper               vacuum_gripper                                                      ${catkin_LIBRARIES})
-# target_link_libraries(test_robot_state                  robot_state                                                         ${catkin_LIBRARIES})
-# target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
-# target_link_libraries(move_maker_server                 move_maker)
-# ################################### Vestigial ######################################
-# #target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}) 
-# #target_link_libraries(move_maker_simpleclient           move_maker)
-# ####################################################################################
-# target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-# target_link_libraries(ttt_brain                         vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-# target_link_libraries(cells_delimitation                ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
+target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
+target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
+target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
+target_link_libraries(test_vacuum_gripper               vacuum_gripper                                                      ${catkin_LIBRARIES})
+target_link_libraries(test_robot_state                  robot_state                                                         ${catkin_LIBRARIES})
+target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
+target_link_libraries(move_maker_server                 move_maker)
+target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
+# target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(board_cells_delimitation          ${PROJECT_NAME}     baxterTictactoe ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+# target_link_libraries(show_board_cells                   ${PROJECT_NAME}      ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 # target_link_libraries(show_board_cells                  ${PROJECT_NAME}     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 # target_link_libraries(hsv_range_finder                  ${PROJECT_NAME}     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 # target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})

@@ -1,4 +1,4 @@
-#include "../../include/tictactoe_utils.h"
+#include "baxterTictactoe/tictactoe_utils.h"
 
 using namespace std;
 using namespace ttt;

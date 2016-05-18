@@ -1,4 +1,4 @@
-#include "trajectory_player.h"
+#include "trajectory_player/trajectory_player.h"
 
 namespace ttt
 {

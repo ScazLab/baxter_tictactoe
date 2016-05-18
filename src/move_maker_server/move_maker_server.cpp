@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include "move_maker.h"
+#include "move_maker/move_maker.h"
 
 int main(int argc, char** argv)
 {

@@ -9,11 +9,11 @@
 #include <QTextStream>
 
 #include <ttt_board_sensor/ttt_board.h>
-#include "../../include/tictactoe_utils.h"
+#include "baxterTictactoe/tictactoe_utils.h"
 
-#include "../../include/T_ThreadSafe.h"
-#include "tictactoe/PlaceTokenAction.h"
-#include "../../include/vacuum_gripper.h"
+#include "T_ThreadSafe.h"
+#include <tictactoe/PlaceTokenAction.h>
+#include "vacuum_gripper/vacuum_gripper.h"
 
 #include <tictactoe/SetTrajectoryType.h>
 

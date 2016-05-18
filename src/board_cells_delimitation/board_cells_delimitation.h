@@ -16,7 +16,7 @@
 #include <QFileDialog>
 #include <QApplication>
 
-#include "tictactoe_utils.h"
+#include "baxterTictactoe/tictactoe_utils.h"
 
 namespace ttt
 {
