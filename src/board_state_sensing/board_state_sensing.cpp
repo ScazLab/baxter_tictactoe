@@ -183,11 +183,13 @@ public:
 
 int main(int argc, char** argv)
 {
+    printf("HI!\n");
     ros::init(argc, argv, "show_cells");
 
     // Very dirty way to process command line arguments. It seems that
     // there is not a straightforward standard ROS way, unfortunately.
     // (by alecive, all the fault goes to him)
+
     bool show=false;
     if (argc>1)
     {
@@ -198,6 +200,7 @@ int main(int argc, char** argv)
     }
 
     ttt::BoardState cd(show);
+    // ttt::BoardState cd();
     ros::spin();
 
     return 0;

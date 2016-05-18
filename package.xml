@@ -51,7 +51,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>message_generation</build_depend> ## ttt_board_sensor
+  <build_depend>message_generation</build_depend> 
   
   <depend>std_msgs</depend>
   <depend>rosconsole</depend>
@@ -69,7 +69,6 @@
   <exec_depend>usb_cam</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 
-  ## ttt_board_sensor
   <export>
     <cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
   </export>
