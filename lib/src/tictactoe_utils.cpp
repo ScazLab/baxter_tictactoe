@@ -306,7 +306,7 @@ cv::Mat Board::mask_image(const cv::Mat &_src)
     return im_crop;
 }
 
-cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
+cv::Mat ttt::hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
 {
     cv::Mat res = _src.clone();
 

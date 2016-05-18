@@ -5,8 +5,8 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "tictactoe_utils.h"
-#include "baxter_tictactoe/ttt_board.h"
+#include "baxterTictactoe/tictactoe_utils.h"
+#include "ttt_board_sensor/ttt_board.h"
 
 namespace ttt
 {
