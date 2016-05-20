@@ -60,6 +60,14 @@ namespace ttt {
 
 	void cellDelimitation::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
+		board.resetState();
+
+		ttt_board_sensor::ttt_board msg_board;
+        msg_board.data.assign(undefined); // initially the state of each cell is undefined
+        msg_board.header.stamp = msg->header.stamp;
+        msg_board.header.frame_id = msg->header.frame_id;
+
+        // convert ROS image to Cv::Mat
 		cv_bridge::CvImageConstPtr cv_ptr;
 		try
 		{
@@ -73,10 +81,37 @@ namespace ttt {
 
 		cv::Mat img_gray;
 		cv::Mat img_binary;
-   		cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
-   		cv::threshold(img_gray, img_binary, 50, 255, cv::THRESH_BINARY);
 
-        cv::imshow(cellDelimitation::window_name, img_binary);
+		// convert image color model from BGR to grayscale
+   		cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
+   		// convert grayscale image to binary image, using 155 threshold value to 
+   		// isolate white-colored board
+   		cv::threshold(img_gray, img_binary, 150, 255, cv::THRESH_BINARY);
+
+   		cv::Mat img_mask;
+
+   		// a contour is an array of x-y coordinates describing the boundaries of an object
+   		std::vector<std::vector<cv::Point> > contours;
+   		// Vec4i = vectors w/ 4 ints
+   		std::vector<cv::Vec4i> hierarchy;
+
+   		cv::findContours(img_binary, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+   		double largest_area = 0;
+   		int largest_area_index = 0;
+   		for(int i = 0; i < contours.size(); i++){
+   			largest_area = largest_area>contourArea(contours[i], false)?largest_area:contourArea(contours[i], false);
+   			largest_area_index = largest_area>contourArea(contours[i], false)?largest_area_index:i;
+   		}
+
+   		cv::Mat board_outline = cv::Mat::zeros(img_binary.size(), CV_8UC3);
+   		// for(int i = 0; i < contours.size(); i++){
+   		// 	drawContours(board_outline, contours, -1, cv::Scalar(255,255,255), CV_FILLED);
+   		// }
+
+   		drawContours(board_outline, contours, largest_area_index, cv::Scalar(255,255,255), CV_FILLED);
+
+        cv::imshow(cellDelimitation::window_name, board_outline);
 		cv::waitKey(30);
 	}
 }
