@@ -24,7 +24,7 @@ It identifies the state of each cell: red, blue, or empty.
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
     <arg name="show" default="false" />
 
-    <!-- The colored area threshold specifies the minimum are size for which a cell is considered colored. It depends on the distance between the camera and board. -->
+    <!-- The colored area threshold specifies the minimum area size for which a cell is considered colored. It depends on the distance between the camera and board. -->
     <param name="baxter_tictactoe/area_threshold" type="int" value="150" />
 
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>

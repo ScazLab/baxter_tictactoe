@@ -144,7 +144,10 @@ add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move
 add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp              lib/include/T_ThreadSafe.h)
 add_executable(test_buffer_toggle               src/test_buffer_toggle/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
 add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
-add_executable(board_cells_delimitation         src/board_cells_delimitation/board_cells_delimitation.cpp                src/board_cells_delimitation/board_cells_delimitation.h)
+
+add_executable(cells_delimitation               src/board_cells_delimitation/board_cells_delimitation.cpp                src/board_cells_delimitation/board_cells_delimitation.h)
+add_executable(cells_delimitation_auto          src/board_cells_delimitation/board_cells_delimitation_auto.cpp           src/board_cells_delimitation/board_cells_delimitation_auto.h)
+
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
@@ -164,11 +167,14 @@ add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messag
 add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(board_cells_delimitation       baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(cells_delimitation             baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(cells_delimitation_auto        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
 add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
-add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_motion_detection         baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -181,9 +187,12 @@ target_link_libraries(test_robot_state                  robot_state             
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper      robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-target_link_libraries(board_cells_delimitation          baxterTictactoe     ${OpenCV_LIBS}      ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-target_link_libraries(show_board_cells                  baxterTictactoe      ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper          robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+
+target_link_libraries(cells_delimitation                baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(cells_delimitation_auto           baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+
+target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
