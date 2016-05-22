@@ -6,7 +6,19 @@
 4. mask out board 
 5. 
 
+3 Options to Isolate a Colored Segment
 
+(1) inRange
+Parameters: void inRange(InputArray src, Scalar lowerb, Scalar upperb, OutputArray dst)
+Functionality: sets element to black if outside of range, white if inside
+Example: https://solarianprogrammer.com/2015/05/08/detect-red-circles-image-using-opencv/
+
+(2) threshold
+Parameters: double threshold(InputArray src, OutputArray dst, double threshval, double maxval, int type)
+Functionality: if type == THRESH_BINARY, dst(x) = maxval if src(x) > thresh, 0 if src(x) <= thresh
+
+(3) findContours
+   		
 
 OpenCV bug with converting ROS image into a cv::Mat
 
@@ -106,12 +118,34 @@ namespace ttt {
    		}
 
    		// draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
-   		cv::Mat outer_board_outline = cv::Mat::zeros(img_binary.size(), CV_8UC3);
-   		drawContours(outer_board_outline, contours, largest_area_index, cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+   		cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
+   		drawContours(outer_board, contours, largest_area_index, cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
+   		cv::findContours(outer_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
+   		largest_area = 0;
+   		largest_area_index = 0;
+   		double next_largest_area = 0;
+   		int next_largest_area_index = 0;
 
-        cv::imshow(cellDelimitation::window_name, board_outline);
+   		for(int i = 0; i < contours.size(); i++){
+   			if(contourArea(contours[i], false) > largest_area){
+   				next_largest_area = largest_area;
+   				next_largest_area_index = largest_area_index;
+   				largest_area = contourArea(contours[i], false);
+   				largest_area_index = i;
+   			}
+   			else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area){
+   				next_largest_area = contourArea(contours[i], false);
+   				next_largest_area_index = i;
+   			}
+   		}
+
+   		cv::Mat inner_board = cv::Mat::ones(outer_board.size(), CV_8UC1);
+   		drawContours(inner_board, contours, next_largest_area_index, cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
+        cv::imshow(cellDelimitation::window_name, inner_board);
+        // cv::imshow(cellDelimitation::window_name, outer_board_outline);
 		cv::waitKey(30);
 	}
 }
