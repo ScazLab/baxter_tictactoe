@@ -150,10 +150,6 @@ namespace ttt {
    		drawContours(inner_board, contours, next_largest_area_index, 
    					cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
-   		// Find contours again. n-th largest contour 2 <= n <= 9 will be the cells
-   		// Problem: how to find which contour equates to what cell?
-   		// http://docs.opencv.org/3.1.0/dd/d49/tutorial_py_contour_features.html#gsc.tab=0+
-
    		cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
    		largest_area_index = get_ith_index(contours, LARGEST);
@@ -166,6 +162,26 @@ namespace ttt {
    				drawContours(board_cells, contours, i, 
    							cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
    			}
+   		}
+
+   		// find and display cell centroids 
+		std::vector<std::vector<cv::Point> > cells(9);
+   		std::vector<cv::Point> cell_centroids(9);
+   		for(int i = 0; i < contours.size(); i++){
+   			int index = 0;
+   			if(i != largest_area_index){
+   				cells[index] = contours[i];
+
+   				double x = cv::moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
+   				double y = cv::moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
+   				cv::Point point(x,y);
+   				cell_centroids[index] = point; 
+
+   				// draw centroids on screen
+   				cv::line(board_cells, point, point, cv::Scalar(0,0,0), 3, 8);
+
+   				++index;
+			}
    		}
 
         cv::imshow(cellDelimitation::window_name, board_cells);
