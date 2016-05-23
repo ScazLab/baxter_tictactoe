@@ -72,6 +72,7 @@ struct Cell
 {
 public:
     std::vector<cv::Point> contours;
+    cv::Point centroidCE;
     cellState state;
     double cell_area_red;
     double cell_area_blue;

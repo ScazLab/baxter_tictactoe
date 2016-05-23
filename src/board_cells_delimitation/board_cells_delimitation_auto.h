@@ -46,14 +46,14 @@ private:
      * 			   NEXT_LARGEST = next largest area)
      * @return     index of the contour with the largest area or the next largest area
      */
-	// int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith);
+	int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith);
     
     /**
      * @param      contour 
      * @return     centroid of the contour
      */
-	// cv::Point findCentroid(std::vector<cv::Point> contour);
-	
+	cv::Point findCentroid(std::vector<cv::Point> contour);
+
 public:
 
 	cellDelimitation();
