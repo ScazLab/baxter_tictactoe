@@ -1,11 +1,5 @@
 /* outline for detection of cell areas
 
-1. take in image from usb cam
-2. convert ROS image to cv::Mat
-3. convert matrix color model from BGR to grayscale
-4. mask out board 
-5. 
-
 3 Options to Isolate a Colored Segment
 
 (1) inRange
@@ -19,7 +13,6 @@ Functionality: if type == THRESH_BINARY, dst(x) = maxval if src(x) > thresh, 0 i
 
 (3) findContours
    		
-
 OpenCV bug with converting ROS image into a cv::Mat
 
 Faulty approach
@@ -70,6 +63,34 @@ namespace ttt {
 		cv::destroyWindow(cellDelimitation::window_name);
 	}
 
+	int get_ith_index(std::vector<std::vector<cv::Point> > contours, Index ith){	
+		
+		if(ith != LARGEST && ith != NEXT_LARGEST){
+			ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
+		};
+
+		double largest_area = 0;
+		int largest_area_index = 0;
+		double next_largest_area = 0;
+		int next_largest_area_index = 0;
+
+		// iterate through contours and keeps track of contour w/ largest and 2nd-largest area
+		for(int i = 0; i < contours.size(); i++){
+			if(contourArea(contours[i], false) > largest_area){
+				next_largest_area = largest_area;
+				next_largest_area_index = largest_area_index;
+				largest_area = contourArea(contours[i], false);
+				largest_area_index = i;
+			}
+			else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area){
+				next_largest_area = contourArea(contours[i], false);
+				next_largest_area_index = i;
+			}
+		}
+
+		return ith==LARGEST?largest_area_index:next_largest_area_index;
+	}
+
 	void cellDelimitation::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
 		board.resetState();
@@ -110,45 +131,50 @@ namespace ttt {
 
    		// isolate contour w/ the largest area to separate outer board from other objects in
    		// image (assuming outer board is largest object in image)
-   		double largest_area = 0;
-   		int largest_area_index = 0;
-   		for(int i = 0; i < contours.size(); i++){
-   			largest_area = largest_area>contourArea(contours[i], false)?largest_area:contourArea(contours[i], false);
-   			largest_area_index = largest_area>contourArea(contours[i], false)?largest_area_index:i;
-   		}
+   		int largest_area_index = get_ith_index(contours, LARGEST);
 
    		// draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
    		cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
-   		drawContours(outer_board, contours, largest_area_index, cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+   		drawContours(outer_board, contours, largest_area_index, 
+   					cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
+   		// find black edges of inner board by finding contours
    		cv::findContours(outer_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-   		largest_area = 0;
-   		largest_area_index = 0;
-   		double next_largest_area = 0;
-   		int next_largest_area_index = 0;
+   		// isolate inner board contour by finding contour w/ second largest area (given that
+   		// outer board contour has the largest area)
+		int next_largest_area_index = get_ith_index(contours, NEXT_LARGEST);
 
+   		// draw inner board contour onto zero matrix
+   		cv::Mat inner_board = cv::Mat::zeros(outer_board.size(), CV_8UC1);
+   		drawContours(inner_board, contours, next_largest_area_index, 
+   					cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
+   		// Find contours again. n-th largest contour 2 <= n <= 9 will be the cells
+   		// Problem: how to find which contour equates to what cell?
+   		// http://docs.opencv.org/3.1.0/dd/d49/tutorial_py_contour_features.html#gsc.tab=0+
+
+   		cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+   		largest_area_index = get_ith_index(contours, LARGEST);
+
+   		// drawn board cells onto zero matrix by drawing all contour except the 
+   		// the largest-area contour (which is the inner board contour)
+   		cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
    		for(int i = 0; i < contours.size(); i++){
-   			if(contourArea(contours[i], false) > largest_area){
-   				next_largest_area = largest_area;
-   				next_largest_area_index = largest_area_index;
-   				largest_area = contourArea(contours[i], false);
-   				largest_area_index = i;
-   			}
-   			else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area){
-   				next_largest_area = contourArea(contours[i], false);
-   				next_largest_area_index = i;
+   			if(i != largest_area_index){
+   				drawContours(board_cells, contours, i, 
+   							cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
    			}
    		}
 
-   		cv::Mat inner_board = cv::Mat::ones(outer_board.size(), CV_8UC1);
-   		drawContours(inner_board, contours, next_largest_area_index, cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
-
-        cv::imshow(cellDelimitation::window_name, inner_board);
+        cv::imshow(cellDelimitation::window_name, board_cells);
         // cv::imshow(cellDelimitation::window_name, outer_board_outline);
 		cv::waitKey(30);
 	}
 }
+
+
 
 int main(int argc, char ** argv){
 	ros::init(argc, argv, "cell_delimitation_auto");

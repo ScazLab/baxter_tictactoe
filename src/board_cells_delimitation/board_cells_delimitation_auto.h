@@ -21,6 +21,11 @@
 namespace ttt 
 {
 
+enum Index {
+	LARGEST 		= 1,
+	NEXT_LARGEST    = 2
+};
+
 class cellDelimitation
 {
 
@@ -38,6 +43,14 @@ public:
 
 	cellDelimitation();
 	~cellDelimitation();
+
+    /**
+     * @param      vector (i.e array) of contours, type indicating whether largest or  
+     * 			   next largest area is to be found where (LARGEST = largest area, 
+     * 			   NEXT_LARGEST = next largest area).
+     * @return     index of the contour with the largest area or the next largest area.
+     */
+    int get_largest_index(std::vector<std::vector<cv::Point> > contours, Index ith);
 
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 }; 
