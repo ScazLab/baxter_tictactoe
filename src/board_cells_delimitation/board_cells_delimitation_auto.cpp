@@ -63,7 +63,7 @@ namespace ttt {
 		cv::destroyWindow(cellDelimitation::window_name);
 	}
 
-	int get_ith_index(std::vector<std::vector<cv::Point> > contours, Index ith){	
+	int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith){	
 		
 		if(ith != LARGEST && ith != NEXT_LARGEST){
 			ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
@@ -89,6 +89,13 @@ namespace ttt {
 		}
 
 		return ith==LARGEST?largest_area_index:next_largest_area_index;
+	}
+
+	cv::Point findCentroid(std::vector<cv::Point> contour){
+		double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
+		double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
+		cv::Point point(x,y);
+		return point;
 	}
 
 	void cellDelimitation::imageCallback(const sensor_msgs::ImageConstPtr& msg){
@@ -131,7 +138,7 @@ namespace ttt {
 
    		// isolate contour w/ the largest area to separate outer board from other objects in
    		// image (assuming outer board is largest object in image)
-   		int largest_area_index = get_ith_index(contours, LARGEST);
+   		int largest_area_index = getIthIndex(contours, LARGEST);
 
    		// draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
    		cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
@@ -143,7 +150,7 @@ namespace ttt {
 
    		// isolate inner board contour by finding contour w/ second largest area (given that
    		// outer board contour has the largest area)
-		int next_largest_area_index = get_ith_index(contours, NEXT_LARGEST);
+		int next_largest_area_index = getIthIndex(contours, NEXT_LARGEST);
 
    		// draw inner board contour onto zero matrix
    		cv::Mat inner_board = cv::Mat::zeros(outer_board.size(), CV_8UC1);
@@ -152,7 +159,7 @@ namespace ttt {
 
    		cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-   		largest_area_index = get_ith_index(contours, LARGEST);
+   		largest_area_index = getIthIndex(contours, LARGEST);
 
    		// drawn board cells onto zero matrix by drawing all contour except the 
    		// the largest-area contour (which is the inner board contour)
@@ -171,14 +178,9 @@ namespace ttt {
    			int index = 0;
    			if(i != largest_area_index){
    				cells[index] = contours[i];
-
-   				double x = cv::moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
-   				double y = cv::moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
-   				cv::Point point(x,y);
-   				cell_centroids[index] = point; 
-
+   				cell_centroids[index] = findCentroid(contours[i]); 
    				// draw centroids on screen
-   				cv::line(board_cells, point, point, cv::Scalar(0,0,0), 3, 8);
+   				cv::line(board_cells, cell_centroids[index], cell_centroids[index], cv::Scalar(0,0,0), 3, 8);
 
    				++index;
 			}
