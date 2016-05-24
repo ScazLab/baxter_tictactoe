@@ -1,9 +1,0 @@
-<!-- Launching all required nodes for checking the position of the board w.r.t. the robot. -->
-<!-- Could also be used to remote controle the robot during the game. -->
-<launch>
-
-    <node name="ttt_move_maker_server" pkg="tictactoe" type="move_maker_server" args="$(find tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>
-
-    <node name="check_board_positions" pkg="tictactoe" type="move_maker_simpleclient" respawn="false" required="true" output="screen" />
-
-</launch>

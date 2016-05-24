@@ -1,0 +1,10 @@
+<!-- Launching all required nodes for playing Tic Tac Toe using smooth movements of Baxter's arms -->
+<launch>
+
+    <param name="cheating" type="bool" value="true" /> <!-- the robot cheats -->
+
+    <param name="smooth" type="bool" value="true" /> <!-- smooth movements -->
+
+    <include file="$(find baxter_tictactoe)/launchers/tictactoe.launch" />
+
+</launch>
