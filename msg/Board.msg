@@ -1,2 +1,2 @@
 Header header
-baxter_tictactoe/Cell[9] cell
+baxter_tictactoe/Cell[9] cells

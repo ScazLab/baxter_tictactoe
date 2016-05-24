@@ -1,19 +1,22 @@
-#include "board_cells_delimitation_auto.h"
+#include "cells_definition_auto.h"
 
-namespace ttt {
+namespace ttt 
+{
 
-	cellDelimitation::cellDelimitation() : image_transport(node_handle), window_name("Cell Delimitation")
+	cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
 	{
-		image_subscriber = image_transport.subscribe("in", 1, &cellDelimitation::imageCallback, this);
-		cv::namedWindow(cellDelimitation::window_name);
+		image_subscriber = image_transport.subscribe("in", 1, &cellsDefinition::imageCallback, this);
+		cv::namedWindow(cellsDefinition::window_name);
 	}
 
-	cellDelimitation::~cellDelimitation()
+	cellsDefinition::~cellsDefinition()
 	{
-		cv::destroyWindow(cellDelimitation::window_name);
+		cv::destroyWindow(cellsDefinition::window_name);
 	}
 
-	int cellDelimitation::getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith){	
+
+
+	int cellsDefinition::getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith){	
 		
 		if(ith != LARGEST && ith != NEXT_LARGEST){
 			ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
@@ -41,18 +44,18 @@ namespace ttt {
 		return ith==LARGEST?largest_area_index:next_largest_area_index;
 	}
 
-	cv::Point cellDelimitation::findCentroid(std::vector<cv::Point> contour){
+	cv::Point cellsDefinition::findCentroid(std::vector<cv::Point> contour){
 		double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
 		double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
 		cv::Point point(x,y);
 		return point;
 	}
 
-	void cellDelimitation::imageCallback(const sensor_msgs::ImageConstPtr& msg){
+	void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
-    board.cells.clear();
+        board.cells.clear();
 
-    // convert ROS image to Cv::Mat
+        // convert ROS image to Cv::Mat
 		cv_bridge::CvImageConstPtr cv_ptr;
 		try
 		{
@@ -113,40 +116,39 @@ namespace ttt {
  		// find and display cell centroids 
  		contours.erase(contours.begin() + largest_area_index);
 
-    // aproximate cell contours to quadrilaterals
-    std::vector<std::vector<cv::Point> > apx_contours;
-    for(int i = 0; i < contours.size(); i++)
-    {
-      double epsilon = arcLength(contours[i], true);
-      // printf("epsilon: %0.3f\n", epsilon);
-      std::vector<cv::Point> apx_cell;
-      approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
-      apx_contours.push_back(apx_cell);
-    }
+        // aproximate cell contours to quadrilaterals
+        std::vector<std::vector<cv::Point> > apx_contours;
+        for(int i = 0; i < contours.size(); i++)
+        {
+          double epsilon = arcLength(contours[i], true);
+          // printf("epsilon: %0.3f\n", epsilon);
+          std::vector<cv::Point> apx_cell;
+          approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
+          apx_contours.push_back(apx_cell);
+        }
 
-    for(int i = 0; i < apx_contours.size(); i++)
-    {
-      drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
-    }
+        for(int i = 0; i < apx_contours.size(); i++)
+        {
+          drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
+        }
 
 		std::vector<cv::Point> cell_centroids;
 
- 		for(int i = 0; i < apx_contours.size(); i++){
-  		cell_centroids.push_back(findCentroid(apx_contours[i])); 
-		// printf("cell_centroids[%d]: x:%d y:%d\n", i, cell_centroids[i].x, cell_centroids[i].y);
-		// cv::line(board_cells, cell_centroids[i], cell_centroids[i], cv::Scalar(0,0,0), 3, 8);
-
+ 		for(int i = 0; i < apx_contours.size(); i++)
+        {
+      		cell_centroids.push_back(findCentroid(apx_contours[i])); 
  		}
 
  		// sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
  		// test shows that findContours apparently finds contours in ascending order of y-coordinate already)
 
-   	// find leftmost and rightmost centroid
+   	    // find leftmost and rightmost centroid
  		cv::Point leftmost_x(cell_centroids[0]);
  		cv::Point rightmost_x(cell_centroids[0]);
  		cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
 
- 		for(int i = 0; i < cell_centroids.size(); i++){
+ 		for(int i = 0; i < cell_centroids.size(); i++)
+        {
  			if(cell_centroids[i].x < leftmost_x.x) {
  				leftmost_x = cell_centroids[i];
  			}
@@ -155,49 +157,86 @@ namespace ttt {
  			}
  		}
 
- 		// cv::line(board_cells, leftmost_x, leftmost_x, cv::Scalar(0,0,0), 3, 8);
- 		// cv::line(board_cells, rightmost_x, rightmost_x, cv::Scalar(0,0,0), 3, 8);
-    // cv::line(board_cells, highest_y, highest_y, cv::Scalar(0,0,0), 3, 8);
-
-		if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x)){
-			for(int i = apx_contours.size() - 1; i >= 0; i--){
+        // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
+        // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
+        // in ascending order. (Note that x and y values are compared using cell centroids)
+		if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
+        {
+			for(int i = apx_contours.size() - 1; i >= 0; i--)
+            {
 				Cell cell(apx_contours[i]);
 				board.cells.push_back(cell);
-   			// cv::line(board_cells, cell_centroids[i], cell_centroids[i], cv::Scalar(0,0,0), i + 4, 8);
 			}
 		}
-		else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x)){
+        // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
+        // the leftmost cell, the board is tilted to the left (counter-clockwise). 
+        // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
+        // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
+        // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
+        // (Note that x and y values are compared using cell centroids)
+		else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
+        {
 			int side_len = sqrt(apx_contours.size() + 1);
             // int thickness = contours.size();
-			for(int i = side_len; i >= 1; i--){
-				for(int j = side_len; j >= 1; j--){
+			for(int i = side_len; i >= 1; i--)
+            {
+				for(int j = side_len; j >= 1; j--)
+                {
 					Cell cell(apx_contours[i * side_len - j]);
 					board.cells.push_back(cell);
-          // cv::line(board_cells, cell_centroids[i * side_len - j], cell_centroids[i * side_len - j], cv::Scalar(0,0,0), 3, 8);
 				}		
 			}
 		}
 
-    // board.save() SHOULD GO HERE
-    cv::imshow(cellDelimitation::window_name, board_cells);
-		// cv::waitKey(30);
+        // cv::imshow(cellsDefinition::window_name, board_cells);
+        cv::waitKey(30);
+        ros::shutdown();
 
-    int c = cv::waitKey(30);
-    if((char)c =='s'){
-      printf("No. of cells in board: %lu\n", board.cells.size());
-      board.save();
-      ros::shutdown();
-    }
-
+        // int c = cv::waitKey(30);
+        // if((char)c =='s')
+        // {
+        //   printf("No. of cells in board: %lu\n", board.cells.size());
+        //   board.save();
+        //   ros::shutdown();
+        // }
 	}
+
+    bool defineCells(baxter_tictactoe::GetBoard::Request  &req,
+              baxter_tictactoe::GetBoard::Response &res)
+    {
+        // baxter_tictactoe::Cell cell;
+        // for(int i = 0; i < board.cells.size(); i++)
+        // {
+        //     cell = baxter_tictactoe::Cell::EMPTY;
+        //     for(int j = 0; j < board.cells[i].contours.size(); j++)
+        //     {
+        //         cell.contours[j] = board.cells[i].contours[j];
+        //     }
+        //     res.board.cells[i] = cell;
+        // }
+
+        // ROS_INFO("sending back response:");
+        // for(int i = 0; i < board.cells.size(); i++)
+        // {
+        //     ROS_INFO("Board cell %d state: %u", i + 1, res.board.cells[i].state);
+        //     for(int j = 0; j < board.cells[i].contours.size(); j++)
+        //     {
+        //         ROS_INFO("Edge %d: [X:%lu Y:%lu]", j + 1, 
+        //             res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
+        //     }
+        // }
+        return true;
+    }
 }
 
-int main(int argc, char ** argv){
-	ros::init(argc, argv, "cell_delimitation_auto");
-	ROS_DEBUG("in main");
+int main(int argc, char ** argv)
+{
+	ros::init(argc, argv, "cells_definition_auto");
+    ros::NodeHandle n;
+	ttt::cellsDefinition cd;
 
-	ttt::cellDelimitation cd;
-
+    ros::ServiceServer service = n.advertiseService("define_cells", &(ttt::defineCells));
+    ROS_INFO("Ready to define board and cell boundaries");
 	ros::spin();
 	return 0;
 }

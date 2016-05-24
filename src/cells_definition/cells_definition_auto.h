@@ -1,5 +1,5 @@
-#ifndef BOARD_CELLS_DELIMITATION_AUTO_H
-#define BOARD_CELLS_DELIMITATION_AUTO_H
+#ifndef CELLS_DEFINITION_AUTO_H
+#define CELLS_DEFINITION_AUTO_H
 
 #include <string>
 
@@ -18,15 +18,22 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
+#include <geometry_msgs/Point.h>
+#include "baxter_tictactoe/GetBoard.h"
+#include "baxter_tictactoe/Cell.h"
+#include "baxter_tictactoe/Board.h"
+
+
 namespace ttt 
 {
 
-enum Index {
+enum Index 
+{
 	LARGEST 		= 1,
 	NEXT_LARGEST    = 2
 };
 
-class cellDelimitation
+class cellsDefinition
 {
 
 private:
@@ -38,7 +45,6 @@ private:
 	std::string window_name;
 	ttt::Cell cell;
 	ttt::Board board;
-
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or  
@@ -56,12 +62,12 @@ private:
 
 public:
 
-	cellDelimitation();
-	~cellDelimitation();
+	cellsDefinition();
+	~cellsDefinition();
 
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 }; 
 
 }
 
-#endif //BOARD_CELLS_DELIMITATION_AUTO_H
+#endif //CELLS_DEFINITION_AUTO_H

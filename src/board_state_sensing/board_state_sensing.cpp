@@ -185,6 +185,7 @@ int main(int argc, char** argv)
 {
     printf("HI!\n");
     ros::init(argc, argv, "show_cells");
+    ros::NodeHandle n;
 
     // Very dirty way to process command line arguments. It seems that
     // there is not a straightforward standard ROS way, unfortunately.
