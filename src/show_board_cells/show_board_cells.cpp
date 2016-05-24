@@ -7,6 +7,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <sstream>
+#include <string>
+
 #include <QFile>
 #include <QXmlStreamReader>
 
@@ -55,6 +58,13 @@ public:
         cv::destroyWindow(CellDisplay::WINDOW);
     }
 
+    std::string int_to_string( const int a )
+    {
+        std::stringstream ss;
+        ss << a;
+        return ss.str();
+    }
+
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
         //converting ROS image format to opencv image format
@@ -73,13 +83,23 @@ public:
 
         // drawing all cells of the board game
         cv::drawContours(img_aux,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
-        for(size_t i=0;i!=board.cells.size();++i)
+        for(int i = 0; i < board.cells.size(); i++)
         {
             cv::Point cell_centroid;
             board.cells[i].get_cell_centroid(cell_centroid);
             //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
-            cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
+            // cv::line(img_aux, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
+            cv::putText(img_aux, int_to_string(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
         }
+
+        // for(size_t i=0;i!=board.cells.size();++i)
+        // {
+        //     cv::Point cell_centroid;
+        //     board.cells[i].get_cell_centroid(cell_centroid);
+        //     //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
+        //     cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
+        // }
+
         cv::putText(img_aux, "Press 's' key to see the filtered images for each cell",
                     cv::Point(10,400), cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
         cv::imshow(CellDisplay::WINDOW, img_aux);
@@ -117,6 +137,9 @@ public:
             cv::imshow(win_name, im_crop);
         }
     }
+
+
+
 };
 
 const char CellDisplay::WINDOW[] = "Cell display";
