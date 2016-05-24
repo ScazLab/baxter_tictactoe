@@ -1,6 +1,5 @@
 #include "board_cells_delimitation.h"
 
-
 namespace ttt
 {
 

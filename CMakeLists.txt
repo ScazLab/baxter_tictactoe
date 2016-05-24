@@ -56,11 +56,14 @@ find_package(Boost REQUIRED COMPONENTS thread)
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
     ttt_board.msg
+    Board.msg 
+    Cell.msg 
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(FILES
     SetTrajectoryType.srv
+    GetBoard.srv
 )
 
 #Required for generating the messages related to actionlib
@@ -72,6 +75,7 @@ add_action_files(DIRECTORY action FILES
 generate_messages(DEPENDENCIES 
     actionlib_msgs 
     std_msgs
+    geometry_msgs
 )
 
 ################################################
