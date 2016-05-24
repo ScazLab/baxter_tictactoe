@@ -21,11 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 2.4 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
