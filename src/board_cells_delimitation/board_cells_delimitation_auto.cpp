@@ -1,52 +1,3 @@
-/* outline for detection of cell areas
-
-3 Options to Isolate a Colored Segment
-
-(1) inRange
-Parameters: void inRange(InputArray src, Scalar lowerb, Scalar upperb, OutputArray dst)
-Functionality: sets element to black if outside of range, white if inside
-Example: https://solarianprogrammer.com/2015/05/08/detect-red-circles-image-using-opencv/
-
-(2) threshold
-Parameters: double threshold(InputArray src, OutputArray dst, double threshval, double maxval, int type)
-Functionality: if type == THRESH_BINARY, dst(x) = maxval if src(x) > thresh, 0 if src(x) <= thresh
-
-(3) findContours
-   		
-OpenCV bug with converting ROS image into a cv::Mat
-
-Faulty approach
-
-    cv_bridge::CvImageConstPtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvShare(msg, enc::BGR8);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-    }
-
-    cv::Mat img_aux = cv_ptr->image.clone();
-
-Recommended approach via https://github.com/sociallyassistiverobotics/clm_ros_wrapper/blob/master/src/CLMWrapper.cpp
-    
-    cv_bridge::CvImageConstPtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvShare(msgIn);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-    }
-
-    cv::cvtColor(cv_ptr->image.clone(), captured_image, CV_BGR2RGB);;
-
-*/
-
 #include "board_cells_delimitation_auto.h"
 
 namespace ttt {
@@ -237,7 +188,6 @@ namespace ttt {
       board.save();
       ros::shutdown();
     }
-
 
 	}
 }
