@@ -19,13 +19,9 @@
 #include "baxterTictactoe/tictactoe_utils.h"
 
 #include <geometry_msgs/Point.h>
-#include "baxter_tictactoe/GetBoard.h"
-#include "baxter_tictactoe/Cell.h"
+#include "baxter_tictactoe/DefineCells.h"
+#include "baxter_tictactoe/BoardCell.h"
 #include "baxter_tictactoe/Board.h"
-
-
-namespace ttt 
-{
 
 enum Index 
 {
@@ -41,6 +37,8 @@ private:
 	ros::NodeHandle node_handle;
 	image_transport::ImageTransport image_transport;
 	image_transport::Subscriber image_subscriber;
+
+    ros::ServiceServer service;
 
 	std::string window_name;
 	ttt::Cell cell;
@@ -66,8 +64,13 @@ public:
 	~cellsDefinition();
 
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-}; 
 
-}
+    /**
+     * service that provides data on the defined contours/boundaries of the board's cells
+     * @param      request variables and response variables 
+     * @return     returns true when function is succesfully executed
+     */
+    bool defineCells(baxter_tictactoe::DefineCells::Request  &req, baxter_tictactoe::DefineCells::Response &res);
+}; 
 
 #endif //CELLS_DEFINITION_AUTO_H

@@ -57,13 +57,13 @@ find_package(Boost REQUIRED COMPONENTS thread)
 add_message_files(FILES
     ttt_board.msg
     Board.msg 
-    Cell.msg 
+    BoardCell.msg 
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(FILES
     SetTrajectoryType.srv
-    GetBoard.srv
+    DefineCells.srv
 )
 
 #Required for generating the messages related to actionlib
@@ -152,7 +152,7 @@ add_executable(cells_definition_auto            src/cells_definition/cells_defin
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
-add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp)
+add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp                          src/board_state_sensing/board_state_sensing.h)
 add_executable(board_motion_detection           src/board_motion_detection/board_motion_detection.cpp 					 src/board_motion_detection/board_motion_detection.h)
 
 ## Add cmake target dependencies of the executable
