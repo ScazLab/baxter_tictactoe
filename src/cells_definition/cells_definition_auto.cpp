@@ -4,9 +4,9 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-bool IMG_LOADED = false;
 cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
 {
+    img_loaded = false;
     pthread_mutex_init(&mutex, NULL);
     
 	image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);  
@@ -24,13 +24,14 @@ cellsDefinition::~cellsDefinition()
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
     pthread_mutex_lock(&mutex);
-    bool im_load = IMG_LOADED;
+    bool img_loaded_copy = img_loaded;
     pthread_mutex_unlock(&mutex);
 
-    if(im_load == true)
+    if(img_loaded_copy == true)
     {
         BoardCell cell;
 
+        pthread_mutex_lock(&mutex);
         for(int i = 0; i < board.cells.size(); i++)
         {
             cell.state = BoardCell::EMPTY;
@@ -41,13 +42,11 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             }
             res.board.cells[i] = cell;
         }
+        pthread_mutex_unlock(&mutex);
 
         return true;    
     }
-    else 
-    {
-        return false;
-    }
+    else {return false;}
 }
 
 int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
@@ -156,7 +155,9 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
     if(contours.size() == 9)
     {
+        pthread_mutex_lock(&mutex);
         board.cells.clear();
+        pthread_mutex_unlock(&mutex);
 
        // aproximate cell contours to quadrilaterals
         vector<vector<cv::Point> > apx_contours;
@@ -199,6 +200,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             }
         }
 
+
         // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
         // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
         // in ascending order. (Note that x and y values are compared using cell centroids)
@@ -207,7 +209,9 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             for(int i = apx_contours.size() - 1; i >= 0; i--)
             {
                 Cell cell(apx_contours[i]);
+                pthread_mutex_lock(&mutex);
                 board.cells.push_back(cell);
+                pthread_mutex_unlock(&mutex);
             }
         }
         // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
@@ -225,20 +229,22 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
                 for(int j = side_len; j >= 1; j--)
                 {
                     Cell cell(apx_contours[i * side_len - j]);
+                    pthread_mutex_lock(&mutex);
                     board.cells.push_back(cell);
+                    pthread_mutex_unlock(&mutex);
                 }       
             }
         }        
 
         pthread_mutex_lock(&mutex);
-        IMG_LOADED = true;
+        img_loaded = true;
         pthread_mutex_unlock(&mutex);
         // ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
     }
     else
     {
         pthread_mutex_lock(&mutex);
-        IMG_LOADED = false;
+        img_loaded = false;
         pthread_mutex_unlock(&mutex);
         // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
@@ -246,6 +252,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
     cv::imshow(cellsDefinition::window_name, board_cells);
     cv::waitKey(30);
 }
+
 
 int main(int argc, char ** argv)
 {

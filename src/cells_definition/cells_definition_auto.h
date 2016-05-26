@@ -47,6 +47,8 @@ private:
 	ttt::Cell cell;
 	ttt::Board board;
 
+    bool img_loaded;
+
     pthread_mutex_t mutex;
 
     /**bo
