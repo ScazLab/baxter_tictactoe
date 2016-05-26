@@ -24,8 +24,7 @@ cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("
 
 
     // &cellsDefinition::defineCells, this);
-	ROS_INFO("Ready to define cell boundaries");
-    cv::namedWindow(cellsDefinition::window_name);
+    // cv::namedWindow(cellsDefinition::window_name);
 }
 
 cellsDefinition::~cellsDefinition()
@@ -35,7 +34,7 @@ cellsDefinition::~cellsDefinition()
 
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
-    ROS_INFO("[defineCells] service has been called");
+    ROS_INFO("[defineCells(service node)] service has been called");
     /* CHECK FOR FAILURE I.E BOARD NOT DEFINED YET BEFORE REQUEST IS MADE*/
     if(IMG_LOADED == true){
         BoardCell cell;
@@ -50,7 +49,7 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             res.board.cells[i] = cell;
         }
 
-        ROS_INFO("[DefineCells] Service requested. Sending back response:");
+        ROS_INFO("[defineCells(service node)] Service requested. Sending back response:");
         for(int i = 0; i < board.cells.size(); i++)
         {
             ROS_INFO("Board cell: %d State: %u", i + 1, res.board.cells[i].state);
@@ -60,11 +59,12 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
                     res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
             }
         }
-        ROS_INFO("Finished defining cells\n");
+        ROS_INFO("[defineCells(service node)] Finished defining cells");
+        // ros::shutdown();
         return true;    
     }
     else {
-        ROS_ERROR("Image callback has not been executed\n");
+        ROS_ERROR("[defineCells(service node)] Image callback has not been executed");
         return false;
     }
 }
@@ -241,19 +241,18 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 		}
 	}
 
-    ROS_INFO("[imageCallback] Image callback has been successfully executed");
-    IMG_LOADED = true;
-    switch((IMG_LOADED))
+    switch(IMG_LOADED)
     {
         case true: 
-            ROS_INFO("[imageCallback] img_loaded = true");
+            ROS_INFO("[imageCallback(server node)] img_loaded = true");
             break;
         case false:
-            ROS_INFO("[imageCallback] img_loaded = false");
+            ROS_INFO("[imageCallback(server node)] img_loaded = false");
             break;
     }
-    ROS_INFO("[imageCallback] img_loaded is NOT the problem");
 
+    ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
+    IMG_LOADED = true;
 
     // cv::imshow(cellsDefinition::window_name, board_cells);
     cv::waitKey(30);
