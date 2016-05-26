@@ -4,12 +4,28 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
+bool IMG_LOADED = false;
 cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
 {
-	image_subscriber = image_transport.subscribe("in", 1, &cellsDefinition::imageCallback, this);
+    // ros::NodeHandle node_handle;
+    // image_transport::ImageTransport image_transport;
+    // image_transport::Subscriber image_subscriber;
+
+    // ros::Subscriber subLeft = nh.subscribe<sensor_msgs::Image> ("/bb2/left/image_raw", 10, 
+    //                           boost::bind(imageCallback, _1, pointerToImageManagmentStruct );
     
+	image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);  
+    //  &cellsDefinition::imageCallback, this);
+    
+    // service = node_handle.advertiseService<DefineCells::Request,DefineCells::Response>("define_cells", boost::bind(&cellsDefinition::defineCells, this, _1, _2, &img_loaded));
     service = node_handle.advertiseService("define_cells", &cellsDefinition::defineCells, this);
-	cv::namedWindow(cellsDefinition::window_name);
+    
+    // service = node_handle.advertiseService<DefineCells::Request,DefineCells::Response>("define_cells", boost::bind(&cellsDefinition::defineCells, this, _1, _2, &img_loaded));
+
+
+    // &cellsDefinition::defineCells, this);
+	ROS_INFO("Ready to define cell boundaries");
+    cv::namedWindow(cellsDefinition::window_name);
 }
 
 cellsDefinition::~cellsDefinition()
@@ -19,32 +35,38 @@ cellsDefinition::~cellsDefinition()
 
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
+    ROS_INFO("[defineCells] service has been called");
     /* CHECK FOR FAILURE I.E BOARD NOT DEFINED YET BEFORE REQUEST IS MADE*/
-
-
-    BoardCell cell;
-    for(int i = 0; i < board.cells.size(); i++)
-    {
-        cell.state = BoardCell::EMPTY;
-        for(int j = 0; j < board.cells[i].contours.size(); j++)
+    if(IMG_LOADED == true){
+        BoardCell cell;
+        for(int i = 0; i < board.cells.size(); i++)
         {
-            cell.contours[j].x = board.cells[i].contours[j].x;
-            cell.contours[j].y = board.cells[i].contours[j].y;
+            cell.state = BoardCell::EMPTY;
+            for(int j = 0; j < board.cells[i].contours.size(); j++)
+            {
+                cell.contours[j].x = board.cells[i].contours[j].x;
+                cell.contours[j].y = board.cells[i].contours[j].y;
+            }
+            res.board.cells[i] = cell;
         }
-        res.board.cells[i] = cell;
-    }
 
-    ROS_INFO("sending back response:");
-    for(int i = 0; i < board.cells.size(); i++)
-    {
-        ROS_INFO("Board cell %d state: %u", i + 1, res.board.cells[i].state);
-        for(int j = 0; j < board.cells[i].contours.size(); j++)
+        ROS_INFO("[DefineCells] Service requested. Sending back response:");
+        for(int i = 0; i < board.cells.size(); i++)
         {
-            ROS_INFO("Edge %d: [X:%0.2f Y:%0.2f]", j + 1, 
-                res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
+            ROS_INFO("Board cell: %d State: %u", i + 1, res.board.cells[i].state);
+            for(int j = 0; j < board.cells[i].contours.size(); j++)
+            {
+                ROS_INFO("Edge %d: [X:%0.2f Y:%0.2f]", j + 1, 
+                    res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
+            }
         }
+        ROS_INFO("Finished defining cells\n");
+        return true;    
     }
-    return true;
+    else {
+        ROS_ERROR("Image callback has not been executed\n");
+        return false;
+    }
 }
 
 int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith){	
@@ -219,9 +241,23 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 		}
 	}
 
+    ROS_INFO("[imageCallback] Image callback has been successfully executed");
+    IMG_LOADED = true;
+    switch((IMG_LOADED))
+    {
+        case true: 
+            ROS_INFO("[imageCallback] img_loaded = true");
+            break;
+        case false:
+            ROS_INFO("[imageCallback] img_loaded = false");
+            break;
+    }
+    ROS_INFO("[imageCallback] img_loaded is NOT the problem");
+
+
     // cv::imshow(cellsDefinition::window_name, board_cells);
     cv::waitKey(30);
-    ros::shutdown();
+    // ros::shutdown();
 
     // int c = cv::waitKey(30);
     // if((char)c =='s')
@@ -238,7 +274,7 @@ int main(int argc, char ** argv)
     ros::NodeHandle n;
 	cellsDefinition cd;
 
-    ROS_INFO("Ready to define board and cell boundaries");
+    // ROS_INFO("Ready to define board and cell boundaries");
 
 	ros::spin();
 	return 0;

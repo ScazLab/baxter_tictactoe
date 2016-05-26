@@ -10,6 +10,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <boost/bind.hpp>
 
 #include <QFile>
 #include <QXmlStreamWriter>
@@ -44,7 +45,7 @@ private:
 	ttt::Cell cell;
 	ttt::Board board;
 
-    /**
+    /**bo
      * @param      vector (i.e array) of contours, type indicating whether largest or  
      * 			   next largest area is to be found where (LARGEST = largest area, 
      * 			   NEXT_LARGEST = next largest area)
@@ -70,7 +71,8 @@ public:
      * @param      request variables and response variables 
      * @return     returns true when function is succesfully executed
      */
-    bool defineCells(baxter_tictactoe::DefineCells::Request  &req, baxter_tictactoe::DefineCells::Response &res);
+    bool defineCells(baxter_tictactoe::DefineCells::Request  &req, 
+                     baxter_tictactoe::DefineCells::Response &res);
 }; 
 
 #endif //CELLS_DEFINITION_AUTO_H
