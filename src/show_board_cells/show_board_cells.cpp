@@ -72,7 +72,6 @@ public:
 
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
-        board.cells.clear();
         ROS_INFO("[imageCallback(client node)] Image callback has been successfully executed");
 
         //converting ROS image format to opencv image format
@@ -94,6 +93,7 @@ public:
 
         if(client.call(srv))
         {
+            board.cells.clear();
             int cells_num = srv.response.board.cells.size();
             ROS_INFO("(1) cells_num: %d", cells_num); 
             for(int i = 0; i < cells_num; i++)
@@ -142,7 +142,13 @@ public:
         else
         {
             ROS_ERROR("[defineCells CLIENT] Service node was not able to send data");
-            return;
+
+            // if board has not been loaded, return (if board was already previously loaded, 
+            // the old board is displayed)
+            if(board.cells.size() != 9)
+            {
+                return;            
+            }
         }     
 
         cv::Mat img_aux = cv_ptr->image.clone();

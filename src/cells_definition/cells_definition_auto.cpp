@@ -35,7 +35,7 @@ cellsDefinition::~cellsDefinition()
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
     ROS_INFO("[defineCells(service node)] service has been called");
-    /* CHECK FOR FAILURE I.E BOARD NOT DEFINED YET BEFORE REQUEST IS MADE*/
+
     if(IMG_LOADED == true){
         BoardCell cell;
         for(int i = 0; i < board.cells.size(); i++)
@@ -64,7 +64,7 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
         return true;    
     }
     else {
-        ROS_ERROR("[defineCells(service node)] Image callback has not been executed");
+        ROS_ERROR("[defineCells(service node)] Image callback was not successfully executed");
         return false;
     }
 }
@@ -105,8 +105,6 @@ cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour){
 }
 
 void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
-
-    board.cells.clear();
 
     // convert ROS image to Cv::Mat
 	cv_bridge::CvImageConstPtr cv_ptr;
@@ -169,92 +167,105 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	// find and display cell centroids 
 	contours.erase(contours.begin() + largest_area_index);
 
-    // aproximate cell contours to quadrilaterals
-    vector<vector<cv::Point> > apx_contours;
-    for(int i = 0; i < contours.size(); i++)
-    {
-        double epsilon = arcLength(contours[i], true);
-        // printf("epsilon: %0.3f\n", epsilon);
-        vector<cv::Point> apx_cell;
-        approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
-        apx_contours.push_back(apx_cell);
-    }
+    if(contours.size() == 9){
+        board.cells.clear();
 
-    for(int i = 0; i < apx_contours.size(); i++)
-    {
-        drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
-    }
-
-	vector<cv::Point> cell_centroids;
-
-	for(int i = 0; i < apx_contours.size(); i++)
-    {
-  		cell_centroids.push_back(findCentroid(apx_contours[i])); 
-	}
-
-		// sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
-		// test shows that findContours apparently finds contours in ascending order of y-coordinate already)
-
-	    // find leftmost and rightmost centroid
-		cv::Point leftmost_x(cell_centroids[0]);
-		cv::Point rightmost_x(cell_centroids[0]);
-		cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
-
-	for(int i = 0; i < cell_centroids.size(); i++)
-    {
-		if(cell_centroids[i].x < leftmost_x.x) {
-			leftmost_x = cell_centroids[i];
-		}
-		if(cell_centroids[i].x > rightmost_x.x) {
-			rightmost_x = cell_centroids[i];
-		}
-	}
-
-    // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
-    // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
-    // in ascending order. (Note that x and y values are compared using cell centroids)
-	if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
-    {
-		for(int i = apx_contours.size() - 1; i >= 0; i--)
+       // aproximate cell contours to quadrilaterals
+        vector<vector<cv::Point> > apx_contours;
+        for(int i = 0; i < contours.size(); i++)
         {
-			Cell cell(apx_contours[i]);
-			board.cells.push_back(cell);
-		}
-	}
-    // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
-    // the leftmost cell, the board is tilted to the left (counter-clockwise). 
-    // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
-    // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
-    // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
-    // (Note that x and y values are compared using cell centroids)
-	else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
-    {
-		int side_len = sqrt(apx_contours.size() + 1);
-        // int thickness = contours.size();
-		for(int i = side_len; i >= 1; i--)
+            double epsilon = arcLength(contours[i], true);
+            // printf("epsilon: %0.3f\n", epsilon);
+            vector<cv::Point> apx_cell;
+            approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
+            apx_contours.push_back(apx_cell);
+        }
+
+        for(int i = 0; i < apx_contours.size(); i++)
         {
-			for(int j = side_len; j >= 1; j--)
+            drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
+        }
+
+        vector<cv::Point> cell_centroids;
+
+        ROS_INFO("1");
+
+        for(int i = 0; i < apx_contours.size(); i++)
+        {
+            cell_centroids.push_back(findCentroid(apx_contours[i])); 
+        }
+
+        ROS_INFO("2");
+
+        // sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
+        // test shows that findContours apparently finds contours in ascending order of y-coordinate already)
+
+        // find leftmost and rightmost centroid
+        ROS_INFO("cell_centroids.size() = %lu", cell_centroids.size());
+        cv::Point leftmost_x(cell_centroids[0]);
+        cv::Point rightmost_x(cell_centroids[0]);
+        cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
+
+        for(int i = 0; i < cell_centroids.size(); i++)
+        {
+            if(cell_centroids[i].x < leftmost_x.x) {
+                leftmost_x = cell_centroids[i];
+            }
+            if(cell_centroids[i].x > rightmost_x.x) {
+                rightmost_x = cell_centroids[i];
+            }
+        }
+
+        // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
+        // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
+        // in ascending order. (Note that x and y values are compared using cell centroids)
+        if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
+        {
+            for(int i = apx_contours.size() - 1; i >= 0; i--)
             {
-				Cell cell(apx_contours[i * side_len - j]);
-				board.cells.push_back(cell);
-			}		
-		}
-	}
+                Cell cell(apx_contours[i]);
+                board.cells.push_back(cell);
+            }
+        }
+        // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
+        // the leftmost cell, the board is tilted to the left (counter-clockwise). 
+        // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
+        // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
+        // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
+        // (Note that x and y values are compared using cell centroids)
+        else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
+        {
+            int side_len = sqrt(apx_contours.size() + 1);
+            // int thickness = contours.size();
+            for(int i = side_len; i >= 1; i--)
+            {
+                for(int j = side_len; j >= 1; j--)
+                {
+                    Cell cell(apx_contours[i * side_len - j]);
+                    board.cells.push_back(cell);
+                }       
+            }
+        }        
 
-    switch(IMG_LOADED)
-    {
-        case true: 
-            ROS_INFO("[imageCallback(server node)] img_loaded = true");
-            break;
-        case false:
-            ROS_INFO("[imageCallback(server node)] img_loaded = false");
-            break;
+        IMG_LOADED = true;
+        ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
+    }
+    else {
+        IMG_LOADED = false;
+        ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
-    ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
-    IMG_LOADED = true;
+    // cv::Mat display_cells = cv::Mat::zeros(board_cells.size(), CV_8UC1);
+    // ROS_INFO("No. of cells: %lu", board.cells.size());
+    // for(int i )
+    // for(int i = 0; i < board.cells.size(); i++){
+    //     drawContours(display_cells, board.cells[i].contours, i,
+    //                 cv::Scalar(255,255,255), CV_FILLED, 8);
+    //     // drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
+    // }
 
-    // cv::imshow(cellsDefinition::window_name, board_cells);
+    cv::imshow(cellsDefinition::window_name, board_cells);
+    // ros::Duration(1).sleep(); // sleep for a second
     cv::waitKey(30);
     // ros::shutdown();
 
