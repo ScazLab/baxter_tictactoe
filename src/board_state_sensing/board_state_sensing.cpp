@@ -27,11 +27,24 @@ void BoardState::init()
 
     board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");
+
+    XmlRpc::XmlRpcValue hsv_red_symbols;
+    ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_red",hsv_red_symbols),
+                                                          "No HSV params for RED!");
+    hsv_red=hsvColorRange(hsv_red_symbols);
+
+    XmlRpc::XmlRpcValue hsv_blue_symbols;
+    ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_blue",hsv_blue_symbols),
+                                                           "No HSV params for BLUE!");
+    hsv_blue=hsvColorRange(hsv_blue_symbols);
+
+    ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/area_threshold",area_threshold),
+                                                                    "No area threshold!");
     
-    // ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
-    // ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
-    // ROS_INFO("Area threshold: %g", area_threshold);
-    // ROS_INFO("Show param set to %i", doShow);
+    ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
+    ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
+    ROS_INFO("Area threshold: %g", area_threshold);
+    ROS_INFO("Show param set to %i", doShow);
 
     if (doShow)
     {
@@ -127,6 +140,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // the old board is displayed)
         if(board.cells.size() != 9)
         {
+            ROS_INFO("asdfasdfsadf");
             return;            
         }
     }     
@@ -152,23 +166,23 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
             if (i==1) cv::imshow("blue masked image of the board",hsv_filt_mask);
         }
 
-        for (int j = 0; j < board.cells.size(); ++j)
-        {
-            Cell *cell = &(board.cells[j]);
-            cv::Mat crop = cell->mask_image(hsv_filt_mask);
+        // for (int j = 0; j < board.cells.size(); ++j)
+        // {
+        //     Cell *cell = &(board.cells[j]);
+        //     cv::Mat crop = cell->mask_image(hsv_filt_mask);
 
-            /* we smooth the image to reduce the noise */
-            cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
+        //     /* we smooth the image to reduce the noise */
+        //     cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
 
-            // the area formed by the remaining pixels is computed based on the moments
-            double cell_area=cv::moments(crop,true).m00;
+        //     // the area formed by the remaining pixels is computed based on the moments
+        //     double cell_area=cv::moments(crop,true).m00;
 
-            if (cell_area > area_threshold)
-            {
-                if (i==0)  cell->cell_area_red =cell_area;
-                else       cell->cell_area_blue=cell_area;
-            }
-        }
+        //     if (cell_area > area_threshold)
+        //     {
+        //         if (i==0)  cell->cell_area_red =cell_area;
+        //         else       cell->cell_area_blue=cell_area;
+        //     }
+        // }
     }
 
     for (int j = 0; j < board.cells.size(); ++j)
@@ -218,21 +232,3 @@ int main(int argc, char** argv)
     return 0;
 }
 
-    // board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
-    // ROS_ASSERT_MSG(board_publisher,"Empty publisher");
-
-    // // Reading cells definition data from the parameter server
-    // ROS_ASSERT_MSG(board.load("/baxter_tictactoe/board_file"),"No cell data to display!");
-
-    // XmlRpc::XmlRpcValue hsv_red_symbols;
-    // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_red",hsv_red_symbols),
-    //                                                       "No HSV params for RED!");
-    // hsv_red=hsvColorRange(hsv_red_symbols);
-
-    // XmlRpc::XmlRpcValue hsv_blue_symbols;
-    // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/hsv_blue",hsv_blue_symbols),
-    //                                                        "No HSV params for BLUE!");
-    // hsv_blue=hsvColorRange(hsv_blue_symbols);
-
-    // ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/area_threshold",area_threshold),
-    //                                                                 "No area threshold!");

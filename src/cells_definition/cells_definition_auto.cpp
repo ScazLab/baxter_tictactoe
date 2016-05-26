@@ -49,17 +49,17 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             res.board.cells[i] = cell;
         }
 
-        ROS_INFO("[defineCells(service node)] Service requested. Sending back response:");
-        for(int i = 0; i < board.cells.size(); i++)
-        {
-            ROS_INFO("Board cell: %d State: %u", i + 1, res.board.cells[i].state);
-            for(int j = 0; j < board.cells[i].contours.size(); j++)
-            {
-                ROS_INFO("Edge %d: [X:%0.2f Y:%0.2f]", j + 1, 
-                    res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
-            }
-        }
-        ROS_INFO("[defineCells(service node)] Finished defining cells");
+        // ROS_INFO("[defineCells(service node)] Service requested. Sending back response:");
+        // for(int i = 0; i < board.cells.size(); i++)
+        // {
+        //     ROS_INFO("Board cell: %d State: %u", i + 1, res.board.cells[i].state);
+        //     for(int j = 0; j < board.cells[i].contours.size(); j++)
+        //     {
+        //         ROS_INFO("Edge %d: [X:%0.2f Y:%0.2f]", j + 1, 
+        //             res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
+        //     }
+        // }
+        // ROS_INFO("[defineCells(service node)] Finished defining cells");
         // ros::shutdown();
         return true;    
     }
@@ -188,20 +188,15 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
         vector<cv::Point> cell_centroids;
 
-        ROS_INFO("1");
-
         for(int i = 0; i < apx_contours.size(); i++)
         {
             cell_centroids.push_back(findCentroid(apx_contours[i])); 
         }
 
-        ROS_INFO("2");
-
         // sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
         // test shows that findContours apparently finds contours in ascending order of y-coordinate already)
 
         // find leftmost and rightmost centroid
-        ROS_INFO("cell_centroids.size() = %lu", cell_centroids.size());
         cv::Point leftmost_x(cell_centroids[0]);
         cv::Point rightmost_x(cell_centroids[0]);
         cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
@@ -248,7 +243,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         }        
 
         IMG_LOADED = true;
-        ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
+        // ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
     }
     else {
         IMG_LOADED = false;
