@@ -72,8 +72,6 @@ public:
 
     void image_callback(const sensor_msgs::ImageConstPtr& msg)
     {
-        ROS_INFO("[imageCallback(client node)] Image callback has been successfully executed");
-
         //converting ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
         try
@@ -95,17 +93,12 @@ public:
         {
             board.cells.clear();
             int cells_num = srv.response.board.cells.size();
-            ROS_INFO("(1) cells_num: %d", cells_num); 
             for(int i = 0; i < cells_num; i++)
             {
                 cell.contours.clear();
                 int edges_num = srv.response.board.cells[i].contours.size();
-                ROS_INFO("(2) edges_num: %d", edges_num); 
                 for(int j = 0; j < edges_num; j++)
-                {
-                    ROS_INFO("(3) Cell %d Edge %d [X: %0.2f Y:%0.2f]", i + 1, j + 1, 
-                            srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
-                    
+                {   
                     cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
                     cell.contours.push_back(point);
                 }
@@ -127,22 +120,9 @@ public:
                 }
                 board.cells.push_back(cell);
             }
-
-            ROS_INFO("[defineCells CLIENT] Displaying response received:");
-            for(int i = 0; i < board.cells.size(); i++)
-            {
-                ROS_INFO("Board cell: %d State: %d", i + 1, board.cells[i].state);
-                for(int j = 0; j < board.cells[i].contours.size(); j++)
-                {
-                    ROS_INFO("Edge %d: [X:%d Y:%d]", j + 1, board.cells[i].contours[j].x, board.cells[i].contours[j].y);
-                }
-            }
-            ROS_INFO("[defineCells CLIENT] Board data was successfully requested from service node");
         }
         else
         {
-            ROS_ERROR("[defineCells CLIENT] Service node was not able to send data");
-
             // if board has not been loaded, return (if board was already previously loaded, 
             // the old board is displayed)
             if(board.cells.size() != 9)
@@ -186,7 +166,6 @@ public:
         {
             this->sensing_cells(cv_ptr->image);
         }
-        ROS_INFO("[imageCallback(client node)] Image callback has been successfully executed");
     }
 
     void sensing_cells(const cv::Mat& img)

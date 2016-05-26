@@ -7,9 +7,9 @@
   <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
 
   <!-- xml file containing the cells of the board -->
-<!--   <param name="board_file" textfile="$(find baxter_tictactoe)/resources/ttt_board_lab.xml" />
+<!--   <param name="board_file" textfile="$(find baxter_tictactoe)/resources/ttt_board_lab.xml" /> -->
 
-  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/> -->
+  <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
   <node name="cells_definition_auto" pkg="baxter_tictactoe" type="cells_definition_auto" respawn="false" output="screen">
     <remap from="/image_in" to="/usb_cam/image_raw"/>

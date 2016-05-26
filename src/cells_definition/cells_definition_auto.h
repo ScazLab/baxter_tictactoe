@@ -1,6 +1,8 @@
 #ifndef CELLS_DEFINITION_AUTO_H
 #define CELLS_DEFINITION_AUTO_H
 
+#include <pthread.h>
+
 #include <string>
 
 #include <ros/ros.h>
@@ -44,6 +46,8 @@ private:
 	std::string window_name;
 	ttt::Cell cell;
 	ttt::Board board;
+
+    pthread_mutex_t mutex;
 
     /**bo
      * @param      vector (i.e array) of contours, type indicating whether largest or  

@@ -90,16 +90,12 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         board.cells.clear();
         int cells_num = srv.response.board.cells.size();
-        ROS_INFO("(1) cells_num: %d", cells_num); 
         for(int i = 0; i < cells_num; i++)
         {
             cell.contours.clear();
             int edges_num = srv.response.board.cells[i].contours.size();
-            ROS_INFO("(2) edges_num: %d", edges_num); 
             for(int j = 0; j < edges_num; j++)
             {
-                ROS_INFO("(3) Cell %d Edge %d [X: %0.2f Y:%0.2f]", i + 1, j + 1, 
-                        srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
                 
                 cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
                 cell.contours.push_back(point);
@@ -122,17 +118,6 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
             }
             board.cells.push_back(cell);
         }
-
-        ROS_INFO("[defineCells CLIENT] Displaying response received:");
-        for(int i = 0; i < board.cells.size(); i++)
-        {
-            ROS_INFO("Board cell: %d State: %d", i + 1, board.cells[i].state);
-            for(int j = 0; j < board.cells[i].contours.size(); j++)
-            {
-                ROS_INFO("Edge %d: [X:%d Y:%d]", j + 1, board.cells[i].contours[j].x, board.cells[i].contours[j].y);
-            }
-        }
-        ROS_INFO("[defineCells CLIENT] Board data was successfully requested from service node");
     }
     else
     {
@@ -140,7 +125,6 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // the old board is displayed)
         if(board.cells.size() != 9)
         {
-            ROS_INFO("asdfasdfsadf");
             return;            
         }
     }     

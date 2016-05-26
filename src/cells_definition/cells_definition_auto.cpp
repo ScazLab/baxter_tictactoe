@@ -7,23 +7,12 @@ using namespace std;
 bool IMG_LOADED = false;
 cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
 {
-    // ros::NodeHandle node_handle;
-    // image_transport::ImageTransport image_transport;
-    // image_transport::Subscriber image_subscriber;
-
-    // ros::Subscriber subLeft = nh.subscribe<sensor_msgs::Image> ("/bb2/left/image_raw", 10, 
-    //                           boost::bind(imageCallback, _1, pointerToImageManagmentStruct );
+    pthread_mutex_init(&mutex, NULL);
     
 	image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);  
-    //  &cellsDefinition::imageCallback, this);
     
-    // service = node_handle.advertiseService<DefineCells::Request,DefineCells::Response>("define_cells", boost::bind(&cellsDefinition::defineCells, this, _1, _2, &img_loaded));
     service = node_handle.advertiseService("define_cells", &cellsDefinition::defineCells, this);
     
-    // service = node_handle.advertiseService<DefineCells::Request,DefineCells::Response>("define_cells", boost::bind(&cellsDefinition::defineCells, this, _1, _2, &img_loaded));
-
-
-    // &cellsDefinition::defineCells, this);
     // cv::namedWindow(cellsDefinition::window_name);
 }
 
@@ -34,10 +23,14 @@ cellsDefinition::~cellsDefinition()
 
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
-    ROS_INFO("[defineCells(service node)] service has been called");
+    pthread_mutex_lock(&mutex);
+    bool im_load = IMG_LOADED;
+    pthread_mutex_unlock(&mutex);
 
-    if(IMG_LOADED == true){
+    if(im_load == true)
+    {
         BoardCell cell;
+
         for(int i = 0; i < board.cells.size(); i++)
         {
             cell.state = BoardCell::EMPTY;
@@ -49,29 +42,19 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             res.board.cells[i] = cell;
         }
 
-        // ROS_INFO("[defineCells(service node)] Service requested. Sending back response:");
-        // for(int i = 0; i < board.cells.size(); i++)
-        // {
-        //     ROS_INFO("Board cell: %d State: %u", i + 1, res.board.cells[i].state);
-        //     for(int j = 0; j < board.cells[i].contours.size(); j++)
-        //     {
-        //         ROS_INFO("Edge %d: [X:%0.2f Y:%0.2f]", j + 1, 
-        //             res.board.cells[i].contours[j].x, res.board.cells[i].contours[j].y);
-        //     }
-        // }
-        // ROS_INFO("[defineCells(service node)] Finished defining cells");
-        // ros::shutdown();
         return true;    
     }
-    else {
-        ROS_ERROR("[defineCells(service node)] Image callback was not successfully executed");
+    else 
+    {
         return false;
     }
 }
 
-int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith){	
+int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
+{	
 	
-	if(ith != LARGEST && ith != NEXT_LARGEST){
+	if(ith != LARGEST && ith != NEXT_LARGEST)
+    {
 		ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
 	};
 
@@ -81,14 +64,17 @@ int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
 	int next_largest_area_index = 0;
 
 	// iterate through contours and keeps track of contour w/ largest and 2nd-largest area
-	for(int i = 0; i < contours.size(); i++){
-		if(contourArea(contours[i], false) > largest_area){
+	for(int i = 0; i < contours.size(); i++)
+    {
+		if(contourArea(contours[i], false) > largest_area)
+        {
 			next_largest_area = largest_area;
 			next_largest_area_index = largest_area_index;
 			largest_area = contourArea(contours[i], false);
 			largest_area_index = i;
 		}
-		else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area){
+		else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area)
+        {
 			next_largest_area = contourArea(contours[i], false);
 			next_largest_area_index = i;
 		}
@@ -97,7 +83,8 @@ int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
 	return ith==LARGEST?largest_area_index:next_largest_area_index;
 }
 
-cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour){
+cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
+{
 	double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
 	double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
 	cv::Point point(x,y);
@@ -167,7 +154,8 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	// find and display cell centroids 
 	contours.erase(contours.begin() + largest_area_index);
 
-    if(contours.size() == 9){
+    if(contours.size() == 9)
+    {
         board.cells.clear();
 
        // aproximate cell contours to quadrilaterals
@@ -242,35 +230,21 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             }
         }        
 
+        pthread_mutex_lock(&mutex);
         IMG_LOADED = true;
+        pthread_mutex_unlock(&mutex);
         // ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
     }
-    else {
+    else
+    {
+        pthread_mutex_lock(&mutex);
         IMG_LOADED = false;
-        ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
+        pthread_mutex_unlock(&mutex);
+        // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
-    // cv::Mat display_cells = cv::Mat::zeros(board_cells.size(), CV_8UC1);
-    // ROS_INFO("No. of cells: %lu", board.cells.size());
-    // for(int i )
-    // for(int i = 0; i < board.cells.size(); i++){
-    //     drawContours(display_cells, board.cells[i].contours, i,
-    //                 cv::Scalar(255,255,255), CV_FILLED, 8);
-    //     // drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
-    // }
-
     cv::imshow(cellsDefinition::window_name, board_cells);
-    // ros::Duration(1).sleep(); // sleep for a second
     cv::waitKey(30);
-    // ros::shutdown();
-
-    // int c = cv::waitKey(30);
-    // if((char)c =='s')
-    // {
-    //   printf("No. of cells in board: %lu\n", board.cells.size());
-    //   board.save();
-    //   ros::shutdown();
-    // }
 }
 
 int main(int argc, char ** argv)
@@ -278,8 +252,6 @@ int main(int argc, char ** argv)
 	ros::init(argc, argv, "cells_definition_auto");
     ros::NodeHandle n;
 	cellsDefinition cd;
-
-    // ROS_INFO("Ready to define board and cell boundaries");
 
 	ros::spin();
 	return 0;

@@ -3,6 +3,7 @@ It identifies the state of each cell: red, blue, or empty.
 -->
 <launch>
     <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
     <!-- Range thresholds for the red tokens -->
     <rosparam param = "baxter_tictactoe/hsv_red">
@@ -17,7 +18,7 @@ It identifies the state of each cell: red, blue, or empty.
         S: [ 70, 256]
         V: [ 70, 256]
     </rosparam>
-    
+
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
     <arg name="show" default="false" />
 
@@ -33,5 +34,4 @@ It identifies the state of each cell: red, blue, or empty.
                                     respawn="false" output="screen" required="true">
         <remap from="/image_in" to="/usb_cam/image_raw"/>
     </node>
-
 </launch>
