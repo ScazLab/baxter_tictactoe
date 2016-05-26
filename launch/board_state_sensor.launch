@@ -4,30 +4,16 @@ It identifies the state of each cell: red, blue, or empty.
 <launch>
     <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
 
-    <!-- xml file containing the cells of the board -->
-    <param name="baxter_tictactoe/board_file" textfile="$(find baxter_tictactoe)/resources/ttt_board_lab.xml" />
-
-    <!-- Range thresholds for the red tokens -->
-    <rosparam param = "baxter_tictactoe/hsv_red">
-        H: [160,  20]
-        S: [ 40, 196]
-        V: [ 50, 196]
-    </rosparam>
-
-    <!-- Range thresholds for the blue tokens -->
-    <rosparam param = "baxter_tictactoe/hsv_blue">
-        H: [ 90, 130]
-        S: [ 70, 256]
-        V: [ 70, 256]
-    </rosparam>
-
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
     <arg name="show" default="false" />
 
     <!-- The colored area threshold specifies the minimum area size for which a cell is considered colored. It depends on the distance between the camera and board. -->
     <param name="baxter_tictactoe/area_threshold" type="int" value="150" />
 
-    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
+
+    <node name="cells_definition_auto" pkg="baxter_tictactoe" type="cells_definition_auto" respawn="false" output="screen">
+        <remap from="/image_in" to="/usb_cam/image_raw"/>
+    </node>
 
     <node name="board_state_sensor" pkg="baxter_tictactoe" type="board_state_sensing" args="--show $(arg show)"
                                     respawn="false" output="screen" required="true">

@@ -24,42 +24,9 @@ bool operator!=(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg
 void BoardState::init()
 {
     image_subscriber = image_transport.subscribe("image_in", 1, &BoardState::imageCallback, this);
-    
-    client = node_handle.serviceClient<DefineCells>("define_cells");
-    ROS_ASSERT_MSG(client, "Empty client");
 
     board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");
-
-    DefineCells srv;
-
-    int cells_num = srv.response.board.cells.size();
-    for(int i = 0; i < cells_num; i++)
-    {
-        int edges_num = srv.response.board.cells[i].contours.size();
-        for(int j = 0; j < edges_num; i++){
-            cell.contours[j].x = srv.response.board.cells[i].contours[j].x;
-            cell.contours[j].y = srv.response.board.cells[i].contours[j].y;
-        }
-
-        switch(srv.response.board.cells[i].state)
-        {
-            case BoardCell::EMPTY:
-                cell.state = empty;
-                break;
-            case BoardCell::RED:
-                cell.state = red;
-                break;
-            case BoardCell::BLUE:
-                cell.state = blue;
-                break;
-            case BoardCell::UNDEFINED:
-                cell.state = undefined;
-                break;
-        }
-        // cell.state = srv.response.board.cells[i].state;
-        board.cells.push_back(cell);
-    }
     
     // ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
     // ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
@@ -100,6 +67,69 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
+
+    client = node_handle.serviceClient<DefineCells>("define_cells");
+    ROS_ASSERT_MSG(client, "Empty client");
+
+    DefineCells srv;
+
+    if(client.call(srv) && board.cells.size() != 9)
+    {
+        board.cells.clear();
+        int cells_num = srv.response.board.cells.size();
+        ROS_INFO("(1) cells_num: %d", cells_num); 
+        for(int i = 0; i < cells_num; i++)
+        {
+            cell.contours.clear();
+            int edges_num = srv.response.board.cells[i].contours.size();
+            ROS_INFO("(2) edges_num: %d", edges_num); 
+            for(int j = 0; j < edges_num; j++)
+            {
+                ROS_INFO("(3) Cell %d Edge %d [X: %0.2f Y:%0.2f]", i + 1, j + 1, 
+                        srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
+                
+                cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
+                cell.contours.push_back(point);
+            }
+
+            switch(srv.response.board.cells[i].state)
+            {
+                case BoardCell::EMPTY:
+                    cell.state = empty;
+                    break;
+                case BoardCell::RED:
+                    cell.state = red;
+                    break;
+                case BoardCell::BLUE:
+                    cell.state = blue;
+                    break;
+                case BoardCell::UNDEFINED:
+                    cell.state = undefined;
+                    break;
+            }
+            board.cells.push_back(cell);
+        }
+
+        ROS_INFO("[defineCells CLIENT] Displaying response received:");
+        for(int i = 0; i < board.cells.size(); i++)
+        {
+            ROS_INFO("Board cell: %d State: %d", i + 1, board.cells[i].state);
+            for(int j = 0; j < board.cells[i].contours.size(); j++)
+            {
+                ROS_INFO("Edge %d: [X:%d Y:%d]", j + 1, board.cells[i].contours[j].x, board.cells[i].contours[j].y);
+            }
+        }
+        ROS_INFO("[defineCells CLIENT] Board data was successfully requested from service node");
+    }
+    else
+    {
+        // if board has not been loaded, return (if board was already previously loaded, 
+        // the old board is displayed)
+        if(board.cells.size() != 9)
+        {
+            return;            
+        }
+    }     
 
     ttt_board_sensor::ttt_board msg_board;
     msg_board.data.assign(undefined); // initially the state of each cell is undefined
