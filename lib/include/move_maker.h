@@ -9,7 +9,6 @@
 
 #include "trajectory_player/trajectory_player.h"
 #include "trajectory_xml_parser/trajectory_xml_parser.h"
-#include "my_ros_utils.h"
 #include "ttt_moves_trajectories.h"
 
 #include <tictactoe/SetTrajectoryType.h>

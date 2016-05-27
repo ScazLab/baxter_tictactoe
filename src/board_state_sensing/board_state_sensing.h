@@ -2,13 +2,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <boost/lexical_cast.hpp>
-
 #include "baxterTictactoe/tictactoe_utils.h"
-
 #include "baxter_tictactoe/DefineCells.h"
-
-
 #include "ttt_board_sensor/ttt_board.h"
 
 class BoardState
@@ -35,7 +30,8 @@ private:
     bool doShow;
 
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
-    ttt_board_sensor::ttt_board last_msg_board; /*WHAT IS THIS FOR?*/
+    // It publishes the board only if its state changes.
+    ttt_board_sensor::ttt_board last_msg_board;
 
     void init();
 

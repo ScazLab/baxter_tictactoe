@@ -42,30 +42,6 @@ install(DIRECTORY lib/include/
   FILES_MATCHING PATTERN "*.h"
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Specify the source files
 # set(folder_source_baxter_tictactoe src/board_sensor/board_motion_detection.cpp
 #                                    src/board_sensor/board_scheme.cpp
@@ -95,7 +71,6 @@ install(DIRECTORY lib/include/
 # set(folder_header_baxter_tictactoe include/board_motion_detection.h
 #                                    include/BufferToggle.h
 #                                    include/move_maker.h
-#                                    include/my_ros_utils.h
 #                                    include/robot_state.h
 #                                    include/ros_time_utils.h
 #                                    include/trajectory_player.h

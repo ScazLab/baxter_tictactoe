@@ -49,12 +49,21 @@ std::string *Move_Maker::get_trajectories_to_cell(std::string cell_id)
 bool Move_Maker::execute_single_trajectory(std::string traj_id, Trajectory_Type mode)
 {
     TTT_Trajectory t;
+    
     if(!this->get_ttt_trajectory(traj_id,t))
     {
         _place_token.setAborted(_place_token_result,traj_id + " trajectory not found");
         return false;
     }
-    if (this->is_preempted() || !my_ros_utils::is_ros_ok()) return false;
+
+    if (this->is_preempted()) return false;
+    
+    if (!ros::ok())
+    {
+        ROS_ERROR("ros node has been shut down");
+        return false;
+    }
+
     ROS_DEBUG_STREAM("[Move_Maker] Trajectory found. " << t.get_ttt_trajectory_description());
     bool success=true;
     switch(mode)
