@@ -13,7 +13,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/core/core.hpp>
 
-#include "ttt_board_sensor/ttt_board.h"
+#include "baxter_tictactoe/MsgCell.h"
+
 
 #include <sstream>
 
@@ -24,10 +25,10 @@ namespace ttt
 
 // Used to determine the three possible states of a cell.
 // Undefined is just used when it is created and non state has been assigned.
-typedef enum {empty=ttt_board_sensor::ttt_board::EMPTY,
-              blue=ttt_board_sensor::ttt_board::BLUE,
-              red=ttt_board_sensor::ttt_board::RED,
-              undefined=ttt_board_sensor::ttt_board::UNDEFINED} cellState;
+typedef enum {empty=baxter_tictactoe::MsgCell::EMPTY,
+              blue=baxter_tictactoe::MsgCell::BLUE,
+              red=baxter_tictactoe::MsgCell::RED,
+              undefined=baxter_tictactoe::MsgCell::UNDEFINED} cellState;
 
 std::string cell_state_to_str(cellState c_s);
 

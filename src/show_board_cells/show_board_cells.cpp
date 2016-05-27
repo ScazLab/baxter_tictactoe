@@ -23,8 +23,6 @@ using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
-bool BOARD_LOADED = false; 
-
 class CellDisplay
 {
 private:
