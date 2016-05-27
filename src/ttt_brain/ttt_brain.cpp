@@ -20,35 +20,59 @@
 namespace ttt
 {
 
+bool operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2)
+{
+    for(int i = 0; i > cells1.size(); i++){
+        if(cells1[i].state != cells2[i].state){
+            return false;
+        }
+    }
+    return true;
+}
+
+bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2)
+{
+    return !(cells1==cells2);
+}
 
 class TTT_Brain
 {
 private:
-
     typedef actionlib::SimpleActionClient<tictactoe::PlaceTokenAction> Place_Token_Client_type;
-    typedef boost::array<uint8_t, NUMBER_OF_CELLS> TTT_State_type;
+    // typedef baxter_tictactoe::MsgCell msg_cell;
+    // typedef msg_cell[9] TTT_State_type;
+    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_State_type;
+    // typedef std::vector<baxter_tictactoe::MsgCell> TTT_State_type;
 
-    ros::NodeHandle _nh; //! ROS node handle
-    ros::Subscriber _ttt_state_sub; //! subscriber to receive the messages comming from the board state sensor
+    ros::NodeHandle _nh; // ROS node handle
+    ros::Subscriber _ttt_state_sub; // subscriber to receive the messages 
+                                    // coming from the board state sensor
 
-    ThreadSafeVariable<TTT_State_type> _ttt_state; //! it stores the state of the board. It is the same type than the data received when a new TTT board state is detected (ttt_board_sensor::ttt_board.data)
+    ThreadSafeVariable<TTT_State_type> _ttt_state; // it stores the state of the board. It is 
+                                                   // the same type than the data received when a 
+                                                   // new TTT board state is detected 
+                                                   // (baxter_tictactoe::MsgBoard::cells)
 
-    ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; //! It stores the total number of cells on the board. This is used to detect the end of the opponent's turn
+    ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; // It stores the total number
+                                                                       // of cells on the board. This 
+                                                                       // is used to detect the end of 
+                                                                       // the opponent's turn
 
-    cellState _robot_color;   //! It represents the color of the tokens the robot is playing with.
-    cellState _opponent_color; //! It represents the color of the tokens the opponent is playing with.
+    cellState _robot_color;   // It represents the color of the tokens the robot is playing with.
+    cellState _opponent_color; // It represents the color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
     /**
-     * It handles the message published when the state of a cell has changed. The new TTT board state is stored in the thread-safe private attribute called _ttt_state.
+     * It handles the message published when the state of a cell has changed. The new TTT board state
+     * is stored in the thread-safe private attribute called _ttt_state.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
      **/
-    void new_ttt_state(const ttt_board_sensor::ttt_boardConstPtr & msg)
+    void new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)
     {
-        if (msg->data!=_ttt_state.get()) {
+        if ((msg->cells)!=_ttt_state.get()) {
             ROS_DEBUG_STREAM("[TTT_Brain] New TTT board state detected at ." << msg->header.stamp);
-            _ttt_state.set(msg->data);
+            _ttt_state.set(msg->cells);
         }
     }
 
@@ -60,9 +84,12 @@ private:
 
     bool _can_cheat; //! It determines if the robot can cheat or not.
 
-    Place_Token_Client_type _move_commander; //! This is the incharge of sending the command to place a new token in a cell of the TTT board
+    Place_Token_Client_type _move_commander; /* This is the incharge of sending the command to 
+                                                place a new token in a cell of the TTT board */
 
-    int (TTT_Brain::*_choose_next_move)(bool& cheating); //! This a pointer to the function that decides the next move. We use a pointer because we could have different strategies.
+    int (TTT_Brain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that 
+                                                            decides the next move. We use a pointer 
+                                                            because we could have different strategies. */
 
     bool has_cheated;
     /**
@@ -77,18 +104,20 @@ private:
         TTT_State_type aux = _ttt_state.get();
         do {
             r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
-            ROS_DEBUG("[TTT_Brain] Cell %d is in state %d ==? %d || %d", r, aux[r-1], ttt_board_sensor::ttt_board::EMPTY, ttt_board_sensor::ttt_board::UNDEFINED);
+            ROS_DEBUG("[TTT_Brain] Cell %d is in state %d ==? %d || %d", r, aux[r-1].state, 
+                      baxter_tictactoe::MsgCell::EMPTY, baxter_tictactoe::MsgCell::UNDEFINED);
         }
-        while(aux[r-1]!=empty && aux[r-1]!=undefined);
+        while(aux[r-1].state!=empty && aux[r-1].state!=undefined);
 
         ROS_INFO_STREAM("[TTT_Brain] Random move to cell with number " << r);
         return r;
     }
 
     /**
-     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat placing a token on top of an opponent's token.
-     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it. It will block opponent's victory.
-     * If it cannot win anyway, it will randomly choose a cell.
+     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat 
+     * placing a token on top of an opponent's token. If the robot can win without breaking the rules, it will
+     * do it. Otherwise, if it can win cheating, it will do it. It will block opponent's victory. If it cannot 
+     * win anyway, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
@@ -107,7 +136,8 @@ private:
 
     /**
      * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
-     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will try to block the opponent's victory. If this is not needed, it will randomly choose a cell.
+     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will 
+     * try to block the opponent's victory. If this is not needed, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
      * \return an integer representing the cell where to place the next token
      **/
@@ -120,12 +150,14 @@ private:
         return random_move(cheating);
     }
 
-    /**
-     * It determines the next cell to place a token. It always will try to win in this turn, even if there is an opponent's token already in that cell.
-     * If the robot can win without breaking the rules, it will do it. Otherwise, if it can win cheating, it will do it.
-     * If it cannot win in this turn anyway, it will try to block the opponent's victory. If this is not needed it will randomly choose a cell.
-     * \param cheating It indicates if cheating has happened.
-     * \return an integer representing the cell where to place the next token
+    /*
+     * It determines the next cell to place a token. It always will try to win in this turn, even if 
+     * there is an opponent's token already in that cell. If the robot can win without breaking the 
+     * rules, it will do it. Otherwise, if it can win cheating, it will do it. If it cannot win in 
+     * this turn anyway, it will try to block the opponent's victory. If this is not needed it will 
+     * randomly choose a cell.
+     * @param cheating It indicates if cheating has happened.
+     * @return an integer representing the cell where to place the next token
      **/
     int smart_cheating_random_move(bool& cheating)
     {
@@ -140,26 +172,30 @@ private:
         return random_move(cheating);
     }
 
-    /**
-     * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell occupied with an opponent's token.
-     * \return -1 if the robot cannot win in the next move, or an integer corresponding to the cell where to place the next token to win, even if there is an opponent's token in that cell. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
-     **/
+    /*
+     * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell 
+     * occupied with an opponent's token. 
+     * @return -1 if the robot cannot win in the next move, 
+     * or an integer corresponding to the cell where to place the next token to win, even if there 
+     * is an opponent's token in that cell. The cell ids are between 1 (first row, first column) 
+     * and NUMBER_OF_CELLS (last raw, last column).
+     */
     int cheating_move()
     {
-        TTT_State_type state = _ttt_state.get();
-        uint8_t cell_state=undefined;
+        TTT_State_type aux = _ttt_state.get();
+        uint8_t cell_state = undefined;
         for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
-            if (state[i]==_opponent_color)
+            if (aux[i].state==_opponent_color)
             {
-                cell_state=state[i];
-                state[i]=_robot_color;
-                if (TTT_Brain::three_in_a_row(_robot_color, state))
+                cell_state=aux[i].state;
+                aux[i].state=_robot_color;
+                if (TTT_Brain::three_in_a_row(_robot_color, aux))
                 {
                     ROS_INFO_STREAM("[TTT_Brain] Cheating move to cell with number " << i+1);
                     has_cheated=true;
                     return i+1;
                 }
-                state[i]=cell_state;
+                aux[i].state=cell_state;
             }
         }
         ROS_INFO("[TTT_Brain] No chance to win in this turn");
@@ -168,23 +204,25 @@ private:
 
     /**
      * It determines if the opponent can win in the next move.
-     * \return -1 if the opponent cannot win in the next move, or an integer corresponding to the first found cell where an opponent's token can be placed to win the game. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * \return -1 if the opponent cannot win in the next move, or an integer corresponding 
+     * to the first found cell where an opponent's token can be placed to win the game. 
+     * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
     int defensive_move()
     {
-        TTT_State_type state = _ttt_state.get();
-        uint8_t cell_state=undefined;
+        TTT_State_type aux = _ttt_state.get();
+        uint8_t cell_state = undefined;
         for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
-            if (state[i]==empty || state[i]==undefined)
+            if (aux[i].state==empty || aux[i].state==undefined)
             {
-                cell_state=state[i];
-                state[i]=_opponent_color;
-                if (TTT_Brain::three_in_a_row(_opponent_color, state))
+                cell_state = aux[i].state;
+                aux[i].state = _opponent_color;
+                if (TTT_Brain::three_in_a_row(_opponent_color, aux))
                 {
                     ROS_INFO_STREAM("[TTT_Brain] Defensive move to cell with number " << i+1);
                     return i+1;
                 }
-                state[i]=cell_state;
+                aux[i].state=cell_state;
             }
         }
         ROS_INFO("[TTT_Brain] No chance to lose in this turn");
@@ -193,23 +231,25 @@ private:
 
     /**
      * It determines if the robot can win in the next move.
-     * \return -1 if the robot cannot win in the next move, or an integer corresponding to the first found cell where a robot's token can be placed to win the game. The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * \return -1 if the robot cannot win in the next move, or an integer corresponding 
+     * to the first found cell where a robot's token can be placed to win the game. The 
+     * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
      **/
     int victory_move()
     {
-        TTT_State_type state = _ttt_state.get();
-        uint8_t cell_state=undefined;
+        TTT_State_type aux = _ttt_state.get();
+        uint8_t cell_state = undefined;
         for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
-            if (state[i]==empty || state[i]==undefined)
+            if (aux[i].state==empty || aux[i].state==undefined)
             {
-                cell_state=state[i];
-                state[i]=_robot_color;
-                if (TTT_Brain::three_in_a_row(_robot_color, state))
+                cell_state = aux[i].state;
+                aux[i].state = _robot_color;
+                if (TTT_Brain::three_in_a_row(_robot_color, aux))
                 {
                     ROS_INFO_STREAM("[TTT_Brain] Victory move to cell with number " << i+1);
                     return i+1;
                 }
-                state[i]=cell_state;
+                aux[i].state = cell_state;
             }
         }
         ROS_INFO("[TTT_Brain] No chance to win in this turn");
@@ -273,8 +313,23 @@ public:
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
         _opponent_color=_robot_color==blue?red:blue;
 
-        TTT_State_type aux;
-        aux.assign(undefined);
+
+
+
+        /******************************************/
+
+
+                        /*CHANGE*/
+
+
+        /******************************************/
+
+        TTT_State_type aux; // aux is an array of 9 MsgCells 
+        for(int i = 0; i < aux.size(); i++){
+            aux[i].state = baxter_tictactoe::MsgCell::UNDEFINED;
+        }
+
+        // aux.assign(undefined);
         _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
         _ttt_state_sub = _nh.subscribe("/new_board", 1, &TTT_Brain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
@@ -296,7 +351,8 @@ public:
     /**
      * Returns the cell where the next token is gonna be placed.
      * @param cheating It indicates if cheating happens
-     * @return The return value is between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * @return The return value is between 1 (first row, first column) 
+     * and NUMBER_OF_CELLS (last raw, last column).
      **/
     int get_next_move(bool& cheating) {
         return (this->*_choose_next_move)(cheating);
@@ -323,8 +379,11 @@ public:
 
     /**
      * This function sends the command to place a token in a particular cell.
-     * @param cell_to_move value between 1 (first row, first column) and 9 (last raw, last column) that points where the next token will be placed
-     * @return The state information for the goal selected. Possible States Are: PENDING, ACTIVE, RECALLED, REJECTED, PREEMPTED, ABORTED, SUCCEEDED, LOST. In case that the cell to move does not exist, the returned value will be LOST.
+     * @param cell_to_move value between 1 (first row, first column) and 
+     * 9 (last raw, last column) that points where the next token will be placed
+     * @return The state information for the goal selected. 
+     * Possible States Are: PENDING, ACTIVE, RECALLED, REJECTED, PREEMPTED, ABORTED, 
+     * SUCCEEDED, LOST. In case that the cell to move does not exist, the returned value will be LOST.
      **/
     actionlib::SimpleClientGoalState execute_move(int cell_to_move)
     {
@@ -355,30 +414,34 @@ public:
     }
 
     /**
-     * This function counts the total number of tokens on the board. That is, the number of cells that are not empty or undefined.
+     * This function counts the total number of tokens on the board. 
+     * That is, the number of cells that are not empty or undefined.
      * @return The number of cells where there is a red or blue token.
      **/
     unsigned short int get_number_of_tokens_on_board()
     {
         unsigned short int counter=0;
-        TTT_State_type state = _ttt_state.get();
-        foreach (unsigned short int c, state) {
-            if(c!=empty && c!=undefined) counter++;
+        TTT_State_type aux = _ttt_state.get();
+        for(int i = 0; i < aux.size(); i++)
+        {
+            if(aux[i].state!=empty && aux[i].state!=undefined) counter++;
         }
         return counter;
     }
 
     /**
-     * This function counts the number of a particular type of tokens on the board. That is, the number of cells that occupied by these kind of tikens.
+     * This function counts the number of a particular type of tokens 
+     * on the board. That is, the number of cells that occupied by these kind of tikens.
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
     unsigned short int get_number_of_tokens_on_board(cellState token_type)
     {
         unsigned short int counter=0;
-        TTT_State_type state = _ttt_state.get();
-        foreach (unsigned short int c, state) {
-            if(c==token_type) counter++;
+        TTT_State_type aux = _ttt_state.get();
+        for(int i = 0; i < aux.size(); i++)
+        {
+           if(aux[i].state==token_type) counter++;
         }
         return counter;
     }
@@ -395,21 +458,22 @@ public:
         ROS_DEBUG("[TTT_Brain] @three in a row");
         if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
 
-        if(tttboard[0]==cell_color && tttboard[1]==cell_color && tttboard[2]==cell_color) return true; // 3 in a row in the first row
-        if(tttboard[3]==cell_color && tttboard[4]==cell_color && tttboard[5]==cell_color) return true; // 3 in a row in the second row
-        if(tttboard[6]==cell_color && tttboard[7]==cell_color && tttboard[8]==cell_color) return true; // 3 in a row in the third row
-        if(tttboard[0]==cell_color && tttboard[3]==cell_color && tttboard[6]==cell_color) return true; // 3 in a row in the first column
-        if(tttboard[1]==cell_color && tttboard[4]==cell_color && tttboard[7]==cell_color) return true; // 3 in a row in the second column
-        if(tttboard[2]==cell_color && tttboard[5]==cell_color && tttboard[8]==cell_color) return true; // 3 in a row in the third column
-        if(tttboard[0]==cell_color && tttboard[4]==cell_color && tttboard[8]==cell_color) return true; // 3 in a row in the first diagonal
-        if(tttboard[2]==cell_color && tttboard[4]==cell_color && tttboard[6]==cell_color) return true; // 3 in a row in the second diagonal
+        if(tttboard[0].state==cell_color && tttboard[1].state==cell_color && tttboard[2].state==cell_color) return true; // 3 in a row in the first row
+        if(tttboard[3].state==cell_color && tttboard[4].state==cell_color && tttboard[5].state==cell_color) return true; // 3 in a row in the second row
+        if(tttboard[6].state==cell_color && tttboard[7].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the third row
+        if(tttboard[0].state==cell_color && tttboard[3].state==cell_color && tttboard[6].state==cell_color) return true; // 3 in a row in the first column
+        if(tttboard[1].state==cell_color && tttboard[4].state==cell_color && tttboard[7].state==cell_color) return true; // 3 in a row in the second column
+        if(tttboard[2].state==cell_color && tttboard[5].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the third column
+        if(tttboard[0].state==cell_color && tttboard[4].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the first diagonal
+        if(tttboard[2].state==cell_color && tttboard[4].state==cell_color && tttboard[6].state==cell_color) return true; // 3 in a row in the second diagonal
 
         return false;
     }
 
     /**
-     * This function checks if there are 3 cell_color tokens in a row in the current TTT board, which means that the game is over.
-     * In a 3x3 board there are 8 possible convinations to get 3 tokens in a row. We explore all of them.
+     * This function checks if there are 3 cell_color tokens in a row in the current TTT board, 
+     * which means that the game is over. In a 3x3 board there are 8 possible convinations to 
+     * get 3 tokens in a row. We explore all of them.
      * @param cell_color It represents the color of the tokens in the row we are searching for.
      * @return True in case of a 3 token row is found, false otherwise.
      **/
@@ -451,13 +515,17 @@ public:
 
     /**
      * This function blocks until the opponent has done his move.
-     * This is detected considering the number of the opponent's tokens on the board. The function waits until the number of opponent's tokens in the board increases.
+     * This is detected considering the number of the opponent's 
+     * tokens on the board. The function waits until the number 
+     * of opponent's tokens in the board increases.
      * @param number of opponent's token at the beginning
      **/
     void wait_for_opponent_turn(const uint8_t& n_opponent_tokens)
     {        
         uint8_t aux_n_opponent_tokens=n_opponent_tokens;
-        while(aux_n_opponent_tokens<=n_opponent_tokens) // Waiting for my turn: the participant has to place one token, so we wait until the number opponent's tokens increase.
+        while(aux_n_opponent_tokens<=n_opponent_tokens) /* Waiting for my turn: the participant 
+                                                           has to place one token, so we wait until
+                                                           the number opponent's tokens increase. */
         {
 //            ros::Duration(1).sleep();
             ROS_WARN("[TTT_Brain] Press ENTER when the opponent's turn is done");
@@ -472,10 +540,12 @@ public:
      **/
     bool full_board()
     {
-        TTT_State_type state = _ttt_state.get();
-        foreach (uint8_t c, state) {
-            if(c==empty || c==undefined) // we consider the case where cells are undefined because is needed in the first loop when all cells are undefined
-                return false;
+        TTT_State_type aux = _ttt_state.get();
+        for(int i = 0; i < aux.size(); i++){
+            if(aux[i].state==empty || aux[i].state==undefined) /* we consider the case where cells are 
+                                                                  undefined because is needed in the first
+                                                                  loop when all cells are undefined */
+            return false;
         }
         return true;
     }
@@ -525,7 +595,7 @@ public:
 
     unsigned short int play_one_game(bool& cheating)
     {
-        bool robot_turm=true;
+        bool robot_turn=true;
         unsigned short int winner=0; // no winner
         has_cheated=false;
 
@@ -540,7 +610,7 @@ public:
         // uint8_t n_robot_tokens=0;
         while ((winner=this->get_winner())==0 && !this->full_board())
         {
-            if (robot_turm) // Robot's turn
+            if (robot_turn) // Robot's turn
             {
                 // n_robot_tokens=this->get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
                 n_opponent_tokens=this->get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
@@ -554,19 +624,23 @@ public:
                     ROS_ERROR_STREAM("[TTT_Brain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
                     //What do we do now?
                 }
-//                if(n_robot_tokens==this->get_number_of_tokens_on_board(_robot_color)) //the number of robot tokens haven't increased so we try again.
-//                {
-//                    ROS_ERROR("[TTT_Brain] Somehow there is still %ud robot tokens.",n_robot_tokens);
-//                    continue;
-//                }
+                //the number of robot tokens haven't increased so we try again.
+                // if(n_robot_tokens==this->get_number_of_tokens_on_board(_robot_color)) 
+                // {
+                //     ROS_ERROR("[TTT_Brain] Somehow there is still %ud robot tokens.",n_robot_tokens);
+                //     continue;
+                // }
             }
             else // Participant's turn
             {
                 ROS_INFO("[TTT_Brain] Waiting for the participant's move.");
                 this->say_sentence("It is your turn",0.1);
-                this->wait_for_opponent_turn(n_opponent_tokens); // Waiting for my turn: the participant has to place one token, so we wait until the number of the opponent's tokens increases.
+                this->wait_for_opponent_turn(n_opponent_tokens); /* Waiting for my turn: the participant 
+                                                                    has to place one token, so we wait 
+                                                                    until the number of the opponent's 
+                                                                    tokens increases. */
             }
-            robot_turm=!robot_turm;
+            robot_turn=!robot_turn;
         }
 
         switch(winner)
