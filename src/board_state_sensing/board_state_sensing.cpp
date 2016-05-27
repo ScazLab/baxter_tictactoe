@@ -247,8 +247,7 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(true);
-    // BoardState cd(show);    
+    BoardState cd(show);    
     ros::spin();
 
     return 0;

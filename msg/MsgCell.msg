@@ -1,5 +1,5 @@
 Header header
-geometry_msgs/Point[4] contours
+baxter_tictactoe/Point[4] contours
 uint8 state
 uint8 EMPTY=0
 uint8 BLUE=1

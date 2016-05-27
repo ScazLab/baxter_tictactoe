@@ -6,6 +6,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "baxter_tictactoe/Point.h"
 #include "baxter_tictactoe/MsgBoard.h"
 #include "baxter_tictactoe/MsgCell.h"
 
