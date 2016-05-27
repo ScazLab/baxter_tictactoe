@@ -1,6 +1,8 @@
 #ifndef MOVE_MAKER_H
 #define MOVE_MAKER_H
 
+#include <string>
+
 #include <ros/ros.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 
@@ -9,7 +11,6 @@
 
 #include "trajectory_player/trajectory_player.h"
 #include "trajectory_xml_parser/trajectory_xml_parser.h"
-#include "ttt_moves_trajectories.h"
 
 #include <tictactoe/SetTrajectoryType.h>
 
@@ -17,6 +18,16 @@
 
 namespace ttt
 {
+
+std::string cell1x1[3]={"grasp","put@1x1","back@1x1"};
+std::string cell1x2[3]={"grasp","put@1x2","back@1x2"};
+std::string cell1x3[3]={"grasp","put@1x3","back@1x3"};
+std::string cell2x1[3]={"grasp","put@2x1","back@2x1"};
+std::string cell2x2[3]={"grasp","put@2x2","back@2x2"};
+std::string cell2x3[3]={"grasp","put@2x3","back@2x3"};
+std::string cell3x1[3]={"grasp","put@3x1","back@3x1"};
+std::string cell3x2[3]={"grasp","put@3x2","back@3x2"};
+std::string cell3x3[3]={"grasp","put@3x3","back@3x3"};
 
 typedef actionlib::SimpleActionServer<tictactoe::PlaceTokenAction> Server;
 

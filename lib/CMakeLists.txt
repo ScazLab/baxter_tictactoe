@@ -69,14 +69,11 @@ install(DIRECTORY lib/include/
 
 ## Specify the header files
 # set(folder_header_baxter_tictactoe include/board_motion_detection.h
-#                                    include/BufferToggle.h
 #                                    include/move_maker.h
 #                                    include/robot_state.h
-#                                    include/ros_time_utils.h
 #                                    include/trajectory_player.h
 #                                    include/trajectory_xml_parser.h
 #                                    include/T_ThreadSafe.h
-#                                    include/ttt_moves_trajectories.h
 #                                    include/vacuum_gripper.h)
 
 # source_group("Source Files" FILES ${folder_source_baxter_tictactoe})

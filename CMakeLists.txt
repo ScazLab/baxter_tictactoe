@@ -143,7 +143,6 @@ add_executable(test_trajectory_player           src/test_trajectory_player/test_
 add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
 add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
 add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp              lib/include/T_ThreadSafe.h)
-add_executable(test_buffer_toggle               src/test_buffer_toggle/test_buffer_toggle.cpp                            lib/include/BufferToggle.h)
 add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
 
 add_executable(cells_definition                 src/cells_definition/cells_definition.cpp                                src/cells_definition/cells_definition.h)
@@ -166,7 +165,6 @@ add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messag
 add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_buffer_toggle             baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})

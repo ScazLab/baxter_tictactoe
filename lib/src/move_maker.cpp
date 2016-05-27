@@ -1,7 +1,6 @@
-#include "move_maker.h"
+#include "move_maker/move_maker.h"
 
-namespace ttt
-{
+using namespace ttt;
 
 bool Move_Maker::get_ttt_trajectory(std::string traj_name, TTT_Trajectory& traj)
 {
@@ -223,4 +222,3 @@ bool Move_Maker::execute_place_token(const tictactoe::PlaceTokenGoalConstPtr& go
     return _place_token_result.success;
 }
 
-}
