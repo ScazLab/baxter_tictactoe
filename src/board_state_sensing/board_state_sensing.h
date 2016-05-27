@@ -30,7 +30,7 @@ private:
 
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
     // It publishes the board only if its state changes.
-    ttt_board_sensor::ttt_board last_msg_board;
+    baxter_tictactoe::MsgBoard last_msg_board;
 
     void init();
 

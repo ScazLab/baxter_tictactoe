@@ -29,12 +29,12 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
     if(img_loaded_copy == true)
     {
-        BoardCell cell;
+        MsgCell cell;
 
         pthread_mutex_lock(&mutex);
         for(int i = 0; i < board.cells.size(); i++)
         {
-            cell.state = BoardCell::EMPTY;
+            cell.state = MsgCell::EMPTY;
             for(int j = 0; j < board.cells[i].contours.size(); j++)
             {
                 cell.contours[j].x = board.cells[i].contours[j].x;

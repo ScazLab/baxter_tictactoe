@@ -23,8 +23,8 @@
 
 #include <geometry_msgs/Point.h>
 #include "baxter_tictactoe/DefineCells.h"
-#include "baxter_tictactoe/BoardCell.h"
-#include "baxter_tictactoe/Board.h"
+#include "baxter_tictactoe/MsgCell.h"
+#include "baxter_tictactoe/MsgBoard.h"
 
 enum Index 
 {

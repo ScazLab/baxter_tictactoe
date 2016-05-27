@@ -105,16 +105,16 @@ public:
 
                 switch(srv.response.board.cells[i].state)
                 {
-                    case BoardCell::EMPTY:
+                    case MsgCell::EMPTY:
                         cell.state = empty;
                         break;
-                    case BoardCell::RED:
+                    case MsgCell::RED:
                         cell.state = red;
                         break;
-                    case BoardCell::BLUE:
+                    case MsgCell::BLUE:
                         cell.state = blue;
                         break;
-                    case BoardCell::UNDEFINED:
+                    case MsgCell::UNDEFINED:
                         cell.state = undefined;
                         break;
                 }

@@ -4,28 +4,28 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-bool operator==(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
+bool operator==(MsgBoard board1, MsgBoard board2)
 {
-    if (msg1.data.size()!=msg2.data.size()) return false;
+    if (board1.cells.size()!=board2.cells.size()) return false;
 
-    for (size_t i = 0; i < msg1.data.size(); ++i) {
-        if (msg1.data[i]!=msg2.data[i]) {
+    for (size_t i = 0; i < board1.cells.size(); ++i) {
+        if (board1.cells[i].state!=board2.cells[i].state) {
             return false;
         }
     }
     return true;
 }
 
-bool operator!=(ttt_board_sensor::ttt_board msg1,ttt_board_sensor::ttt_board msg2)
+bool operator!=(MsgBoard board1, MsgBoard board2)
 {
-    return !(msg1==msg2);
+    return !(board1==board2);
 }
 
 void BoardState::init()
 {
     image_subscriber = image_transport.subscribe("image_in", 1, &BoardState::imageCallback, this);
 
-    board_publisher  = node_handle.advertise<ttt_board_sensor::ttt_board>("/new_board", 1);
+    board_publisher  = node_handle.advertise<MsgBoard>("/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
@@ -105,16 +105,16 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
             switch(srv.response.board.cells[i].state)
             {
-                case BoardCell::EMPTY:
+                case MsgCell::EMPTY:
                     cell.state = empty;
                     break;
-                case BoardCell::RED:
+                case MsgCell::RED:
                     cell.state = red;
                     break;
-                case BoardCell::BLUE:
+                case MsgCell::BLUE:
                     cell.state = blue;
                     break;
-                case BoardCell::UNDEFINED:
+                case MsgCell::UNDEFINED:
                     cell.state = undefined;
                     break;
             }
@@ -131,8 +131,10 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         }
     }     
 
-    ttt_board_sensor::ttt_board msg_board;
-    msg_board.data.assign(undefined); // initially the state of each cell is undefined
+    MsgBoard msg_board;
+    for(int i = 0; i < msg_board.cells.size(); i++){
+        msg_board.cells[i].state = MsgCell::UNDEFINED;
+    }
     msg_board.header.stamp = msg->header.stamp;
     msg_board.header.frame_id = msg->header.frame_id;
 
@@ -186,7 +188,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
             cell->cell_area_red>cell->cell_area_blue?cell->state=red:cell->state=blue;
         }
 
-        msg_board.data[j]=cell->state;
+        msg_board.cells[j].state=cell->state;
     }
 
     ROS_DEBUG("Board state is %s", board.stateToString().c_str());

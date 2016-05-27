@@ -56,8 +56,8 @@ find_package(Boost REQUIRED COMPONENTS thread)
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
     ttt_board.msg
-    Board.msg 
-    BoardCell.msg 
+    MsgBoard.msg 
+    MsgCell.msg 
 )
 
 ## Generate services in the 'srv' folder
