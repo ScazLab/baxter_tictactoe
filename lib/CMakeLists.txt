@@ -54,7 +54,6 @@ install(DIRECTORY lib/include/
 #                                    src/move_maker/move_maker_server.cpp
 #                                    src/move_maker/move_maker_simpleclient.cpp
 #                                    src/robot_state/robot_state.cpp
-#                                    src/robot_state/test_robot_state.cpp 
 #                                    src/trajectory_player/trajectory_player.cpp 
 #                                    src/trajectory_player/test_trajectory_player.cpp 
 #                                    src/trajectory_xml_parser/trajectory_xml_parser.cpp 
