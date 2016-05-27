@@ -22,7 +22,7 @@ namespace ttt
 
 bool operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2)
 {
-    for(int i = 0; i > cells1.size(); i++){
+    for(int i = 0; i < cells1.size(); i++){
         if(cells1[i].state != cells2[i].state){
             return false;
         }
@@ -39,8 +39,6 @@ class TTT_Brain
 {
 private:
     typedef actionlib::SimpleActionClient<tictactoe::PlaceTokenAction> Place_Token_Client_type;
-    // typedef baxter_tictactoe::MsgCell msg_cell;
-    // typedef msg_cell[9] TTT_State_type;
     typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_State_type;
     // typedef std::vector<baxter_tictactoe::MsgCell> TTT_State_type;
 
@@ -73,6 +71,9 @@ private:
         if ((msg->cells)!=_ttt_state.get()) {
             ROS_DEBUG_STREAM("[TTT_Brain] New TTT board state detected at ." << msg->header.stamp);
             _ttt_state.set(msg->cells);
+        }
+        else{
+            ROS_DEBUG("[TTT_Brain] Same board received. Do not update.");
         }
     }
 
@@ -312,17 +313,6 @@ public:
 
         ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
         _opponent_color=_robot_color==blue?red:blue;
-
-
-
-
-        /******************************************/
-
-
-                        /*CHANGE*/
-
-
-        /******************************************/
 
         TTT_State_type aux; // aux is an array of 9 MsgCells 
         for(int i = 0; i < aux.size(); i++){

@@ -35,3 +35,4 @@ It identifies the state of each cell: red, blue, or empty.
         <remap from="/image_in" to="/usb_cam/image_raw"/>
     </node>
 </launch>
+

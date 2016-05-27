@@ -50,6 +50,7 @@ void BoardState::init()
     {
         cv::namedWindow("red  masked image of the board");
         cv::namedWindow("blue masked image of the board");
+        cv::namedWindow("board cells");
     }
 }
 
@@ -62,6 +63,7 @@ BoardState::~BoardState()
     {
         cv::destroyWindow("red  masked image of the board");
         cv::destroyWindow("blue masked image of the board");
+        cv::namedWindow("board cells");
     }
 }
 
@@ -149,25 +151,32 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
             if (i==0) cv::imshow("red  masked image of the board",hsv_filt_mask);
             if (i==1) cv::imshow("blue masked image of the board",hsv_filt_mask);
         }
+        for (int j = 0; j < board.cells.size(); ++j)
+        {
+            Cell *cell = &(board.cells[j]);
+            cv::Mat crop = cell->mask_image(hsv_filt_mask);
 
-        // for (int j = 0; j < board.cells.size(); ++j)
-        // {
-        //     Cell *cell = &(board.cells[j]);
-        //     cv::Mat crop = cell->mask_image(hsv_filt_mask);
+            /* we smooth the image to reduce the noise */
+            cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
 
-        //     /* we smooth the image to reduce the noise */
-        //     cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
+            // the area formed by the remaining pixels is computed based on the moments
+            double cell_area=cv::moments(crop,true).m00;
 
-        //     // the area formed by the remaining pixels is computed based on the moments
-        //     double cell_area=cv::moments(crop,true).m00;
-
-        //     if (cell_area > area_threshold)
-        //     {
-        //         if (i==0)  cell->cell_area_red =cell_area;
-        //         else       cell->cell_area_blue=cell_area;
-        //     }
-        // }
+            if (cell_area > area_threshold)
+            {
+                if (i==0)  cell->cell_area_red =cell_area;
+                else       cell->cell_area_blue=cell_area;
+            }
+        }
     }
+    cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
+    for(int i = 0; i < board.cells.size(); i++){
+        vector<vector<cv::Point> > contours;
+        contours.push_back(board.cells[i].contours);
+        drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);    
+    }
+    cv::imshow("board cells", bg);
+
 
     for (int j = 0; j < board.cells.size(); ++j)
     {
@@ -182,14 +191,40 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     ROS_DEBUG("Board state is %s", board.stateToString().c_str());
 
+    for (int i = 0; i < msg_board.cells.size(); ++i)
+    {
+        switch(msg_board.cells[i].state)
+        {
+            case MsgCell::EMPTY:
+                ROS_DEBUG("Cell %d State: empty", i);
+                break;
+            case MsgCell::RED:
+                ROS_DEBUG("Cell %d State: red", i);
+                break;
+            case MsgCell::BLUE:
+                ROS_DEBUG("Cell %d State: blue", i);
+                break;
+            case MsgCell::UNDEFINED:
+                ROS_DEBUG("Cell %d State: undefined", i);
+                break; 
+        }
+    }
+
+    ROS_DEBUG("\n");
+
     if(last_msg_board!=msg_board)
     {
         board_publisher.publish(msg_board);
+        ROS_DEBUG("[Board_State_Sensor] Publishing new state");
         last_msg_board=msg_board;
         ROS_DEBUG("NEW TTT BOARD STATE PUBLISHED");
     }
+    else {
+        ROS_DEBUG("[Board_State_Sensor] NOT publishing new state - same state encountered");
+    }
 
     if (doShow) cv::waitKey(50);
+    ros::Duration(2).sleep();
 }
 
 int main(int argc, char** argv)
@@ -210,7 +245,8 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(show);
+    BoardState cd(true);
+    // BoardState cd(show);    
     ros::spin();
 
     return 0;
