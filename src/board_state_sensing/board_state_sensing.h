@@ -4,7 +4,6 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/DefineCells.h"
-#include "ttt_board_sensor/ttt_board.h"
 
 class BoardState
 {

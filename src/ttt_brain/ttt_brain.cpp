@@ -1,4 +1,3 @@
-
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
@@ -8,7 +7,8 @@
 #include <QFile>
 #include <QTextStream>
 
-#include <ttt_board_sensor/ttt_board.h>
+#include <baxter_tictactoe/MsgCell.h>
+#include <baxter_tictactoe/MsgBoard.h>
 #include "baxterTictactoe/tictactoe_utils.h"
 
 #include "T_ThreadSafe.h"
