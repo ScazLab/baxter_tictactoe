@@ -42,38 +42,3 @@ install(DIRECTORY lib/include/
   FILES_MATCHING PATTERN "*.h"
 )
 
-## Specify the source files
-# set(folder_source_baxter_tictactoe src/board_sensor/board_motion_detection.cpp
-#                                    src/board_sensor/board_scheme.cpp
-#                                    src/board_sensor/board_state_sensing.cpp
-#                                    src/board_sensor/hsv_range_finder.cpp
-#                                    src/board_sensor/show_board_cells.cpp
-#                                    src/board_sensor/tictactoe_utils.cpp
-#                                    src/brain/ttt_brain.cpp
-#                                    src/move_maker/move_maker.cpp
-#                                    src/move_maker/move_maker_server.cpp
-#                                    src/move_maker/move_maker_simpleclient.cpp
-#                                    src/robot_state/robot_state.cpp
-#                                    src/trajectory_player/trajectory_player.cpp 
-#                                    src/trajectory_player/test_trajectory_player.cpp 
-#                                    src/trajectory_xml_parser/trajectory_xml_parser.cpp 
-#                                    src/trajectory_xml_parser/trajectory_from_raw_to_xml.cpp 
-#                                    src/trajectory_xml_parser/test_trajectory_xml_parser.cpp 
-#                                    src/trajectory_xml_parser/test_loading_trajectory_xml.cpp 
-#                                    src/trajectory_xml_parser/concat_trajectory_xml_files.cpp
-#                                    src/utils/test_buffer_toggle.cpp 
-#                                    src/utils/test_thread_safe_variable.cpp
-#                                    src/vacuum_gripper/vacuum_gripper.cpp 
-#                                    src/vacuum_gripper/test_vacuum_gripper.cpp)
-
-## Specify the header files
-# set(folder_header_baxter_tictactoe include/board_motion_detection.h
-#                                    include/move_maker.h
-#                                    include/robot_state.h
-#                                    include/trajectory_player.h
-#                                    include/trajectory_xml_parser.h
-#                                    include/T_ThreadSafe.h
-#                                    include/vacuum_gripper.h)
-
-# source_group("Source Files" FILES ${folder_source_baxter_tictactoe})
-# source_group("Header Files" FILES ${folder_header_baxter_tictactoe})

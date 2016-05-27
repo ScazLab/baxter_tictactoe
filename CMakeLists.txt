@@ -181,7 +181,7 @@ target_link_libraries(test_vacuum_gripper               vacuum_gripper          
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper          robot_state             ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})

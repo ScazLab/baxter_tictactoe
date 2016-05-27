@@ -1,12 +1,5 @@
 <!--
  Display of the state of the cells in the board. A Tic Tac Toe board appears on the screen waiting for the /new_board topic with the information about each cell.
- To test it independently, once this file is launched, send a topic like this:
-    rostopic pub -1 /new_board ttt_board_sensor/ttt_board "header:
-      seq: 0
-      stamp: {secs: 0, nsecs: 0}
-      frame_id: ''
-    data: [0, 0, 0, 0, 0, 2, 1, 1, 0]"
-
 -->
 
 <launch>
