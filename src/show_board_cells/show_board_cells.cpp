@@ -82,7 +82,7 @@ public:
             return;
         }
 
-        client = nh_.serviceClient<DefineCells>("define_cells");
+        client = nh_.serviceClient<DefineCells>("baxter_tictactoe/define_cells");
         ROS_ASSERT_MSG(client, "Empty client");
 
         DefineCells srv;
@@ -152,7 +152,7 @@ public:
 
         cv::putText(img_aux, "Press 's' key to see the filtered images for each cell",
                     cv::Point(10,400), cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
-        // cv::imshow(CellDisplay::WINDOW, img_aux);
+        cv::imshow(CellDisplay::WINDOW, img_aux);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed

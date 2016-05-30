@@ -83,7 +83,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    client = node_handle.serviceClient<DefineCells>("define_cells");
+    client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
     ROS_ASSERT_MSG(client, "Empty client");
 
     DefineCells srv;
@@ -150,8 +150,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
         if (doShow)
         {
-            if (i==0) cv::imshow("red  masked image of the board",hsv_filt_mask);
-            if (i==1) cv::imshow("blue masked image of the board",hsv_filt_mask);
+            if (i==0) cv::imshow("red  masked image of the board", img_hsv_mask);
+            if (i==1) cv::imshow("blue masked image of the board", img_hsv_mask);
         }
         for (int j = 0; j < board.cells.size(); ++j)
         {
@@ -226,7 +226,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     if (doShow) cv::waitKey(50);
-    ros::Duration(2).sleep();
+    // ros::Duration(2).sleep();
 }
 
 int main(int argc, char** argv)
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(show);    
+    BoardState cd(true);    
     ros::spin();
 
     return 0;

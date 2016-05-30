@@ -11,9 +11,9 @@ cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("
     
 	image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);  
     
-    service = node_handle.advertiseService("define_cells", &cellsDefinition::defineCells, this);
+    service = node_handle.advertiseService("baxter_tictactoe/define_cells", &cellsDefinition::defineCells, this);
     
-    // cv::namedWindow(cellsDefinition::window_name);
+    cv::namedWindow(cellsDefinition::window_name);
 }
 
 cellsDefinition::~cellsDefinition()
@@ -29,6 +29,7 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
     if(img_loaded_copy == true)
     {
+
         MsgCell cell;
 
         pthread_mutex_lock(&mutex);
@@ -37,8 +38,10 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             cell.state = MsgCell::EMPTY;
             for(int j = 0; j < board.cells[i].contours.size(); j++)
             {
+                // ROS_INFO("[BOARD] x: %d y: %d", board.cells[i].contours[j].x, board.cells[i].contours[j].y);
                 cell.contours[j].x = board.cells[i].contours[j].x;
                 cell.contours[j].y = board.cells[i].contours[j].y;
+                // ROS_INFO("[CELL] x: %d y: %d", cell.contours[j].x, cell.contours[j].y);
             }
             res.board.cells[i] = cell;
         }
@@ -88,6 +91,20 @@ cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
 	double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
 	cv::Point point(x,y);
 	return point;
+}
+
+/* mouse event handler function */
+void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
+{
+    if( event != cv::EVENT_LBUTTONDOWN )
+        return;
+
+    cv::Point p = cv::Point(x,y);
+
+    ROS_INFO_STREAM("Point: " << p.x << " , " << p.y << "." );
+    
+
+    return;
 }
 
 void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
@@ -249,7 +266,14 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
-    cv::imshow(cellsDefinition::window_name, board_cells);
+    // for(int i = 0; i < board.cells.size(); i++){
+    //     vector<vector<cv::Point> > disp_contours;
+    //     disp_contours.push_back(board.cells[i].contours);
+    //     drawContours(img_gray, disp_contours, 0, cv::Scalar(0,255,255), 3, 8);
+    // }
+
+    cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
+    cv::imshow(cellsDefinition::window_name, img_gray);
     cv::waitKey(30);
 }
 

@@ -21,10 +21,10 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
-#include <geometry_msgs/Point.h>
 #include "baxter_tictactoe/DefineCells.h"
 #include "baxter_tictactoe/MsgCell.h"
 #include "baxter_tictactoe/MsgBoard.h"
+#include "baxter_tictactoe/Point.h"
 
 enum Index 
 {
@@ -69,7 +69,9 @@ public:
 
 	cellsDefinition();
 	~cellsDefinition();
-
+    
+    /* mouse event handler function */
+    static void onMouseClick( int event, int x, int y, int, void* param);
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
     /**
