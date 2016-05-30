@@ -14,6 +14,7 @@
 
     ## Calibration 
       * Open a new terminal
+        * Make sure the board is empty
         * `cd` to `~/ros_ws`
         * `source devel/setup.bash`
         * `./baxter.sh` (this has to be done with any terminal that will interface with the Baxter)
