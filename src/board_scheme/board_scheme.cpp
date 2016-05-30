@@ -141,7 +141,7 @@ public:
     BoardScheme(std::string channel) : it_(nh_)
     {
         image_pub_ = it_.advertise(channel.c_str(), 1);
-        sub = nh_.subscribe("/new_board", 1, &BoardScheme::publish_draw_board, this);
+        sub = nh_.subscribe("baxter_tictactoe/new_board", 1, &BoardScheme::publish_draw_board, this);
 
         height=600;
         width =1024;

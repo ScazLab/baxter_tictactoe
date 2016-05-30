@@ -322,7 +322,7 @@ public:
         // aux.assign(undefined);
         _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
-        _ttt_state_sub = _nh.subscribe("/new_board", 1, &TTT_Brain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
+        _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &TTT_Brain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
 
         qsrand(ros::Time::now().nsec);
         this->set_strategy(strategy);
