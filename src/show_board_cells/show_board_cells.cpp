@@ -17,14 +17,18 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
-namespace ttt
-{
+#include "baxter_tictactoe/DefineCells.h"
+
+using namespace ttt;
+using namespace std;
+using namespace baxter_tictactoe;
 
 class CellDisplay
 {
 private:
 
-    ros::NodeHandle nh_;
+    ros::NodeHandle nh_;    
+    ros::ServiceClient client;
     image_transport::ImageTransport it_;
     image_transport::Subscriber image_sub_;
 
@@ -34,8 +38,8 @@ private:
 
     std::string board_config;
 
-    Board board; // A vector of cells representing the board game
-
+    ttt::Board board; // A vector of cells representing the board game
+    ttt::Cell cell;
 
 public:
     CellDisplay()
@@ -43,14 +47,13 @@ public:
     {
         image_sub_ = it_.subscribe("image_in", 1, &CellDisplay::image_callback, this);
 
-        if(!board.load("/board_file"))
-        {
-            ROS_FATAL_STREAM("No cell data to display!");
-            ROS_BREAK();
-        }
+        // if(!board.load("/board_file"))
+        // {
+        //     ROS_FATAL_STREAM("No cell data to display!");
+        //     ROS_BREAK();
+        // }
 
         cv::namedWindow(CellDisplay::WINDOW);
-
     }
 
     ~CellDisplay()
@@ -58,9 +61,9 @@ public:
         cv::destroyWindow(CellDisplay::WINDOW);
     }
 
-    std::string int_to_string( const int a )
+    string int_to_string( const int a )
     {
-        std::stringstream ss;
+        stringstream ss;
         ss << a;
         return ss.str();
     }
@@ -78,6 +81,53 @@ public:
             ROS_ERROR("cv_bridge exception: %s", e.what());
             return;
         }
+
+        client = nh_.serviceClient<DefineCells>("baxter_tictactoe/define_cells");
+        ROS_ASSERT_MSG(client, "Empty client");
+
+        DefineCells srv;
+
+        if(client.call(srv))
+        {
+            board.cells.clear();
+            int cells_num = srv.response.board.cells.size();
+            for(int i = 0; i < cells_num; i++)
+            {
+                cell.contours.clear();
+                int edges_num = srv.response.board.cells[i].contours.size();
+                for(int j = 0; j < edges_num; j++)
+                {   
+                    cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
+                    cell.contours.push_back(point);
+                }
+
+                switch(srv.response.board.cells[i].state)
+                {
+                    case MsgCell::EMPTY:
+                        cell.state = empty;
+                        break;
+                    case MsgCell::RED:
+                        cell.state = red;
+                        break;
+                    case MsgCell::BLUE:
+                        cell.state = blue;
+                        break;
+                    case MsgCell::UNDEFINED:
+                        cell.state = undefined;
+                        break;
+                }
+                board.cells.push_back(cell);
+            }
+        }
+        else
+        {
+            // if board has not been loaded, return (if board was already previously loaded, 
+            // the old board is displayed)
+            if(board.cells.size() != 9)
+            {
+                return;            
+            }
+        }     
 
         cv::Mat img_aux = cv_ptr->image.clone();
 
@@ -137,19 +187,15 @@ public:
             cv::imshow(win_name, im_crop);
         }
     }
-
-
-
 };
 
 const char CellDisplay::WINDOW[] = "Cell display";
 
-}
 
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "show_cells");
-    ttt::CellDisplay cd;
+    CellDisplay cd;
     ros::spin();
     return 0;
 }

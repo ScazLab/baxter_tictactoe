@@ -6,7 +6,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "ttt_board_sensor/ttt_board.h"
+#include "baxter_tictactoe/Point.h"
+#include "baxter_tictactoe/MsgBoard.h"
+#include "baxter_tictactoe/MsgCell.h"
 
 namespace ttt
 {
@@ -39,7 +41,7 @@ private:
     cv::Scalar   red;
     cv::Scalar  blue;
 
-    cv::Mat draw_board(const ttt_board_sensor::ttt_board::ConstPtr& msg) const
+    cv::Mat draw_board(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
     {
         ROS_DEBUG("@display_board");
 
@@ -50,9 +52,9 @@ private:
 
         this->draw_lines(img);
 
-        for (size_t i = 0; i < msg->data.size(); ++i) {
+        for (size_t i = 0; i < msg->cells.size(); ++i) {
             ROS_DEBUG_STREAM("Processing Cell " << i);
-            if(msg->data[i]>0)
+            if(msg->cells[i].state>0)
             {
                 col=i%n_cols;
                 row=i/n_rows;
@@ -61,7 +63,7 @@ private:
                 cv::Point   top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
                 ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
 
-                draw_tile(img,i,msg->data[i]);
+                draw_tile(img,i,msg->cells[i].state);
             }
         }
         return img;
@@ -72,9 +74,9 @@ private:
         cv::Point top_left =compute_cell_top_left(cell_number);
         cv::Point diag_incr(cols_cell_img*1/12,rows_cell_img*1/12);
 
-        cv::rectangle(img,top_left+2*diag_incr,top_left+10*diag_incr,cell_data==ttt_board_sensor::ttt_board::RED?red:blue,CV_FILLED);
+        cv::rectangle(img,top_left+2*diag_incr,top_left+10*diag_incr,cell_data==baxter_tictactoe::MsgCell::RED?red:blue,CV_FILLED);
 
-        if (cell_data==ttt_board_sensor::ttt_board::RED)
+        if (cell_data==baxter_tictactoe::MsgCell::RED)
         {
             cv::Point center=top_left+6*diag_incr;
             cv::circle(img,center,rows_cell_img*3/12,white,16);
@@ -121,7 +123,7 @@ private:
         cv::destroyAllWindows();
     }
 
-    void publish_draw_board(const ttt_board_sensor::ttt_board::ConstPtr& msg) const
+    void publish_draw_board(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
     {
         cv::Mat img_board = this->draw_board(msg);
         //this->show_board_temporary(img_board,30000);
@@ -139,7 +141,7 @@ public:
     BoardScheme(std::string channel) : it_(nh_)
     {
         image_pub_ = it_.advertise(channel.c_str(), 1);
-        sub = nh_.subscribe("/new_board", 1, &BoardScheme::publish_draw_board, this);
+        sub = nh_.subscribe("baxter_tictactoe/new_board", 1, &BoardScheme::publish_draw_board, this);
 
         height=600;
         width =1024;

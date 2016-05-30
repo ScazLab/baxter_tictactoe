@@ -1,23 +1,22 @@
-#include "board_cells_delimitation.h"
-
+#include "cells_definition.h"
 
 namespace ttt
 {
 
-    cellDelimitation::cellDelimitation() : image_transport(node_handle), point_radius(5), window_name("Cell Delimitation")
+    cellsDefinition::cellsDefinition() : image_transport(node_handle), point_radius(5), window_name("Cell Delimitation")
     {
-        image_subscriber = image_transport.subscribe("in", 1, &cellDelimitation::imageCallback, this);
+        image_subscriber = image_transport.subscribe("in", 1, &cellsDefinition::imageCallback, this);
 
-        cv::namedWindow(cellDelimitation::window_name);
+        cv::namedWindow(cellsDefinition::window_name);
     }
 
-    bool cellDelimitation::remove_point(const cv::Point & p)
+    bool cellsDefinition::remove_point(const cv::Point & p)
     {
         for(std::vector<cv::Point>::iterator it_points = cell.contours.begin() ; it_points != cell.contours.end(); ++it_points)
         {
 
-            if(it_points->x > (p.x-cellDelimitation::point_radius) && it_points->x < (p.x+cellDelimitation::point_radius) &&
-                    it_points->y > (p.y-cellDelimitation::point_radius) && it_points->y < (p.y+cellDelimitation::point_radius))
+            if(it_points->x > (p.x-cellsDefinition::point_radius) && it_points->x < (p.x+cellsDefinition::point_radius) &&
+                    it_points->y > (p.y-cellsDefinition::point_radius) && it_points->y < (p.y+cellsDefinition::point_radius))
             {
                 cell.contours.erase(it_points);
                 return true;
@@ -26,7 +25,7 @@ namespace ttt
         return false;
     }
 
-    bool cellDelimitation::point_is_inside_cell(const cv::Point & p)
+    bool cellsDefinition::point_is_inside_cell(const cv::Point & p)
     {
         for(std::vector<Cell>::iterator it_cell = board.cells.begin() ; it_cell != board.cells.end(); ++it_cell)
         {
@@ -39,7 +38,7 @@ namespace ttt
         return false;
     }
 
-    void cellDelimitation::show_tutorial(cv::Mat& img)
+    void cellsDefinition::show_tutorial(cv::Mat& img)
     {
         cv::putText(img,"LEFT-CLICK to add/remove points and cells",    cv::Point(20,385),cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
         cv::putText(img,"Press SPACE bar to add the cell to the board", cv::Point(20,400),cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
@@ -50,7 +49,7 @@ namespace ttt
     }
 
     // thanks to http://bytefish.de/blog/extracting_contours_with_opencv/
-    void cellDelimitation::crop_cells(cv_bridge::CvImageConstPtr& cv_cp_img, const std::vector<std::vector<cv::Point> > cntrs)
+    void cellsDefinition::crop_cells(cv_bridge::CvImageConstPtr& cv_cp_img, const std::vector<std::vector<cv::Point> > cntrs)
     {
         cv::Mat mask = cv::Mat::zeros(cv_cp_img->image.rows, cv_cp_img->image.cols, CV_8UC1);
         cv::drawContours(mask, cntrs, -1, cv::Scalar(255), CV_FILLED);        // CV_FILLED fills the connected components found with white (white RGB value = 255,255,255)
@@ -66,19 +65,19 @@ namespace ttt
         cv::imshow("cropped", im_crop);
     }
 
-    cellDelimitation::~cellDelimitation()
+    cellsDefinition::~cellsDefinition()
     {
-        cv::destroyWindow(cellDelimitation::window_name);
+        cv::destroyWindow(cellsDefinition::window_name);
     }
 
     /* mouse event handler function */
-    void cellDelimitation::onMouseClick( int event, int x, int y, int, void* param)
+    void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
     {
         if( event != cv::EVENT_LBUTTONDOWN )
             return;
 
         cv::Point p = cv::Point(x,y);
-        cellDelimitation * img_conv = (cellDelimitation*) param;
+        cellsDefinition * img_conv = (cellsDefinition*) param;
 
         // If the point is inside an already defined cell, the cell is removed
         if(img_conv->point_is_inside_cell(p)) {
@@ -100,7 +99,7 @@ namespace ttt
     }
 
 
-    void cellDelimitation::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+    void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         //converting ROS image format to opencv image format
         cv_bridge::CvImageConstPtr cv_ptr;
@@ -121,7 +120,7 @@ namespace ttt
 
         // drawing all points of the current cell
         for (std::vector<cv::Point>::iterator image_transportdrawing = cell.contours.begin();image_transportdrawing != cell.contours.end();++image_transportdrawing) {
-            cv::circle(img_aux,*image_transportdrawing,cellDelimitation::point_radius,cv::Scalar(0,0,255),-1);
+            cv::circle(img_aux,*image_transportdrawing,cellsDefinition::point_radius,cv::Scalar(0,0,255),-1);
         }
 
         // drawing all cells of the board game
@@ -130,8 +129,8 @@ namespace ttt
         }
         cv::drawContours(img_aux, board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing the borders in a different color
 
-        cv::setMouseCallback(cellDelimitation::window_name, onMouseClick, this);
-        cv::imshow(cellDelimitation::window_name, img_aux);
+        cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
+        cv::imshow(cellsDefinition::window_name, img_aux);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
@@ -162,8 +161,8 @@ namespace ttt
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "cell_delimitation");
-    ttt::cellDelimitation cd;
+    ros::init(argc, argv, "cells_definition");
+    ttt::cellsDefinition cd;
     ros::spin();
     return 0;
 }

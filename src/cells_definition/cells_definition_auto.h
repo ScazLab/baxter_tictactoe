@@ -1,5 +1,7 @@
-#ifndef BOARD_CELLS_DELIMITATION_AUTO_H
-#define BOARD_CELLS_DELIMITATION_AUTO_H
+#ifndef CELLS_DEFINITION_AUTO_H
+#define CELLS_DEFINITION_AUTO_H
+
+#include <pthread.h>
 
 #include <string>
 
@@ -10,6 +12,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <boost/bind.hpp>
 
 #include <QFile>
 #include <QXmlStreamWriter>
@@ -18,15 +21,18 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
-namespace ttt 
-{
+#include "baxter_tictactoe/DefineCells.h"
+#include "baxter_tictactoe/MsgCell.h"
+#include "baxter_tictactoe/MsgBoard.h"
+#include "baxter_tictactoe/Point.h"
 
-enum Index {
+enum Index 
+{
 	LARGEST 		= 1,
 	NEXT_LARGEST    = 2
 };
 
-class cellDelimitation
+class cellsDefinition
 {
 
 private:
@@ -35,12 +41,17 @@ private:
 	image_transport::ImageTransport image_transport;
 	image_transport::Subscriber image_subscriber;
 
+    ros::ServiceServer service;
+
 	std::string window_name;
 	ttt::Cell cell;
 	ttt::Board board;
 
+    bool img_loaded;
 
-    /**
+    pthread_mutex_t mutex;
+
+    /**bo
      * @param      vector (i.e array) of contours, type indicating whether largest or  
      * 			   next largest area is to be found where (LARGEST = largest area, 
      * 			   NEXT_LARGEST = next largest area)
@@ -56,12 +67,20 @@ private:
 
 public:
 
-	cellDelimitation();
-	~cellDelimitation();
-
+	cellsDefinition();
+	~cellsDefinition();
+    
+    /* mouse event handler function */
+    static void onMouseClick( int event, int x, int y, int, void* param);
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+
+    /**
+     * service that provides data on the defined contours/boundaries of the board's cells
+     * @param      request variables and response variables 
+     * @return     returns true when function is succesfully executed
+     */
+    bool defineCells(baxter_tictactoe::DefineCells::Request  &req, 
+                     baxter_tictactoe::DefineCells::Response &res);
 }; 
 
-}
-
-#endif //BOARD_CELLS_DELIMITATION_AUTO_H
+#endif //CELLS_DEFINITION_AUTO_H

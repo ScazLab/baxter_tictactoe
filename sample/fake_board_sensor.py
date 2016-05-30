@@ -17,7 +17,7 @@ SYMBOLS = {BLUE: 'X', RED: 'O', EMPTY: ' '}
 X = BLUE
 O = RED
 
-pub = rospy.Publisher("/new_board", BoardMsg)
+pub = rospy.Publisher("baxter_tictactoe/new_board", BoardMsg)
 
 
 class Board:

@@ -1,5 +1,5 @@
-#ifndef BOARD_CELLS_DELIMITATION_H
-#define BOARD_CELLS_DELIMITATION_H
+#ifndef CELLS_DEFINITION_H
+#define CELLS_DEFINITION_H
 
 #include <string>
 
@@ -21,7 +21,7 @@
 namespace ttt
 {
 
-class cellDelimitation
+class cellsDefinition
 {
 private:
 
@@ -41,8 +41,8 @@ private:
     void crop_cells(cv_bridge::CvImageConstPtr& , const std::vector<std::vector<cv::Point> > );
 
 public:
-    cellDelimitation();
-    ~cellDelimitation();
+    cellsDefinition();
+    ~cellsDefinition();
 
     /* mouse event handler function */
     static void onMouseClick( int event, int x, int y, int, void* param);
@@ -52,4 +52,4 @@ public:
 
 }
 
-#endif //BOARD_CELLS_DELIMITATION_H
+#endif //CELLS_DEFINITION_H
