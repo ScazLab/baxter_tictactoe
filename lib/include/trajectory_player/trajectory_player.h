@@ -18,7 +18,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
-#include "T_ThreadSafe.h"
+#include "baxterTictactoe/T_ThreadSafe.h"
 #include "vacuum_gripper/vacuum_gripper.h"
 
 namespace ttt

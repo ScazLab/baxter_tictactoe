@@ -1,4 +1,4 @@
-#include "T_ThreadSafe.h"
+#include "baxterTictactoe/T_ThreadSafe.h"
 #include <iostream>
 
 /*! \file test_thread_safe_variable.cpp

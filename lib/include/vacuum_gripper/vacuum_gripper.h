@@ -8,7 +8,7 @@
 #include <baxter_core_msgs/EndEffectorState.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
 
-#include "T_ThreadSafe.h"
+#include "baxterTictactoe/T_ThreadSafe.h"
 
 namespace ttt
 {

@@ -7,7 +7,7 @@
 #include <baxter_tictactoe/MsgBoard.h>
 #include "baxterTictactoe/tictactoe_utils.h"
 
-#include "T_ThreadSafe.h"
+#include "baxterTictactoe/T_ThreadSafe.h"
 #include <tictactoe/PlaceTokenAction.h>
 #include "vacuum_gripper/vacuum_gripper.h"
 
