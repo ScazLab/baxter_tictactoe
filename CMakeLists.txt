@@ -148,7 +148,6 @@ add_executable(show_board_cells                 src/show_board_cells/show_board_
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
 add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp             src/board_state_sensing/board_state_sensing.h)
-add_executable(board_motion_detection           src/board_motion_detection/board_motion_detection.cpp       src/board_motion_detection/board_motion_detection.h)
 
 add_executable(right_arm_joint_pub_test         src/right_arm_joint_pub_test.cpp)
 
@@ -189,7 +188,6 @@ target_link_libraries(show_board_cells                  baxterTictactoe     ${Op
 target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-target_link_libraries(board_motion_detection            baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 
 target_link_libraries(right_arm_joint_pub_test          baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
