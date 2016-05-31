@@ -22,15 +22,15 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _r
     _number_of_tokens_on_board.set(0);
 
     ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
-    ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retreive from the parameter server");
+    ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retrieve from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using voice " << _voice_type);
 
     ROS_ASSERT_MSG(_nh.hasParam("cheating"),"No cheating parameter found in the parameter server!");
-    ROS_ASSERT_MSG(_nh.getParam("cheating",cheating), "The cheating possibility has not been retreived from the parameter server");
+    ROS_ASSERT_MSG(_nh.getParam("cheating",cheating), "The cheating possibility has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Robot " << (cheating?"can":"cannot") << " cheat");
 
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
-    ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retreived from the parameter server");
+    ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
     _clnt_movement_type = _nh.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
     set_movement_type(movement_type);
@@ -39,7 +39,8 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _r
     _opponent_color=_robot_color==blue?red:blue;
 
     TTT_State_type aux; // aux is an array of 9 MsgCells 
-    for(int i = 0; i < aux.size(); i++){
+    for(int i = 0; i < aux.size(); i++)
+    {
         aux[i].state = baxter_tictactoe::MsgCell::UNDEFINED;
     }
 
