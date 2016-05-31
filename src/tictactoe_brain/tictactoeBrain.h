@@ -5,13 +5,13 @@
 
 #include <baxter_tictactoe/MsgCell.h>
 #include <baxter_tictactoe/MsgBoard.h>
+#include <baxter_tictactoe/SetTrajectoryType.h>
+
 #include "baxterTictactoe/tictactoe_utils.h"
 
 #include "baxterTictactoe/T_ThreadSafe.h"
 #include <tictactoe/PlaceTokenAction.h>
 #include "vacuum_gripper/vacuum_gripper.h"
-
-#include <tictactoe/SetTrajectoryType.h>
 
 namespace ttt
 {

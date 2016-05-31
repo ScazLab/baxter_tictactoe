@@ -2,7 +2,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <tictactoe/PlaceTokenAction.h>
-#include <tictactoe/SetTrajectoryType.h>
+#include <baxter_tictactoe/SetTrajectoryType.h>
 
 int main (int argc, char **argv)
 {
@@ -16,12 +16,14 @@ int main (int argc, char **argv)
     ROS_INFO("TTT Move Maker action server is started. We are ready for sending goals.");
 
     ros::NodeHandle n;
-    ros::ServiceClient client = n.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
-    tictactoe::SetTrajectoryType srv;
+    ros::ServiceClient client = n.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
+    baxter_tictactoe::SetTrajectoryType srv;
 
     tictactoe::PlaceTokenGoal goal;
     int i=0;
-    while(true){
+    
+    while(true)
+    {
         ROS_INFO("Choose the cell to place the next token [1..9], or other value to exit.");
         ROS_INFO(" ___________");
         ROS_INFO("| 1 | 2 | 3 |");
@@ -30,38 +32,45 @@ int main (int argc, char **argv)
         ROS_INFO("|---|---|---|");
         ROS_INFO("|_7_|_8_|_9_|");
         std::cin >> i;
-        switch(i){
-        case 1:goal.cell="1x1"; break;
-        case 2:goal.cell="1x2"; break;
-        case 3:goal.cell="1x3"; break;
-        case 4:goal.cell="2x1"; break;
-        case 5:goal.cell="2x2"; break;
-        case 6:goal.cell="2x3"; break;
-        case 7:goal.cell="3x1"; break;
-        case 8:goal.cell="3x2"; break;
-        case 9:goal.cell="3x3"; break;
-        default: return 0;//ros::shutdown();
-        }
-        ROS_INFO("Smooth (0) or mechanistic (other)");
-        std::cin >> i;
-        switch(i){
-        case 0:srv.request.smooth=true; break;
-        default: srv.request.smooth=false;
+        switch(i)
+        {
+            case 1:goal.cell="1x1"; break;
+            case 2:goal.cell="1x2"; break;
+            case 3:goal.cell="1x3"; break;
+            case 4:goal.cell="2x1"; break;
+            case 5:goal.cell="2x2"; break;
+            case 6:goal.cell="2x3"; break;
+            case 7:goal.cell="3x1"; break;
+            case 8:goal.cell="3x2"; break;
+            case 9:goal.cell="3x3"; break;
+            default: return 0;//ros::shutdown();
         }
 
-        if (client.call(srv)) {
+        ROS_INFO("Choose if to use smooth (0) or mechanistic (other)");
+        std::cin >> i;
+        switch(i)
+        {
+            case 0:srv.request.smooth=true; break;
+            default: srv.request.smooth=false;
+        }
+
+        if (client.call(srv))
+        {
             if (!srv.response.error) ROS_INFO_STREAM("Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
             else ROS_INFO_STREAM("Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
         }
-        else {
+        else
+        {
             ROS_ERROR("Failed to call service set_movement_type");
             continue;
         }
 
         move_commander.sendGoal(goal);
         bool finished_before_timeout = move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
+        
         if (finished_before_timeout) ROS_INFO_STREAM("Action moving to " << goal.cell << " finished!");
         else ROS_INFO_STREAM("Action moving to " << goal.cell << " did not finish before the time out.");
+        
         actionlib::SimpleClientGoalState state = move_commander.getState();
         ROS_INFO("State after the action: %s",state.toString().c_str());
     }

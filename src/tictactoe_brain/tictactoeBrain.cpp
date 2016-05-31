@@ -32,7 +32,7 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _r
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
-    _clnt_movement_type = _nh.serviceClient<tictactoe::SetTrajectoryType>("set_movement_type");
+    _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
     set_movement_type(movement_type);
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
@@ -191,7 +191,7 @@ int tictactoeBrain::victory_move()
 bool tictactoeBrain::set_movement_type(bool b)
 {
     movement_type=b;
-    tictactoe::SetTrajectoryType srv;
+    baxter_tictactoe::SetTrajectoryType srv;
     srv.request.smooth=(movement_type?true:false);
 
     if(_clnt_movement_type.call(srv))
