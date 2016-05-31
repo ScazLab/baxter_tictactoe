@@ -12,7 +12,7 @@
 #include "trajectory_player/trajectory_player.h"
 #include "trajectory_xml_parser/trajectory_xml_parser.h"
 
-#include <tictactoe/SetTrajectoryType.h>
+#include <baxter_tictactoe/SetTrajectoryType.h>
 
 #define INTER_TRAJ_GAP 0.5 // 0.5s
 
@@ -65,7 +65,7 @@ class Move_Maker
 
     std::string _prefix_traj; //! This variable is used to identified between smooth and mechanistic trajectories. It will be put ahead of the trajectory names. Possible values are "mech_" or "".
 
-    bool set_movement_type(tictactoe::SetTrajectoryType::Request& req, tictactoe::SetTrajectoryType::Response& res);
+    bool set_movement_type(baxter_tictactoe::SetTrajectoryType::Request& req, baxter_tictactoe::SetTrajectoryType::Response& res);
     ros::ServiceServer _srv_set_traj_type;
 
     Trajectory_Player* _traj_player;    

@@ -166,7 +166,7 @@ void Move_Maker::print_trajectory_repository_details()
     }
 }
 
-bool Move_Maker::set_movement_type(tictactoe::SetTrajectoryType::Request &req, tictactoe::SetTrajectoryType::Response& res)
+bool Move_Maker::set_movement_type(baxter_tictactoe::SetTrajectoryType::Request &req, baxter_tictactoe::SetTrajectoryType::Response& res)
 {
     if (req.smooth) {
         this->set_smooth_trajectories();
