@@ -150,6 +150,8 @@ add_executable(board_scheme                     src/board_scheme/board_scheme.cp
 add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp                          src/board_state_sensing/board_state_sensing.h)
 add_executable(board_motion_detection           src/board_motion_detection/board_motion_detection.cpp 					 src/board_motion_detection/board_motion_detection.h)
 
+add_executable(right_arm_joint_pub_test         src/right_arm_joint_pub_test.cpp)
+
 ## Add cmake target dependencies of the executable
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -161,15 +163,16 @@ add_dependencies(move_maker_server              baxter_tictactoe_generate_messag
 add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
 add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(cells_definition_auto          baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
 add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_motion_detection         baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
+
+add_dependencies(right_arm_joint_pub_test       baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
@@ -181,15 +184,15 @@ target_link_libraries(test_trajectory_player            trajectory_player   traj
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
 target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-    
 target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(board_motion_detection            baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+
+target_link_libraries(right_arm_joint_pub_test          baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
 #############
 ## Install ##
