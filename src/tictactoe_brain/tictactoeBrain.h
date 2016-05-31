@@ -2,10 +2,6 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <sound_play/sound_play.h>
-#include <QtGlobal>
-#include <QDateTime>
-#include <QFile>
-#include <QTextStream>
 
 #include <baxter_tictactoe/MsgCell.h>
 #include <baxter_tictactoe/MsgBoard.h>

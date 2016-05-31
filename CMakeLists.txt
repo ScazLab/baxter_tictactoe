@@ -140,7 +140,7 @@ add_executable(test_vacuum_gripper              src/test_vacuum_gripper/test_vac
 add_executable(test_trajectory_player           src/test_trajectory_player/test_trajectory_player.cpp)
 add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
 add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
-add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp lib/include/T_ThreadSafe.h)
+add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp)
 add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h                        src/tictactoe_brain/tictactoeBrain.cpp src/tictactoe_brain/tictactoe_brain.cpp                                              )
 add_executable(cells_definition                 src/cells_definition/cells_definition.cpp                   src/cells_definition/cells_definition.h)
 add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.cpp              src/cells_definition/cells_definition_auto.h)
@@ -169,7 +169,6 @@ add_dependencies(show_board_cells               baxter_tictactoe_generate_messag
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(board_motion_detection         baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
