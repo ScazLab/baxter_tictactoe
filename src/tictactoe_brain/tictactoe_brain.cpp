@@ -9,7 +9,7 @@ using namespace ttt;
 int main(int argc, char** argv)
 {    
     ROS_INFO("[tictactoeBrain] Playing TIC TAC TOE");
-    ros::init(argc, argv, "ttt_brain");
+    ros::init(argc, argv, "tictactoe_brain");
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
