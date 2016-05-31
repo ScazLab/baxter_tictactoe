@@ -17,6 +17,6 @@
     <param name="cheating" type="bool" value="true" />
     <param name="smooth" type="bool" value="true" />
 
-    <node name="ttt_brain" pkg="tictactoe" type="ttt_brain" respawn="false" output="screen" required="true"/>
+    <node name="tictactoe_brain" pkg="tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
 
 </launch>
