@@ -1,7 +1,6 @@
 #include "robot_state/robot_state.h"
 
-namespace ttt
-{
+using namespace ttt;
 
 void Robot_State::robot_state_handler(const baxter_core_msgs::AssemblyStateConstPtr &msg)
 {
@@ -70,6 +69,4 @@ bool Robot_State::is_stopped()
 bool Robot_State::has_error()
 {
     return _robot_state.get().error;
-}
-
 }

@@ -6,7 +6,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 
-#include "T_ThreadSafe.h"
+#include "baxterTictactoe/T_ThreadSafe.h"
 
 namespace ttt
 {

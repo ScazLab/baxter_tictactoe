@@ -11,7 +11,7 @@ find_package(OpenCV REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}       include/${PROJECT_NAME}/tictactoe_utils.h                     src/tictactoe_utils.cpp)
+add_library(${PROJECT_NAME}       include/${PROJECT_NAME}/tictactoe_utils.h     include/${PROJECT_NAME}/T_ThreadSafe.h src/tictactoe_utils.cpp)
 add_library(trajectory_xml_parser include/trajectory_xml_parser/trajectory_xml_parser.h         src/trajectory_xml_parser.cpp)
 add_library(vacuum_gripper        include/vacuum_gripper/vacuum_gripper.h                       src/vacuum_gripper.cpp)
 add_library(robot_state           include/robot_state/robot_state.h                             src/robot_state.cpp)
