@@ -380,19 +380,20 @@ public:
         tictactoe::PlaceTokenGoal goal;
         switch(cell_to_move)
         {
-        case 1:goal.cell="1x1"; break;
-        case 2:goal.cell="1x2"; break;
-        case 3:goal.cell="1x3"; break;
-        case 4:goal.cell="2x1"; break;
-        case 5:goal.cell="2x2"; break;
-        case 6:goal.cell="2x3"; break;
-        case 7:goal.cell="3x1"; break;
-        case 8:goal.cell="3x2"; break;
-        case 9:goal.cell="3x3"; break;
-        default:
-            ROS_ERROR("[TTT_Brain] Unknown cell to move, %d",cell_to_move);
-            return actionlib::SimpleClientGoalState::LOST;
+            case 1:goal.cell="1x1"; break;
+            case 2:goal.cell="1x2"; break;
+            case 3:goal.cell="1x3"; break;
+            case 4:goal.cell="2x1"; break;
+            case 5:goal.cell="2x2"; break;
+            case 6:goal.cell="2x3"; break;
+            case 7:goal.cell="3x1"; break;
+            case 8:goal.cell="3x2"; break;
+            case 9:goal.cell="3x3"; break;
+            default:
+                ROS_ERROR("[TTT_Brain] Unknown cell to move, %d",cell_to_move);
+                return actionlib::SimpleClientGoalState::LOST;
         }
+        
         _move_commander.sendGoal(goal);
         _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
         bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
@@ -608,9 +609,13 @@ public:
                 int cell_to_move = this->get_next_move(cheating);
                 ROS_DEBUG_STREAM("[TTT_Brain] Robot's token to " << cell_to_move);
                 actionlib::SimpleClientGoalState goal_state = this->execute_move(cell_to_move);
-                if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED) {
+
+                if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED)
+                {
                     ROS_INFO("[TTT_Brain] Last move successfully performed.");
-                } else {
+                }
+                else
+                {
                     ROS_ERROR_STREAM("[TTT_Brain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
                     //What do we do now?
                 }
@@ -692,11 +697,14 @@ int main(int argc, char** argv)
     while(i<=ttt::TTT_Brain::NUM_GAMES)
     {
         ROS_INFO_STREAM("[TTT_Brain] Game " << i);
+
         if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat()) //In the fourth game, Baxter cheats
         {
             brain.set_strategy("smart-cheating");
         }
+
         game_result=brain.play_one_game(cheating);
+
         switch(game_result)
         {
         case 1: robot_victories++;
@@ -707,12 +715,16 @@ int main(int argc, char** argv)
             break;
         default: ROS_ERROR_STREAM("[TTT_Brain] Unexpected return value for the game: " << game_result << " ???");
         }
+
         if ((i==ttt::TTT_Brain::CHEATING_GAME_A || i==ttt::TTT_Brain::CHEATING_GAME_B) && brain.can_cheat())
         {
-            if (!cheating) {
+            if (!cheating)
+            {
                 ROS_INFO("[TTT_Brain] Game ended but no cheating. Game counter does not increase.");
                 continue;
-            } else {
+            }
+            else
+            {
                 ROS_INFO("[TTT_Brain] Game ended cheating. Back to random strategy");
                 brain.set_strategy("smart");
             }
