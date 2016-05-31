@@ -1,6 +1,6 @@
 # Baxter TicTacToe
 
-Playing TicTacToe with Baxter.
+Playing TicTacToe with the Baxter collaborative robot.
 This code is released under a GNU GPL v2 license (see LICENSE file for more information).
 
 ## Requirements
