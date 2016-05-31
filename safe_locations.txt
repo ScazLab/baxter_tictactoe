@@ -80,7 +80,7 @@ right_w2: -0.6853059169878086
 
 
 
-SAFE POSES 
+SAFE POSES FOR RIGHT ARM
 
 /* produced by running 'rostopic echo /robot/limb/right/endpoint_state' */
 /* NOTE: position/orientation appear to not be stable (very small variations 
