@@ -140,15 +140,15 @@ add_executable(test_vacuum_gripper              src/test_vacuum_gripper/test_vac
 add_executable(test_trajectory_player           src/test_trajectory_player/test_trajectory_player.cpp)
 add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
 add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
-add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp              lib/include/T_ThreadSafe.h)
-add_executable(ttt_brain                        src/ttt_brain/ttt_brain.cpp                                              )
-add_executable(cells_definition                 src/cells_definition/cells_definition.cpp                                src/cells_definition/cells_definition.h)
-add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.cpp                           src/cells_definition/cells_definition_auto.h)
+add_executable(test_thread_safe_variable        src/test_thread_safe_variable/test_thread_safe_variable.cpp lib/include/T_ThreadSafe.h)
+add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h                        src/tictactoe_brain/tictactoeBrain.cpp src/tictactoe_brain/tictactoe_brain.cpp                                              )
+add_executable(cells_definition                 src/cells_definition/cells_definition.cpp                   src/cells_definition/cells_definition.h)
+add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.cpp              src/cells_definition/cells_definition_auto.h)
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
-add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp                          src/board_state_sensing/board_state_sensing.h)
-add_executable(board_motion_detection           src/board_motion_detection/board_motion_detection.cpp 					 src/board_motion_detection/board_motion_detection.h)
+add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp             src/board_state_sensing/board_state_sensing.h)
+add_executable(board_motion_detection           src/board_motion_detection/board_motion_detection.cpp       src/board_motion_detection/board_motion_detection.h)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -160,7 +160,7 @@ add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messag
 add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(ttt_brain                      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(cells_definition_auto          baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -180,10 +180,10 @@ target_link_libraries(test_vacuum_gripper               vacuum_gripper          
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(ttt_brain                         baxterTictactoe     vacuum_gripper          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper                                  ${catkin_LIBRARIES})
 
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
     
 target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
