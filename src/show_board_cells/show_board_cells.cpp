@@ -189,7 +189,7 @@ public:
     }
 };
 
-const char CellDisplay::WINDOW[] = "Cell display";
+const char CellDisplay::WINDOW[] = "[display_board_cells] cell boundaries overlay on raw image";
 
 
 int main(int argc, char** argv)

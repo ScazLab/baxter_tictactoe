@@ -4,7 +4,7 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
+cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("[cells_definition_auto] cell boundaries")
 {
     img_loaded = false;
     pthread_mutex_init(&mutex, NULL);
@@ -273,7 +273,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
     // }
 
     cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
-    cv::imshow(cellsDefinition::window_name, img_gray);
+    cv::imshow(cellsDefinition::window_name, board_cells);
     cv::waitKey(30);
 }
 

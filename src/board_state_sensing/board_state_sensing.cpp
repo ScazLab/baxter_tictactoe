@@ -48,9 +48,8 @@ void BoardState::init()
 
     if (doShow)
     {
-        cv::namedWindow("red  masked image of the board");
-        cv::namedWindow("blue masked image of the board");
-        cv::namedWindow("board cells");
+        cv::namedWindow("[board_state_sensing] red  masked image of the board");
+        cv::namedWindow("[board_state_sensing] blue masked image of the board");
     }
 }
 
@@ -61,9 +60,8 @@ BoardState::~BoardState()
 {
     if (doShow)
     {
-        cv::destroyWindow("red  masked image of the board");
-        cv::destroyWindow("blue masked image of the board");
-        cv::namedWindow("board cells");
+        cv::destroyWindow("[board_state_sensing] red  masked image of the board");
+        cv::destroyWindow("[board_state_sensing] blue masked image of the board");
     }
 }
 
@@ -150,8 +148,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
         if (doShow)
         {
-            if (i==0) cv::imshow("red  masked image of the board", img_hsv_mask);
-            if (i==1) cv::imshow("blue masked image of the board", img_hsv_mask);
+            if (i==0) cv::imshow("[board_state_sensing] red  masked image of the board", hsv_filt_mask);
+            if (i==1) cv::imshow("[board_state_sensing] blue masked image of the board", hsv_filt_mask);
         }
         for (int j = 0; j < board.cells.size(); ++j)
         {
@@ -177,8 +175,6 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         contours.push_back(board.cells[i].contours);
         drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);    
     }
-    cv::imshow("board cells", bg);
-
 
     for (int j = 0; j < board.cells.size(); ++j)
     {
@@ -247,7 +243,7 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(true);    
+    BoardState cd(show);    
     ros::spin();
 
     return 0;
