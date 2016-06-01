@@ -4,7 +4,7 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("[cells_definition_auto] cell boundaries")
+cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("[Cells_Definition_Auto] cell boundaries")
 {
     img_loaded = false;
     pthread_mutex_init(&mutex, NULL);
@@ -57,7 +57,7 @@ int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
 	
 	if(ith != LARGEST && ith != NEXT_LARGEST)
     {
-		ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
+		ROS_ERROR("[Cells_Definition_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
 	};
 
 	double largest_area = 0;

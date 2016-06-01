@@ -148,8 +148,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
         if (doShow)
         {
-            if (i==0) cv::imshow("[board_state_sensing] red  masked image of the board", hsv_filt_mask);
-            if (i==1) cv::imshow("[board_state_sensing] blue masked image of the board", hsv_filt_mask);
+            if (i==0) cv::imshow("[Board_State_Sensor] red  masked image of the board", hsv_filt_mask);
+            if (i==1) cv::imshow("[Board_State_Sensor] blue masked image of the board", hsv_filt_mask);
         }
         for (int j = 0; j < board.cells.size(); ++j)
         {
@@ -215,7 +215,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         board_publisher.publish(msg_board);
         ROS_DEBUG("[Board_State_Sensor] Publishing new state");
         last_msg_board=msg_board;
-        ROS_DEBUG("NEW TTT BOARD STATE PUBLISHED");
+        ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
     }
     else {
         ROS_DEBUG("[Board_State_Sensor] NOT publishing new state - same state encountered");
