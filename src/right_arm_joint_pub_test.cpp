@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+<<<<<<< HEAD
 #include <baxter_core_msgs/SolvePositionIK.h>
 #include <baxter_core_msgs/JointCommand.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -10,12 +11,16 @@ using namespace baxter_core_msgs;
 using namespace geometry_msgs;
 
 int NUM_JOINTS= 7;
+=======
+#include "baxter_core_msgs/JointCommand.h"
+>>>>>>> Handle merge conflict
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "right_arm_joint_test_pub");
   ros::NodeHandle n;
   ros::Publisher right_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/right/joint_command", 1);
+<<<<<<< HEAD
   ros::ServiceClient ik_client;
 
   ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/right/PositionKinematicsNode/IKService");
@@ -59,6 +64,9 @@ int main(int argc, char **argv)
     ROS_INFO("joint_angles[%d]: %0.6f", i, joint_angles[i]);
   }  
 
+=======
+  
+>>>>>>> Handle merge conflict
   // publish at at least 5 Hz, or else Baxter switches back to Position mode and holds position
   ros::Rate loop_rate(100);
   baxter_core_msgs::JointCommand cmd;
@@ -76,6 +84,7 @@ int main(int argc, char **argv)
   cmd.names.push_back("right_w2");
   
   // set your calculated velocities
+<<<<<<< HEAD
   cmd.command.resize(NUM_JOINTS);
 
   // move to untucked position (can also be achieved by running 'rosrun baxter_tools tuck_arms.py -u')
@@ -83,6 +92,21 @@ int main(int argc, char **argv)
   for(int i = 0; i < NUM_JOINTS; i++){
     cmd.command[i] = joint_angles[i];
   }
+=======
+  cmd.command.resize(cmd.names.size());
+
+  // move to untucked position (can also be achieved by running 'rosrun baxter_tools tuck_arms.py -u')
+  cmd.command[0] = 0.08705340971249723;
+  cmd.command[1] = -1.0105098440195164;
+  cmd.command[2] = 1.1527865620958884;
+  cmd.command[3] = 1.945471134235676;
+  cmd.command[4] = -0.6645971763513555;
+  cmd.command[5] = 1.0208642143377429;
+  cmd.command[6] = 0.4962427848809313;
+  
+  // for(size_t i = 0; i < cmd.names.size(); i++)
+  //   cmd.command[i] = 0.0;
+>>>>>>> Handle merge conflict
 
   std::cout<<cmd<<std::endl;
 
@@ -94,6 +118,9 @@ int main(int argc, char **argv)
     loop_rate.sleep();
     std::cout<<cmd<<std::endl;
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> Handle merge conflict
   return 0;
 }
