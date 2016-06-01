@@ -11,57 +11,84 @@
  * 
  */ 
 
-#include "ros/ros.h"
+#include <ros/ros.h>
+#include <string>
+#include <iostream>
+#include <cmath>
+#include <baxter_core_msgs/EndpointState.h>
 #include <baxter_core_msgs/SolvePositionIK.h>
 #include <baxter_core_msgs/JointCommand.h>
 #include <geometry_msgs/PoseStamped.h>
-
-enum Limb {RIGHT, LEFT};
+#include <geometry_msgs/Pose.h>
 
 class ArmController
 {
 
 private:
     ros::NodeHandle n;
-    // [NOTE] ros::Publisher name should convey the type of message it is publishing
-    ros::Publisher r_joint_cmd_pub;
-    ros::Publisher l_joint_cmd_pub;
-    // [NOTE] ros::ServiceClient name should convey the type of service it is requesting
-    ros::ServiceClient r_ik_client;
-    ros::ServiceClient l_ik_client;
 
+    ros::Publisher joint_cmd_pub;
+
+    ros::Subscriber endpt_sub;
+
+    ros::ServiceClient ik_client;
+
+    // PoseStamped message to be used as request value for IK solver service
+    geometry_msgs::PoseStamped req_pose_stamped;
+    geometry_msgs::Pose curr_pose;
+
+    std::string limb;
     int NUM_JOINTS;
 
     /*
-     * takes in a position and orientation that the user wants the right/left arm to be in,
+     * takes in a position and orientation that the user wants the arm to be in,
      * and uses Baxter's built-in inverse kinematics solver to produce the joint angles
      * at which the right/left joints must have to reach that position and orientation
      * 
-     * @param      a PoseStamped specifying the desired end position and orientation, and
-     *             the limb the user wants to move
+     * @param      a PoseStamped specifying the desired end position and orientation,
      *             
      * @return     a vector of joint angles the right/left arm joints should have to reach the desired
      *             position/orientation, in order from shoulder to wrist
      */
 
-    std::vector<float> getJointAngles(geometry_msgs::PoseStamped pose_stamped, Limb limb);
+    std::vector<float> getJointAngles(geometry_msgs::PoseStamped req_pose_stamped);
 
     /*
-     * takes in an array of joint angles and commands the right/left joints to take on the
+     * takes in an array of joint angles and commands the joints to take on the
      * angles specified, moving the arm's position/orientation in the process
      * 
-     * @param      a vector of joint angles, in order from shoulder to wrist, and 
-     *             the limb the user wants to move
+     * @param      a vector of joint angles, in order from shoulder to wrist
      *             
      * @return     N/A
      */
 
-    void publishMoveCommand(std::vector<float> joint_angles, Limb limb);
-    bool reachedPose();
+    void publishMoveCommand(std::vector<float> joint_angles);
+
+    /*
+     * checks if the arm has completed its intended move by comparing
+     * the requested pose and the current pose
+     * 
+     * @param      N/A
+     *             
+     * @return     true if the parameters of the current pose is equal to the 
+     *             requested pose; false otherwise 
+     */
+
+    bool hasMoveCompleted();
+
+    /*
+     * checks if two decimal numbers are equal to each other up to two decimal points
+     * 
+     * @param      two floats x and y
+     *             
+     * @return     true if they are equal up to 2 decimal points; false otherwise
+     */
+
+    bool equalTwoDP(float x, float y);
 
 public:
 
-    ArmController();
+    ArmController(std::string limb);
     ~ArmController();
 
     // [NOTE] Style note on naming conventions of functions: OpenCV functions follow
@@ -71,6 +98,8 @@ public:
 
     // [NOTE] Style note on naming conventions of variables: Given the above, variables
     // should follow a word1_word2 convention for maximum contrast
+
+    void endpointCallback(const baxter_core_msgs::EndpointState& msg);
 
     void pickUpTile();
     void placeTile();
