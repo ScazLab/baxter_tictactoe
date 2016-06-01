@@ -73,6 +73,8 @@ add_action_files(DIRECTORY action FILES
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(DEPENDENCIES 
+    baxter_core_msgs
+    geometry_msgs
     actionlib_msgs 
     std_msgs
 )
@@ -149,7 +151,7 @@ add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_f
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
 add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp             src/board_state_sensing/board_state_sensing.h)
 
-add_executable(right_arm_joint_pub_test         src/right_arm_joint_pub_test.cpp)
+add_executable(arm_controller                   src/arm_controller/arm_controller.cpp                       src/arm_controller/arm_controller.h)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -169,8 +171,7 @@ add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messag
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(right_arm_joint_pub_test       baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
+add_dependencies(arm_controller                 baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
@@ -189,7 +190,7 @@ target_link_libraries(hsv_range_finder                  baxterTictactoe     ${Op
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
-target_link_libraries(right_arm_joint_pub_test          baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
+target_link_libraries(arm_controller                    baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
 #############
 ## Install ##
