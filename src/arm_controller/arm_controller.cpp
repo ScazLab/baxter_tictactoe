@@ -91,20 +91,16 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens();
-        gripToken();
-        ROS_ERROR("Escaped gripToken() function");
-        hoverAboveTokens();        
-        gripper->blow();
+        // gripToken();
+        // hoverAboveTokens();        
+        // gripper->blow();
     }
 }
 
-/*
-
-min_range: 0.00400000018999
-max_range: 0.40000000596
-range: 0.0590000003576
-
-*/
+void ArmController::placeToken()
+{
+    hoverAboveBoard();
+}
 
 // Moving from Untucked to Rest using IK solver works 1 out of 10~15 times
 // Moving from Enabled to Rest using Hardcoded Joint Angle also doesn't work; gets stuck in awkward pose
@@ -196,6 +192,24 @@ void ArmController::gripToken()
     publishMoveCommand(joint_angles, COLLISION);
 }
 
+void ArmController::hoverAboveBoard()
+{
+    req_pose_stamped.header.frame_id = "base";
+    req_pose_stamped.pose.position.x = 0.645298787334;
+    req_pose_stamped.pose.position.y = 0.125732369738;
+
+    req_pose_stamped.pose.position.z = 0.13621169853;
+    // req_pose_stamped.pose.position.z = -0.13021169853;
+    // -0.13... ~= 3 tokens
+    // -0.15... ~= board
+    req_pose_stamped.pose.orientation.x = 0.712801568376;
+    req_pose_stamped.pose.orientation.y = -0.700942136419;
+    req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+    vector<float> joint_angles = getJointAngles(req_pose_stamped);
+    publishMoveCommand(joint_angles, POSE);   
+}
 
 // error-check if IK solver gives all zeros?
 vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
@@ -335,7 +349,7 @@ int main(int argc, char **argv)
     ArmController acl("left");
     acl.moveToRest();
     acl.pickUpToken();
-
+    acl.placeToken();
     ros::spin();
     return 0;
 }

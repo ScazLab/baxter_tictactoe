@@ -129,6 +129,8 @@ private:
     void hoverAboveTokens();
     void gripToken();
 
+    void hoverAboveBoard();
+
 public:
 
     ArmController(std::string limb);
