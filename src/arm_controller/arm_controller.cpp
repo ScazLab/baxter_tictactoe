@@ -9,15 +9,18 @@ using namespace std;
 
 /*
     TASKS:
-    Use endpointState topic approximation to shutdown once destination has been reached
-    Change DEBUG_STREAM to DEBUG_STREAM once testing is done
-    How to make arm move at same time
+    Make arm move at same time
 */
 
 /******************* Public ************************/
 
 ArmController::ArmController(string limb): img_trp(n), limb(limb)
 {
+
+    if(limb != "left" && limb != "right"){
+        ROS_ERROR("[Arm Controller] Invalid limb. Acceptable values are: right / left");
+        ros::shutdown();
+    }
 
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << limb << endl);
     joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);
@@ -37,7 +40,6 @@ ArmController::~ArmController() {
 void ArmController::endpointCallback(const EndpointState& msg)
 {
     curr_pose = msg.pose;
-    // cout << msg.pose << endl;
 }
 
 void ArmController::imageCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -54,6 +56,20 @@ void ArmController::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     cv::imshow("[Arm Controller] hand camera", cv_ptr->image.clone());
     cv::waitKey(30);
+}
+
+void ArmController::pickUpToken()
+{
+    if(limb == "right") 
+    {
+        ROS_ERROR("[Arm Controller] Right arm should not pick up tokens");
+    }
+    else if(limb == "left")
+    {
+        hoverAboveTokens();
+        // gripToken();
+        // hoverAboveTokens();        
+    }
 }
 
 void ArmController::moveToRest() 
@@ -101,12 +117,37 @@ void ArmController::moveToRest()
 
 /******************* Private ************************/
 
-vector<float> ArmController::getJointAngles(PoseStamped req_pose_stamped)
+void ArmController::hoverAboveTokens()
+{
+
+    req_pose_stamped.header.frame_id = "base";
+    req_pose_stamped.pose.position.x = 0.780298787334;
+    req_pose_stamped.pose.position.y = 0.533732369738;
+    req_pose_stamped.pose.position.z = 0.0631621169853;
+    req_pose_stamped.pose.orientation.x = 0.712801568376;
+    req_pose_stamped.pose.orientation.y = -0.700942136419;
+    req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+    vector<float> joint_angles = getJointAngles(req_pose_stamped);
+    publishMoveCommand(joint_angles);
+
+    /* joint angles: left_e0: -2.4160197409195265, left_e1: 0.9921020745648913, left_s0: -0.0947233136519243, left_s1: 0.4571262747898533, left_w0: 2.5272333480412192, left_w1: 1.8699225804323194, left_w2: -1.5044516577186196 */
+}
+
+void ArmController::gripToken()
+{
+
+}
+
+
+// error-check if IK solver gives all zeros?
+vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
 {
     // IK solver service
     SolvePositionIK ik_srv;
 
-    ik_srv.request.pose_stamp.push_back(req_pose_stamped);
+    ik_srv.request.pose_stamp.push_back(pose_stamped);
     ik_client.call(ik_srv);
 
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
@@ -168,7 +209,7 @@ void ArmController::publishMoveCommand(vector<float> joint_angles)
 
     while(ros::ok())
     {
-        ROS_DEBUG("[Arm Controller] In the loop");
+        // ROS_DEBUG("[Arm Controller] In the loop");
         joint_cmd_pub.publish(joint_cmd);
         ros::spinOnce();
         loop_rate.sleep();
@@ -198,7 +239,7 @@ bool ArmController::hasMoveCompleted()
 
 bool ArmController::equalTwoDP(float x, float y) 
 {
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] curr_pose: " << x << "req_pose_stamped: " << y << endl);
+    // ROS_DEBUG_STREAM(cout << "[Arm Controller] curr_pose: " << x << "req_pose_stamped: " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
     return xTwoDP == yTwoDP ? true : false;
@@ -209,10 +250,9 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "arm_controller");
     ArmController acl("left");
-    // ArmController acr("right");
+    acl.moveToRest();
+    acl.pickUpToken();
 
-    // acl.moveToRest(); 
-    // acr.moveToRest(); 
     ros::spin();
     return 0;
 }

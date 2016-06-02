@@ -44,8 +44,10 @@ private:
 
     // PoseStamped message to be used as request value for IK solver service
     geometry_msgs::PoseStamped req_pose_stamped;
+    // Pose message used to store current pose; updated by endpointCallback()
     geometry_msgs::Pose curr_pose;
 
+    // string indicating whether class instance is meant to control right/left limb
     std::string limb;
     int NUM_JOINTS;
 
@@ -60,7 +62,7 @@ private:
      *             position/orientation, in order from shoulder to wrist
      */
 
-    std::vector<float> getJointAngles(geometry_msgs::PoseStamped req_pose_stamped);
+    std::vector<float> getJointAngles(geometry_msgs::PoseStamped pose_stamped);
 
     /*
      * takes in an array of joint angles and commands the joints to take on the
@@ -94,6 +96,17 @@ private:
      */
 
     bool equalTwoDP(float x, float y);
+
+    /*
+     * hover the left arm above the stack of tokens
+     * 
+     * @param      N/A
+     *             
+     * @return     N/A
+     */
+
+    void hoverAboveTokens();
+    void gripToken();
 
 public:
 
@@ -130,8 +143,8 @@ public:
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
-    void pickUpTile();
-    void placeTile();
+    void pickUpToken();
+    void placeToken();
 
     /*
      * moves the arm to a rest position when not performing a move
