@@ -74,11 +74,12 @@ void ArmController::pickUpToken()
 
 void ArmController::moveToRest() 
 {
-    vector<float> joint_angles;
-    joint_angles.resize(NUM_JOINTS);
+    // vector<float> joint_angles;
+    // joint_angles.resize(NUM_JOINTS);
 
     // requested position and orientation is filled out despite hardcoding of joint angles
     // to double-check if move has been completed using hasMoveCompleted()
+    req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.292391;
     req_pose_stamped.pose.position.z = 0.181133;
     req_pose_stamped.pose.orientation.x = 0.028927;
@@ -91,27 +92,28 @@ void ArmController::moveToRest()
     // a joint angles combination for the left arm rest pose.
     if(limb == "left")
     {
-        joint_angles[0] = 1.1508690861110316;
-        joint_angles[1] = -0.6001699832601681;
-        joint_angles[2] = -0.17449031462196582;
-        joint_angles[3] = 2.2856313739492666;
-        joint_angles[4] = 1.8680051044474626;
-        joint_angles[5] = -1.4684031092033123;
-        joint_angles[6] = 0.1257864246066039;
+        // joint_angles[0] = 1.1508690861110316;
+        // joint_angles[1] = -0.6001699832601681;
+        // joint_angles[2] = -0.17449031462196582;
+        // joint_angles[3] = 2.2856313739492666;
+        // joint_angles[4] = 1.8680051044474626;
+        // joint_angles[5] = -1.4684031092033123;
+        // joint_angles[6] = 0.1257864246066039;
         req_pose_stamped.pose.position.y = 0.611039; 
     }
     else if(limb == "right") 
     {
-        joint_angles[0] = -1.3322623142784817;
-        joint_angles[1] = -0.5786942522297723;
-        joint_angles[2] = 0.14266021327334347;
-        joint_angles[3] = 2.2695245756764697;
-        joint_angles[4] = -1.9945585194480093;
-        joint_angles[5] = -1.469170099597255;
-        joint_angles[6] = -0.011504855909140603;
+        // joint_angles[0] = -1.3322623142784817;
+        // joint_angles[1] = -0.5786942522297723;
+        // joint_angles[2] = 0.14266021327334347;
+        // joint_angles[3] = 2.2695245756764697;
+        // joint_angles[4] = -1.9945585194480093;
+        // joint_angles[5] = -1.469170099597255;
+        // joint_angles[6] = -0.011504855909140603;
         req_pose_stamped.pose.position.y = -0.611039; 
     }
 
+    vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles);
 }
 
