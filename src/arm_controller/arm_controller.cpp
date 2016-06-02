@@ -33,7 +33,9 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);   
     endpt_sub = n.subscribe("/robot/limb/" + limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
     img_sub = img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ArmController::imageCallback, this);
-    ir_sub = n.subscribe("/robot/range/left_hand_range", 1, &ArmController::IRCallback, this);
+
+    ir_sub = n.subscribe("/robot/range/left_hand_range/state", 1, &ArmController::IRCallback, this);
+
     ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
     gripper = new Vacuum_Gripper(ttt::left);
 
@@ -41,6 +43,9 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
     NUM_JOINTS = 7;
     IR_RANGE_THRESHOLD = 0.085;
+    curr_range = 0;
+    curr_max_range = 0;
+    curr_min_range = 0;
 }
 
 ArmController::~ArmController() {
@@ -70,6 +75,10 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
 void ArmController::IRCallback(const RangeConstPtr& msg)
 {
+
+
+    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
+    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
     curr_range = msg->range;
     curr_max_range = msg->max_range;
     curr_min_range = msg->min_range;
@@ -85,9 +94,17 @@ void ArmController::pickUpToken()
     {
         hoverAboveTokens();
         gripToken();
-        // hoverAboveTokens();        
+        hoverAboveTokens();        
     }
 }
+
+/*
+
+min_range: 0.00400000018999
+max_range: 0.40000000596
+range: 0.0590000003576
+
+*/
 
 // Moving from Untucked to Rest using IK solver works 1 out of 10~15 times
 // Moving from Enabled to Rest using Hardcoded Joint Angle also doesn't work; gets stuck in awkward pose
@@ -176,7 +193,7 @@ void ArmController::gripToken()
 
     // ROS_ERROR("Entered grip token");
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, POSE);
+    publishMoveCommand(joint_angles, COLLISION);
 }
 
 
@@ -268,6 +285,9 @@ void ArmController::publishMoveCommand(vector<float> joint_angles, goalType goal
                 gripper->suck();
                 break;
             }
+            else {
+                ROS_DEBUG("No collision yet");
+            }
         }
     }   
 }
@@ -289,12 +309,15 @@ bool ArmController::hasPoseCompleted()
 
 bool ArmController::hasCollided()
 {
+    ROS_DEBUG_STREAM(cout << " range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
     if(curr_range <= curr_max_range && curr_range >= curr_min_range && curr_range <= IR_RANGE_THRESHOLD)
     {
         ROS_INFO("[Arm Controller] Collision");
         return true;
     }
-    
+    else {
+        return false;
+    }
 }
 
 bool ArmController::equalTwoDP(float x, float y) 
