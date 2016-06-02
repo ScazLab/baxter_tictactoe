@@ -12,9 +12,18 @@
  */ 
 
 #include <ros/ros.h>
+#include <ros/console.h>
+// Standard libraries
 #include <string>
 #include <iostream>
 #include <cmath>
+// Image-handling libraries
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+// ROS message libraries
 #include <baxter_core_msgs/EndpointState.h>
 #include <baxter_core_msgs/SolvePositionIK.h>
 #include <baxter_core_msgs/JointCommand.h>
@@ -26,12 +35,12 @@ class ArmController
 
 private:
     ros::NodeHandle n;
-
     ros::Publisher joint_cmd_pub;
-
     ros::Subscriber endpt_sub;
-
     ros::ServiceClient ik_client;
+
+    image_transport::ImageTransport img_trp;
+    image_transport::Subscriber img_sub;
 
     // PoseStamped message to be used as request value for IK solver service
     geometry_msgs::PoseStamped req_pose_stamped;
@@ -99,7 +108,27 @@ public:
     // [NOTE] Style note on naming conventions of variables: Given the above, variables
     // should follow a word1_word2 convention for maximum contrast
 
+
+    /*
+     * callback function that sets the current pose to the pose received from 
+     * the endpoint state topic
+     * 
+     * @param      N/A
+     * 
+     * @return     N/A
+     */
+
     void endpointCallback(const baxter_core_msgs::EndpointState& msg);
+
+    /*
+     * image callback function
+     * 
+     * @param      N/A
+     * 
+     * @return     N/A
+     */
+
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
     void pickUpTile();
     void placeTile();
@@ -111,6 +140,7 @@ public:
      * 
      * @return     N/A
      */
+
     void moveToRest();
 
 };

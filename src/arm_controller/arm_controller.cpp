@@ -10,29 +10,50 @@ using namespace std;
 /*
     TASKS:
     Use endpointState topic approximation to shutdown once destination has been reached
-    Change INFO_STREAM to DEBUG_STREAM once testing is done
+    Change DEBUG_STREAM to DEBUG_STREAM once testing is done
     How to make arm move at same time
 */
 
 /******************* Public ************************/
 
-ArmController::ArmController(string limb): limb(limb)
+ArmController::ArmController(string limb): img_trp(n), limb(limb)
 {
 
-    ROS_INFO_STREAM(cout << limb << endl);
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << limb << endl);
     joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);
     endpt_sub = n.subscribe("/robot/limb/" + limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
     ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
+    img_sub = img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ArmController::imageCallback, this);
+
+    cv::namedWindow("[Arm Controller] hand camera", cv::WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
 }
 
-ArmController::~ArmController() {}
+ArmController::~ArmController() {
+    cv::destroyWindow("[Arm Controller] hand camera");
+}
 
 void ArmController::endpointCallback(const EndpointState& msg)
 {
     curr_pose = msg.pose;
     // cout << msg.pose << endl;
+}
+
+void ArmController::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try
+    {
+        cv_ptr = cv_bridge::toCvShare(msg);
+    }
+    catch(cv_bridge::Exception& e)
+    {
+        ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());
+    }
+
+    cv::imshow("[Arm Controller] hand camera", cv_ptr->image.clone());
+    cv::waitKey(30);
 }
 
 void ArmController::moveToRest() 
@@ -88,14 +109,14 @@ vector<float> ArmController::getJointAngles(PoseStamped req_pose_stamped)
     ik_srv.request.pose_stamp.push_back(req_pose_stamped);
     ik_client.call(ik_srv);
 
-    ROS_INFO_STREAM(cout << "[Arm_Controller] " << ik_srv.request << endl);
-    ROS_INFO_STREAM(cout << "[Arm_Controller] " << ik_srv.response << endl);
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);
 
 
     // if service is successfully called
     if(ik_client.call(ik_srv))
     {
-        ROS_INFO("[Arm_Controller] Service called");
+        ROS_DEBUG("[Arm Controller] Service called");
 
         // store joint angles values received from service
         vector<float> joint_angles;
@@ -106,14 +127,14 @@ vector<float> ArmController::getJointAngles(PoseStamped req_pose_stamped)
         }
 
         for(int i = 0; i < joint_angles.size(); i++){
-            ROS_INFO("joint angles %d: %0.4f", i, joint_angles[i]);
+            ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
         }
 
         return joint_angles;
     }
     else 
     {
-        ROS_ERROR("[Arm_Controller] SolvePositionIK service was unsuccessful");
+        ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
         vector<float> empty;
         return empty;
     }
@@ -147,14 +168,14 @@ void ArmController::publishMoveCommand(vector<float> joint_angles)
 
     while(ros::ok())
     {
-        ROS_INFO("In the loop");
+        ROS_DEBUG("[Arm Controller] In the loop");
         joint_cmd_pub.publish(joint_cmd);
         ros::spinOnce();
         loop_rate.sleep();
 
         if(hasMoveCompleted()) 
         {
-            ROS_INFO("Move completed");
+            ROS_DEBUG("[Arm Controller] Move completed");
             break;
         }
    }   
@@ -177,22 +198,22 @@ bool ArmController::hasMoveCompleted()
 
 bool ArmController::equalTwoDP(float x, float y) 
 {
-    ROS_INFO_STREAM(cout << "curr_pose: " << x << "req_pose_stamped: " << y << endl);
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] curr_pose: " << x << "req_pose_stamped: " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
     return xTwoDP == yTwoDP ? true : false;
-    ROS_INFO_STREAM(cout << xTwoDP << " " << yTwoDP << endl);
 }
 
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "right_arm_joint_test_pub");
+    ros::init(argc, argv, "arm_controller");
     ArmController acl("left");
-    ArmController acr("right");
+    // ArmController acr("right");
 
-    acl.moveToRest(); 
-    acr.moveToRest(); 
+    // acl.moveToRest(); 
+    // acr.moveToRest(); 
+    ros::spin();
     return 0;
 }
 
