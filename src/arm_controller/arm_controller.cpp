@@ -11,12 +11,15 @@ using namespace std;
     TASKS:
     Use endpointState topic approximation to shutdown once destination has been reached
     Change INFO_STREAM to DEBUG_STREAM once testing is done
+    How to make arm move at same time
 */
 
 /******************* Public ************************/
 
 ArmController::ArmController(string limb): limb(limb)
 {
+
+    ROS_INFO_STREAM(cout << limb << endl);
     joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);
     endpt_sub = n.subscribe("/robot/limb/" + limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
     ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
@@ -29,27 +32,50 @@ ArmController::~ArmController() {}
 void ArmController::endpointCallback(const EndpointState& msg)
 {
     curr_pose = msg.pose;
+    // cout << msg.pose << endl;
 }
 
-void ArmController::moveRightToRest() 
+void ArmController::moveToRest() 
 {
-    // sets reference frame of IK Solver to Baxter's reference frame 
-    req_pose_stamped.header.frame_id = "base";
+    vector<float> joint_angles;
+    joint_angles.resize(NUM_JOINTS);
 
-    req_pose_stamped.pose.position.x = 0.473749561242;
-    req_pose_stamped.pose.position.y = -0.690844692814;
-    req_pose_stamped.pose.position.z = 0.408007113257;
+    // requested position and orientation is filled out despite hardcoding of joint angles
+    // to double-check if move has been completed using hasMoveCompleted()
+    req_pose_stamped.pose.position.x = 0.292391;
+    req_pose_stamped.pose.position.z = 0.181133;
+    req_pose_stamped.pose.orientation.x = 0.028927;
+    req_pose_stamped.pose.orientation.y = 0.686745;
+    req_pose_stamped.pose.orientation.z = 0.00352694;
+    req_pose_stamped.pose.orientation.w = 0.726314;
 
-    req_pose_stamped.pose.orientation.x = -0.0574340933229;
-    req_pose_stamped.pose.orientation.y = 0.721856881714;
-    req_pose_stamped.pose.orientation.z = 0.14480378245;
-    req_pose_stamped.pose.orientation.w = 0.674281715483;
-
-    vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    if(!joint_angles.empty()) 
+    // joint angles are hardcoded as opposed to relying on the IK solver to provide a solution given
+    // the requested pose because testing showed that the IK solver would fail approx. 9/10 to find 
+    // a joint angles combination for the left arm rest pose.
+    if(limb == "left")
     {
-        publishMoveCommand(joint_angles);
+        joint_angles[0] = 1.1508690861110316;
+        joint_angles[1] = -0.6001699832601681;
+        joint_angles[2] = -0.17449031462196582;
+        joint_angles[3] = 2.2856313739492666;
+        joint_angles[4] = 1.8680051044474626;
+        joint_angles[5] = -1.4684031092033123;
+        joint_angles[6] = 0.1257864246066039;
+        req_pose_stamped.pose.position.y = 0.611039; 
     }
+    else if(limb == "right") 
+    {
+        joint_angles[0] = -1.3322623142784817;
+        joint_angles[1] = -0.5786942522297723;
+        joint_angles[2] = 0.14266021327334347;
+        joint_angles[3] = 2.2695245756764697;
+        joint_angles[4] = -1.9945585194480093;
+        joint_angles[5] = -1.469170099597255;
+        joint_angles[6] = -0.011504855909140603;
+        req_pose_stamped.pose.position.y = -0.611039; 
+    }
+
+    publishMoveCommand(joint_angles);
 }
 
 /******************* Private ************************/
@@ -65,6 +91,7 @@ vector<float> ArmController::getJointAngles(PoseStamped req_pose_stamped)
     ROS_INFO_STREAM(cout << "[Arm_Controller] " << ik_srv.request << endl);
     ROS_INFO_STREAM(cout << "[Arm_Controller] " << ik_srv.response << endl);
 
+
     // if service is successfully called
     if(ik_client.call(ik_srv))
     {
@@ -76,6 +103,10 @@ vector<float> ArmController::getJointAngles(PoseStamped req_pose_stamped)
         for(int i = 0; i < ik_srv.response.joints[0].position.size(); i++)
         {
             joint_angles[i] = ik_srv.response.joints[0].position[i];
+        }
+
+        for(int i = 0; i < joint_angles.size(); i++){
+            ROS_INFO("joint angles %d: %0.4f", i, joint_angles[i]);
         }
 
         return joint_angles;
@@ -97,13 +128,13 @@ void ArmController::publishMoveCommand(vector<float> joint_angles)
     joint_cmd.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
 
     // command joints in the order shown in baxter_interface
-    joint_cmd.names.push_back("right_s0");
-    joint_cmd.names.push_back("right_s1");
-    joint_cmd.names.push_back("right_e0");
-    joint_cmd.names.push_back("right_e1");
-    joint_cmd.names.push_back("right_w0");
-    joint_cmd.names.push_back("right_w1");
-    joint_cmd.names.push_back("right_w2");
+    joint_cmd.names.push_back(limb + "_s0");
+    joint_cmd.names.push_back(limb + "_s1");
+    joint_cmd.names.push_back(limb + "_e0");
+    joint_cmd.names.push_back(limb + "_e1");
+    joint_cmd.names.push_back(limb + "_w0");
+    joint_cmd.names.push_back(limb + "_w1");
+    joint_cmd.names.push_back(limb + "_w2");
 
     // set your calculated velocities
     joint_cmd.command.resize(NUM_JOINTS);
@@ -116,12 +147,17 @@ void ArmController::publishMoveCommand(vector<float> joint_angles)
 
     while(ros::ok())
     {
+        ROS_INFO("In the loop");
         joint_cmd_pub.publish(joint_cmd);
         ros::spinOnce();
         loop_rate.sleep();
 
-        if(hasMoveCompleted()) break;
-    }   
+        if(hasMoveCompleted()) 
+        {
+            ROS_INFO("Move completed");
+            break;
+        }
+   }   
 }
 
 bool ArmController::hasMoveCompleted()
@@ -141,6 +177,7 @@ bool ArmController::hasMoveCompleted()
 
 bool ArmController::equalTwoDP(float x, float y) 
 {
+    ROS_INFO_STREAM(cout << "curr_pose: " << x << "req_pose_stamped: " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
     return xTwoDP == yTwoDP ? true : false;
@@ -148,9 +185,40 @@ bool ArmController::equalTwoDP(float x, float y)
 }
 
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
     ros::init(argc, argv, "right_arm_joint_test_pub");
-    ArmController ac("right");
-    ac.moveRightToRest(); 
+    ArmController acl("left");
+    ArmController acr("right");
+
+    acl.moveToRest(); 
+    acr.moveToRest(); 
     return 0;
 }
+
+/*
+  position: 
+    x: 0.291852005639
+    y: 0.909470230033
+    z: 0.18183478935
+  orientation: 
+    x: 0.0312589347159
+    y: 0.684610901271
+    z: 0.00354192350954
+    w: 0.728229529503
+
+  position: 
+    x: 0.291852005639
+    y: -0.909470230033
+    z: 0.18183478935
+  orientation: 
+    x: -0.0312589347159
+    y: 0.684610901271
+    z: -0.00354192350954
+    w: 0.728229529503
+
+right_e0',          'right_e1',             'right_s0',         'right_s1',         'right_w0',         'right_w1',         'right_w2',           
+ 0.14266021327334347, 2.2695245756764697, -1.3322623142784817, -0.5786942522297723, -1.9945585194480093, -1.469170099597255, -0.011504855909140603 
+
+
+*/

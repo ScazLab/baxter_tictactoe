@@ -105,23 +105,13 @@ public:
     void placeTile();
 
     /*
-     * moves the left arm to a standby position it adopts before and after each of 
-     * Baxter's turn
+     * moves the arm to a rest position when not performing a move
      * 
      * @param      N/A
      * 
      * @return     N/A
      */
-    void moveLeftToStandby();
+    void moveToRest();
 
-    /*
-     * moves the left arm to a standby position it adopts before and after each of 
-     * Baxter's turn
-     * 
-     * @param      N/A
-     * 
-     * @return     N/A
-     */
-    void moveRightToRest();
 };
 
