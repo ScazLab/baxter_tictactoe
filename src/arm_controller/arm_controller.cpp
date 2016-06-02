@@ -75,10 +75,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
 void ArmController::IRCallback(const RangeConstPtr& msg)
 {
-
-
-    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
-    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+    // ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
+    // ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
     curr_range = msg->range;
     curr_max_range = msg->max_range;
     curr_min_range = msg->min_range;
@@ -94,7 +92,9 @@ void ArmController::pickUpToken()
     {
         hoverAboveTokens();
         gripToken();
+        ROS_ERROR("Escaped gripToken() function");
         hoverAboveTokens();        
+        gripper->blow();
     }
 }
 
