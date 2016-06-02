@@ -29,17 +29,29 @@
 #include <baxter_core_msgs/JointCommand.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <sensor_msgs/Range.h>
+
+#include "vacuum_gripper/vacuum_gripper.h"
+
+enum goalType {POSE, COLLISION};
 
 class ArmController
 {
 
 private:
     ros::NodeHandle n;
+
+    // publishes joint angles commands in order to move arm
     ros::Publisher joint_cmd_pub;
+    // subscribes to end-effector endpoint in order to find current pose
     ros::Subscriber endpt_sub;
+    ros::Subscriber ir_sub;
+    // requests inverse kinematics service to find joint angles to reach desired pose
     ros::ServiceClient ik_client;
 
+    // 'node handle' for images (e.g img_sub = img_trp.subscribe(...) instead of img_sub = n.subscribe(...))
     image_transport::ImageTransport img_trp;
+    // subscribes to hand camera image stream in order to locate tile
     image_transport::Subscriber img_sub;
 
     // PoseStamped message to be used as request value for IK solver service
@@ -47,9 +59,16 @@ private:
     // Pose message used to store current pose; updated by endpointCallback()
     geometry_msgs::Pose curr_pose;
 
+    float curr_range;
+    float curr_max_range;
+    float curr_min_range;
+
+    ttt::Vacuum_Gripper * gripper;
+
     // string indicating whether class instance is meant to control right/left limb
     std::string limb;
     int NUM_JOINTS;
+    float IR_RANGE_THRESHOLD;
 
     /*
      * takes in a position and orientation that the user wants the arm to be in,
@@ -73,7 +92,7 @@ private:
      * @return     N/A
      */
 
-    void publishMoveCommand(std::vector<float> joint_angles);
+    void publishMoveCommand(std::vector<float> joint_angles, goalType goal);
 
     /*
      * checks if the arm has completed its intended move by comparing
@@ -85,7 +104,9 @@ private:
      *             requested pose; false otherwise 
      */
 
-    bool hasMoveCompleted();
+    bool hasPoseCompleted();
+
+    bool hasCollided();
 
     /*
      * checks if two decimal numbers are equal to each other up to two decimal points
@@ -136,12 +157,14 @@ public:
     /*
      * image callback function
      * 
-     * @param      N/A
+     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
      * 
      * @return     N/A
      */
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+
+    void IRCallback(const sensor_msgs::RangeConstPtr& msg);
 
     void pickUpToken();
     void placeToken();

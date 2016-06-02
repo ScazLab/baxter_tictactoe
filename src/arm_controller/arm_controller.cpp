@@ -5,11 +5,16 @@
 
 using namespace baxter_core_msgs;
 using namespace geometry_msgs;
+using namespace sensor_msgs;
 using namespace std;
+using namespace ttt;
 
 /*
     TASKS:
     Make arm move at same time
+    I would make  ArmController::hoverAboveTokens() return bool if success/failure. 
+    And also you should check for the limb, because if by mistake you call the function 
+    on the right limb you should check for that in the beginning and return false. 
 */
 
 /******************* Public ************************/
@@ -23,14 +28,19 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     }
 
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << limb << endl);
-    joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);
+
+    // see header file for descriptions
+    joint_cmd_pub = n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + limb + "/joint_command", 1);   
     endpt_sub = n.subscribe("/robot/limb/" + limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
-    ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
     img_sub = img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ArmController::imageCallback, this);
+    ir_sub = n.subscribe("/robot/range/left_hand_range", 1, &ArmController::IRCallback, this);
+    ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
+    gripper = new Vacuum_Gripper(ttt::left);
 
     cv::namedWindow("[Arm Controller] hand camera", cv::WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
+    IR_RANGE_THRESHOLD = 0.085;
 }
 
 ArmController::~ArmController() {
@@ -42,7 +52,7 @@ void ArmController::endpointCallback(const EndpointState& msg)
     curr_pose = msg.pose;
 }
 
-void ArmController::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+void ArmController::imageCallback(const ImageConstPtr& msg)
 {
     cv_bridge::CvImageConstPtr cv_ptr;
     try
@@ -58,6 +68,13 @@ void ArmController::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     cv::waitKey(30);
 }
 
+void ArmController::IRCallback(const RangeConstPtr& msg)
+{
+    curr_range = msg->range;
+    curr_max_range = msg->max_range;
+    curr_min_range = msg->min_range;
+}
+
 void ArmController::pickUpToken()
 {
     if(limb == "right") 
@@ -67,18 +84,20 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens();
-        // gripToken();
+        gripToken();
         // hoverAboveTokens();        
     }
 }
 
+// Moving from Untucked to Rest using IK solver works 1 out of 10~15 times
+// Moving from Enabled to Rest using Hardcoded Joint Angle also doesn't work; gets stuck in awkward pose
 void ArmController::moveToRest() 
 {
-    // vector<float> joint_angles;
-    // joint_angles.resize(NUM_JOINTS);
+    vector<float> joint_angles;
+    joint_angles.resize(NUM_JOINTS);
 
     // requested position and orientation is filled out despite hardcoding of joint angles
-    // to double-check if move has been completed using hasMoveCompleted()
+    // to double-check if move has been completed using hasPoseCompleted()
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.292391;
     req_pose_stamped.pose.position.z = 0.181133;
@@ -92,29 +111,29 @@ void ArmController::moveToRest()
     // a joint angles combination for the left arm rest pose.
     if(limb == "left")
     {
-        // joint_angles[0] = 1.1508690861110316;
-        // joint_angles[1] = -0.6001699832601681;
-        // joint_angles[2] = -0.17449031462196582;
-        // joint_angles[3] = 2.2856313739492666;
-        // joint_angles[4] = 1.8680051044474626;
-        // joint_angles[5] = -1.4684031092033123;
-        // joint_angles[6] = 0.1257864246066039;
+        joint_angles[0] = 1.1508690861110316;
+        joint_angles[1] = -0.6001699832601681;
+        joint_angles[2] = -0.17449031462196582;
+        joint_angles[3] = 2.2856313739492666;
+        joint_angles[4] = 1.8680051044474626;
+        joint_angles[5] = -1.4684031092033123;
+        joint_angles[6] = 0.1257864246066039;
         req_pose_stamped.pose.position.y = 0.611039; 
     }
     else if(limb == "right") 
     {
-        // joint_angles[0] = -1.3322623142784817;
-        // joint_angles[1] = -0.5786942522297723;
-        // joint_angles[2] = 0.14266021327334347;
-        // joint_angles[3] = 2.2695245756764697;
-        // joint_angles[4] = -1.9945585194480093;
-        // joint_angles[5] = -1.469170099597255;
-        // joint_angles[6] = -0.011504855909140603;
+        joint_angles[0] = -1.3322623142784817;
+        joint_angles[1] = -0.5786942522297723;
+        joint_angles[2] = 0.14266021327334347;
+        joint_angles[3] = 2.2695245756764697;
+        joint_angles[4] = -1.9945585194480093;
+        joint_angles[5] = -1.469170099597255;
+        joint_angles[6] = -0.011504855909140603;
         req_pose_stamped.pose.position.y = -0.611039; 
     }
 
-    vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles);
+    // vector<float> joint_angles = getJointAngles(req_pose_stamped);
+    publishMoveCommand(joint_angles, POSE);
 }
 
 /******************* Private ************************/
@@ -123,23 +142,41 @@ void ArmController::hoverAboveTokens()
 {
 
     req_pose_stamped.header.frame_id = "base";
-    req_pose_stamped.pose.position.x = 0.780298787334;
-    req_pose_stamped.pose.position.y = 0.533732369738;
-    req_pose_stamped.pose.position.z = 0.0631621169853;
+    req_pose_stamped.pose.position.x = 0.540298787334;
+    req_pose_stamped.pose.position.y = 0.603732369738;
+
+    req_pose_stamped.pose.position.z = 0.13621169853;
+    // req_pose_stamped.pose.position.z = -0.13021169853;
+    // -0.13... ~= 3 tokens
+    // -0.15... ~= board
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
     req_pose_stamped.pose.orientation.z = -0.0127158080742;
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles);
+    publishMoveCommand(joint_angles, POSE);
 
     /* joint angles: left_e0: -2.4160197409195265, left_e1: 0.9921020745648913, left_s0: -0.0947233136519243, left_s1: 0.4571262747898533, left_w0: 2.5272333480412192, left_w1: 1.8699225804323194, left_w2: -1.5044516577186196 */
 }
 
 void ArmController::gripToken()
 {
+    req_pose_stamped.header.frame_id = "base";
+    req_pose_stamped.pose.position.x = 0.540298787334;
+    req_pose_stamped.pose.position.y = 0.603732369738;
 
+    req_pose_stamped.pose.position.z = -0.10501169853;
+    // -0.13... ~= 3 tokens
+    // -0.15... ~= board
+    req_pose_stamped.pose.orientation.x = 0.712801568376;
+    req_pose_stamped.pose.orientation.y = -0.700942136419;
+    req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+    // ROS_ERROR("Entered grip token");
+    vector<float> joint_angles = getJointAngles(req_pose_stamped);
+    publishMoveCommand(joint_angles, POSE);
 }
 
 
@@ -153,8 +190,8 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     ik_client.call(ik_srv);
 
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);
-
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);   
+    
 
     // if service is successfully called
     if(ik_client.call(ik_srv))
@@ -172,7 +209,7 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
         for(int i = 0; i < joint_angles.size(); i++){
             ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
         }
-
+        ros::Duration(2).sleep(); 
         return joint_angles;
     }
     else 
@@ -183,13 +220,13 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     }
 }
 
-void ArmController::publishMoveCommand(vector<float> joint_angles) 
+void ArmController::publishMoveCommand(vector<float> joint_angles, goalType goal) 
 {
     ros::Rate loop_rate(100);
     JointCommand joint_cmd;
 
     // command in velocity mode
-    joint_cmd.mode = baxter_core_msgs::JointCommand::POSITION_MODE;
+    joint_cmd.mode = JointCommand::POSITION_MODE;
 
     // command joints in the order shown in baxter_interface
     joint_cmd.names.push_back(limb + "_s0");
@@ -216,15 +253,26 @@ void ArmController::publishMoveCommand(vector<float> joint_angles)
         ros::spinOnce();
         loop_rate.sleep();
 
-        if(hasMoveCompleted()) 
+        if(goal == POSE)
         {
-            ROS_DEBUG("[Arm Controller] Move completed");
-            break;
+            if(hasPoseCompleted()) 
+            {
+                ROS_DEBUG("[Arm Controller] Move completed");
+                break;
+            }              
         }
-   }   
+        else if(goal == COLLISION)
+        {
+            if(hasCollided())
+            {
+                gripper->suck();
+                break;
+            }
+        }
+    }   
 }
 
-bool ArmController::hasMoveCompleted()
+bool ArmController::hasPoseCompleted()
 {
     bool samePose = true;
 
@@ -237,6 +285,16 @@ bool ArmController::hasMoveCompleted()
     if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) samePose = false;
 
     return samePose;    
+}
+
+bool ArmController::hasCollided()
+{
+    if(curr_range <= curr_max_range && curr_range >= curr_min_range && curr_range <= IR_RANGE_THRESHOLD)
+    {
+        ROS_INFO("[Arm Controller] Collision");
+        return true;
+    }
+    
 }
 
 bool ArmController::equalTwoDP(float x, float y) 
@@ -260,28 +318,34 @@ int main(int argc, char **argv)
 }
 
 /*
-  position: 
-    x: 0.291852005639
-    y: 0.909470230033
-    z: 0.18183478935
-  orientation: 
-    x: 0.0312589347159
-    y: 0.684610901271
-    z: 0.00354192350954
-    w: 0.728229529503
 
-  position: 
-    x: 0.291852005639
-    y: -0.909470230033
-    z: 0.18183478935
-  orientation: 
-    x: -0.0312589347159
-    y: 0.684610901271
-    z: -0.00354192350954
-    w: 0.728229529503
+[DEBUG] [1464888840.333485258]: 0x6575c8[Arm Controller] joints[]
+  joints[0]: 
+    header: 
+      seq: 0
+      stamp: 0.000000000
+      frame_id: 
+    name[]
+    position[]
+    velocity[]
+    effort[]
+isValid[]
+  isValid[0]: 0
+result_type[]
+  result_type[0]: 0
 
-right_e0',          'right_e1',             'right_s0',         'right_s1',         'right_w0',         'right_w1',         'right_w2',           
- 0.14266021327334347, 2.2695245756764697, -1.3322623142784817, -0.5786942522297723, -1.9945585194480093, -1.469170099597255, -0.011504855909140603 
-
-
+[DEBUG] [1464888843.480391118]: 0x6575c8[Arm Controller] joints[]
+  joints[0]: 
+    header: 
+      seq: 0
+      stamp: 0.000000000
+      frame_id: 
+    name[]
+    position[]
+    velocity[]
+    effort[]
+isValid[]
+  isValid[0]: 0
+result_type[]
+  result_type[0]: 0
 */

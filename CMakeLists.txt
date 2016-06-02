@@ -190,7 +190,7 @@ target_link_libraries(hsv_range_finder                  baxterTictactoe     ${Op
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
-target_link_libraries(arm_controller                                        ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+target_link_libraries(arm_controller                    vacuum_gripper      ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
