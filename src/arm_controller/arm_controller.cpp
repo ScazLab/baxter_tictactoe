@@ -42,6 +42,9 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     cv::namedWindow("[Arm Controller] hand camera", cv::WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
+    CENTER_X = 0.685298787334;
+    CENTER_Y = 0.125732369738;
+    CELL_SIDE = 0.1;
     IR_RANGE_THRESHOLD = 0.085;
     curr_range = 0;
     curr_max_range = 0;
@@ -91,14 +94,16 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens();
-        // gripToken();
-        // hoverAboveTokens();        
+        gripToken();
+        hoverAboveTokens();        
         // gripper->blow();
     }
 }
 
-void ArmController::placeToken()
+void ArmController::placeToken(int cell_num)
 {
+    hoverAboveBoard();
+    releaseToken(cell_num);
     hoverAboveBoard();
 }
 
@@ -195,8 +200,8 @@ void ArmController::gripToken()
 void ArmController::hoverAboveBoard()
 {
     req_pose_stamped.header.frame_id = "base";
-    req_pose_stamped.pose.position.x = 0.645298787334;
-    req_pose_stamped.pose.position.y = 0.125732369738;
+    req_pose_stamped.pose.position.x = CENTER_X;
+    req_pose_stamped.pose.position.y = CENTER_Y;
 
     req_pose_stamped.pose.position.z = 0.13621169853;
     // req_pose_stamped.pose.position.z = -0.13021169853;
@@ -209,6 +214,27 @@ void ArmController::hoverAboveBoard()
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles, POSE);   
+}
+
+void ArmController::releaseToken(int cell_num)
+{
+    if((cell_num - 1) / 3 == 0) req_pose_stamped.pose.position.x = CENTER_X + CELL_SIDE;
+    if((cell_num - 1) / 3 == 1) req_pose_stamped.pose.position.x = CENTER_X;
+    if((cell_num - 1) / 3 == 2) req_pose_stamped.pose.position.x = CENTER_X - CELL_SIDE;
+    if(cell_num % 3 == 0) req_pose_stamped.pose.position.y = CENTER_Y + CELL_SIDE;
+    if(cell_num % 3 == 1) req_pose_stamped.pose.position.y = CENTER_Y - CELL_SIDE;
+    if(cell_num % 3 == 2) req_pose_stamped.pose.position.y = CENTER_Y;
+
+    req_pose_stamped.pose.position.z = -0.13501169853;
+
+    req_pose_stamped.pose.orientation.x = 0.712801568376;
+    req_pose_stamped.pose.orientation.y = -0.700942136419;
+    req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+    vector<float> joint_angles = getJointAngles(req_pose_stamped);
+    publishMoveCommand(joint_angles, POSE);   
+    gripper->blow();
 }
 
 // error-check if IK solver gives all zeros?
@@ -349,7 +375,7 @@ int main(int argc, char **argv)
     ArmController acl("left");
     acl.moveToRest();
     acl.pickUpToken();
-    acl.placeToken();
+    acl.placeToken(5);
     ros::spin();
     return 0;
 }

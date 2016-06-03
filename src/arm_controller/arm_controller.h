@@ -68,6 +68,9 @@ private:
     // string indicating whether class instance is meant to control right/left limb
     std::string limb;
     int NUM_JOINTS;
+    double CENTER_X;
+    double CENTER_Y;
+    double CELL_SIDE;
     float IR_RANGE_THRESHOLD;
 
     /*
@@ -130,6 +133,7 @@ private:
     void gripToken();
 
     void hoverAboveBoard();
+    void releaseToken(int cell_num);
 
 public:
 
@@ -169,7 +173,7 @@ public:
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
 
     void pickUpToken();
-    void placeToken();
+    void placeToken(int cell_num);
 
     /*
      * moves the arm to a rest position when not performing a move
