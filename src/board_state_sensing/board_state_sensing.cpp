@@ -48,8 +48,8 @@ void BoardState::init()
 
     if (doShow)
     {
-        cv::namedWindow("[board_state_sensing] red  masked image of the board");
-        cv::namedWindow("[board_state_sensing] blue masked image of the board");
+        cv::namedWindow("[Board_State_Sensor] red  masked image of the board");
+        cv::namedWindow("[Board_State_Sensor] blue masked image of the board");
     }
 }
 
@@ -60,8 +60,8 @@ BoardState::~BoardState()
 {
     if (doShow)
     {
-        cv::destroyWindow("[board_state_sensing] red  masked image of the board");
-        cv::destroyWindow("[board_state_sensing] blue masked image of the board");
+        cv::destroyWindow("[Board_State_Sensor] red  masked image of the board");
+        cv::destroyWindow("[Board_State_Sensor] blue masked image of the board");
     }
 }
 
@@ -222,7 +222,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     if (doShow) cv::waitKey(50);
-    // ros::Duration(2).sleep();
+    ros::Duration(2).sleep();
 }
 
 int main(int argc, char** argv)

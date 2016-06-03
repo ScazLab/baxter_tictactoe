@@ -19,6 +19,12 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 
 tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _robot_color(robot_color), _move_commander("place_token", true) // true causes the client to spin its own thread
 {
+    left_arm_controller = new ArmController("left");
+    right_arm_controller = new ArmController("right");
+
+    right_arm_controller->moveToRest();
+    left_arm_controller->moveToRest();
+
     _number_of_tokens_on_board.set(0);
 
     ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
@@ -32,8 +38,14 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _r
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
-    _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
-    set_movement_type(movement_type);
+
+    /*******************************************/
+    /*****************TEST**********************/
+    /*******************************************/
+    /*******************************************/
+
+    // _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
+    // set_movement_type(movement_type);
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
@@ -54,13 +66,24 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : _r
 
     has_cheated=false;
 
-    ROS_INFO("[tictactoeBrain] Waiting for TTT Move Maker action server to start.");
-    ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
-    ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");
+    /*******************************************/
+    /*****************TEST**********************/
+    /*******************************************/
+    /*******************************************/
+
+    // ROS_INFO("[tictactoeBrain] Waiting for TTT Move Maker action server to start.");
+    // ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
+    // ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");
 }
 
 void tictactoeBrain::new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)
 {
+    ROS_INFO("Board State:");
+    for(int i = 0; i < 9; i++)
+    {
+        ROS_INFO("Cell %d: %d", i + 1, msg->cells[i].state);
+    }
+
     if ((msg->cells)!=_ttt_state.get()) {
         ROS_DEBUG_STREAM("[tictactoeBrain] New TTT board state detected at ." << msg->header.stamp);
         _ttt_state.set(msg->cells);
@@ -367,7 +390,13 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     // say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
     // say_sentence(" and the red tokens in the red square on the left side of the board",6);
     say_sentence("I start the game.",2);
-    set_movement_type(movement_type);
+
+    /*******************************************/
+    /*****************TEST**********************/
+    /*******************************************/
+    /*******************************************/
+
+    // set_movement_type(movement_type);
 
     ROS_WARN("[tictactoeBrain] PRESS ENTER TO START THE GAME");
     std::cin.get();        
@@ -382,17 +411,22 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
             say_sentence("It is my turn",0.3);
             int cell_to_move = get_next_move(cheating);
             ROS_DEBUG_STREAM("[tictactoeBrain] Robot's token to " << cell_to_move);
-            actionlib::SimpleClientGoalState goal_state = execute_move(cell_to_move);
 
-            if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED)
-            {
-                ROS_INFO("[tictactoeBrain] Last move successfully performed.");
-            }
-            else
-            {
-                ROS_ERROR_STREAM("[tictactoeBrain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
-                //What do we do now?
-            }
+            left_arm_controller->pickUpToken();
+            left_arm_controller->placeToken(cell_to_move);
+            ROS_INFO("[tictactoeBrain] Last move successfully performed.");
+
+            // actionlib::SimpleClientGoalState goal_state = execute_move(cell_to_move);
+
+            // if (goal_state==actionlib::SimpleClientGoalState::SUCCEEDED)
+            // {
+            //     ROS_INFO("[tictactoeBrain] Last move successfully performed.");
+            // }
+            // else
+            // {
+            //     ROS_ERROR_STREAM("[tictactoeBrain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
+            //     //What do we do now?
+            // }
             //the number of robot tokens haven't increased so we try again.
             // if(n_robot_tokens==get_number_of_tokens_on_board(_robot_color)) 
             // {

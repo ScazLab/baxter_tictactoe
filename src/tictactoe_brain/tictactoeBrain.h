@@ -12,6 +12,8 @@
 #include "baxterTictactoe/T_ThreadSafe.h"
 #include <tictactoe/PlaceTokenAction.h>
 #include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/arm_controller.h"
+
 
 namespace ttt
 {
@@ -59,6 +61,9 @@ private:
     int (tictactoeBrain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that 
                                                             decides the next move. We use a pointer 
                                                             because we could have different strategies. */
+
+    ArmController * left_arm_controller;
+    ArmController * right_arm_controller;
 
     bool has_cheated;
 

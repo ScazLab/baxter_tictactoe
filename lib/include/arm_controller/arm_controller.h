@@ -33,7 +33,7 @@
 
 #include "vacuum_gripper/vacuum_gripper.h"
 
-enum goalType {POSE, COLLISION};
+enum GoalType {POSE, COLLISION};
 
 class ArmController
 {
@@ -95,7 +95,7 @@ private:
      * @return     N/A
      */
 
-    void publishMoveCommand(std::vector<float> joint_angles, goalType goal);
+    void publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
 
     /*
      * checks if the arm has completed its intended move by comparing

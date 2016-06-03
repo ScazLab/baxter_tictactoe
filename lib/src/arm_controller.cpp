@@ -108,6 +108,7 @@ void ArmController::placeToken(int cell_num)
     // hoverAboveBoard();
     releaseToken(cell_num);
     hoverAboveBoard();
+    hoverAboveTokens();
 }
 
 // Moving from Untucked to Rest using IK solver works 1 out of 10~15 times
@@ -294,7 +295,7 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     }
 }
 
-void ArmController::publishMoveCommand(vector<float> joint_angles, goalType goal) 
+void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal) 
 {
     ros::Rate loop_rate(100);
     JointCommand joint_cmd;

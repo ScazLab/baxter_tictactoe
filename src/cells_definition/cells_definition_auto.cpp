@@ -29,7 +29,6 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
     if(img_loaded_copy == true)
     {
-
         MsgCell cell;
 
         pthread_mutex_lock(&mutex);
@@ -93,7 +92,6 @@ cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
 	return point;
 }
 
-/* mouse event handler function */
 void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
 {
     if( event != cv::EVENT_LBUTTONDOWN )
@@ -128,7 +126,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
 	// convert grayscale image to binary image, using 155 threshold value to 
 	// isolate white-colored board
-	cv::threshold(img_gray, img_binary, 150, 255, cv::THRESH_BINARY);
+	cv::threshold(img_gray, img_binary, 140, 255, cv::THRESH_BINARY);
 
 	// a contour is an array of x-y coordinates describing the boundaries of an object
 	vector<vector<cv::Point> > contours;
@@ -281,7 +279,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 int main(int argc, char ** argv)
 {
 	ros::init(argc, argv, "cells_definition_auto");
-    ros::NodeHandle n;
+    // ros::NodeHandle n;
 	cellsDefinition cd;
 
 	ros::spin();

@@ -11,7 +11,7 @@
     <node name="baxtertrajectorycontroller" pkg="baxter_interface" type="joint_trajectory_action_server.py" required="true" output="screen"/>
 
 <!--    <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>-->
-    <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/> 
+<!--     <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>  -->
 
     <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
     <param name="voice" type="str" value="voice_kal_diphone" /> <!-- A robotic voice -->
