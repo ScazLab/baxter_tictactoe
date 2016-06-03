@@ -42,9 +42,12 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     cv::namedWindow("[Arm Controller] hand camera", cv::WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
-    CENTER_X = 0.685298787334;
-    CENTER_Y = 0.125732369738;
-    CELL_SIDE = 0.1;
+    CENTER_X = 0.655298787334;
+
+    CENTER_Y = 0.205732369738; // for cell 1
+
+    // CENTER_Y = 0.125732369738;
+    CELL_SIDE = 0.15;
     IR_RANGE_THRESHOLD = 0.085;
     curr_range = 0;
     curr_max_range = 0;
@@ -102,7 +105,7 @@ void ArmController::pickUpToken()
 
 void ArmController::placeToken(int cell_num)
 {
-    hoverAboveBoard();
+    // hoverAboveBoard();
     releaseToken(cell_num);
     hoverAboveBoard();
 }
@@ -161,7 +164,7 @@ void ArmController::hoverAboveTokens()
 
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
-    req_pose_stamped.pose.position.y = 0.603732369738;
+    req_pose_stamped.pose.position.y = 0.683732369738;
 
     req_pose_stamped.pose.position.z = 0.13621169853;
     // req_pose_stamped.pose.position.z = -0.13021169853;
@@ -182,7 +185,7 @@ void ArmController::gripToken()
 {
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
-    req_pose_stamped.pose.position.y = 0.603732369738;
+    req_pose_stamped.pose.position.y = 0.683732369738;
 
     req_pose_stamped.pose.position.z = -0.10501169853;
     // -0.13... ~= 3 tokens
@@ -218,13 +221,27 @@ void ArmController::hoverAboveBoard()
 
 void ArmController::releaseToken(int cell_num)
 {
+
+    /*
+    position: 
+    x: 0.801041916535
+    y: -0.00678896893406
+    z: -0.118683937789
+    orientation: 
+    x: -0.486730253461
+    y: 0.873332034238
+    z: 0.0149266804118
+    w: 0.0127284151335
+
+*/
     if((cell_num - 1) / 3 == 0) req_pose_stamped.pose.position.x = CENTER_X + CELL_SIDE;
     if((cell_num - 1) / 3 == 1) req_pose_stamped.pose.position.x = CENTER_X;
     if((cell_num - 1) / 3 == 2) req_pose_stamped.pose.position.x = CENTER_X - CELL_SIDE;
-    if(cell_num % 3 == 0) req_pose_stamped.pose.position.y = CENTER_Y + CELL_SIDE;
-    if(cell_num % 3 == 1) req_pose_stamped.pose.position.y = CENTER_Y - CELL_SIDE;
+    if(cell_num % 3 == 0) req_pose_stamped.pose.position.y = CENTER_Y - CELL_SIDE;
+    if(cell_num % 3 == 1) req_pose_stamped.pose.position.y = CENTER_Y + CELL_SIDE;
     if(cell_num % 3 == 2) req_pose_stamped.pose.position.y = CENTER_Y;
 
+    // req_pose_stamped.pose.position.z = -0.05501169853;
     req_pose_stamped.pose.position.z = -0.13501169853;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
@@ -336,13 +353,16 @@ bool ArmController::hasPoseCompleted()
 {
     bool samePose = true;
 
-    if(!withinOneHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x, "curr_pose.position.x", "req_pose_stamped.pose.position.x")) samePose = false; 
-    if(!withinOneHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y, "curr_pose.position.y", "req_pose_stamped.pose.position.y")) samePose = false;
-    if(!withinOneHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z, "curr_pose.position.z", "req_pose_stamped.pose.position.z")) samePose = false;
-    if(!withinOneHundreth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, "curr_pose.orientation.x", "req_pose_stamped.pose.orientation.x")) samePose = false;
-    if(!withinOneHundreth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, "curr_pose.orientation.y", "req_pose_stamped.pose.orientation.y")) samePose = false;
-    if(!withinOneHundreth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, "curr_pose.orientation.z", "req_pose_stamped.pose.orientation.z")) samePose = false;
-    if(!withinOneHundreth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, "curr_pose.orientation.w", "req_pose_stamped.pose.orientation.w")) samePose = false;
+    int samePosition = 3;
+    if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) samePosition--; 
+    if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) samePosition--;
+    if(!withinOneHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) samePosition--;
+    if(samePosition < 2) samePose = false;
+
+    if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) samePose = false;
+    if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) samePose = false;
+    if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) samePose = false;
+    if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) samePose = false;
 
     return samePose;    
 }
@@ -360,22 +380,18 @@ bool ArmController::hasCollided()
     }
 }
 
-bool ArmController::withinOneHundreth(float x, float y, string curr, string req)
+bool ArmController::withinOneHundreth(float x, float y)
 {
-    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << x << " " << req << " : " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << xTwoDP << " " << req << " : " << yTwoDP << endl);
     return abs(xTwoDP - yTwoDP) <= 0.01 ? true : false;    
 }
 
 
-bool ArmController::equalTwoDP(float x, float y, string curr, string req) 
+bool ArmController::equalTwoDP(float x, float y) 
 {
-    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << x << " " << req << " : " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << xTwoDP << " " << req << " : " << yTwoDP << endl);
     return xTwoDP == yTwoDP ? true : false;
 }
 
@@ -385,8 +401,12 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "arm_controller");
     ArmController acl("left");
     acl.moveToRest();
-    acl.pickUpToken();
-    acl.placeToken(5);
+    for(int i = 1; i <= 9; i++)
+    {
+        acl.pickUpToken();
+        acl.placeToken(i);       
+    }
+
     ros::spin();
     return 0;
 }
