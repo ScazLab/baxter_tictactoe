@@ -336,13 +336,13 @@ bool ArmController::hasPoseCompleted()
 {
     bool samePose = true;
 
-    if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) samePose = false; 
-    if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) samePose = false;
-    if(!equalTwoDP(curr_pose.position.z, req_pose_stamped.pose.position.z)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) samePose = false;
+    if(!withinOneHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x, "curr_pose.position.x", "req_pose_stamped.pose.position.x")) samePose = false; 
+    if(!withinOneHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y, "curr_pose.position.y", "req_pose_stamped.pose.position.y")) samePose = false;
+    if(!withinOneHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z, "curr_pose.position.z", "req_pose_stamped.pose.position.z")) samePose = false;
+    if(!withinOneHundreth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, "curr_pose.orientation.x", "req_pose_stamped.pose.orientation.x")) samePose = false;
+    if(!withinOneHundreth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, "curr_pose.orientation.y", "req_pose_stamped.pose.orientation.y")) samePose = false;
+    if(!withinOneHundreth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, "curr_pose.orientation.z", "req_pose_stamped.pose.orientation.z")) samePose = false;
+    if(!withinOneHundreth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, "curr_pose.orientation.w", "req_pose_stamped.pose.orientation.w")) samePose = false;
 
     return samePose;    
 }
@@ -360,11 +360,22 @@ bool ArmController::hasCollided()
     }
 }
 
-bool ArmController::equalTwoDP(float x, float y) 
+bool ArmController::withinOneHundreth(float x, float y, string curr, string req)
 {
-    // ROS_DEBUG_STREAM(cout << "[Arm Controller] curr_pose: " << x << "req_pose_stamped: " << y << endl);
+    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << x << " " << req << " : " << y << endl);
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << xTwoDP << " " << req << " : " << yTwoDP << endl);
+    return abs(xTwoDP - yTwoDP) <= 0.01 ? true : false;    
+}
+
+
+bool ArmController::equalTwoDP(float x, float y, string curr, string req) 
+{
+    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << x << " " << req << " : " << y << endl);
+    float xTwoDP = roundf(x * 100) / 100;
+    float yTwoDP = roundf(y * 100) / 100;
+    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << curr << " : " << xTwoDP << " " << req << " : " << yTwoDP << endl);
     return xTwoDP == yTwoDP ? true : false;
 }
 
@@ -382,33 +393,29 @@ int main(int argc, char **argv)
 
 /*
 
-[DEBUG] [1464888840.333485258]: 0x6575c8[Arm Controller] joints[]
-  joints[0]: 
-    header: 
-      seq: 0
-      stamp: 0.000000000
-      frame_id: 
-    name[]
-    position[]
-    velocity[]
-    effort[]
-isValid[]
-  isValid[0]: 0
-result_type[]
-  result_type[0]: 0
+curr_pose.position.x : 0.685384 req_pose_stamped.pose.position.x : 0.685299
+curr_pose.position.x : 0.69 req_pose_stamped.pose.position.x : 0.69
+curr_pose.position.y : 0.125796 req_pose_stamped.pose.position.y : 0.125732
+curr_pose.position.y : 0.13 req_pose_stamped.pose.position.y : 0.13
+curr_pose.position.z : -0.133551 req_pose_stamped.pose.position.z : -0.135012
 
-[DEBUG] [1464888843.480391118]: 0x6575c8[Arm Controller] joints[]
-  joints[0]: 
-    header: 
-      seq: 0
-      stamp: 0.000000000
-      frame_id: 
-    name[]
-    position[]
-    velocity[]
-    effort[]
-isValid[]
-  isValid[0]: 0
-result_type[]
-  result_type[0]: 0
+curr_pose.position.z : -0.13 req_pose_stamped.pose.position.z : -0.14
+
+curr_pose.orientation.x : 0.712918 req_pose_stamped.pose.orientation.x : 0.712802
+
+curr_pose.orientation.x : 0.71 req_pose_stamped.pose.orientation.x : 0.71
+
+curr_pose.orientation.y : -0.700854 req_pose_stamped.pose.orientation.y : -0.700942
+
+curr_pose.orientation.y : -0.7 req_pose_stamped.pose.orientation.y : -0.7
+
+curr_pose.orientation.z : -0.0123446 req_pose_stamped.pose.orientation.z : -0.0127158
+
+curr_pose.orientation.z : -0.01 req_pose_stamped.pose.orientation.z : -0.01
+
+curr_pose.orientation.w : -0.0199877 req_pose_stamped.pose.orientation.w : -0.0207931
+
+curr_pose.orientation.w : -0.02 req_pose_stamped.pose.orientation.w : -0.02
 */
+
+

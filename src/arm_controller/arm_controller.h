@@ -119,7 +119,8 @@ private:
      * @return     true if they are equal up to 2 decimal points; false otherwise
      */
 
-    bool equalTwoDP(float x, float y);
+    bool withinOneHundreth(float x, float y, std::string curr, std::string req);
+    bool equalTwoDP(float x, float y, std::string curr, std::string req);
 
     /*
      * hover the left arm above the stack of tokens
