@@ -1,7 +1,7 @@
 // correct header to use once arm_controller is migrated to /lib after testing
 // #include "arm_controller/arm_controller.h"
 
-#include "arm_controller.h"
+#include "arm_controller/arm_controller.h"
 
 using namespace baxter_core_msgs;
 using namespace geometry_msgs;
@@ -394,48 +394,3 @@ bool ArmController::equalTwoDP(float x, float y)
     float yTwoDP = roundf(y * 100) / 100;
     return xTwoDP == yTwoDP ? true : false;
 }
-
-
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "arm_controller");
-    ArmController acl("left");
-    acl.moveToRest();
-    for(int i = 1; i <= 9; i++)
-    {
-        acl.pickUpToken();
-        acl.placeToken(i);       
-    }
-
-    ros::spin();
-    return 0;
-}
-
-/*
-
-curr_pose.position.x : 0.685384 req_pose_stamped.pose.position.x : 0.685299
-curr_pose.position.x : 0.69 req_pose_stamped.pose.position.x : 0.69
-curr_pose.position.y : 0.125796 req_pose_stamped.pose.position.y : 0.125732
-curr_pose.position.y : 0.13 req_pose_stamped.pose.position.y : 0.13
-curr_pose.position.z : -0.133551 req_pose_stamped.pose.position.z : -0.135012
-
-curr_pose.position.z : -0.13 req_pose_stamped.pose.position.z : -0.14
-
-curr_pose.orientation.x : 0.712918 req_pose_stamped.pose.orientation.x : 0.712802
-
-curr_pose.orientation.x : 0.71 req_pose_stamped.pose.orientation.x : 0.71
-
-curr_pose.orientation.y : -0.700854 req_pose_stamped.pose.orientation.y : -0.700942
-
-curr_pose.orientation.y : -0.7 req_pose_stamped.pose.orientation.y : -0.7
-
-curr_pose.orientation.z : -0.0123446 req_pose_stamped.pose.orientation.z : -0.0127158
-
-curr_pose.orientation.z : -0.01 req_pose_stamped.pose.orientation.z : -0.01
-
-curr_pose.orientation.w : -0.0199877 req_pose_stamped.pose.orientation.w : -0.0207931
-
-curr_pose.orientation.w : -0.02 req_pose_stamped.pose.orientation.w : -0.02
-*/
-
-

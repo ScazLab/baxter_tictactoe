@@ -150,8 +150,7 @@ add_executable(show_board_cells                 src/show_board_cells/show_board_
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
 add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp             src/board_state_sensing/board_state_sensing.h)
-
-add_executable(arm_controller                   src/arm_controller/arm_controller.cpp                       src/arm_controller/arm_controller.h)
+add_executable(test_arm_controller              src/test_arm_controller/test_arm_controller.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -170,8 +169,7 @@ add_dependencies(show_board_cells               baxter_tictactoe_generate_messag
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp 		${${PROJECT_NAME}_EXPORTED_TARGETS} 	${catkin_EXPORTED_TARGETS})
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
-add_dependencies(arm_controller                 baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_arm_controller            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
@@ -182,15 +180,14 @@ target_link_libraries(test_vacuum_gripper               vacuum_gripper          
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper                                  ${catkin_LIBRARIES})
+target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper          arm_controller          ${catkin_LIBRARIES})
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder                  baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
-
-target_link_libraries(arm_controller                    vacuum_gripper      ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
+target_link_libraries(test_arm_controller               arm_controller      vacuum_gripper          ${OpenCV_LIBS}          ${catkin_LIBRARIES})
 
 #############
 ## Install ##

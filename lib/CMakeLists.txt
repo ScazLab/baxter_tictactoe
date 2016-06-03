@@ -17,18 +17,21 @@ add_library(vacuum_gripper        include/vacuum_gripper/vacuum_gripper.h       
 add_library(robot_state           include/robot_state/robot_state.h                             src/robot_state.cpp)
 add_library(trajectory_player     include/trajectory_player/trajectory_player.h                 src/trajectory_player.cpp)
 add_library(move_maker            include/move_maker/move_maker.h                               src/move_maker.cpp)
+add_library(arm_controller        include/arm_controller/arm_controller.h                       src/arm_controller.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp       ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(move_maker        ${catkin_EXPORTED_TARGETS})
+add_dependencies(arm_controller    ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}          ${OpenCV_LIBRARIES}    ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}               ${OpenCV_LIBRARIES}          ${catkin_LIBRARIES})
 target_link_libraries(trajectory_xml_parser  ${QT_LIBRARIES}               ${catkin_LIBRARIES})
-target_link_libraries(trajectory_player      vacuum_gripper ${catkin_LIBRARIES})
+target_link_libraries(trajectory_player      vacuum_gripper                ${catkin_LIBRARIES})
 target_link_libraries(move_maker             trajectory_player             trajectory_xml_parser)
+target_link_libraries(arm_controller         vacuum_gripper                ${catkin_LIBRARIES})
 
 ## Mark libraries for installation
 install (TARGETS ${PROJECT_NAME}
