@@ -45,6 +45,7 @@ private:
     ros::Publisher joint_cmd_pub;
     // subscribes to end-effector endpoint in order to find current pose
     ros::Subscriber endpt_sub;
+    // subscribes to left hand range in order to find current range
     ros::Subscriber ir_sub;
     // requests inverse kinematics service to find joint angles to reach desired pose
     ros::ServiceClient ik_client;
@@ -109,7 +110,26 @@ private:
 
     bool hasPoseCompleted();
 
+    /*
+     * checks if end effector has made contact with a token by checking if 
+     * the range of the infrared sensor has fallen below the threshold value
+     * 
+     * @param      N/A
+     *             
+     * @return     true if end effector has made contact; false otherwise
+     */
+
     bool hasCollided();
+
+    /*
+     * checks if two numbers rounded up to 2 decimal poitns are within 0.01 to each other 
+     * 
+     * @param      two floats x and y
+     *             
+     * @return     true if they are within 0.01; false otherwise
+     */
+
+    bool withinOneHundreth(float x, float y);
 
     /*
      * checks if two decimal numbers are equal to each other up to two decimal points
@@ -119,7 +139,6 @@ private:
      * @return     true if they are equal up to 2 decimal points; false otherwise
      */
 
-    bool withinOneHundreth(float x, float y);
     bool equalTwoDP(float x, float y);
 
     /*
@@ -131,24 +150,42 @@ private:
      */
 
     void hoverAboveTokens();
+
+    /*
+     * lower left arm and grip a token
+     * 
+     * @param      N/A
+     *             
+     * @return     N/A
+     */
+
     void gripToken();
 
+    /*
+     * hover the left arm above the center of the board
+     * 
+     * @param      N/A
+     *             
+     * @return     N/A
+     */
+
     void hoverAboveBoard();
+
+    /*
+     * release token in the specified cell
+     * 
+     * @param      an integer specifying which cell the token should
+     *             be placed in
+     *             
+     * @return     N/A
+     */
+       
     void releaseToken(int cell_num);
 
 public:
 
     ArmController(std::string limb);
     ~ArmController();
-
-    // [NOTE] Style note on naming conventions of functions: OpenCV functions follow
-    // a word1Word2 convention as opposed to word1_word2. Given that this is the case,
-    // it is better to standardize baxter_tictactoe functions to use the same naming
-    // convention.
-
-    // [NOTE] Style note on naming conventions of variables: Given the above, variables
-    // should follow a word1_word2 convention for maximum contrast
-
 
     /*
      * callback function that sets the current pose to the pose received from 
@@ -162,7 +199,7 @@ public:
     void endpointCallback(const baxter_core_msgs::EndpointState& msg);
 
     /*
-     * image callback function
+     * image callback function that displays the image stream from the hand camera 
      * 
      * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
      * 
@@ -171,9 +208,36 @@ public:
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
+    /*
+     * infrared sensor callback function that sets the current range to the range received
+     * from the left hand range state topic
+     * 
+     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * 
+     * @return     N/A
+     */
+
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
 
+    /*
+     * move to position above tokens and pick up tokens
+     * 
+     * @param      N/A
+     * 
+     * @return     N/A
+     */
+
     void pickUpToken();
+
+    /*
+     * move arm to position above specified cell and place token 
+     * 
+     * @param      an integer specifying which cell the token should
+     *             be placed in
+     * 
+     * @return     N/A
+     */
+
     void placeToken(int cell_num);
 
     /*
@@ -185,5 +249,4 @@ public:
      */
 
     void moveToRest();
-
 };

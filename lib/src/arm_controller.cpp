@@ -1,6 +1,3 @@
-// correct header to use once arm_controller is migrated to /lib after testing
-// #include "arm_controller/arm_controller.h"
-
 #include "arm_controller/arm_controller.h"
 
 using namespace baxter_core_msgs;
@@ -21,7 +18,6 @@ using namespace ttt;
 
 ArmController::ArmController(string limb): img_trp(n), limb(limb)
 {
-
     if(limb != "left" && limb != "right"){
         ROS_ERROR("[Arm Controller] Invalid limb. Acceptable values are: right / left");
         ros::shutdown();
@@ -43,10 +39,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
     NUM_JOINTS = 7;
     CENTER_X = 0.655298787334;
+    CENTER_Y = 0.205732369738; 
 
-    CENTER_Y = 0.205732369738; // for cell 1
-
-    // CENTER_Y = 0.125732369738;
     CELL_SIDE = 0.15;
     IR_RANGE_THRESHOLD = 0.085;
     curr_range = 0;
@@ -60,6 +54,7 @@ ArmController::~ArmController() {
 
 void ArmController::endpointCallback(const EndpointState& msg)
 {
+    // update current pose
     curr_pose = msg.pose;
 }
 
@@ -81,8 +76,10 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
 void ArmController::IRCallback(const RangeConstPtr& msg)
 {
-    // ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
-    // ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
+    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+
+    // update current range
     curr_range = msg->range;
     curr_max_range = msg->max_range;
     curr_min_range = msg->min_range;
@@ -98,8 +95,7 @@ void ArmController::pickUpToken()
     {
         hoverAboveTokens();
         gripToken();
-        hoverAboveTokens();        
-        // gripper->blow();
+        hoverAboveTokens();       
     }
 }
 
@@ -111,8 +107,6 @@ void ArmController::placeToken(int cell_num)
     hoverAboveTokens();
 }
 
-// Moving from Untucked to Rest using IK solver works 1 out of 10~15 times
-// Moving from Enabled to Rest using Hardcoded Joint Angle also doesn't work; gets stuck in awkward pose
 void ArmController::moveToRest() 
 {
     vector<float> joint_angles;
@@ -154,7 +148,6 @@ void ArmController::moveToRest()
         req_pose_stamped.pose.position.y = -0.611039; 
     }
 
-    // vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles, POSE);
 }
 
@@ -162,15 +155,11 @@ void ArmController::moveToRest()
 
 void ArmController::hoverAboveTokens()
 {
-
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
     req_pose_stamped.pose.position.y = 0.683732369738;
-
     req_pose_stamped.pose.position.z = 0.13621169853;
-    // req_pose_stamped.pose.position.z = -0.13021169853;
-    // -0.13... ~= 3 tokens
-    // -0.15... ~= board
+
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
     req_pose_stamped.pose.orientation.z = -0.0127158080742;
@@ -178,8 +167,6 @@ void ArmController::hoverAboveTokens()
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles, POSE);
-
-    /* joint angles: left_e0: -2.4160197409195265, left_e1: 0.9921020745648913, left_s0: -0.0947233136519243, left_s1: 0.4571262747898533, left_w0: 2.5272333480412192, left_w1: 1.8699225804323194, left_w2: -1.5044516577186196 */
 }
 
 void ArmController::gripToken()
@@ -187,16 +174,13 @@ void ArmController::gripToken()
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
     req_pose_stamped.pose.position.y = 0.683732369738;
-
     req_pose_stamped.pose.position.z = -0.10501169853;
-    // -0.13... ~= 3 tokens
-    // -0.15... ~= board
+
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
     req_pose_stamped.pose.orientation.z = -0.0127158080742;
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
-    // ROS_ERROR("Entered grip token");
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles, COLLISION);
 }
@@ -206,11 +190,8 @@ void ArmController::hoverAboveBoard()
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = CENTER_X;
     req_pose_stamped.pose.position.y = CENTER_Y;
-
     req_pose_stamped.pose.position.z = 0.13621169853;
-    // req_pose_stamped.pose.position.z = -0.13021169853;
-    // -0.13... ~= 3 tokens
-    // -0.15... ~= board
+
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
     req_pose_stamped.pose.orientation.z = -0.0127158080742;
@@ -222,19 +203,6 @@ void ArmController::hoverAboveBoard()
 
 void ArmController::releaseToken(int cell_num)
 {
-
-    /*
-    position: 
-    x: 0.801041916535
-    y: -0.00678896893406
-    z: -0.118683937789
-    orientation: 
-    x: -0.486730253461
-    y: 0.873332034238
-    z: 0.0149266804118
-    w: 0.0127284151335
-
-*/
     if((cell_num - 1) / 3 == 0) req_pose_stamped.pose.position.x = CENTER_X + CELL_SIDE;
     if((cell_num - 1) / 3 == 1) req_pose_stamped.pose.position.x = CENTER_X;
     if((cell_num - 1) / 3 == 2) req_pose_stamped.pose.position.x = CENTER_X - CELL_SIDE;
@@ -242,7 +210,6 @@ void ArmController::releaseToken(int cell_num)
     if(cell_num % 3 == 1) req_pose_stamped.pose.position.y = CENTER_Y + CELL_SIDE;
     if(cell_num % 3 == 2) req_pose_stamped.pose.position.y = CENTER_Y;
 
-    // req_pose_stamped.pose.position.z = -0.05501169853;
     req_pose_stamped.pose.position.z = -0.13501169853;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
@@ -255,7 +222,6 @@ void ArmController::releaseToken(int cell_num)
     gripper->blow();
 }
 
-// error-check if IK solver gives all zeros?
 vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
 {
     // IK solver service
@@ -267,7 +233,6 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
     ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);   
     
-
     // if service is successfully called
     if(ik_client.call(ik_srv))
     {
@@ -281,9 +246,13 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
             joint_angles[i] = ik_srv.response.joints[0].position[i];
         }
 
+        bool allZeros = true;
         for(int i = 0; i < joint_angles.size(); i++){
+            if(joint_angles[i] == 0) allZeros = false;
             ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
         }
+        if(allZeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+
         ros::Duration(2).sleep(); 
         return joint_angles;
     }
@@ -300,7 +269,7 @@ void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
     ros::Rate loop_rate(100);
     JointCommand joint_cmd;
 
-    // command in velocity mode
+    // command in position mode
     joint_cmd.mode = JointCommand::POSITION_MODE;
 
     // command joints in the order shown in baxter_interface
