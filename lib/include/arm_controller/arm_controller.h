@@ -93,10 +93,10 @@ private:
      * 
      * @param      a vector of joint angles, in order from shoulder to wrist
      *             
-     * @return     N/A
+     * @return     true if goal is achieved within 10 seconds; false otherwise
      */
 
-    void publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
+    bool publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
 
     /*
      * checks if the arm has completed its intended move by comparing
@@ -122,14 +122,14 @@ private:
     bool hasCollided();
 
     /*
-     * checks if two numbers rounded up to 2 decimal poitns are within 0.01 to each other 
+     * checks if two numbers rounded up to 2 decimal poitns are within 0.02 to each other 
      * 
      * @param      two floats x and y
      *             
      * @return     true if they are within 0.01; false otherwise
      */
 
-    bool withinOneHundreth(float x, float y);
+    bool withinTwoHundreth(float x, float y);
 
     /*
      * checks if two decimal numbers are equal to each other up to two decimal points
@@ -156,10 +156,10 @@ private:
      * 
      * @param      N/A
      *             
-     * @return     N/A
+     * @return     true if arm succesfully gripped token; false otherwise
      */
 
-    void gripToken();
+    bool gripToken();
 
     /*
      * hover the left arm above the center of the board

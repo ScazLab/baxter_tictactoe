@@ -17,7 +17,7 @@ using namespace ttt;
 /******************* Public ************************/
 
 ArmController::ArmController(string limb): img_trp(n), limb(limb)
-{
+{ 
     if(limb != "left" && limb != "right"){
         ROS_ERROR("[Arm Controller] Invalid limb. Acceptable values are: right / left");
         ros::shutdown();
@@ -93,15 +93,24 @@ void ArmController::pickUpToken()
     }
     else if(limb == "left")
     {
-        hoverAboveTokens();
-        gripToken();
-        hoverAboveTokens();       
+        bool no_token = true;
+        while(no_token)
+        {
+            hoverAboveTokens();
+            // grip token; record if arm fails successfully gripped token
+            if(gripToken()) no_token = false;
+            hoverAboveTokens();   
+            // check if arm successfully gripped token
+            // (sometimes infrared sensor falls below threshold w/o 
+            // successfully gripping token)
+            if(!hasCollided()) no_token = true;
+        }    
     }
 }
 
 void ArmController::placeToken(int cell_num)
 {
-    // hoverAboveBoard();
+    hoverAboveBoard();
     releaseToken(cell_num);
     hoverAboveBoard();
     hoverAboveTokens();
@@ -169,7 +178,7 @@ void ArmController::hoverAboveTokens()
     publishMoveCommand(joint_angles, POSE);
 }
 
-void ArmController::gripToken()
+bool ArmController::gripToken()
 {
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
@@ -182,7 +191,9 @@ void ArmController::gripToken()
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, COLLISION);
+
+    if(publishMoveCommand(joint_angles, COLLISION) == true) return true;
+    else return false;
 }
 
 void ArmController::hoverAboveBoard()
@@ -246,12 +257,12 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
             joint_angles[i] = ik_srv.response.joints[0].position[i];
         }
 
-        bool allZeros = true;
+        bool all_zeros = true;
         for(int i = 0; i < joint_angles.size(); i++){
-            if(joint_angles[i] == 0) allZeros = false;
+            if(joint_angles[i] == 0) all_zeros = false;
             ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
         }
-        if(allZeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+        if(all_zeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
 
         ros::Duration(2).sleep(); 
         return joint_angles;
@@ -264,7 +275,7 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     }
 }
 
-void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal) 
+bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal) 
 {
     ros::Rate loop_rate(100);
     JointCommand joint_cmd;
@@ -290,6 +301,9 @@ void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         joint_cmd.command[i] = joint_angles[i];
     }
 
+    // record time at which joint angles was published to arm
+    ros::Time start_time = ros::Time::now();
+
     while(ros::ok())
     {
         // ROS_DEBUG("[Arm Controller] In the loop");
@@ -302,17 +316,36 @@ void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
             if(hasPoseCompleted()) 
             {
                 ROS_DEBUG("[Arm Controller] Move completed");
-                break;
-            }              
+                return true;
+            }     
+            else {
+                // if 10 seconds has elapsed and pose has not been achieved,
+                // (pose was likely unreachable) stop publishing joint angles
+                ros::Time curr_time = ros::Time::now();
+                if((curr_time - start_time).toSec() > 10)
+                {
+                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
+                    return false;
+                } 
+                ROS_DEBUG("No collision yet");
+            }         
         }
         else if(goal == COLLISION)
         {
             if(hasCollided())
             {
                 gripper->suck();
-                break;
+                return true;
             }
             else {
+                // if 10 seconds has elapsed and pose has not been achieved,
+                // (probably no object to collide with) stop publishing joint angles
+                ros::Time curr_time = ros::Time::now();
+                if((curr_time - start_time).toSec() > 10)
+                {
+                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
+                    return false;
+                } 
                 ROS_DEBUG("No collision yet");
             }
         }
@@ -321,20 +354,18 @@ void ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
 
 bool ArmController::hasPoseCompleted()
 {
-    bool samePose = true;
+    bool same_pose = true;
 
-    int samePosition = 3;
-    if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) samePosition--; 
-    if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) samePosition--;
-    if(!withinOneHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) samePosition--;
-    if(samePosition < 2) samePose = false;
+    if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
+    if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
+    if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;
 
-    if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) samePose = false;
-    if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) samePose = false;
+    if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
+    if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
+    if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
+    if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;
 
-    return samePose;    
+    return same_pose;    
 }
 
 bool ArmController::hasCollided()
@@ -350,13 +381,12 @@ bool ArmController::hasCollided()
     }
 }
 
-bool ArmController::withinOneHundreth(float x, float y)
+bool ArmController::withinTwoHundreth(float x, float y)
 {
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
-    return abs(xTwoDP - yTwoDP) <= 0.01 ? true : false;    
+    return abs(xTwoDP - yTwoDP) <= 0.02 ? true : false;    
 }
-
 
 bool ArmController::equalTwoDP(float x, float y) 
 {
