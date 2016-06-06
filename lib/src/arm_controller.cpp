@@ -396,9 +396,11 @@ bool ArmController::hasPoseCompleted(PoseType pose)
     }
     else if(pose == LOOSE)
     {
-        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
-        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
-        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;          
+        int same_position = 3;
+        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_position--; 
+        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_position--;
+        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_position--;  
+        if(same_position < 2) same_pose = false;        
     }
 
     if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
