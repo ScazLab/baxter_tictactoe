@@ -99,21 +99,34 @@ void ArmController::pickUpToken()
             hoverAboveTokens();
             // grip token; record if arm fails successfully gripped token
             if(gripToken()) no_token = false;
+            // if(gripToken()) no_token = false;
             hoverAboveTokens();   
             // check if arm successfully gripped token
             // (sometimes infrared sensor falls below threshold w/o 
             // successfully gripping token)
-            if(!hasCollided()) no_token = true;
+            if(!hasCollided())
+            {
+                no_token = true;
+                // gripper cannot suck w/o blowing first
+                gripper->blow();   
+            } 
         }    
     }
 }
 
 void ArmController::placeToken(int cell_num)
 {
-    hoverAboveBoard();
-    releaseToken(cell_num);
-    hoverAboveBoard();
-    hoverAboveTokens();
+    if(limb == "right") 
+    {
+        ROS_ERROR("[Arm Controller] Right arm should not pick up tokens");
+    }
+    else if(limb == "left")
+    {
+        hoverAboveBoard();
+        releaseToken(cell_num);
+        hoverAboveBoard();
+        hoverAboveTokens();
+    }
 }
 
 void ArmController::moveToRest() 

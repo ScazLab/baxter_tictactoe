@@ -5,19 +5,22 @@
 
     <include file="$(find baxter_tictactoe)/launch/ttt_board_sensor.launch" />
 
+    <!-- If traj is set to true, arm movements will be controlled via a joint trajectory action server (not recommended).-->
+    <arg name="traj" default="false" />
+
     <!-- <include file="$(find sound_play)/soundplay_node.launch" /> We don't use the existing launch file because we want this node to be a must, i.e.required="true"-->
     <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 
     <node name="baxtertrajectorycontroller" pkg="baxter_interface" type="joint_trajectory_action_server.py" required="true" output="screen"/>
 
-<!--    <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>-->
-<!--     <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/>  -->
+<!--     <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories.xml /sdk/robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true"/> -->
+    <node name="ttt_move_maker_server" pkg="baxter_tictactoe" type="move_maker_server" args="$(find baxter_tictactoe)/resources/trajectories/trajectories_over_heap_safe.xml robot/limb/left/follow_joint_trajectory"  respawn="false" output="screen" required="true" if="$(arg traj)"/> 
 
     <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
     <param name="voice" type="str" value="voice_kal_diphone" /> <!-- A robotic voice -->
     <param name="cheating" type="bool" value="true" />
     <param name="smooth" type="bool" value="true" />
 
-    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
+    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" args="--traj $(arg traj)" respawn="false" output="screen" required="true"/>
 
 </launch>
