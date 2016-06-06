@@ -33,7 +33,8 @@
 
 #include "vacuum_gripper/vacuum_gripper.h"
 
-enum GoalType {POSE, COLLISION};
+enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION};
+enum PoseType {LOOSE, STRICT};
 
 class ArmController
 {
@@ -108,7 +109,7 @@ private:
      *             requested pose; false otherwise 
      */
 
-    bool hasPoseCompleted();
+    bool hasPoseCompleted(PoseType pose);
 
     /*
      * checks if end effector has made contact with a token by checking if 

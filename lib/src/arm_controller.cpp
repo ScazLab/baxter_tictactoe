@@ -170,7 +170,7 @@ void ArmController::moveToRest()
         req_pose_stamped.pose.position.y = -0.611039; 
     }
 
-    publishMoveCommand(joint_angles, POSE);
+    publishMoveCommand(joint_angles, LOOSEPOSE);
 }
 
 /******************* Private ************************/
@@ -188,7 +188,7 @@ void ArmController::hoverAboveTokens()
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, POSE);
+    publishMoveCommand(joint_angles, STRICTPOSE);
 }
 
 bool ArmController::gripToken()
@@ -222,7 +222,7 @@ void ArmController::hoverAboveBoard()
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, POSE);   
+    publishMoveCommand(joint_angles, LOOSEPOSE);   
 }
 
 void ArmController::releaseToken(int cell_num)
@@ -242,7 +242,7 @@ void ArmController::releaseToken(int cell_num)
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, POSE);   
+    publishMoveCommand(joint_angles, STRICTPOSE);   
     gripper->blow();
 }
 
@@ -324,9 +324,9 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         ros::spinOnce();
         loop_rate.sleep();
 
-        if(goal == POSE)
+        if(goal == STRICTPOSE)
         {
-            if(hasPoseCompleted()) 
+            if(hasPoseCompleted(STRICT)) 
             {
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
@@ -342,6 +342,25 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 } 
                 ROS_DEBUG("No collision yet");
             }         
+        }
+        else if(goal == LOOSEPOSE)
+        {
+            if(hasPoseCompleted(LOOSE)) 
+            {
+                ROS_DEBUG("[Arm Controller] Move completed");
+                return true;
+            }     
+            else {
+                // if 10 seconds has elapsed and pose has not been achieved,
+                // (pose was likely unreachable) stop publishing joint angles
+                ros::Time curr_time = ros::Time::now();
+                if((curr_time - start_time).toSec() > 10)
+                {
+                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
+                    return false;
+                } 
+                ROS_DEBUG("No collision yet");
+            }                  
         }
         else if(goal == COLLISION)
         {
@@ -365,13 +384,22 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
     }   
 }
 
-bool ArmController::hasPoseCompleted()
+bool ArmController::hasPoseCompleted(PoseType pose)
 {
     bool same_pose = true;
 
-    if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
-    if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
-    if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;
+    if(pose == STRICT)
+    {
+        if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
+        if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
+        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;        
+    }
+    else if(pose == LOOSE)
+    {
+        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
+        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
+        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;          
+    }
 
     if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
     if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
