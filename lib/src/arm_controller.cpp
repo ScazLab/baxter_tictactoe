@@ -16,6 +16,8 @@ using namespace ttt;
 
 /******************* Public ************************/
 
+int pose_delay = 0;
+
 ArmController::ArmController(string limb): img_trp(n), limb(limb)
 { 
     if(limb != "left" && limb != "right"){
@@ -96,11 +98,11 @@ void ArmController::pickUpToken()
         bool no_token = true;
         while(no_token)
         {
-            hoverAboveTokens();
+            hoverAboveTokens(STRICTPOSE);
             // grip token; record if arm fails successfully gripped token
             if(gripToken()) no_token = false;
             // if(gripToken()) no_token = false;
-            hoverAboveTokens();   
+            hoverAboveTokens(LOOSEPOSE);   
             // check if arm successfully gripped token
             // (sometimes infrared sensor falls below threshold w/o 
             // successfully gripping token)
@@ -125,7 +127,7 @@ void ArmController::placeToken(int cell_num)
         hoverAboveBoard();
         releaseToken(cell_num);
         hoverAboveBoard();
-        hoverAboveTokens();
+        // hoverAboveTokens();
     }
 }
 
@@ -175,20 +177,22 @@ void ArmController::moveToRest()
 
 /******************* Private ************************/
 
-void ArmController::hoverAboveTokens()
+void ArmController::hoverAboveTokens(GoalType goal)
 {
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
     req_pose_stamped.pose.position.y = 0.683732369738;
-    req_pose_stamped.pose.position.z = 0.13621169853;
+    req_pose_stamped.pose.position.z = 0.15621169853;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
     req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    // req_pose_stamped.pose.orientation.z = -0.0127158080742;
     req_pose_stamped.pose.orientation.w = -0.0207931175453;
+    // req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
-    publishMoveCommand(joint_angles, STRICTPOSE);
+    publishMoveCommand(joint_angles, goal);
 }
 
 bool ArmController::gripToken()
@@ -324,6 +328,7 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         ros::spinOnce();
         loop_rate.sleep();
 
+
         if(goal == STRICTPOSE)
         {
             if(hasPoseCompleted(STRICT)) 
@@ -335,9 +340,9 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 // if 10 seconds has elapsed and pose has not been achieved,
                 // (pose was likely unreachable) stop publishing joint angles
                 ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 10)
+                if((curr_time - start_time).toSec() > 8)
                 {
-                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
+                    ROS_ERROR("8 seconds have elapsed. No collision has occured.");
                     return false;
                 } 
                 ROS_DEBUG("No collision yet");
@@ -347,6 +352,8 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         {
             if(hasPoseCompleted(LOOSE)) 
             {
+                ROS_INFO("pose delay %d", pose_delay);
+                pose_delay = 0;
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
             }     
@@ -354,9 +361,9 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 // if 10 seconds has elapsed and pose has not been achieved,
                 // (pose was likely unreachable) stop publishing joint angles
                 ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 10)
+                if((curr_time - start_time).toSec() > 8)
                 {
-                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
+                    ROS_ERROR("8 seconds have elapsed. No collision has occured.");
                     return false;
                 } 
                 ROS_DEBUG("No collision yet");
@@ -388,25 +395,47 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 {
     bool same_pose = true;
 
+    ROS_INFO("Checking if pose has been completed. Strategy: %s",pose==STRICT?"strict":"loose");
+
     if(pose == STRICT)
     {
-        if(!equalTwoDP(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
-        if(!equalTwoDP(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
+        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
+        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
         if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;        
     }
     else if(pose == LOOSE)
     {
-        int same_position = 3;
-        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_position--; 
-        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_position--;
-        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_position--;  
-        if(same_position < 2) same_pose = false;        
+        if(!withinFourHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false;  
+        if(!withinFourHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;  
+        if(!withinFourHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;              
     }
 
-    if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
-    if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
-    if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
-    if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;
+    if (same_pose == true)
+    {
+        pose_delay++;
+        ROS_INFO("pose delay: %d", pose_delay);
+        ROS_INFO("Position is ok!");
+        ROS_INFO_STREAM(cout << curr_pose << endl);
+        ROS_INFO_STREAM(cout << req_pose_stamped.pose << endl);
+    }
+
+    if(pose == STRICT)
+    {
+        if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
+        if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
+        if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
+        if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;
+    }
+    else if(pose == LOOSE)
+    {
+        if(!withinFourHundreth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
+        if(!withinFourHundreth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
+        if(!withinFourHundreth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
+        if(!withinFourHundreth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;   
+    }
+
+
+    if (same_pose == true) ROS_INFO("Position and orientation are ok!");
 
     return same_pose;    
 }
@@ -426,14 +455,42 @@ bool ArmController::hasCollided()
 
 bool ArmController::withinTwoHundreth(float x, float y)
 {
-    float xTwoDP = roundf(x * 100) / 100;
-    float yTwoDP = roundf(y * 100) / 100;
-    return abs(xTwoDP - yTwoDP) <= 0.02 ? true : false;    
+    float diff = abs(x - y);
+    float diffTwoDP = roundf(diff * 100) / 100;
+    return diffTwoDP <= 0.02 ? true : false;    
+}
+
+bool ArmController::withinThreeHundreth(float x, float y)
+{
+    float diff = abs(x - y);
+    float diffTwoDP = roundf(diff * 100) / 100;
+    return diffTwoDP <= 0.03 ? true : false;    
+}
+
+bool ArmController::withinFourHundreth(float x, float y)
+{
+    float diff = abs(x - y);
+    float diffTwoDP = roundf(diff * 100) / 100;
+    return diffTwoDP <= 0.04 ? true : false;    
+}
+
+bool ArmController::withinEightHundreth(float x, float y)
+{
+    float diff = abs(x - y);
+    float diffTwoDP = roundf(diff * 100) / 100;
+    return diffTwoDP <= 0.08 ? true : false;    
 }
 
 bool ArmController::equalTwoDP(float x, float y) 
 {
     float xTwoDP = roundf(x * 100) / 100;
     float yTwoDP = roundf(y * 100) / 100;
+    return xTwoDP == yTwoDP ? true : false;
+}
+
+bool ArmController::equalOneDP(float x, float y) 
+{
+    float xTwoDP = roundf(x * 10) / 10;
+    float yTwoDP = roundf(y * 10) / 10;
     return xTwoDP == yTwoDP ? true : false;
 }

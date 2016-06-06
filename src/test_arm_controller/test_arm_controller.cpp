@@ -6,11 +6,13 @@ int main(int argc, char **argv)
 
     ArmController acl("left");
     acl.moveToRest();
+
     for(int i = 1; i <= 9; i++)
     {
         acl.pickUpToken();
         acl.placeToken(i);       
     }
+    ros::shutdown();
 
     ros::spin();
     return 0;
