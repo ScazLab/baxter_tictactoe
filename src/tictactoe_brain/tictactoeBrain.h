@@ -12,6 +12,9 @@
 #include "baxterTictactoe/T_ThreadSafe.h"
 #include <tictactoe/PlaceTokenAction.h>
 #include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/arm_controller.h"
+
+
 
 namespace ttt
 {
@@ -50,8 +53,13 @@ private:
 
     std::string _voice_type; // It determines the type of voice.
 
-    bool movement_type;   // It determines the type of movements: smooth and natural or more mechanistic and robotic.
-    bool cheating;        // It determines if the robot can cheat or not.
+    bool traj;             // traj=false -> arm movement done via inverse kinematics (ArmController)
+                           // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
+                           // traj=false preferred due to simpler and more robust implementation 
+    
+    bool movement_type;    // It determines the type of movements: smooth and natural or more mechanistic and robotic.
+    bool cheating;         // It determines if the robot can cheat or not.
+
 
     Place_Token_Client_type _move_commander; /* This is the incharge of sending the command to 
                                                 place a new token in a cell of the TTT board */
@@ -59,6 +67,9 @@ private:
     int (tictactoeBrain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that 
                                                             decides the next move. We use a pointer 
                                                             because we could have different strategies. */
+
+    ArmController * left_arm_controller;
+    ArmController * right_arm_controller;
 
     bool has_cheated;
 
@@ -134,7 +145,7 @@ private:
 
 public:
 
-    tictactoeBrain(cellState robot_color=blue, std::string strategy="random");
+    tictactoeBrain(bool traj, cellState robot_color=blue, std::string strategy="random");
 
     ~tictactoeBrain() {};
 

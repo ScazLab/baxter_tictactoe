@@ -1,3 +1,12 @@
+/*
+ * cellsDefinition
+ * ------------------------------
+ * 
+ * cellsDefinition identifies and then advertises the boundaries (contours) 
+ * of the tictactoe board and its cells
+ * 
+ */ 
+
 #ifndef CELLS_DEFINITION_AUTO_H
 #define CELLS_DEFINITION_AUTO_H
 
@@ -12,7 +21,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <boost/bind.hpp>
 
 #include <QFile>
 #include <QXmlStreamWriter>
@@ -51,16 +59,18 @@ private:
 
     pthread_mutex_t mutex;
 
-    /**bo
+    /**
      * @param      vector (i.e array) of contours, type indicating whether largest or  
      * 			   next largest area is to be found where (LARGEST = largest area, 
      * 			   NEXT_LARGEST = next largest area)
+     *                
      * @return     index of the contour with the largest area or the next largest area
      */
 	int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith);
     
     /**
      * @param      contour 
+     * 
      * @return     centroid of the contour
      */
 	cv::Point findCentroid(std::vector<cv::Point> contour);
@@ -72,11 +82,22 @@ public:
     
     /* mouse event handler function */
     static void onMouseClick( int event, int x, int y, int, void* param);
+
+    /**
+     * callback function executed whenever a new message (raw image) from the usb_cam node is received
+     * and identifies the boundaries of the tictactoe board and its cells
+     * 
+     * @param      raw image from camera
+     * 
+     * @return     N/A
+     */    
 	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
     /**
      * service that provides data on the defined contours/boundaries of the board's cells
+     * 
      * @param      request variables and response variables 
+     * 
      * @return     returns true when function is succesfully executed
      */
     bool defineCells(baxter_tictactoe::DefineCells::Request  &req, 

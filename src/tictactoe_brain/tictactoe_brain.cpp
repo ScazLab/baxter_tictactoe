@@ -5,6 +5,7 @@
 #define CHEATING_GAME_B     3
 
 using namespace ttt;
+using namespace std;
 
 int main(int argc, char** argv)
 {    
@@ -13,9 +14,27 @@ int main(int argc, char** argv)
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ttt::tictactoeBrain brain; //random strategy by default
+    // Very dirty way to process command line arguments. It seems that
+    // there is not a straightforward standard ROS way, unfortunately.
+    // (by alecive, all the fault goes to him)
+
+    // traj=false -> arm movement done via inverse kinematics (ArmController)
+    // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
+    // traj=false preferred due to simpler and more robust implementation 
+    
+    bool traj=false;
+    if (argc>1)
+    {
+        if (string(argv[1])=="--traj")
+        {
+            traj=string(argv[2])=="true"?true:false;
+        }
+    }
+
+    ttt::tictactoeBrain brain(traj); //random strategy by default
     brain.set_strategy("smart");
-    ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beggining
+    ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
+
     ROS_INFO_STREAM("[tictactoeBrain] Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 
     ROS_WARN("[tictactoeBrain] PRESS ENTER TO START WITH A NEW PARTICIPANT");

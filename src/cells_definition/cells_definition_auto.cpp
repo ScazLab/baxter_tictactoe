@@ -4,7 +4,7 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("Cell Delimitation")
+cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("[Cells_Definition_Auto] cell boundaries")
 {
     img_loaded = false;
     pthread_mutex_init(&mutex, NULL);
@@ -29,7 +29,6 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
     if(img_loaded_copy == true)
     {
-
         MsgCell cell;
 
         pthread_mutex_lock(&mutex);
@@ -57,7 +56,7 @@ int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
 	
 	if(ith != LARGEST && ith != NEXT_LARGEST)
     {
-		ROS_ERROR("[Cells_Delimitation_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
+		ROS_ERROR("[Cells_Definition_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
 	};
 
 	double largest_area = 0;
@@ -93,7 +92,6 @@ cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
 	return point;
 }
 
-/* mouse event handler function */
 void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
 {
     if( event != cv::EVENT_LBUTTONDOWN )
@@ -128,7 +126,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 	cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
 	// convert grayscale image to binary image, using 155 threshold value to 
 	// isolate white-colored board
-	cv::threshold(img_gray, img_binary, 150, 255, cv::THRESH_BINARY);
+	cv::threshold(img_gray, img_binary, 140, 255, cv::THRESH_BINARY);
 
 	// a contour is an array of x-y coordinates describing the boundaries of an object
 	vector<vector<cv::Point> > contours;
@@ -273,7 +271,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
     // }
 
     cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
-    cv::imshow(cellsDefinition::window_name, img_gray);
+    cv::imshow(cellsDefinition::window_name, board_cells);
     cv::waitKey(30);
 }
 
@@ -281,7 +279,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 int main(int argc, char ** argv)
 {
 	ros::init(argc, argv, "cells_definition_auto");
-    ros::NodeHandle n;
+    // ros::NodeHandle n;
 	cellsDefinition cd;
 
 	ros::spin();
