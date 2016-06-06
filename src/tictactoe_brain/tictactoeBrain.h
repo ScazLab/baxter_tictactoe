@@ -15,6 +15,7 @@
 #include "arm_controller/arm_controller.h"
 
 
+
 namespace ttt
 {
 
@@ -58,6 +59,7 @@ private:
     
     bool movement_type;    // It determines the type of movements: smooth and natural or more mechanistic and robotic.
     bool cheating;         // It determines if the robot can cheat or not.
+
 
     Place_Token_Client_type _move_commander; /* This is the incharge of sending the command to 
                                                 place a new token in a cell of the TTT board */

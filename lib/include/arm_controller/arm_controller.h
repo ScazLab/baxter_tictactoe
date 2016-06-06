@@ -123,7 +123,7 @@ private:
     bool hasCollided();
 
     /*
-     * checks if two numbers rounded up to 2 decimal poitns are within 0.02 to each other 
+     * checks if two numbers rounded up to 2 decimal poitns are within 0.0z (z is specified no.) to each other 
      * 
      * @param      two floats x and y
      *             
@@ -137,7 +137,7 @@ private:
 
 
     /*
-     * checks if two decimal numbers are equal to each other up to two decimal points
+     * checks if two decimal numbers are equal to each other up to the specified no. of decimal points
      * 
      * @param      two floats x and y
      *             
@@ -148,46 +148,46 @@ private:
     bool equalOneDP(float x, float y); 
 
 
-    // /*
-    //  * hover the left arm above the stack of tokens
-    //  * 
-    //  * @param      N/A
-    //  *             
-    //  * @return     N/A
-    //  */
+    /*
+     * hover the left arm above the stack of tokens
+     * 
+     * @param      N/A
+     *             
+     * @return     N/A
+     */
 
-    // void hoverAboveTokens();
+    void hoverAboveTokens();
 
-    // /*
-    //  * lower left arm and grip a token
-    //  * 
-    //  * @param      N/A
-    //  *             
-    //  * @return     true if arm succesfully gripped token; false otherwise
-    //  */
+    /*
+     * lower left arm and grip a token
+     * 
+     * @param      N/A
+     *             
+     * @return     true if arm succesfully gripped token; false otherwise
+     */
 
-    // bool gripToken();
+    bool gripToken();
 
     
-    //  * hover the left arm above the center of the board
-    //  * 
-    //  * @param      N/A
-    //  *             
-    //  * @return     N/A
+     * hover the left arm above the center of the board
+     * 
+     * @param      N/A
+     *             
+     * @return     N/A
      
 
-    // void hoverAboveBoard();
+    void hoverAboveBoard();
 
-    // /*
-    //  * release token in the specified cell
-    //  * 
-    //  * @param      an integer specifying which cell the token should
-    //  *             be placed in
-    //  *             
-    //  * @return     N/A
-    //  */
+    /*
+     * release token in the specified cell
+     * 
+     * @param      an integer specifying which cell the token should
+     *             be placed in
+     *             
+     * @return     N/A
+     */
        
-    // void releaseToken(int cell_num);
+    void releaseToken(int cell_num);
 
 public:
 
@@ -257,55 +257,4 @@ public:
 
     void moveToRest();
 
-
-
-
-
-
-// TEMP
-
-
-
-
-
-    /*
-     * hover the left arm above the stack of tokens
-     * 
-     * @param      N/A
-     *             
-     * @return     N/A
-     */
-
-    void hoverAboveTokens(GoalType goal);
-
-    /*
-     * lower left arm and grip a token
-     * 
-     * @param      N/A
-     *             
-     * @return     true if arm succesfully gripped token; false otherwise
-     */
-
-    bool gripToken();
-
-    /*
-     * hover the left arm above the center of the board
-     * 
-     * @param      N/A
-     *             
-     * @return     N/A
-     */
-
-    void hoverAboveBoard();
-
-    /*
-     * release token in the specified cell
-     * 
-     * @param      an integer specifying which cell the token should
-     *             be placed in
-     *             
-     * @return     N/A
-     */
-       
-    void releaseToken(int cell_num);
 };

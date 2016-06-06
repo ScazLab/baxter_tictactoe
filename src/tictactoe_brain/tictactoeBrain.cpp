@@ -45,14 +45,12 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
-
-//comment    
+   
     if(traj == true)
     {
         _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
         set_movement_type(movement_type);    
     }
-
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
@@ -73,14 +71,12 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
 
     has_cheated=false;
 
-//comment
     if(traj == true)
     {
         ROS_INFO("[tictactoeBrain] Waiting for TTT Move Maker action server to start.");
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
         ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");       
     }
-
 }
 
 void tictactoeBrain::new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)

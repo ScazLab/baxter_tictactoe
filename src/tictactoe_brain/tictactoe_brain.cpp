@@ -34,6 +34,7 @@ int main(int argc, char** argv)
     ttt::tictactoeBrain brain(traj); //random strategy by default
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
+
     ROS_INFO_STREAM("[tictactoeBrain] Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 
     ROS_WARN("[tictactoeBrain] PRESS ENTER TO START WITH A NEW PARTICIPANT");
