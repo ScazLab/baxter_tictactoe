@@ -199,6 +199,9 @@ public:
     ArmController(std::string limb);
     ~ArmController();
 
+
+    /*************************Callback Functions************************/
+
     /*
      * callback function that sets the current pose to the pose received from 
      * the endpoint state topic
@@ -230,6 +233,10 @@ public:
      */
 
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
+
+
+
+    /*************************Movement Functions************************/
 
     /*
      * move to position above tokens and pick up tokens

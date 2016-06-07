@@ -37,7 +37,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
     gripper = new Vacuum_Gripper(ttt::left);
 
-    cv::namedWindow("[Arm Controller] hand camera", cv::WINDOW_NORMAL);
+    cv::namedWindow("[Arm Controller] raw image", cv::WINDOW_NORMAL);
+    cv::namedWindow("[Arm Controller] processed image", cv::WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
     CENTER_X = 0.655298787334;
@@ -51,7 +52,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 }
 
 ArmController::~ArmController() {
-    cv::destroyWindow("[Arm Controller] hand camera");
+    cv::namedWindow("[Arm Controller] raw image");
+    cv::namedWindow("[Arm Controller] processed image");
 }
 
 void ArmController::endpointCallback(const EndpointState& msg)
@@ -72,7 +74,15 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());
     }
 
-    cv::imshow("[Arm Controller] hand camera", cv_ptr->image.clone());
+    cv::Mat img_hsv;
+    cv::Mat img_hsv_blue;
+
+    // isolate blue tokens
+    cv::cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
+    inRange(img_hsv, cv::Scalar(60, 120, 30), cv::Scalar(130, 256, 256), img_hsv_blue);
+
+    cv::imshow("[Arm Controller] raw image", cv_ptr->image.clone());
+    cv::imshow("[Arm Controller] processed image", img_hsv_blue);
     cv::waitKey(30);
 }
 
@@ -99,7 +109,8 @@ void ArmController::pickUpToken()
         hover above tokens
         while(no collision)
             find centroid of image
-            find contour of token
+            find 4 contours of token
+            reconstruct contours into approx. square shape  
             find centroid of token
             find area of token
             
@@ -196,8 +207,8 @@ void ArmController::hoverAboveTokens(GoalType goal)
 {
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = 0.540298787334;
-    req_pose_stamped.pose.position.y = 0.683732369738;
-    req_pose_stamped.pose.position.z = 0.15621169853;
+    req_pose_stamped.pose.position.y = 0.663732369738;
+    req_pose_stamped.pose.position.z = 0.35621169853;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
