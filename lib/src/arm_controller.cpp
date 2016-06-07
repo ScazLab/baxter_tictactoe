@@ -106,7 +106,7 @@ void ArmController::pickUpToken()
             // check if arm successfully gripped token
             // (sometimes infrared sensor falls below threshold w/o 
             // successfully gripping token)
-            if(!hasCollided())
+            if(!(gripper->is_gripping()))
             {
                 no_token = true;
                 // gripper cannot suck w/o blowing first
@@ -127,7 +127,7 @@ void ArmController::placeToken(int cell_num)
         hoverAboveBoard();
         releaseToken(cell_num);
         hoverAboveBoard();
-        // hoverAboveTokens();
+        hoverAboveTokens(STRICTPOSE);
     }
 }
 

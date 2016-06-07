@@ -80,9 +80,9 @@ private:
      * and uses Baxter's built-in inverse kinematics solver to produce the joint angles
      * at which the right/left joints must have to reach that position and orientation
      * 
-     * @param      a PoseStamped specifying the desired end position and orientation,
+     * param      a PoseStamped specifying the desired end position and orientation,
      *             
-     * @return     a vector of joint angles the right/left arm joints should have to reach the desired
+     * return     a vector of joint angles the right/left arm joints should have to reach the desired
      *             position/orientation, in order from shoulder to wrist
      */
 
@@ -92,9 +92,9 @@ private:
      * takes in an array of joint angles and commands the joints to take on the
      * angles specified, moving the arm's position/orientation in the process
      * 
-     * @param      a vector of joint angles, in order from shoulder to wrist
+     * param      a vector of joint angles, in order from shoulder to wrist
      *             
-     * @return     true if goal is achieved within 10 seconds; false otherwise
+     * return     true if goal is achieved within 10 seconds; false otherwise
      */
 
     bool publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
@@ -103,9 +103,9 @@ private:
      * checks if the arm has completed its intended move by comparing
      * the requested pose and the current pose
      * 
-     * @param      N/A
+     * param      N/A
      *             
-     * @return     true if the parameters of the current pose is equal to the 
+     * return     true if the parameters of the current pose is equal to the 
      *             requested pose; false otherwise 
      */
 
@@ -115,9 +115,9 @@ private:
      * checks if end effector has made contact with a token by checking if 
      * the range of the infrared sensor has fallen below the threshold value
      * 
-     * @param      N/A
+     * param      N/A
      *             
-     * @return     true if end effector has made contact; false otherwise
+     * return     true if end effector has made contact; false otherwise
      */
 
     bool hasCollided();
@@ -125,9 +125,9 @@ private:
     /*
      * checks if two numbers rounded up to 2 decimal poitns are within 0.0z (z is specified no.) to each other 
      * 
-     * @param      two floats x and y
+     * param      two floats x and y
      *             
-     * @return     true if they are within 0.01; false otherwise
+     * return     true if they are within 0.01; false otherwise
      */
 
     bool withinTwoHundreth(float x, float y);
@@ -139,9 +139,9 @@ private:
     /*
      * checks if two decimal numbers are equal to each other up to the specified no. of decimal points
      * 
-     * @param      two floats x and y
+     * param      two floats x and y
      *             
-     * @return     true if they are equal up to 2 decimal points; false otherwise
+     * return     true if they are equal up to 2 decimal points; false otherwise
      */
 
     bool equalTwoDP(float x, float y);
@@ -151,40 +151,40 @@ private:
     /*
      * hover the left arm above the stack of tokens
      * 
-     * @param      N/A
+     * param      N/A
      *             
-     * @return     N/A
+     * return     N/A
      */
 
-    void hoverAboveTokens();
+    void hoverAboveTokens(GoalType goal);
 
     /*
      * lower left arm and grip a token
      * 
-     * @param      N/A
+     * param      N/A
      *             
-     * @return     true if arm succesfully gripped token; false otherwise
+     * return     true if arm succesfully gripped token; false otherwise
      */
 
     bool gripToken();
 
-    
+    /*
      * hover the left arm above the center of the board
      * 
-     * @param      N/A
+     * param      N/A
      *             
-     * @return     N/A
-     
+     * return     N/A
+     */
 
     void hoverAboveBoard();
 
     /*
      * release token in the specified cell
      * 
-     * @param      an integer specifying which cell the token should
+     * param      an integer specifying which cell the token should
      *             be placed in
      *             
-     * @return     N/A
+     * return     N/A
      */
        
     void releaseToken(int cell_num);
@@ -198,9 +198,9 @@ public:
      * callback function that sets the current pose to the pose received from 
      * the endpoint state topic
      * 
-     * @param      N/A
+     * param      N/A
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void endpointCallback(const baxter_core_msgs::EndpointState& msg);
@@ -208,9 +208,9 @@ public:
     /*
      * image callback function that displays the image stream from the hand camera 
      * 
-     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
@@ -219,9 +219,9 @@ public:
      * infrared sensor callback function that sets the current range to the range received
      * from the left hand range state topic
      * 
-     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
@@ -229,9 +229,9 @@ public:
     /*
      * move to position above tokens and pick up tokens
      * 
-     * @param      N/A
+     * param      N/A
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void pickUpToken();
@@ -239,10 +239,10 @@ public:
     /*
      * move arm to position above specified cell and place token 
      * 
-     * @param      an integer specifying which cell the token should
+     * param      an integer specifying which cell the token should
      *             be placed in
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void placeToken(int cell_num);
@@ -250,9 +250,9 @@ public:
     /*
      * moves the arm to a rest position when not performing a move
      * 
-     * @param      N/A
+     * param      N/A
      * 
-     * @return     N/A
+     * return     N/A
      */
 
     void moveToRest();
