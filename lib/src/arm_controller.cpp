@@ -95,24 +95,39 @@ void ArmController::pickUpToken()
     }
     else if(limb == "left")
     {
-        bool no_token = true;
-        while(no_token)
-        {
-            hoverAboveTokens(STRICTPOSE);
-            // grip token; record if arm fails successfully gripped token
-            if(gripToken()) no_token = false;
-            // if(gripToken()) no_token = false;
-            hoverAboveTokens(LOOSEPOSE);   
-            // check if arm successfully gripped token
-            // (sometimes infrared sensor falls below threshold w/o 
-            // successfully gripping token)
-            if(!(gripper->is_gripping()))
-            {
-                no_token = true;
-                // gripper cannot suck w/o blowing first
-                gripper->blow();   
-            } 
-        }    
+        /*
+        hover above tokens
+        while(no collision)
+            find centroid of image
+            find contour of token
+            find centroid of token
+            find area of token
+            
+            move token down (offset x, offset y, predefined z)
+             where x = (image centroid x - token centroid x) * k
+             where k is inversely proportional to token area, vice versa for y 
+        */
+
+        hoverAboveTokens(STRICTPOSE);
+
+        // bool no_token = true;
+        // while(no_token)
+        // {
+        //     hoverAboveTokens(STRICTPOSE);
+        //     // grip token; record if arm fails successfully gripped token
+        //     if(gripToken()) no_token = false;
+        //     // if(gripToken()) no_token = false;
+        //     hoverAboveTokens(LOOSEPOSE);   
+        //     // check if arm successfully gripped token
+        //     // (sometimes infrared sensor falls below threshold w/o 
+        //     // successfully gripping token)
+        //     if(!(gripper->is_gripping()))
+        //     {
+        //         no_token = true;
+        //         // gripper cannot suck w/o blowing first
+        //         gripper->blow();   
+        //     } 
+        // }    
     }
 }
 
@@ -340,9 +355,9 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 // if 10 seconds has elapsed and pose has not been achieved,
                 // (pose was likely unreachable) stop publishing joint angles
                 ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 8)
+                if((curr_time - start_time).toSec() > 10)
                 {
-                    ROS_ERROR("8 seconds have elapsed. No collision has occured.");
+                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
                     return false;
                 } 
                 ROS_DEBUG("No collision yet");
@@ -399,15 +414,15 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 
     if(pose == STRICT)
     {
-        if(!withinTwoHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false; 
-        if(!withinTwoHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;
-        if(!withinTwoHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;        
+        if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
+        if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
+        if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 2)) same_pose = false;        
     }
     else if(pose == LOOSE)
     {
-        if(!withinFourHundreth(curr_pose.position.x, req_pose_stamped.pose.position.x)) same_pose = false;  
-        if(!withinFourHundreth(curr_pose.position.y, req_pose_stamped.pose.position.y)) same_pose = false;  
-        if(!withinFourHundreth(curr_pose.position.z, req_pose_stamped.pose.position.z)) same_pose = false;              
+        if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 4)) same_pose = false;  
+        if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 4)) same_pose = false;  
+        if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 4)) same_pose = false;              
     }
 
     if (same_pose == true)
@@ -421,17 +436,17 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 
     if(pose == STRICT)
     {
-        if(!equalTwoDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
-        if(!equalTwoDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
-        if(!equalTwoDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
-        if(!equalTwoDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 2)) same_pose = false;
     }
     else if(pose == LOOSE)
     {
-        if(!withinFourHundreth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x)) same_pose = false;
-        if(!withinFourHundreth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y)) same_pose = false;
-        if(!withinFourHundreth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z)) same_pose = false;
-        if(!withinFourHundreth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w)) same_pose = false;   
+        if(!withinXHundredth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 4)) same_pose = false;
+        if(!withinXHundredth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 4)) same_pose = false;
+        if(!withinXHundredth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 4)) same_pose = false;
+        if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;   
     }
 
 
@@ -453,44 +468,16 @@ bool ArmController::hasCollided()
     }
 }
 
-bool ArmController::withinTwoHundreth(float x, float y)
+bool ArmController::withinXHundredth(float x, float y, float z)
 {
     float diff = abs(x - y);
     float diffTwoDP = roundf(diff * 100) / 100;
-    return diffTwoDP <= 0.02 ? true : false;    
+    return diffTwoDP <= (0.01 * z) ? true : false;
 }
 
-bool ArmController::withinThreeHundreth(float x, float y)
+bool ArmController::equalXDP(float x, float y, float z)
 {
-    float diff = abs(x - y);
-    float diffTwoDP = roundf(diff * 100) / 100;
-    return diffTwoDP <= 0.03 ? true : false;    
-}
-
-bool ArmController::withinFourHundreth(float x, float y)
-{
-    float diff = abs(x - y);
-    float diffTwoDP = roundf(diff * 100) / 100;
-    return diffTwoDP <= 0.04 ? true : false;    
-}
-
-bool ArmController::withinEightHundreth(float x, float y)
-{
-    float diff = abs(x - y);
-    float diffTwoDP = roundf(diff * 100) / 100;
-    return diffTwoDP <= 0.08 ? true : false;    
-}
-
-bool ArmController::equalTwoDP(float x, float y) 
-{
-    float xTwoDP = roundf(x * 100) / 100;
-    float yTwoDP = roundf(y * 100) / 100;
-    return xTwoDP == yTwoDP ? true : false;
-}
-
-bool ArmController::equalOneDP(float x, float y) 
-{
-    float xTwoDP = roundf(x * 10) / 10;
-    float yTwoDP = roundf(y * 10) / 10;
-    return xTwoDP == yTwoDP ? true : false;
+    float xTwoDP = roundf(x * (10 * z)) / (10 * z);
+    float yTwoDP = roundf(y * (10 * z)) / (10 * z);
+    return xTwoDP == yTwoDP ? true : false;    
 }

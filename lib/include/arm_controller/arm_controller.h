@@ -30,7 +30,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <sensor_msgs/Range.h>
-
+// baxter_tictactoe libraries
 #include "vacuum_gripper/vacuum_gripper.h"
 
 enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION};
@@ -75,6 +75,8 @@ private:
     double CELL_SIDE;
     float IR_RANGE_THRESHOLD;
 
+    /*************************Location Control Functions************************/
+
     /*
      * takes in a position and orientation that the user wants the arm to be in,
      * and uses Baxter's built-in inverse kinematics solver to produce the joint angles
@@ -98,6 +100,10 @@ private:
      */
 
     bool publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
+
+
+
+    /*************************Checking Functions************************/
 
     /*
      * checks if the arm has completed its intended move by comparing
@@ -125,28 +131,27 @@ private:
     /*
      * checks if two numbers rounded up to 2 decimal poitns are within 0.0z (z is specified no.) to each other 
      * 
-     * param      two floats x and y
+     * param      two floats x and y specifying the numbers to be checked,
+     *            and a float z determining the desired accuracy
      *             
      * return     true if they are within 0.01; false otherwise
      */
 
-    bool withinTwoHundreth(float x, float y);
-    bool withinThreeHundreth(float x, float y);
-    bool withinFourHundreth(float x, float y);
-    bool withinEightHundreth(float x, float y);
-
+    bool withinXHundredth(float x, float y, float z);
 
     /*
-     * checks if two decimal numbers are equal to each other up to the specified no. of decimal points
+     * checks if two decimal numbers are equal to each other up to z of decimal points
      * 
-     * param      two floats x and y
+     * param      two floats x and y, and a float z specifying the desired accuracy
      *             
      * return     true if they are equal up to 2 decimal points; false otherwise
      */
 
-    bool equalTwoDP(float x, float y);
-    bool equalOneDP(float x, float y); 
+    bool equalXDP(float x, float y, float z);
 
+
+
+    /*************************Movement Functions************************/
 
     /*
      * hover the left arm above the stack of tokens
