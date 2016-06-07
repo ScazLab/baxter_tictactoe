@@ -5,6 +5,7 @@ using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace std;
 using namespace ttt;
+using namespace cv;
 
 /*
     TASKS:
@@ -37,8 +38,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     ik_client = n.serviceClient<SolvePositionIK>("/ExternalTools/" + limb + "/PositionKinematicsNode/IKService");
     gripper = new Vacuum_Gripper(ttt::left);
 
-    cv::namedWindow("[Arm Controller] raw image", cv::WINDOW_NORMAL);
-    cv::namedWindow("[Arm Controller] processed image", cv::WINDOW_NORMAL);
+    namedWindow("[Arm Controller] raw image", WINDOW_NORMAL);
+    namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
     CENTER_X = 0.655298787334;
@@ -52,8 +53,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 }
 
 ArmController::~ArmController() {
-    cv::namedWindow("[Arm Controller] raw image");
-    cv::namedWindow("[Arm Controller] processed image");
+    namedWindow("[Arm Controller] raw image");
+    namedWindow("[Arm Controller] processed image");
 }
 
 void ArmController::endpointCallback(const EndpointState& msg)
@@ -74,17 +75,17 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());
     }
 
-    cv::Mat img_hsv;
-    cv::Mat img_hsv_blue;
+    Mat img_hsv;
+    Mat img_hsv_blue;
 
     // removes non-blue elements of image 
-    cv::cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
-    inRange(img_hsv, cv::Scalar(60,120,30), cv::Scalar(130,256,256), img_hsv_blue);
+    cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
+    inRange(img_hsv, Scalar(60,120,30), Scalar(130,256,256), img_hsv_blue);
 
     // find contours of blue elements in image
     vector<vector<cv::Point> > contours;
     vector<vector<cv::Point> > token_contours;
-    cv::findContours(img_hsv_blue, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    findContours(img_hsv_blue, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
     int largest_index = 0;
     int largest_area = 0;
@@ -92,8 +93,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     // removes 'noise' elements (all approx. have size < 150)
     for(int i = 0; i < contours.size(); i++)
     {
-        // ROS_DEBUG("Area: %0.5f", cv::contourArea(contours[i]));
-        if(cv::contourArea(contours[i]) > 175)
+        // ROS_DEBUG("Area: %0.5f", contourArea(contours[i]));
+        if(contourArea(contours[i]) > 175)
         {
             token_contours.push_back(contours[i]);
         }
@@ -136,25 +137,33 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         }
     }
 
-    cv::Mat img_token_rough = cv::Mat::zeros(img_hsv_blue.size(), CV_8UC1);
-    cv::Mat img_token = cv::Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    Mat img_token_rough = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    Mat img_token = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
 
     // draw 'blue triangles' portion of token
     for(int i = 0; i < token_contours.size(); i++)
     {
-        cv::drawContours(img_token_rough, token_contours, i, cv::Scalar(255,255,255), CV_FILLED);
+        drawContours(img_token_rough, token_contours, i, Scalar(255,255,255), CV_FILLED);
     }
 
+    // if 'noise' contours are present, do nothing
+    if(token_contours.size() != 4) return;
+    
     // reconstruct token's square shape
-    cv::Rect token(x_least, y_least, y_most - y_least, y_most - y_least);
-    cv::rectangle(img_token, token, cv::Scalar(255,255,255), CV_FILLED);
+    Rect token(x_least, y_least, y_most - y_least, y_most - y_least);
+    rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
+
+    // find and draw the center of the token and the image
+    float x_mid = x_least + ((x_most - x_least) / 2);
+    float y_mid = y_least + ((y_most - y_least) / 2);
+    circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+    circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
     // ros::Duration(2).sleep();
-    cv::imshow("[Arm Controller] raw image", cv_ptr->image.clone());
-    cv::imshow("[Arm Controller] processed image", img_token);
+    imshow("[Arm Controller] raw image", cv_ptr->image.clone());
+    imshow("[Arm Controller] processed image", img_token);
 
-
-    cv::waitKey(30);
+    waitKey(30);
 }
 
 void ArmController::IRCallback(const RangeConstPtr& msg)
@@ -166,6 +175,14 @@ void ArmController::IRCallback(const RangeConstPtr& msg)
     curr_range = msg->range;
     curr_max_range = msg->max_range;
     curr_min_range = msg->min_range;
+}
+
+cv::Point ArmController::findCentroid(vector<cv::Point> contour)
+{
+    double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
+    double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
+    cv::Point point(x,y);
+    return point;
 }
 
 void ArmController::pickUpToken()

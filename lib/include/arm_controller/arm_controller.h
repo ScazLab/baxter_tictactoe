@@ -194,6 +194,10 @@ private:
        
     void releaseToken(int cell_num);
 
+
+    /*************************Visual Servoing Functions************************/
+
+
 public:
 
     ArmController(std::string limb);
