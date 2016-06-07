@@ -90,11 +90,10 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     int largest_area = 0;
 
     // removes 'noise' elements (all approx. have size < 150)
-    cv::Mat bg = cv::Mat::zeros(img_hsv_blue.size(), CV_8UC1);
     for(int i = 0; i < contours.size(); i++)
     {
         // ROS_DEBUG("Area: %0.5f", cv::contourArea(contours[i]));
-        if(cv::contourArea(contours[i]) > 150)
+        if(cv::contourArea(contours[i]) > 175)
         {
             token_contours.push_back(contours[i]);
         }
@@ -102,34 +101,59 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     // find gripper contour (always up against upper boundary of image) and remove
     int gripper_index = 0;
-    float y_least = (token_contours[0])[0].y;
+    float gripper_y = (token_contours[0])[0].y;
 
     for(int i = 0; i < token_contours.size(); i++)
     {
         vector<cv::Point> contour = token_contours[i];
         for(int j = 0; j < contour.size(); j++)
         {
-            if(y_least > contour[j].y)
+            if(gripper_y > contour[j].y)
             {
-                // ROS_INFO("y_least: %d", contour[j].y);
-                y_least = contour[j].y;
+                gripper_y = contour[j].y;
                 gripper_index = i;
             }
         }
     }
-
     token_contours.erase(token_contours.begin() + gripper_index);
-    // ROS_INFO("token_contours.size(): %lu ", token_contours.size());
+
+    // find highest and lowest x and y values from token triangles contours
+    // to find x-y coordinate of top left token edge and token side length
+    float y_least = (token_contours[0])[0].y;
+    float x_least = (token_contours[0])[0].x;
+    float y_most = 0;
+    float x_most = 0;
 
     for(int i = 0; i < token_contours.size(); i++)
     {
-        cv::drawContours(bg, token_contours, i, cv::Scalar(255,255,255), CV_FILLED);
+        vector<cv::Point> contour = token_contours[i];
+        for(int j = 0; j < contour.size(); j++)
+        {
+            if(y_least > contour[j].y) y_least = contour[j].y;
+            if(x_least > contour[j].x) x_least = contour[j].x;
+            if(y_most < contour[j].y) y_most = contour[j].y;
+            if(x_most < contour[j].x) x_most = contour[j].x;
+        }
     }
 
-    // NEED TO CHECK IF TOKEN CONTOURS SIZE HAS 4 (SOMETIMES random contour > 150)
+    cv::Mat img_token_rough = cv::Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    cv::Mat img_token = cv::Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+
+    // draw 'blue triangles' portion of token
+    for(int i = 0; i < token_contours.size(); i++)
+    {
+        cv::drawContours(img_token_rough, token_contours, i, cv::Scalar(255,255,255), CV_FILLED);
+    }
+
+    // reconstruct token's square shape
+    cv::Rect token(x_least, y_least, y_most - y_least, y_most - y_least);
+    cv::rectangle(img_token, token, cv::Scalar(255,255,255), CV_FILLED);
+
     // ros::Duration(2).sleep();
     cv::imshow("[Arm Controller] raw image", cv_ptr->image.clone());
-    cv::imshow("[Arm Controller] processed image", bg);
+    cv::imshow("[Arm Controller] processed image", img_token);
+
+
     cv::waitKey(30);
 }
 
