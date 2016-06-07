@@ -235,7 +235,6 @@ public:
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
 
 
-
     /*************************Movement Functions************************/
 
     /*
