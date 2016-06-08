@@ -65,10 +65,14 @@ private:
     float curr_max_range;
     float curr_min_range;
 
+    float _curr_x_offset;
+    float _curr_y_offset;
+
     ttt::Vacuum_Gripper * gripper;
 
     // string indicating whether class instance is meant to control right/left limb
     std::string limb;
+    float OFFSET_CONSTANT;
     int NUM_JOINTS;
     double CENTER_X;
     double CENTER_Y;

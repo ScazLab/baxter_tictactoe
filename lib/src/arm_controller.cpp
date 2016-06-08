@@ -37,9 +37,9 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
+    OFFSET_CONSTANT = 0;
     CENTER_X = 0.655298787334;
     CENTER_Y = 0.205732369738; 
-
     CELL_SIDE = 0.15;
     IR_RANGE_THRESHOLD = 0.085;
     curr_range = 0;
@@ -90,7 +90,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     // if hand camera is not positioned above tokens, no point processing image
     if(!withinXHundredth(curr_pose.position.x, 0.540298787334, 2) || 
-       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2)) return;
+       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2) ||
+       gripper->is_gripping()) return;
 
     // removes non-blue elements of image 
     cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
@@ -123,6 +124,12 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     float y_mid = y_min + ((y_max - y_min) / 2);
     circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
     circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+
+    float token_area = (x_max - x_min) * (y_max - y_min);
+    float height_var = OFFSET_CONSTANT / token_area;
+
+    _curr_x_offset = height_var * (x_mid - (img_token.size().width / 2));
+    _curr_y_offset = height_var * (y_mid - (img_token.size().height / 2));
 
     // ros::Duration(2).sleep();
     imshow("[Arm Controller] raw image", cv_ptr->image.clone());
