@@ -37,7 +37,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
-    OFFSET_CONSTANT = 0;
+    OFFSET_CONSTANT = 0.1;
     CENTER_X = 0.655298787334;
     CENTER_Y = 0.205732369738; 
     CELL_SIDE = 0.15;
@@ -90,8 +90,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     // if hand camera is not positioned above tokens, no point processing image
     if(!withinXHundredth(curr_pose.position.x, 0.540298787334, 2) || 
-       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2) ||
-       gripper->is_gripping()) return;
+       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2)) return;
 
     // removes non-blue elements of image 
     cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
@@ -120,18 +119,21 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
 
     // find and draw the center of the token and the image
-    float x_mid = x_min + ((x_max - x_min) / 2);
-    float y_mid = y_min + ((y_max - y_min) / 2);
+    double x_mid = x_min + ((x_max - x_min) / 2);
+    double y_mid = y_min + ((y_max - y_min) / 2);
     circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
     circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
-    float token_area = (x_max - x_min) * (y_max - y_min);
-    float height_var = OFFSET_CONSTANT / token_area;
+    double token_area = (x_max - x_min) * (y_max - y_min);
+    double height_var = OFFSET_CONSTANT / token_area;
 
     _curr_x_offset = height_var * (x_mid - (img_token.size().width / 2));
     _curr_y_offset = height_var * (y_mid - (img_token.size().height / 2));
 
-    // ros::Duration(2).sleep();
+    // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
+    // ROS_INFO("token_area: %0.6f   height_var: %0.6f", token_area, height_var);
+    // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
+
     imshow("[Arm Controller] raw image", cv_ptr->image.clone());
     imshow("[Arm Controller] processed image", img_token);
 
@@ -163,6 +165,7 @@ void ArmController::pickUpToken()
         */
 
         hoverAboveTokens(STRICTPOSE);
+        // gripToken();
 
         // bool no_token = true;
         // while(no_token)
@@ -266,22 +269,74 @@ void ArmController::hoverAboveTokens(GoalType goal)
     publishMoveCommand(joint_angles, goal);
 }
 
+void ArmController::gripTest(float z_offset)
+{
+    if(z_offset > 0.5) 
+    {
+        ROS_ERROR("[Arm Controller] Offset is too large. Pick a number below 0.5");
+        return;
+    }
+
+
+    for(int i = 1; i <= 0.3 / z_offset; i++)
+    {
+        req_pose_stamped.header.frame_id = "base";
+        req_pose_stamped.pose.position.x = 0.540298787334; // + _curr_x_offset;
+        req_pose_stamped.pose.position.y = 0.663732369738; // + _curr_y_offset;
+        req_pose_stamped.pose.position.z = 0.35621169853 - z_offset * i;
+
+        req_pose_stamped.pose.orientation.x = 0.712801568376;
+        req_pose_stamped.pose.orientation.y = -0.700942136419;
+        req_pose_stamped.pose.orientation.z = -0.0127158080742;
+        // req_pose_stamped.pose.orientation.z = -0.0127158080742;
+        req_pose_stamped.pose.orientation.w = -0.0207931175453;
+        // req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+        vector<float> joint_angles = getJointAngles(req_pose_stamped);
+        // publishMoveCommand(joint_angles, STRICTPOSE);        
+        publishMoveCommand(joint_angles, LOOSEPOSE);        
+    }
+    hoverAboveTokens(STRICTPOSE);
+}
+
+
 bool ArmController::gripToken()
 {
-    req_pose_stamped.header.frame_id = "base";
-    req_pose_stamped.pose.position.x = 0.540298787334;
-    req_pose_stamped.pose.position.y = 0.683732369738;
-    req_pose_stamped.pose.position.z = -0.10501169853;
+    int loop = 0;
+    while(loop < 10)
+    {
+        req_pose_stamped.header.frame_id = "base";
+        req_pose_stamped.pose.position.x = curr_pose.position.x + _curr_x_offset;
+        req_pose_stamped.pose.position.y = curr_pose.position.y + _curr_y_offset;
+        req_pose_stamped.pose.position.z = curr_pose.position.z - 0.002000000000;
 
-    req_pose_stamped.pose.orientation.x = 0.712801568376;
-    req_pose_stamped.pose.orientation.y = -0.700942136419;
-    req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+        req_pose_stamped.pose.orientation.x = 0.712801568376;
+        req_pose_stamped.pose.orientation.y = -0.700942136419;
+        req_pose_stamped.pose.orientation.z = -0.0127158080742;
+        req_pose_stamped.pose.orientation.w = -0.0207931175453;   
 
-    vector<float> joint_angles = getJointAngles(req_pose_stamped);
+        vector<float> joint_angles = getJointAngles(req_pose_stamped);
 
-    if(publishMoveCommand(joint_angles, COLLISION) == true) return true;
-    else return false;
+        publishMoveCommand(joint_angles, STRICTPOSE);
+        ROS_INFO("Loop %d", loop);
+        loop++;
+    }
+    return true;
+
+    // req_pose_stamped.header.frame_id = "base";
+    // req_pose_stamped.pose.position.x = 0.540298787334;
+    // req_pose_stamped.pose.position.y = 0.683732369738;
+    // req_pose_stamped.pose.position.z = -0.10501169853;
+
+    // req_pose_stamped.pose.orientation.x = 0.712801568376;
+    // req_pose_stamped.pose.orientation.y = -0.700942136419;
+    // req_pose_stamped.pose.orientation.z = -0.0127158080742;
+    // req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+    // vector<float> joint_angles = getJointAngles(req_pose_stamped);
+
+    // if(publishMoveCommand(joint_angles, COLLISION) == true) return true;
+    // else return false;
 }
 
 void ArmController::hoverAboveBoard()
@@ -354,7 +409,6 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
         }
         if(all_zeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
 
-        ros::Duration(2).sleep(); 
         return joint_angles;
     }
     else 
@@ -441,11 +495,11 @@ bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time
     ros::Time curr_time = ros::Time::now();
     if((curr_time - start_time).toSec() > len)
     {
-        ROS_ERROR("%d seconds have elapsed. Goal type [%s] was not achieved", len, goal_str.c_str());
+        ROS_ERROR("[Arm Controller] %d seconds have elapsed. Goal type [%s] was not achieved", len, goal_str.c_str());
         return true;
     } 
     else {
-        ROS_DEBUG("Time limit not reached");
+        ROS_DEBUG("[Arm Controller] Time limit not reached");
         return false;  
     }
 }
@@ -469,12 +523,12 @@ bool ArmController::hasPoseCompleted(PoseType pose)
         if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 4)) same_pose = false;              
     }
 
-    if (same_pose == true)
-    {
-        ROS_DEBUG("Position is ok!");
-        ROS_DEBUG_STREAM(cout << curr_pose << endl);
-        ROS_DEBUG_STREAM(cout << req_pose_stamped.pose << endl);
-    }
+    // if (same_pose == true)
+    // {
+    //     ROS_DEBUG("Position is ok!");
+    //     ROS_DEBUG_STREAM(cout << curr_pose << endl);
+    //     ROS_DEBUG_STREAM(cout << req_pose_stamped.pose << endl);
+    // }
 
     if(pose == STRICT)
     {
@@ -491,7 +545,7 @@ bool ArmController::hasPoseCompleted(PoseType pose)
         if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;   
     }
 
-    if (same_pose == true) ROS_INFO("Position and orientation are ok!");
+    // if (same_pose == true) ROS_INFO("Position and orientation are ok!");
 
     return same_pose;    
 }

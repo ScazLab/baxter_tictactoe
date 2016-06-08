@@ -72,7 +72,7 @@ private:
 
     // string indicating whether class instance is meant to control right/left limb
     std::string limb;
-    float OFFSET_CONSTANT;
+    double OFFSET_CONSTANT;
     int NUM_JOINTS;
     double CENTER_X;
     double CENTER_Y;
@@ -111,6 +111,7 @@ private:
      */
 
     void hoverAboveBoard();
+    void gripTest(float z_offset);
 
     /*
      * release token in the specified cell
