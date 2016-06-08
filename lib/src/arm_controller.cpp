@@ -77,6 +77,12 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     Mat img_hsv;
     Mat img_hsv_blue;
+    Mat img_token;
+    Mat img_token_rough;
+
+    if(!equalXDP(curr_pose.position.x, 0.540298787334, 2) || 
+       !equalXDP(curr_pose.position.y, 0.663732369738, 2) || 
+       !equalXDP(curr_pose.position.z, 0.35621169853, 2)) return;
 
     // removes non-blue elements of image 
     cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
@@ -137,8 +143,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         }
     }
 
-    Mat img_token_rough = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
-    Mat img_token = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    img_token_rough = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    img_token = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
 
     // draw 'blue triangles' portion of token
     for(int i = 0; i < token_contours.size(); i++)
@@ -175,14 +181,6 @@ void ArmController::IRCallback(const RangeConstPtr& msg)
     curr_range = msg->range;
     curr_max_range = msg->max_range;
     curr_min_range = msg->min_range;
-}
-
-cv::Point ArmController::findCentroid(vector<cv::Point> contour)
-{
-    double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
-    double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
-    cv::Point point(x,y);
-    return point;
 }
 
 void ArmController::pickUpToken()
