@@ -10,14 +10,9 @@ using namespace cv;
 /*
     TASKS:
     Make arm move at same time
-    I would make  ArmController::hoverAboveTokens() return bool if success/failure. 
-    And also you should check for the limb, because if by mistake you call the function 
-    on the right limb you should check for that in the beginning and return false. 
 */
 
-/******************* Public ************************/
-
-int pose_delay = 0;
+/**************************** PUBLIC ******************************/
 
 ArmController::ArmController(string limb): img_trp(n), limb(limb)
 { 
@@ -57,10 +52,23 @@ ArmController::~ArmController() {
     namedWindow("[Arm Controller] processed image");
 }
 
+/*************************Callback Functions************************/
+
 void ArmController::endpointCallback(const EndpointState& msg)
 {
     // update current pose
     curr_pose = msg.pose;
+}
+
+void ArmController::IRCallback(const RangeConstPtr& msg)
+{
+    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
+    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+
+    // update current range
+    curr_range = msg->range;
+    curr_max_range = msg->max_range;
+    curr_min_range = msg->min_range;
 }
 
 void ArmController::imageCallback(const ImageConstPtr& msg)
@@ -77,74 +85,25 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     Mat img_hsv;
     Mat img_hsv_blue;
-    Mat img_token;
-    Mat img_token_rough;
+    Mat img_token_rough = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
+    Mat img_token = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
 
-    if(!equalXDP(curr_pose.position.x, 0.540298787334, 2) || 
-       !equalXDP(curr_pose.position.y, 0.663732369738, 2) || 
-       !equalXDP(curr_pose.position.z, 0.35621169853, 2)) return;
+    // if hand camera is not positioned above tokens, no point processing image
+    if(!withinXHundredth(curr_pose.position.x, 0.540298787334, 2) || 
+       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2)) return;
 
     // removes non-blue elements of image 
     cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
     inRange(img_hsv, Scalar(60,120,30), Scalar(130,256,256), img_hsv_blue);
 
-    // find contours of blue elements in image
-    vector<vector<cv::Point> > contours;
-    vector<vector<cv::Point> > token_contours;
-    findContours(img_hsv_blue, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    int largest_index = 0;
-    int largest_area = 0;
-
-    // removes 'noise' elements (all approx. have size < 150)
-    for(int i = 0; i < contours.size(); i++)
-    {
-        // ROS_DEBUG("Area: %0.5f", contourArea(contours[i]));
-        if(contourArea(contours[i]) > 175)
-        {
-            token_contours.push_back(contours[i]);
-        }
-    }
-
-    // find gripper contour (always up against upper boundary of image) and remove
-    int gripper_index = 0;
-    float gripper_y = (token_contours[0])[0].y;
-
-    for(int i = 0; i < token_contours.size(); i++)
-    {
-        vector<cv::Point> contour = token_contours[i];
-        for(int j = 0; j < contour.size(); j++)
-        {
-            if(gripper_y > contour[j].y)
-            {
-                gripper_y = contour[j].y;
-                gripper_index = i;
-            }
-        }
-    }
-    token_contours.erase(token_contours.begin() + gripper_index);
+    vector<vector<cv::Point> > token_contours = getTokenContours(img_hsv_blue);
 
     // find highest and lowest x and y values from token triangles contours
     // to find x-y coordinate of top left token edge and token side length
-    float y_least = (token_contours[0])[0].y;
-    float x_least = (token_contours[0])[0].x;
-    float y_most = 0;
-    float x_most = 0;
-
-    for(int i = 0; i < token_contours.size(); i++)
-    {
-        vector<cv::Point> contour = token_contours[i];
-        for(int j = 0; j < contour.size(); j++)
-        {
-            if(y_least > contour[j].y) y_least = contour[j].y;
-            if(x_least > contour[j].x) x_least = contour[j].x;
-            if(y_most < contour[j].y) y_most = contour[j].y;
-            if(x_most < contour[j].x) x_most = contour[j].x;
-        }
-    }
-
-    img_token_rough = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
-    img_token = Mat::zeros(img_hsv_blue.size(), CV_8UC1);
+    float y_min = getTokenPoints(token_contours, "y_min");
+    float x_min = getTokenPoints(token_contours, "x_min");
+    float y_max = getTokenPoints(token_contours, "y_max");
+    float x_max = getTokenPoints(token_contours, "x_max");
 
     // draw 'blue triangles' portion of token
     for(int i = 0; i < token_contours.size(); i++)
@@ -156,12 +115,12 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     if(token_contours.size() != 4) return;
     
     // reconstruct token's square shape
-    Rect token(x_least, y_least, y_most - y_least, y_most - y_least);
+    Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
     rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
 
     // find and draw the center of the token and the image
-    float x_mid = x_least + ((x_most - x_least) / 2);
-    float y_mid = y_least + ((y_most - y_least) / 2);
+    float x_mid = x_min + ((x_max - x_min) / 2);
+    float y_mid = y_min + ((y_max - y_min) / 2);
     circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
     circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
@@ -172,16 +131,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     waitKey(30);
 }
 
-void ArmController::IRCallback(const RangeConstPtr& msg)
-{
-    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
-    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
-
-    // update current range
-    curr_range = msg->range;
-    curr_max_range = msg->max_range;
-    curr_min_range = msg->min_range;
-}
+/*************************Movement Functions************************/
 
 void ArmController::pickUpToken()
 {
@@ -287,7 +237,9 @@ void ArmController::moveToRest()
     publishMoveCommand(joint_angles, LOOSEPOSE);
 }
 
-/******************* Private ************************/
+/**************************** PRIVATE ******************************/
+
+/*************************Movement Functions************************/
 
 void ArmController::hoverAboveTokens(GoalType goal)
 {
@@ -361,6 +313,8 @@ void ArmController::releaseToken(int cell_num)
     publishMoveCommand(joint_angles, STRICTPOSE);   
     gripper->blow();
 }
+
+/*************************Location Control Functions************************/
 
 vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
 {
@@ -440,7 +394,6 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         ros::spinOnce();
         loop_rate.sleep();
 
-
         if(goal == STRICTPOSE)
         {
             if(hasPoseCompleted(STRICT)) 
@@ -448,38 +401,16 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
             }     
-            else {
-                // if 10 seconds has elapsed and pose has not been achieved,
-                // (pose was likely unreachable) stop publishing joint angles
-                ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 10)
-                {
-                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
-                    return false;
-                } 
-                ROS_DEBUG("No collision yet");
-            }         
+            else if(checkForTimeout(10, STRICTPOSE, start_time)) return false; 
         }
         else if(goal == LOOSEPOSE)
         {
             if(hasPoseCompleted(LOOSE)) 
             {
-                ROS_DEBUG("pose delay %d", pose_delay);
-                pose_delay = 0;
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
             }     
-            else {
-                // if 10 seconds has elapsed and pose has not been achieved,
-                // (pose was likely unreachable) stop publishing joint angles
-                ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 8)
-                {
-                    ROS_ERROR("8 seconds have elapsed. No collision has occured.");
-                    return false;
-                } 
-                ROS_DEBUG("No collision yet");
-            }                  
+            else if(checkForTimeout(8, LOOSEPOSE, start_time)) return false; 
         }
         else if(goal == COLLISION)
         {
@@ -488,19 +419,28 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
                 gripper->suck();
                 return true;
             }
-            else {
-                // if 10 seconds has elapsed and pose has not been achieved,
-                // (probably no object to collide with) stop publishing joint angles
-                ros::Time curr_time = ros::Time::now();
-                if((curr_time - start_time).toSec() > 10)
-                {
-                    ROS_ERROR("10 seconds have elapsed. No collision has occured.");
-                    return false;
-                } 
-                ROS_DEBUG("No collision yet");
-            }
+            else if(checkForTimeout(10, COLLISION, start_time)) return false; 
         }
     }   
+}
+
+/*************************Checking Functions************************/
+
+bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time)
+{
+    // if (int len) seconds has elapsed and goal has not been achieved,
+    // throw an error
+    string goal_str = (goal == LOOSEPOSE || goal == STRICTPOSE)? "pose" : "collision";
+    ros::Time curr_time = ros::Time::now();
+    if((curr_time - start_time).toSec() > len)
+    {
+        ROS_ERROR("%d seconds have elapsed. Goal type [%s] was not achieved", len, goal_str.c_str());
+        return true;
+    } 
+    else {
+        ROS_DEBUG("Time limit not reached");
+        return false;  
+    }
 }
 
 bool ArmController::hasPoseCompleted(PoseType pose)
@@ -524,8 +464,6 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 
     if (same_pose == true)
     {
-        pose_delay++;
-        ROS_DEBUG("pose delay: %d", pose_delay);
         ROS_DEBUG("Position is ok!");
         ROS_DEBUG_STREAM(cout << curr_pose << endl);
         ROS_DEBUG_STREAM(cout << req_pose_stamped.pose << endl);
@@ -545,7 +483,6 @@ bool ArmController::hasPoseCompleted(PoseType pose)
         if(!withinXHundredth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 4)) same_pose = false;
         if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;   
     }
-
 
     if (same_pose == true) ROS_INFO("Position and orientation are ok!");
 
@@ -577,4 +514,74 @@ bool ArmController::equalXDP(float x, float y, float z)
     float xTwoDP = roundf(x * (10 * z)) / (10 * z);
     float yTwoDP = roundf(y * (10 * z)) / (10 * z);
     return xTwoDP == yTwoDP ? true : false;    
+}
+
+/*************************Visual Servoing Functions************************/
+
+vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
+{
+    // find contours of blue elements in image
+    vector<vector<cv::Point> > contours;
+    vector<vector<cv::Point> > token_contours;
+    findContours(img_hsv_blue, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    int largest_index = 0;
+    int largest_area = 0;
+
+    // removes 'noise' elements (all approx. have size < 150)
+    for(int i = 0; i < contours.size(); i++)
+    {
+        // ROS_DEBUG("Area: %0.5f", contourArea(contours[i]));
+        if(contourArea(contours[i]) > 175)
+        {
+            token_contours.push_back(contours[i]);
+        }
+    }
+
+    // find gripper contour (always up against upper boundary of image) and remove
+    int gripper_index = 0;
+    float gripper_y = (token_contours[0])[0].y;
+
+    for(int i = 0; i < token_contours.size(); i++)
+    {
+        vector<cv::Point> contour = token_contours[i];
+        for(int j = 0; j < contour.size(); j++)
+        {
+            if(gripper_y > contour[j].y)
+            {
+                gripper_y = contour[j].y;
+                gripper_index = i;
+            }
+        }
+    }
+
+    token_contours.erase(token_contours.begin() + gripper_index);
+    return token_contours;
+}
+
+float ArmController::getTokenPoints(vector<vector<cv::Point> > token_contours, string point)
+{
+    // find highest and lowest x and y values from token triangles contours
+    // to find x-y coordinate of top left token edge and token side length
+    float y_min = (token_contours[0])[0].y;
+    float x_min = (token_contours[0])[0].x;
+    float y_max = 0;
+    float x_max = 0;
+
+    for(int i = 0; i < token_contours.size(); i++)
+    {
+        vector<cv::Point> contour = token_contours[i];
+        for(int j = 0; j < contour.size(); j++)
+        {
+            if(y_min > contour[j].y) y_min = contour[j].y;
+            if(x_min > contour[j].x) x_min = contour[j].x;
+            if(y_max < contour[j].y) y_max = contour[j].y;
+            if(x_max < contour[j].x) x_max = contour[j].x;
+        }
+    }
+
+    if(point == "y_min") return y_min;
+    if(point == "y_max") return y_max;
+    if(point == "x_min") return x_min;
+    if(point == "x_max") return x_max;
 }
