@@ -62,8 +62,8 @@ void ArmController::endpointCallback(const EndpointState& msg)
 
 void ArmController::IRCallback(const RangeConstPtr& msg)
 {
-    ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
-    ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+    // ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
+    // ROS_DEBUG_STREAM(cout << "range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
 
     // update current range
     curr_range = msg->range;
@@ -165,7 +165,7 @@ void ArmController::pickUpToken()
         */
 
         hoverAboveTokens(STRICTPOSE);
-        // gripToken();
+        gripToken();
 
         // bool no_token = true;
         // while(no_token)
@@ -302,41 +302,25 @@ void ArmController::gripTest(float z_offset)
 
 bool ArmController::gripToken()
 {
-    int loop = 0;
-    while(loop < 10)
+    for(int i = 0; i < 5; i++)
     {
         req_pose_stamped.header.frame_id = "base";
-        req_pose_stamped.pose.position.x = curr_pose.position.x + _curr_x_offset;
-        req_pose_stamped.pose.position.y = curr_pose.position.y + _curr_y_offset;
-        req_pose_stamped.pose.position.z = curr_pose.position.z - 0.002000000000;
+        req_pose_stamped.pose.position.x = curr_pose.position.x; // + _curr_x_offset;
+        req_pose_stamped.pose.position.y = curr_pose.position.y; // + _curr_y_offset;
+        req_pose_stamped.pose.position.z = (roundf(curr_pose.position.z * 100) / 100) - 0.02;
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
         req_pose_stamped.pose.orientation.y = -0.700942136419;
         req_pose_stamped.pose.orientation.z = -0.0127158080742;
-        req_pose_stamped.pose.orientation.w = -0.0207931175453;   
+        req_pose_stamped.pose.orientation.w = -0.0207931175453;
+
+        float curr_z = curr_pose.position.z;
+        ROS_DEBUG("Loop: %d curr_z: %0.3f req_z: %0.3f", i, curr_pose.position.z, req_pose_stamped.pose.position.z);   
 
         vector<float> joint_angles = getJointAngles(req_pose_stamped);
-
-        publishMoveCommand(joint_angles, STRICTPOSE);
-        ROS_INFO("Loop %d", loop);
-        loop++;
+        publishMoveCommand(joint_angles, GRIPPOSE);     
     }
     return true;
-
-    // req_pose_stamped.header.frame_id = "base";
-    // req_pose_stamped.pose.position.x = 0.540298787334;
-    // req_pose_stamped.pose.position.y = 0.683732369738;
-    // req_pose_stamped.pose.position.z = -0.10501169853;
-
-    // req_pose_stamped.pose.orientation.x = 0.712801568376;
-    // req_pose_stamped.pose.orientation.y = -0.700942136419;
-    // req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    // req_pose_stamped.pose.orientation.w = -0.0207931175453;
-
-    // vector<float> joint_angles = getJointAngles(req_pose_stamped);
-
-    // if(publishMoveCommand(joint_angles, COLLISION) == true) return true;
-    // else return false;
 }
 
 void ArmController::hoverAboveBoard()
@@ -386,13 +370,13 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
     ik_srv.request.pose_stamp.push_back(pose_stamped);
     ik_client.call(ik_srv);
 
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);   
+    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
+    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);   
     
     // if service is successfully called
     if(ik_client.call(ik_srv))
     {
-        ROS_DEBUG("[Arm Controller] Service called");
+        // ROS_DEBUG("[Arm Controller] Service called");
 
         // store joint angles values received from service
         vector<float> joint_angles;
@@ -405,7 +389,7 @@ vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
         bool all_zeros = true;
         for(int i = 0; i < joint_angles.size(); i++){
             if(joint_angles[i] == 0) all_zeros = false;
-            ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
+            // ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
         }
         if(all_zeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
 
@@ -455,7 +439,16 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         ros::spinOnce();
         loop_rate.sleep();
 
-        if(goal == STRICTPOSE)
+        if(goal == GRIPPOSE)
+        {
+            if(hasPoseCompleted(GRIP)) 
+            {
+                ROS_DEBUG("[Arm Controller] Move completed\n");
+                return true;
+            }     
+            else if(checkForTimeout(10, GRIPPOSE, start_time)) return false; 
+        }
+        else if(goal == STRICTPOSE)
         {
             if(hasPoseCompleted(STRICT)) 
             {
@@ -499,7 +492,7 @@ bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time
         return true;
     } 
     else {
-        ROS_DEBUG("[Arm Controller] Time limit not reached");
+        // ROS_DEBUG("[Arm Controller] Time limit not reached");
         return false;  
     }
 }
@@ -508,7 +501,26 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 {
     bool same_pose = true;
 
-    ROS_DEBUG("Checking if pose has been completed. Strategy: %s",pose==STRICT?"strict":"loose");
+    // ROS_DEBUG("Checking if pose has been completed. Strategy: %s",pose==STRICT?"strict":"loose");
+
+    if(pose == GRIP)
+    {
+        if(!equalXDP(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
+        if(!equalXDP(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
+        
+        float curr_z = curr_pose.position.z;
+        float req_z = req_pose_stamped.pose.position.z;
+
+        if(!equalXDP(curr_z, req_z, 2)) same_pose = false;  
+        // ROS_DEBUG("curr_z: %0.3f req_z: %0.3f", curr_z, req_z);
+        // ROS_DEBUG("(2dp) curr_z: %0.3f req_z: %0.3f", roundf(curr_z * (100)) / (100), roundf(req_z * (100)) / (100));
+        // ROS_DEBUG("same_pose: %d", same_pose);
+
+        if(!equalXDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 2)) same_pose = false;
+        if(!equalXDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 2)) same_pose = false;
+    }
 
     if(pose == STRICT)
     {
@@ -522,13 +534,6 @@ bool ArmController::hasPoseCompleted(PoseType pose)
         if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 4)) same_pose = false;  
         if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 4)) same_pose = false;              
     }
-
-    // if (same_pose == true)
-    // {
-    //     ROS_DEBUG("Position is ok!");
-    //     ROS_DEBUG_STREAM(cout << curr_pose << endl);
-    //     ROS_DEBUG_STREAM(cout << req_pose_stamped.pose << endl);
-    // }
 
     if(pose == STRICT)
     {
@@ -545,14 +550,12 @@ bool ArmController::hasPoseCompleted(PoseType pose)
         if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;   
     }
 
-    // if (same_pose == true) ROS_INFO("Position and orientation are ok!");
-
     return same_pose;    
 }
 
 bool ArmController::hasCollided()
 {
-    ROS_DEBUG_STREAM(cout << " range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
+    // ROS_DEBUG_STREAM(cout << " range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
     if(curr_range <= curr_max_range && curr_range >= curr_min_range && curr_range <= IR_RANGE_THRESHOLD)
     {
         ROS_INFO("[Arm Controller] Collision");
@@ -572,8 +575,11 @@ bool ArmController::withinXHundredth(float x, float y, float z)
 
 bool ArmController::equalXDP(float x, float y, float z)
 {
-    float xTwoDP = roundf(x * (10 * z)) / (10 * z);
-    float yTwoDP = roundf(y * (10 * z)) / (10 * z);
+    // ROS_INFO("x: %0.3f y: %0.3f", x, y);
+    float xTwoDP = roundf(x * pow(10, z)) / pow(10, z);
+    float yTwoDP = roundf(y * pow(10, z)) / pow(10, z);
+
+    // ROS_INFO("xTwoDP: %0.3f yTwoDP: %0.3f", xTwoDP, yTwoDP);
     return xTwoDP == yTwoDP ? true : false;    
 }
 
