@@ -157,8 +157,8 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens(STRICTPOSE);
-
-        // gripToken();
+        ROS_INFO("grip token");
+        gripToken();
 
         // bool no_token = true;
         // while(no_token)
@@ -303,7 +303,7 @@ bool ArmController::gripToken()
         req_pose_stamped.header.frame_id = "base";
         req_pose_stamped.pose.position.x = curr_pose.position.x;
         req_pose_stamped.pose.position.y = curr_pose.position.y;
-        req_pose_stamped.pose.position.z = 0.350 + (-0.01) * (curr_time - start_time).toSec();
+        req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
                                  // z(t) = z(0) + v * t
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
@@ -312,8 +312,7 @@ bool ArmController::gripToken()
         req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
         vector<float> joint_angles = getJointAngles(req_pose_stamped);
-        publishMoveCommand(joint_angles, GRIPPOSE);
-        
+
         JointCommand joint_cmd;
 
         // command in position mode
@@ -580,14 +579,20 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 bool ArmController::hasCollided()
 {
     // ROS_DEBUG_STREAM(cout << " range: " << curr_range << " max range: " << curr_max_range << " min range: " << curr_min_range << endl);
-    if(curr_range <= curr_max_range && curr_range >= curr_min_range && curr_range <= IR_RANGE_THRESHOLD)
+    if(curr_range != 0 && curr_max_range !=0 && curr_min_range != 0)
     {
-        ROS_INFO("[Arm Controller] Collision");
-        return true;
+        if(curr_range <= curr_max_range && curr_range >= curr_min_range && curr_range <= IR_RANGE_THRESHOLD)
+        {
+            ROS_INFO("[Arm Controller] Collision");
+            ROS_INFO("range: %0.3f max range: %0.3f min range: %0.3f", curr_range, curr_max_range, curr_min_range);
+
+            return true;
+        }
+        else {
+            return false;
+        }        
     }
-    else {
-        return false;
-    }
+
 }
 
 bool ArmController::withinXHundredth(float x, float y, float z)
@@ -629,7 +634,7 @@ vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
         }
     }
 
-    ROS_INFO("size: %lu", token_contours.size());
+    // ROS_INFO("size: %lu", token_contours.size());
 
     // find gripper contour (always up against upper boundary of image) and remove
     int gripper_index = 0;
