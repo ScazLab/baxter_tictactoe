@@ -34,6 +34,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     gripper = new Vacuum_Gripper(ttt::left);
 
     namedWindow("[Arm Controller] raw image", WINDOW_NORMAL);
+    namedWindow("[Arm Controller] rough processed image", WINDOW_NORMAL);
     namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
@@ -49,6 +50,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
 ArmController::~ArmController() {
     namedWindow("[Arm Controller] raw image");
+    namedWindow("[Arm Controller] rough processed image");
     namedWindow("[Arm Controller] processed image");
 }
 
@@ -89,52 +91,56 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     Mat img_token = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
 
     // if hand camera is not positioned above tokens, no point processing image
-    if(!withinXHundredth(curr_pose.position.x, 0.540298787334, 2) || 
-       !withinXHundredth(curr_pose.position.y, 0.663732369738, 2)) return;
-
-    // removes non-blue elements of image 
-    cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
-    inRange(img_hsv, Scalar(60,120,30), Scalar(130,256,256), img_hsv_blue);
-
-    vector<vector<cv::Point> > token_contours = getTokenContours(img_hsv_blue);
-
-    // find highest and lowest x and y values from token triangles contours
-    // to find x-y coordinate of top left token edge and token side length
-    float y_min = getTokenPoints(token_contours, "y_min");
-    float x_min = getTokenPoints(token_contours, "x_min");
-    float y_max = getTokenPoints(token_contours, "y_max");
-    float x_max = getTokenPoints(token_contours, "x_max");
-
-    // draw 'blue triangles' portion of token
-    for(int i = 0; i < token_contours.size(); i++)
+    if(withinXHundredth(curr_pose.position.x, 0.540298787334, 2) && 
+       withinXHundredth(curr_pose.position.y, 0.663732369738, 2))
     {
-        drawContours(img_token_rough, token_contours, i, Scalar(255,255,255), CV_FILLED);
+        // removes non-blue elements of image 
+        cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
+        inRange(img_hsv, Scalar(60,120,10), Scalar(130,256,256), img_hsv_blue);
+
+        vector<vector<cv::Point> > token_contours = getTokenContours(img_hsv_blue);
+
+        // draw 'blue triangles' portion of token
+        for(int i = 0; i < token_contours.size(); i++)
+        {
+            drawContours(img_token_rough, token_contours, i, Scalar(255,255,255), CV_FILLED);
+        }
+
+        // if 'noise' contours are present, do nothing
+        if(token_contours.size() == 4)
+        {
+            // find highest and lowest x and y values from token triangles contours
+            // to find x-y coordinate of top left token edge and token side length
+            float y_min = getTokenPoints(token_contours, "y_min");
+            float x_min = getTokenPoints(token_contours, "x_min");
+            float y_max = getTokenPoints(token_contours, "y_max");
+            float x_max = getTokenPoints(token_contours, "x_max");
+
+            // reconstruct token's square shape
+            Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
+            rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
+
+            // find and draw the center of the token and the image
+            double x_mid = x_min + ((x_max - x_min) / 2);
+            double y_mid = y_min + ((y_max - y_min) / 2);
+            circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+            circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+
+            double token_area = (x_max - x_min) * (y_max - y_min);
+            double height_var = 1 / token_area;
+
+            _curr_x_offset = height_var * (x_mid - (img_token.size().width / 2));
+            _curr_y_offset = height_var * (y_mid - (img_token.size().height / 2));
+
+            // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
+            // ROS_INFO("token_area: %0.6f   height_var: %0.6f", token_area, height_var);
+            // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
+        }
     }
 
-    // if 'noise' contours are present, do nothing
-    if(token_contours.size() != 4) return;
-    
-    // reconstruct token's square shape
-    Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-    rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
-
-    // find and draw the center of the token and the image
-    double x_mid = x_min + ((x_max - x_min) / 2);
-    double y_mid = y_min + ((y_max - y_min) / 2);
-    circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-    circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
-
-    double token_area = (x_max - x_min) * (y_max - y_min);
-    double height_var = OFFSET_CONSTANT / token_area;
-
-    _curr_x_offset = height_var * (x_mid - (img_token.size().width / 2));
-    _curr_y_offset = height_var * (y_mid - (img_token.size().height / 2));
-
-    // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
-    // ROS_INFO("token_area: %0.6f   height_var: %0.6f", token_area, height_var);
-    // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
 
     imshow("[Arm Controller] raw image", cv_ptr->image.clone());
+    imshow("[Arm Controller] rough processed image", img_token_rough);
     imshow("[Arm Controller] processed image", img_token);
 
     waitKey(30);
@@ -150,22 +156,9 @@ void ArmController::pickUpToken()
     }
     else if(limb == "left")
     {
-        /*
-        hover above tokens
-        while(no collision)
-            find centroid of image
-            find 4 contours of token
-            reconstruct contours into approx. square shape  
-            find centroid of token
-            find area of token
-            
-            move token down (offset x, offset y, predefined z)
-             where x = (image centroid x - token centroid x) * k
-             where k is inversely proportional to token area, vice versa for y 
-        */
-
         hoverAboveTokens(STRICTPOSE);
-        gripToken();
+
+        // gripToken();
 
         // bool no_token = true;
         // while(no_token)
@@ -254,9 +247,9 @@ void ArmController::moveToRest()
 void ArmController::hoverAboveTokens(GoalType goal)
 {
     req_pose_stamped.header.frame_id = "base";
-    req_pose_stamped.pose.position.x = 0.540298787334;
-    req_pose_stamped.pose.position.y = 0.663732369738;
-    req_pose_stamped.pose.position.z = 0.35621169853;
+    req_pose_stamped.pose.position.x = 0.540;
+    req_pose_stamped.pose.position.y = 0.660;
+    req_pose_stamped.pose.position.z = 0.350;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
@@ -299,27 +292,55 @@ void ArmController::gripTest(float z_offset)
     hoverAboveTokens(STRICTPOSE);
 }
 
-
 bool ArmController::gripToken()
 {
-    for(int i = 0; i < 5; i++)
+    ros::Time start_time = ros::Time::now();
+    while(!hasCollided())
     {
+        ros::Time curr_time = ros::Time::now();
+        ros::Rate loop_rate(100);
+
         req_pose_stamped.header.frame_id = "base";
-        req_pose_stamped.pose.position.x = curr_pose.position.x; // + _curr_x_offset;
-        req_pose_stamped.pose.position.y = curr_pose.position.y; // + _curr_y_offset;
-        req_pose_stamped.pose.position.z = (roundf(curr_pose.position.z * 100) / 100) - 0.02;
+        req_pose_stamped.pose.position.x = curr_pose.position.x;
+        req_pose_stamped.pose.position.y = curr_pose.position.y;
+        req_pose_stamped.pose.position.z = 0.350 + (-0.01) * (curr_time - start_time).toSec();
+                                 // z(t) = z(0) + v * t
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
         req_pose_stamped.pose.orientation.y = -0.700942136419;
         req_pose_stamped.pose.orientation.z = -0.0127158080742;
         req_pose_stamped.pose.orientation.w = -0.0207931175453;
 
-        float curr_z = curr_pose.position.z;
-        ROS_DEBUG("Loop: %d curr_z: %0.3f req_z: %0.3f", i, curr_pose.position.z, req_pose_stamped.pose.position.z);   
-
         vector<float> joint_angles = getJointAngles(req_pose_stamped);
-        publishMoveCommand(joint_angles, GRIPPOSE);     
+        publishMoveCommand(joint_angles, GRIPPOSE);
+        
+        JointCommand joint_cmd;
+
+        // command in position mode
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        // command joints in the order shown in baxter_interface
+        joint_cmd.names.push_back(limb + "_s0");
+        joint_cmd.names.push_back(limb + "_s1");
+        joint_cmd.names.push_back(limb + "_e0");
+        joint_cmd.names.push_back(limb + "_e1");
+        joint_cmd.names.push_back(limb + "_w0");
+        joint_cmd.names.push_back(limb + "_w1");
+        joint_cmd.names.push_back(limb + "_w2");
+
+        // set your calculated velocities
+        joint_cmd.command.resize(NUM_JOINTS);
+
+        // set joint angles
+        for(int i = 0; i < NUM_JOINTS; i++)
+        {
+            joint_cmd.command[i] = joint_angles[i];
+        }
+
+        joint_cmd_pub.publish(joint_cmd);
+        loop_rate.sleep();
     }
+
     return true;
 }
 
@@ -475,7 +496,7 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
             }
             else if(checkForTimeout(10, COLLISION, start_time)) return false; 
         }
-    }   
+     }   
 }
 
 /*************************Checking Functions************************/
@@ -505,21 +526,24 @@ bool ArmController::hasPoseCompleted(PoseType pose)
 
     if(pose == GRIP)
     {
-        if(!equalXDP(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
-        if(!equalXDP(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
+        // if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
+        // if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
         
         float curr_z = curr_pose.position.z;
         float req_z = req_pose_stamped.pose.position.z;
 
-        if(!equalXDP(curr_z, req_z, 2)) same_pose = false;  
+        if(!equalXDP(curr_z, req_z, 2)) same_pose = false;   
+        // if(!equalXDP(curr_z, req_z, 3)) same_pose = false;  
+
+
         // ROS_DEBUG("curr_z: %0.3f req_z: %0.3f", curr_z, req_z);
         // ROS_DEBUG("(2dp) curr_z: %0.3f req_z: %0.3f", roundf(curr_z * (100)) / (100), roundf(req_z * (100)) / (100));
         // ROS_DEBUG("same_pose: %d", same_pose);
 
-        if(!equalXDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 2)) same_pose = false;
+        // if(!withinXHundredth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 4)) same_pose = false;
+        // if(!withinXHundredth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 4)) same_pose = false;
+        // if(!withinXHundredth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 4)) same_pose = false;
+        // if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;
     }
 
     if(pose == STRICT)
@@ -604,6 +628,8 @@ vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
             token_contours.push_back(contours[i]);
         }
     }
+
+    ROS_INFO("size: %lu", token_contours.size());
 
     // find gripper contour (always up against upper boundary of image) and remove
     int gripper_index = 0;

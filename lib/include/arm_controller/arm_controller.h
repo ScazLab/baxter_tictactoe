@@ -33,8 +33,8 @@
 // baxter_tictactoe libraries
 #include "vacuum_gripper/vacuum_gripper.h"
 
-enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION};
-enum PoseType {LOOSE, STRICT};
+enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION, GRIPPOSE};
+enum PoseType {LOOSE, STRICT, GRIP};
 
 class ArmController
 {
@@ -79,6 +79,7 @@ private:
     double CELL_SIDE;
     float IR_RANGE_THRESHOLD;
 
+public:
 
     /*************************Movement Functions************************/
 
@@ -207,7 +208,7 @@ private:
     float getTokenPoints(std::vector<std::vector<cv::Point> > token_contours, std::string point);
 
 
-public:
+// public:
 
     ArmController(std::string limb);
     ~ArmController();
