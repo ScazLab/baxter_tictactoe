@@ -48,7 +48,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     CENTER_X = 0.655298787334;
     CENTER_Y = 0.205732369738; 
     CELL_SIDE = 0.15;
-    IR_RANGE_THRESHOLD = 0.085;
+    IR_RANGE_THRESHOLD = 0.065;
 
     _curr_x_offset = 0;
     _curr_y_offset = 0;
@@ -167,9 +167,9 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens(STRICTPOSE);   
-        ros::Duration(3).sleep();     
-        // ROS_INFO("grip token");
+        ROS_INFO("grip token");
         gripToken();
+        hoverAboveTokens(STRICTPOSE);  
 
         // bool no_token = true;
         // while(no_token)
@@ -292,9 +292,9 @@ bool ArmController::gripToken()
         prev_y = req_pose_stamped.pose.position.y;
 
                                  // z(t) = z(0) + v * t
-        req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
+        req_pose_stamped.pose.position.z = 0.350 + (-0.07) * (curr_time - start_time).toSec();
 
-        ROS_INFO("_curr_x_offset: %0.4f", _curr_x_offset);
+        // ROS_INFO("_curr_x_offset: %0.4f", _curr_x_offset);
         // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
@@ -331,7 +331,12 @@ bool ArmController::gripToken()
         loop_rate.sleep();
 
         ros::spinOnce();
-        if(hasCollided()) break;
+        if(hasCollided()) 
+        {
+            // gripper->suck();e
+            ROS_ERROR("entered hasCollided");
+            break;
+        }
     }
 
     return true;
@@ -582,11 +587,9 @@ bool ArmController::hasCollided()
 
             return true;
         }
-        else {
-            return false;
-        }        
+        else return false;
     }
-
+    else return false;
 }
 
 bool ArmController::withinXHundredth(float x, float y, float z)
