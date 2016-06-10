@@ -15,6 +15,7 @@ using namespace cv;
     Introduce offset variable (center of camera != center of gripper)
     Token is partially covered/excluded when camera is close
     Calibrate offset multiplier depending on depth
+    Threshold out black boundaires of board and remove tokens on board
 */
 
 /**************************** PUBLIC ******************************/
@@ -40,7 +41,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
     namedWindow("[Arm Controller] raw image", WINDOW_NORMAL);
     namedWindow("[Arm Controller] rough processed image", WINDOW_NORMAL);
-    // namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
+    namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
     OFFSET_CONSTANT = 0.1;
@@ -59,7 +60,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 ArmController::~ArmController() {
     namedWindow("[Arm Controller] raw image");
     namedWindow("[Arm Controller] rough processed image");
-    // namedWindow("[Arm Controller] processed image");
+    namedWindow("[Arm Controller] processed image");
 }
 
 /*************************Callback Functions************************/
@@ -100,7 +101,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     // removes non-blue elements of image 
     cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
-    inRange(img_hsv, Scalar(60,120,10), Scalar(130,256,256), img_hsv_blue);
+    inRange(img_hsv, Scalar(60,90,10), Scalar(130,256,256), img_hsv_blue);
 
     vector<vector<cv::Point> > token_contours = getTokenContours(img_hsv_blue);
 
@@ -112,40 +113,45 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     circle(img_token_rough, cv::Point((img_token.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
 
-    // // if 'noise' contours are present, do nothing
-    // if(token_contours.size() == 4)
-    // {
-    //     ROS_INFO("token size 4!!");
-    //     // find highest and lowest x and y values from token triangles contours
-    //     // to find x-y coordinate of top left token edge and token side length
-    //     float y_min = getTokenPoints(token_contours, "y_min");
-    //     float x_min = getTokenPoints(token_contours, "x_min");
-    //     float y_max = getTokenPoints(token_contours, "y_max");
-    //     float x_max = getTokenPoints(token_contours, "x_max");
+    // if 'noise' contours are present, do nothing
+    if(token_contours.size() == 4)
+    {
+        // find highest and lowest x and y values from token triangles contours
+        // to find x-y coordinate of top left token edge and token side length
+        float y_min = getTokenPoints(token_contours, "y_min");
+        float x_min = getTokenPoints(token_contours, "x_min");
+        float y_max = getTokenPoints(token_contours, "y_max");
+        float x_max = getTokenPoints(token_contours, "x_max");
 
-    //     // reconstruct token's square shape
-    //     Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-    //     rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
+        // reconstruct token's square shape
+        Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
+        rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
 
-    //     // find and draw the center of the token and the image
-    //     double x_mid = x_min + ((x_max - x_min) / 2);
-    //     double y_mid = y_min + ((y_max - y_min) / 2);
-    //     circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-    //     circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+        // find and draw the center of the token and the image
+        double x_mid = x_min + ((x_max - x_min) / 2);
+        double y_mid = y_min + ((y_max - y_min) / 2);
+        circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
-    //     double token_area = (x_max - x_min) * (y_max - y_min);
+        double token_area = (x_max - x_min) * (y_max - y_min);
 
-    //     _curr_x_offset = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
-    //     _curr_y_offset = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) + 0.03 /*distance between gripper center and camera center*/;
+        _curr_x_offset = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
+        _curr_y_offset = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/;
 
-    //     ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
-    //     ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
-    //     ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
-    // }
+        // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
+        // ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
+        // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
+    }
+    // when hand camera is blind due to being too close to token, go straight down;
+    else
+    {
+        _curr_x_offset = 0;
+        _curr_y_offset = 0;
+    }
 
     imshow("[Arm Controller] raw image", cv_ptr->image.clone());
     imshow("[Arm Controller] rough processed image", img_token_rough);
-    // imshow("[Arm Controller] processed image", img_hsv_blue);
+    imshow("[Arm Controller] processed image", img_token);
 
     waitKey(30);
 }
@@ -160,8 +166,9 @@ void ArmController::pickUpToken()
     }
     else if(limb == "left")
     {
-        hoverAboveTokens(STRICTPOSE);        
-        ROS_INFO("grip token");
+        hoverAboveTokens(STRICTPOSE);   
+        ros::Duration(2).sleep();     
+        // ROS_INFO("grip token");
         gripToken();
 
         // bool no_token = true;
@@ -269,6 +276,9 @@ void ArmController::hoverAboveTokens(GoalType goal)
 bool ArmController::gripToken()
 {
     ros::Time start_time = ros::Time::now();
+    
+    double const_y = 0.660;
+    
     while(ros::ok())
     {
         ros::Time curr_time = ros::Time::now();
@@ -276,9 +286,14 @@ bool ArmController::gripToken()
 
         req_pose_stamped.header.frame_id = "base";
         req_pose_stamped.pose.position.x = 0.540; // curr_pose.position.x + 0.075 * _curr_x_offset;
-        req_pose_stamped.pose.position.y = 0.660; // curr_pose.position.y + 0.2 * _curr_y_offset;
+        
+        req_pose_stamped.pose.position.y = const_y + 0.06 * _curr_y_offset;
+        const_y = req_pose_stamped.pose.position.y;
+
         req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
                                  // z(t) = z(0) + v * t
+
+        ROS_INFO("_curr_y_offset: %0.4f", _curr_y_offset);
         // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
@@ -602,9 +617,9 @@ vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
     int largest_index = 0;
     int largest_area = 0;
 
-    // removes 'noise' elements (all approx. have size < 150)
     for(int i = 0; i < contours.size(); i++)
     {
+        // remove any element with y < 65 (gripper area)
         bool not_gripper = true;
         for(int j = 0; j < contours[i].size(); j++)
         {
@@ -616,36 +631,19 @@ vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
             }
         }
 
-        if(contourArea(contours[i]) > 250 && not_gripper == true)
-        {
+        bool is_triangle = true;
+        vector<cv::Point> contour;
+        approxPolyDP(contours[i], contour, 0.1 * arcLength(contours[i], true), true);
+        if(contour.size() != 3) is_triangle = false;
 
+        // removes 'noise' elements (all approx. have size < 150)
+        if(contourArea(contours[i]) > 200 && not_gripper == true && is_triangle == true)
+        {
             token_contours.push_back(contours[i]);
         }
     }
 
-    printf("size: %lu\n", token_contours.size());
-
-    // if(token_contours.size() > 0)
-    // {
-    //     // find gripper contour (always up against upper boundary of image) and remove
-    //     int gripper_index = 0;
-    //     float gripper_y = (token_contours[0])[0].y;
-
-    //     for(int i = 0; i < token_contours.size(); i++)
-    //     {
-    //         vector<cv::Point> contour = token_contours[i];
-    //         for(int j = 0; j < contour.size(); j++)
-    //         {
-    //             if(gripper_y > contour[j].y)
-    //             {
-    //                 gripper_y = contour[j].y;
-    //                 gripper_index = i;
-    //             }
-    //         }
-    //     }        
-
-    //     token_contours.erase(token_contours.begin() + gripper_index);
-    // }
+    // printf("\nsize: %lu\n", token_contours.size());
     
     return token_contours;
 }
