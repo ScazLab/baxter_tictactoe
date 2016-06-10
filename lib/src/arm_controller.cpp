@@ -167,7 +167,7 @@ void ArmController::pickUpToken()
     else if(limb == "left")
     {
         hoverAboveTokens(STRICTPOSE);   
-        ros::Duration(2).sleep();     
+        ros::Duration(3).sleep();     
         // ROS_INFO("grip token");
         gripToken();
 
@@ -277,7 +277,8 @@ bool ArmController::gripToken()
 {
     ros::Time start_time = ros::Time::now();
     
-    double const_y = 0.660;
+    double prev_x = 0.540;
+    double prev_y = 0.660;
     
     while(ros::ok())
     {
@@ -285,15 +286,15 @@ bool ArmController::gripToken()
         ros::Rate loop_rate(500);
 
         req_pose_stamped.header.frame_id = "base";
-        req_pose_stamped.pose.position.x = 0.540; // curr_pose.position.x + 0.075 * _curr_x_offset;
-        
-        req_pose_stamped.pose.position.y = const_y + 0.06 * _curr_y_offset;
-        const_y = req_pose_stamped.pose.position.y;
+        req_pose_stamped.pose.position.x = prev_x + 0.07 * _curr_x_offset; 
+        prev_x = req_pose_stamped.pose.position.x;
+        req_pose_stamped.pose.position.y = prev_y + 0.07 * _curr_y_offset;
+        prev_y = req_pose_stamped.pose.position.y;
 
-        req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
                                  // z(t) = z(0) + v * t
+        req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
 
-        ROS_INFO("_curr_y_offset: %0.4f", _curr_y_offset);
+        ROS_INFO("_curr_x_offset: %0.4f", _curr_x_offset);
         // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
