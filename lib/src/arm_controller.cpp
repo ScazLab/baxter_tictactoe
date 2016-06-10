@@ -40,7 +40,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
     namedWindow("[Arm Controller] raw image", WINDOW_NORMAL);
     namedWindow("[Arm Controller] rough processed image", WINDOW_NORMAL);
-    namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
+    // namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
 
     NUM_JOINTS = 7;
     OFFSET_CONSTANT = 0.1;
@@ -59,7 +59,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 ArmController::~ArmController() {
     namedWindow("[Arm Controller] raw image");
     namedWindow("[Arm Controller] rough processed image");
-    namedWindow("[Arm Controller] processed image");
+    // namedWindow("[Arm Controller] processed image");
 }
 
 /*************************Callback Functions************************/
@@ -110,6 +110,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         drawContours(img_token_rough, token_contours, i, Scalar(255,255,255), CV_FILLED);
     }
 
+    circle(img_token_rough, cv::Point((img_token.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
+
     // // if 'noise' contours are present, do nothing
     // if(token_contours.size() == 4)
     // {
@@ -143,7 +145,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     imshow("[Arm Controller] raw image", cv_ptr->image.clone());
     imshow("[Arm Controller] rough processed image", img_token_rough);
-    imshow("[Arm Controller] processed image", img_hsv_blue);
+    // imshow("[Arm Controller] processed image", img_hsv_blue);
 
     waitKey(30);
 }
@@ -273,11 +275,11 @@ bool ArmController::gripToken()
         ros::Rate loop_rate(500);
 
         req_pose_stamped.header.frame_id = "base";
-        req_pose_stamped.pose.position.x = 0.54; // curr_pose.position.x + 0.075 * _curr_x_offset;
-        req_pose_stamped.pose.position.y = curr_pose.position.y + 0.2 * _curr_y_offset;
+        req_pose_stamped.pose.position.x = 0.540; // curr_pose.position.x + 0.075 * _curr_x_offset;
+        req_pose_stamped.pose.position.y = 0.660; // curr_pose.position.y + 0.2 * _curr_y_offset;
         req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
                                  // z(t) = z(0) + v * t
-        ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
+        // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
 
         req_pose_stamped.pose.orientation.x = 0.712801568376;
         req_pose_stamped.pose.orientation.y = -0.700942136419;
@@ -603,37 +605,47 @@ vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
     // removes 'noise' elements (all approx. have size < 150)
     for(int i = 0; i < contours.size(); i++)
     {
-        // ROS_DEBUG("Area: %0.5f", contourArea(contours[i]));
-        if(contourArea(contours[i]) > 250)
+        bool not_gripper = true;
+        for(int j = 0; j < contours[i].size(); j++)
         {
+            vector<cv::Point> contour = contours[i];
+            if(contour[j].y < 65)
+            {
+                not_gripper = false;
+                break;
+            }
+        }
+
+        if(contourArea(contours[i]) > 250 && not_gripper == true)
+        {
+
             token_contours.push_back(contours[i]);
         }
     }
 
     printf("size: %lu\n", token_contours.size());
 
-    if(token_contours.size() > 0)
-    {
-        // find gripper contour (always up against upper boundary of image) and remove
-        int gripper_index = 0;
-        float gripper_y = (token_contours[0])[0].y;
+    // if(token_contours.size() > 0)
+    // {
+    //     // find gripper contour (always up against upper boundary of image) and remove
+    //     int gripper_index = 0;
+    //     float gripper_y = (token_contours[0])[0].y;
 
-        for(int i = 0; i < token_contours.size(); i++)
-        {
-            vector<cv::Point> contour = token_contours[i];
-            for(int j = 0; j < contour.size(); j++)
-            {
-                if(gripper_y > contour[j].y)
-                {
-                    gripper_y = contour[j].y;
-                    gripper_index = i;
-                }
-            }
-        }        
+    //     for(int i = 0; i < token_contours.size(); i++)
+    //     {
+    //         vector<cv::Point> contour = token_contours[i];
+    //         for(int j = 0; j < contour.size(); j++)
+    //         {
+    //             if(gripper_y > contour[j].y)
+    //             {
+    //                 gripper_y = contour[j].y;
+    //                 gripper_index = i;
+    //             }
+    //         }
+    //     }        
 
-        token_contours.erase(token_contours.begin() + gripper_index);
-    }
-
+    //     token_contours.erase(token_contours.begin() + gripper_index);
+    // }
     
     return token_contours;
 }
