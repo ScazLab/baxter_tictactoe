@@ -72,6 +72,10 @@ private:
 
     // string indicating whether class instance is meant to control right/left limb
     std::string limb;
+    // indicates whether a token is within the hand camera's field of view before 
+    // the arm attempts to pick up a token
+    bool _token_present;
+
     double OFFSET_CONSTANT;
     int NUM_JOINTS;
     double CENTER_X;
@@ -167,7 +171,7 @@ public:
      *             requested pose; false otherwise 
      */
 
-    bool hasPoseCompleted(PoseType pose);
+    bool hasPoseCompleted(PoseType type, geometry_msgs::Pose pose);
 
     /*
      * checks if end effector has made contact with a token by checking if 

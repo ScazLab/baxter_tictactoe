@@ -48,7 +48,7 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
     CENTER_X = 0.655298787334;
     CENTER_Y = 0.205732369738; 
     CELL_SIDE = 0.15;
-    IR_RANGE_THRESHOLD = 0.065;
+    IR_RANGE_THRESHOLD = 0.060;
 
     _curr_x_offset = 0;
     _curr_y_offset = 0;
@@ -113,6 +113,21 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
 
     circle(img_token_rough, cv::Point((img_token.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
 
+    // check if token is within camera's field of view when hovering above tokens
+    geometry_msgs::Pose above_tokens;
+    above_tokens.position.x = 0.540;
+    above_tokens.position.x = 0.540;
+    above_tokens.position.y = 0.660;    
+    above_tokens.position.z = 0.350;
+    above_tokens.orientation.x = 0.712801568376;
+    above_tokens.orientation.y = -0.700942136419;
+    above_tokens.orientation.z = -0.0127158080742;
+    above_tokens.orientation.z = -0.0127158080742;
+    above_tokens.orientation.w = -0.0207931175453;
+
+    if(hasPoseCompleted(STRICT, above_tokens) && token_contours.size() == 4) _token_present = true;
+    else _token_present = false;
+
     // if 'noise' contours are present, do nothing
     if(token_contours.size() == 4)
     {
@@ -134,9 +149,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
         double token_area = (x_max - x_min) * (y_max - y_min);
-
         _curr_x_offset = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
-        _curr_y_offset = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/;
+        _curr_y_offset = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
 
         // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
         // ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
@@ -166,29 +180,15 @@ void ArmController::pickUpToken()
     }
     else if(limb == "left")
     {
-        hoverAboveTokens(STRICTPOSE);   
-        ROS_INFO("grip token");
-        gripToken();
-        hoverAboveTokens(STRICTPOSE);  
-
-        // bool no_token = true;
-        // while(no_token)
-        // {
-        //     hoverAboveTokens(STRICTPOSE);
-        //     // grip token; record if arm fails successfully gripped token
-        //     if(gripToken()) no_token = false;
-        //     // if(gripToken()) no_token = false;
-        //     hoverAboveTokens(LOOSEPOSE);   
-        //     // check if arm successfully gripped token
-        //     // (sometimes infrared sensor falls below threshold w/o 
-        //     // successfully gripping token)
-        //     if(!(gripper->is_gripping()))
-        //     {
-        //         no_token = true;
-        //         // gripper cannot suck w/o blowing first
-        //         gripper->blow();   
-        //     } 
-        // }    
+        ROS_WARN("Arm will not move until token is in the hand camera's field of view");
+        bool no_token = true;
+        while(no_token)
+        {
+            hoverAboveTokens(STRICTPOSE);
+            ros::Duration(2).sleep();
+            if(gripToken()) no_token = false;
+            hoverAboveTokens(LOOSEPOSE);                        
+        }
     }
 }
 
@@ -200,9 +200,13 @@ void ArmController::placeToken(int cell_num)
     }
     else if(limb == "left")
     {
+        ros::Duration(0.25).sleep();
         hoverAboveBoard();
+        ros::Duration(0.5).sleep();
         releaseToken(cell_num);
+        ros::Duration(0.25).sleep();
         hoverAboveBoard();
+        ros::Duration(0.25).sleep();
         hoverAboveTokens(STRICTPOSE);
     }
 }
@@ -280,6 +284,8 @@ bool ArmController::gripToken()
     double prev_x = 0.540;
     double prev_y = 0.660;
     
+    if(_token_present == false) return false;
+    
     while(ros::ok())
     {
         ros::Time curr_time = ros::Time::now();
@@ -292,7 +298,7 @@ bool ArmController::gripToken()
         prev_y = req_pose_stamped.pose.position.y;
 
                                  // z(t) = z(0) + v * t
-        req_pose_stamped.pose.position.z = 0.350 + (-0.07) * (curr_time - start_time).toSec();
+        req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
 
         // ROS_INFO("_curr_x_offset: %0.4f", _curr_x_offset);
         // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, curr_range);
@@ -333,8 +339,7 @@ bool ArmController::gripToken()
         ros::spinOnce();
         if(hasCollided()) 
         {
-            // gripper->suck();e
-            ROS_ERROR("entered hasCollided");
+            gripper->suck();
             break;
         }
     }
@@ -347,7 +352,7 @@ void ArmController::hoverAboveBoard()
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = CENTER_X;
     req_pose_stamped.pose.position.y = CENTER_Y;
-    req_pose_stamped.pose.position.z = 0.13621169853;
+    req_pose_stamped.pose.position.z = 0.23621169853;
 
     req_pose_stamped.pose.orientation.x = 0.712801568376;
     req_pose_stamped.pose.orientation.y = -0.700942136419;
@@ -458,18 +463,9 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         ros::spinOnce();
         loop_rate.sleep();
 
-        if(goal == GRIPPOSE)
+        if(goal == STRICTPOSE)
         {
-            if(hasPoseCompleted(GRIP)) 
-            {
-                ROS_DEBUG("[Arm Controller] Move completed\n");
-                return true;
-            }     
-            else if(checkForTimeout(10, GRIPPOSE, start_time)) return false; 
-        }
-        else if(goal == STRICTPOSE)
-        {
-            if(hasPoseCompleted(STRICT)) 
+            if(hasPoseCompleted(STRICT, req_pose_stamped.pose)) 
             {
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
@@ -478,7 +474,7 @@ bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal
         }
         else if(goal == LOOSEPOSE)
         {
-            if(hasPoseCompleted(LOOSE)) 
+            if(hasPoseCompleted(LOOSE, req_pose_stamped.pose)) 
             {
                 ROS_DEBUG("[Arm Controller] Move completed");
                 return true;
@@ -516,60 +512,29 @@ bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time
     }
 }
 
-bool ArmController::hasPoseCompleted(PoseType pose)
+bool ArmController::hasPoseCompleted(PoseType type, Pose req_pose)
 {
     bool same_pose = true;
 
-    // ROS_DEBUG("Checking if pose has been completed. Strategy: %s",pose==STRICT?"strict":"loose");
-
-    if(pose == GRIP)
+    if(type == STRICT)
     {
-        // if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
-        // if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
-        
-        float curr_z = curr_pose.position.z;
-        float req_z = req_pose_stamped.pose.position.z;
-
-        if(!equalXDP(curr_z, req_z, 2)) same_pose = false;   
-        // if(!equalXDP(curr_z, req_z, 3)) same_pose = false;  
-
-
-        // ROS_DEBUG("curr_z: %0.3f req_z: %0.3f", curr_z, req_z);
-        // ROS_DEBUG("(2dp) curr_z: %0.3f req_z: %0.3f", roundf(curr_z * (100)) / (100), roundf(req_z * (100)) / (100));
-        // ROS_DEBUG("same_pose: %d", same_pose);
-
-        // if(!withinXHundredth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 4)) same_pose = false;
-        // if(!withinXHundredth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 4)) same_pose = false;
-        // if(!withinXHundredth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 4)) same_pose = false;
-        // if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;
+        if(!withinXHundredth(curr_pose.position.x, req_pose.position.x, 1)  || 
+            !withinXHundredth(curr_pose.position.y, req_pose.position.y, 1) || 
+            !withinXHundredth(curr_pose.position.z, req_pose.position.z, 2) ||   
+            !equalXDP(curr_pose.orientation.x, req_pose.orientation.x, 2)   || 
+            !equalXDP(curr_pose.orientation.y, req_pose.orientation.y, 2)   || 
+            !equalXDP(curr_pose.orientation.z, req_pose.orientation.z, 2)   || 
+            !equalXDP(curr_pose.orientation.w, req_pose.orientation.w, 2)) same_pose = false;
     }
-
-    if(pose == STRICT)
+    else if(type == LOOSE)
     {
-        if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 2)) same_pose = false; 
-        if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 2)) same_pose = false;
-        if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 2)) same_pose = false;        
-    }
-    else if(pose == LOOSE)
-    {
-        if(!withinXHundredth(curr_pose.position.x, req_pose_stamped.pose.position.x, 4)) same_pose = false;  
-        if(!withinXHundredth(curr_pose.position.y, req_pose_stamped.pose.position.y, 4)) same_pose = false;  
-        if(!withinXHundredth(curr_pose.position.z, req_pose_stamped.pose.position.z, 4)) same_pose = false;              
-    }
-
-    if(pose == STRICT)
-    {
-        if(!equalXDP(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 2)) same_pose = false;
-        if(!equalXDP(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 2)) same_pose = false;
-    }
-    else if(pose == LOOSE)
-    {
-        if(!withinXHundredth(curr_pose.orientation.x, req_pose_stamped.pose.orientation.x, 4)) same_pose = false;
-        if(!withinXHundredth(curr_pose.orientation.y, req_pose_stamped.pose.orientation.y, 4)) same_pose = false;
-        if(!withinXHundredth(curr_pose.orientation.z, req_pose_stamped.pose.orientation.z, 4)) same_pose = false;
-        if(!withinXHundredth(curr_pose.orientation.w, req_pose_stamped.pose.orientation.w, 4)) same_pose = false;   
+        if(!withinXHundredth(curr_pose.position.x, req_pose.position.x, 4)         ||
+            !withinXHundredth(curr_pose.position.y, req_pose.position.y, 4)        ||
+            !withinXHundredth(curr_pose.position.z, req_pose.position.z, 4)        ||
+            !withinXHundredth(curr_pose.orientation.x, req_pose.orientation.x, 4)  ||
+            !withinXHundredth(curr_pose.orientation.y, req_pose.orientation.y, 4)  ||
+            !withinXHundredth(curr_pose.orientation.z, req_pose.orientation.z, 4)  ||
+            !withinXHundredth(curr_pose.orientation.w, req_pose.orientation.w, 4)) same_pose = false;
     }
 
     return same_pose;    
