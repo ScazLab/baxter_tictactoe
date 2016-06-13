@@ -45,8 +45,8 @@ ArmController::ArmController(string limb): img_trp(n), limb(limb)
 
     NUM_JOINTS = 7;
     OFFSET_CONSTANT = 0.1;
-    CENTER_X = 0.655298787334;
-    CENTER_Y = 0.205732369738; 
+    CENTER_X = 0.725;
+    CENTER_Y = 0.200; 
     CELL_SIDE = 0.15;
     IR_RANGE_THRESHOLD = 0.060;
 
@@ -202,12 +202,12 @@ void ArmController::placeToken(int cell_num)
     {
         ros::Duration(0.25).sleep();
         hoverAboveBoard();
-        ros::Duration(0.5).sleep();
-        releaseToken(cell_num);
-        ros::Duration(0.25).sleep();
-        hoverAboveBoard();
-        ros::Duration(0.25).sleep();
-        hoverAboveTokens(STRICTPOSE);
+        // ros::Duration(0.5).sleep();
+        // releaseToken(cell_num);
+        // ros::Duration(0.25).sleep();
+        // hoverAboveBoard();
+        // ros::Duration(0.25).sleep();
+        // hoverAboveTokens(STRICTPOSE);
     }
 }
 
@@ -352,12 +352,12 @@ void ArmController::hoverAboveBoard()
     req_pose_stamped.header.frame_id = "base";
     req_pose_stamped.pose.position.x = CENTER_X;
     req_pose_stamped.pose.position.y = CENTER_Y;
-    req_pose_stamped.pose.position.z = 0.23621169853;
+    req_pose_stamped.pose.position.z = 0.500;
 
-    req_pose_stamped.pose.orientation.x = 0.712801568376;
-    req_pose_stamped.pose.orientation.y = -0.700942136419;
-    req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    req_pose_stamped.pose.orientation.w = -0.0207931175453;
+    req_pose_stamped.pose.orientation.x = -0.00148564331811;
+    req_pose_stamped.pose.orientation.y = 0.999783174154;
+    req_pose_stamped.pose.orientation.z = -0.0153224515183;
+    req_pose_stamped.pose.orientation.w = 0.0140221261632;
 
     vector<float> joint_angles = getJointAngles(req_pose_stamped);
     publishMoveCommand(joint_angles, LOOSEPOSE);   

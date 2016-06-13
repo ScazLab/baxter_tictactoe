@@ -6,10 +6,10 @@ int main(int argc, char **argv)
 
     ArmController acl("left");
     // acl.moveToRest();
-    acl.pickUpToken();
-    // acl.placeToken(4);
+    // acl.pickUpToken();
+    acl.placeToken(4);
 
-    ros::shutdown();
+    // ros::shutdown();
     ros::spin();
     return 0;
 }
