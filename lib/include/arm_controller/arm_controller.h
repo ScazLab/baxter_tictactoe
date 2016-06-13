@@ -40,38 +40,41 @@ class ArmController
 {
 
 private:
-    ros::NodeHandle n;
+    ros::NodeHandle _n;
 
     // publishes joint angles commands in order to move arm
-    ros::Publisher joint_cmd_pub;
+    ros::Publisher _joint_cmd_pub;
     // subscribes to end-effector endpoint in order to find current pose
-    ros::Subscriber endpt_sub;
+    ros::Subscriber _endpt_sub;
     // subscribes to left hand range in order to find current range
-    ros::Subscriber ir_sub;
+    ros::Subscriber _ir_sub;
     // requests inverse kinematics service to find joint angles to reach desired pose
-    ros::ServiceClient ik_client;
+    ros::ServiceClient _ik_client;
 
     // 'node handle' for images (e.g img_sub = img_trp.subscribe(...) instead of img_sub = n.subscribe(...))
-    image_transport::ImageTransport img_trp;
+    image_transport::ImageTransport _img_trp;
     // subscribes to hand camera image stream in order to locate tile
-    image_transport::Subscriber img_sub;
+    image_transport::Subscriber _img_sub;
 
     // PoseStamped message to be used as request value for IK solver service
-    geometry_msgs::PoseStamped req_pose_stamped;
+    geometry_msgs::PoseStamped _req_pose_stamped;
     // Pose message used to store current pose; updated by endpointCallback()
-    geometry_msgs::Pose curr_pose;
+    geometry_msgs::Pose _curr_pose;
 
-    float curr_range;
-    float curr_max_range;
-    float curr_min_range;
+    float _curr_range;
+    float _curr_max_range;
+    float _curr_min_range;
 
     float _curr_x_offset;
     float _curr_y_offset;
 
-    ttt::Vacuum_Gripper * gripper;
+    ttt::Vacuum_Gripper * _gripper;
 
     // string indicating whether class instance is meant to control right/left limb
-    std::string limb;
+    std::string _limb;
+
+    bool _release_mode;
+    bool _grip_mode;
     // indicates whether a token is within the hand camera's field of view before 
     // the arm attempts to pick up a token
     bool _token_present;
