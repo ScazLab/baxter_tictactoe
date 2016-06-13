@@ -116,7 +116,6 @@ public:
      */
 
     void hoverAboveBoard();
-    void gripTest(float z_offset);
 
     /*
      * release token in the specified cell
@@ -165,10 +164,12 @@ public:
      * checks if the arm has completed its intended move by comparing
      * the requested pose and the current pose
      * 
-     * param      N/A
+     * param      PoseType type indicating whether strict or loose accuracy in 
+     *            pose-checking is desired; geometry_msgs::Pose pose indicating
+     *            the desired destination pose
      *             
      * return     true if the parameters of the current pose is equal to the 
-     *             requested pose; false otherwise 
+     *            requested pose; false otherwise 
      */
 
     bool hasPoseCompleted(PoseType type, geometry_msgs::Pose pose);
@@ -190,7 +191,7 @@ public:
      * param      two floats x and y specifying the numbers to be checked,
      *            and a float z determining the desired accuracy
      *             
-     * return     true if they are within 0.01; false otherwise
+     * return     true if they are within 0.0z; false otherwise
      */
 
     bool withinXHundredth(float x, float y, float z);
@@ -200,14 +201,31 @@ public:
      * 
      * param      two floats x and y, and a float z specifying the desired accuracy
      *             
-     * return     true if they are equal up to 2 decimal points; false otherwise
+     * return     true if they are equal up to z decimal points; false otherwise
      */
 
     bool equalXDP(float x, float y, float z);
 
     /*************************Visual Servoing Functions************************/
 
+    /*
+     * isolates the contours of a token from all blue-colored objects in the raw image
+     * 
+     * param      cv::Mat img_hsv_blue is an image that shows only the blue-colored objects 
+     *            in the raw image
+     *             
+     * return     contours of the token
+     */
+
     std::vector<std::vector<cv::Point> > getTokenContours(cv::Mat img_hsv_blue);
+
+    /*
+     * gets the highest/lowest x/y coordinate of a token contour
+     * 
+     * param      the contours of the token, and a string indicating w
+     *             
+     * return     the desired x/y value
+     */
 
     float getTokenPoints(std::vector<std::vector<cv::Point> > token_contours, std::string point);
 
