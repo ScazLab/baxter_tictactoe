@@ -28,10 +28,14 @@ private:
 
 public:
     HsvRangeFinder() : image_transport(node_handle), window("HSV Range Finder"),
-                       hsv(colorRange(160, 20),colorRange(40,200),colorRange(40,200))
+                       hsv(colorRange(60, 130),colorRange(90,256),colorRange(10,256))
     {
-        image_subscriber = image_transport.subscribe("image_in", 1,
+        // left hand camera
+        image_subscriber = image_transport.subscribe("/cameras/left_hand_camera/image", 1,
                             &HsvRangeFinder::imageCallback, this);
+        // usb camera
+        // image_subscriber = image_transport.subscribe("image_in", 1,
+        //                     &HsvRangeFinder::imageCallback, this);
 
         cv::namedWindow(window);
 
