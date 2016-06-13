@@ -54,8 +54,13 @@ ArmController::ArmController(string limb): _img_trp(_n), _limb(limb)
     _grip_mode = false;
     _token_present = false;
 
-    _curr_x_offset = 0;
-    _curr_y_offset = 0;
+    for(int i = 0; i < 9; i++)
+    {
+        _x_offset_cell[i] = 0;
+        _y_offset_cell[i] = 0;
+    }
+    _x_offset_token = 0;
+    _y_offset_token = 0;
     _curr_range = 0;
     _curr_max_range = 0;
     _curr_min_range = 0;
@@ -119,7 +124,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     double largest_area = 0, next_largest_area = 0;
     int largest_area_index = 0, next_largest_area_index = 0;
 
-    // iterate through contours and keeps track of contour w/ largest and 2nd-largest area
+    // iterate through contours and keeps track of contour w/ 2nd-largest area
     for(int i = 0; i < board_contours.size(); i++)
     {
         if(contourArea(board_contours[i], false) > largest_area)
@@ -137,6 +142,40 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     }
 
     drawContours(img_board, board_contours, next_largest_area_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+    findContours(img_board, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    largest_area = 0;
+    largest_area_index = 0;
+
+    // iterate through contours and keeps track of contour w/ largest area
+    for(int i = 0; i < board_contours.size(); i++)
+    {
+        if(contourArea(board_contours[i], false) > largest_area)
+        {
+            largest_area = contourArea(board_contours[i], false);
+            largest_area_index = i;
+        }
+    } 
+
+    // remove outer board contours
+    board_contours.erase(board_contours.begin() + largest_area_index);
+
+    img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
+    for(int i = 0; i < board_contours.size(); i++)
+    {
+        drawContours(img_board, board_contours, i, Scalar(255,255,255), CV_FILLED);
+    }
+
+    vector<cv::Point> cell_centroids;
+
+    for(int i = 0; i < board_contours.size(); i++)
+    {
+        double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
+        double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
+
+        cell_centroids.push_back(cv::Point(x,y)); 
+        circle(img_board, cv::Point(x,y), 3, Scalar(180, 40, 40), CV_FILLED);
+    }
 
     imshow("[Arm Controller] rough processed image", img_binary);
     imshow("[Arm Controller] processed image", img_board);
@@ -198,18 +237,18 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
             circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
             double token_area = (x_max - x_min) * (y_max - y_min);
-            _curr_x_offset = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
-            _curr_y_offset = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
+            _x_offset_token = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
+            _y_offset_token = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
 
             // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
             // ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
-            // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _curr_x_offset, _curr_y_offset);
+            // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _x_offset_token, _y_offset_token);
         }
         // when hand camera is blind due to being too close to token, go straight down;
         else
         {
-            _curr_x_offset = 0;
-            _curr_y_offset = 0;
+            _x_offset_token = 0;
+            _y_offset_token = 0;
         }
         imshow("[Arm Controller] rough processed image", img_token_rough);
         imshow("[Arm Controller] processed image", img_token);
@@ -258,6 +297,9 @@ void ArmController::placeToken(int cell_num)
     {
         ros::Duration(0.25).sleep();
         hoverAboveBoard();
+        // hoverAboveCell(cell_num);
+
+
         // ros::Duration(0.5).sleep();
         // releaseToken(cell_num);
         // ros::Duration(0.25).sleep();
@@ -350,15 +392,15 @@ bool ArmController::gripToken()
         ros::Rate loop_rate(500);
 
         _req_pose_stamped.header.frame_id = "base";
-        _req_pose_stamped.pose.position.x = prev_x + 0.07 * _curr_x_offset; 
+        _req_pose_stamped.pose.position.x = prev_x + 0.07 * _x_offset_token; 
         prev_x = _req_pose_stamped.pose.position.x;
-        _req_pose_stamped.pose.position.y = prev_y + 0.07 * _curr_y_offset;
+        _req_pose_stamped.pose.position.y = prev_y + 0.07 * _y_offset_token;
         prev_y = _req_pose_stamped.pose.position.y;
 
                                  // z(t) = z(0) + v * t
         _req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
 
-        // ROS_INFO("_curr_x_offset: %0.4f", _curr_x_offset);
+        // ROS_INFO("_x_offset_token: %0.4f", _x_offset_token);
         // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, _curr_range);
 
         _req_pose_stamped.pose.orientation.x = 0.712801568376;

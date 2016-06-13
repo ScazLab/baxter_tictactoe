@@ -65,8 +65,11 @@ private:
     float _curr_max_range;
     float _curr_min_range;
 
-    float _curr_x_offset;
-    float _curr_y_offset;
+
+    float _x_offset_token;
+    float _y_offset_token;
+    float _x_offset_cell[9];
+    float _y_offset_cell[9];
 
     ttt::Vacuum_Gripper * _gripper;
 
