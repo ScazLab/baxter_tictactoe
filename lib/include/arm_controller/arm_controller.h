@@ -31,6 +31,7 @@
 #include <baxter_core_msgs/JointCommand.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Point.h>
 #include <sensor_msgs/Range.h>
 // baxter_tictactoe libraries
 #include "vacuum_gripper/vacuum_gripper.h"
@@ -68,7 +69,7 @@ private:
     float _curr_min_range;
 
     cv::Point _offset_token;    
-    std::vector<cv::Point> _offset_cell;
+    std::vector<geometry_msgs::Point> _offset_cell;
 
     ttt::Vacuum_Gripper * _gripper;
 
@@ -87,8 +88,6 @@ private:
     double CENTER_Y;
     double CELL_SIDE;
     float IR_RANGE_THRESHOLD;
-
-public:
 
     /*************************Movement Functions************************/
 
@@ -234,8 +233,9 @@ public:
 
     float getTokenPoints(std::vector<std::vector<cv::Point> > token_contours, std::string point);
 
+    std::string int_to_string(const int a);
 
-// public:
+public:
 
     ArmController(std::string limb);
     ~ArmController();

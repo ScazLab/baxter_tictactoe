@@ -56,7 +56,9 @@ ArmController::ArmController(string limb): _img_trp(_n), _limb(limb)
 
     for(int i = 0; i < 9; i++)
     {
-        _offset_cell.push_back(cv::Point(0,0));
+        geometry_msgs::Point pt;
+        pt.x = 0; pt.y = 0; pt.z = 0;
+        _offset_cell.push_back(pt);
     }
     _offset_token = cv::Point(0,0);
     _curr_range = 0;
@@ -70,15 +72,6 @@ ArmController::~ArmController() {
     destroyWindow("[Arm Controller] processed image");
 }
 
-/*************************Callback Functions************************/
-
-string int_to_string( const int a )
-{
-    stringstream ss;
-    ss << a;
-    return ss.str();
-}
-
 bool x_descending(vector<cv::Point> i, vector<cv::Point> j) 
 {
     double x_i = moments(i, false).m10 / cv::moments(i, false).m00;
@@ -86,6 +79,8 @@ bool x_descending(vector<cv::Point> i, vector<cv::Point> j)
 
     return x_i > x_j;
 }
+
+/*************************Callback Functions************************/
 
 void ArmController::endpointCallback(const EndpointState& msg)
 {
@@ -116,115 +111,101 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());
     }
 
-    Mat img_gray;
-    Mat img_binary;
-    Mat img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-
-    // convert image color model from BGR to grayscale
-    cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
-    // convert grayscale image to binary image, using 155 threshold value to 
-    // isolate white-colored board
-    threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
-
-    // a contour is an array of x-y coordinates describing the boundaries of an object
-    vector<vector<cv::Point> > board_contours;
-    // Vec4i = vectors w/ 4 ints
-    vector<cv::Vec4i> hierarchy;
-
-    // find white edges of outer board by finding contours (i.e boundaries)
-    findContours(img_binary, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    double largest_area = 0, next_largest_area = 0;
-    int largest_area_index = 0, next_largest_area_index = 0;
-
-    // iterate through contours and keeps track of contour w/ 2nd-largest area
-    for(int i = 0; i < board_contours.size(); i++)
-    {
-        if(contourArea(board_contours[i], false) > largest_area)
-        {
-            next_largest_area = largest_area;
-            next_largest_area_index = largest_area_index;
-            largest_area = contourArea(board_contours[i], false);
-            largest_area_index = i;
-        }
-        else if(next_largest_area < contourArea(board_contours[i], false) && contourArea(board_contours[i], false) < largest_area)
-        {
-            next_largest_area = contourArea(board_contours[i], false);
-            next_largest_area_index = i;
-        }
-    }
-
-    float board_area = contourArea(board_contours[largest_area_index], false);
-
-    drawContours(img_board, board_contours, next_largest_area_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
-    findContours(img_board, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    largest_area = 0;
-    largest_area_index = 0;
-
-    // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < board_contours.size(); i++)
-    {
-        if(contourArea(board_contours[i], false) > largest_area)
-        {
-            largest_area = contourArea(board_contours[i], false);
-            largest_area_index = i;
-        }
-    } 
-
-    // remove outer board contours
-    board_contours.erase(board_contours.begin() + largest_area_index);
-
-    img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-    for(int i = 0; i < board_contours.size(); i++)
-    {
-        drawContours(img_board, board_contours, i, Scalar(255,255,255), CV_FILLED);
-    }
-
-    cv::Point img_center(img_board.size().width / 2, img_board.size().height / 2);
-    circle(img_board, img_center, 1, Scalar(180,40,40), CV_FILLED);
-
-    for(int i = 0; i < board_contours.size(); i++)
-    {
-        if(contourArea(board_contours[i], false) < 150)
-        {
-            board_contours.erase(board_contours.begin() + i);
-        } 
-    }
-
-    for(int i = 0; i <= 6; i+= 3)
-    {
-        sort(board_contours.begin() + i, board_contours.begin() + i + 3, x_descending);        
-    }
-
-    // sort(board_contours.begin(), board_contours.begin() + 3, x_descending);        
-
-    for(int i = board_contours.size() - 1; i >= 0; i--)
-    {
-        double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
-        double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
-        cv::Point centroid(x,y);  
-        cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-    }
-
-    // sort(board_contours.begin(), board_contours.end(), x_descending);        
-
-    // for(int i = board_contours.size() - 1; i >= 0; i--)
+    // if(_release_mode)
     // {
-    //     double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
-    //     double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
-    //     cv::Point centroid(x,y);  
+        Mat img_gray, img_binary, img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
 
-    //     cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
+        // convert grayscale image to binary image
+        threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
 
-    //     _offset_cell[board_contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (img_center.x - centroid.x);
-    //     _offset_cell[board_contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (img_center.y - centroid.y);        
+        vector<vector<cv::Point> > board_contours;
+        vector<cv::Vec4i> hierarchy; // captures contours within contours 
+
+        findContours(img_binary, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+        double largest_area = 0, next_largest_area = 0;
+        int largest_area_index = 0, next_largest_area_index = 0;
+
+        // iterate through contours and keeps track of contour w/ 2nd-largest area
+        for(int i = 0; i < board_contours.size(); i++)
+        {
+            if(contourArea(board_contours[i], false) > largest_area)
+            {
+                next_largest_area = largest_area;
+                next_largest_area_index = largest_area_index;
+                largest_area = contourArea(board_contours[i], false);
+                largest_area_index = i;
+            }
+            else if(next_largest_area < contourArea(board_contours[i], false) && contourArea(board_contours[i], false) < largest_area)
+            {
+                next_largest_area = contourArea(board_contours[i], false);
+                next_largest_area_index = i;
+            }
+        }
+
+        float board_area = contourArea(board_contours[next_largest_area_index], false);
+
+        drawContours(img_board, board_contours, next_largest_area_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+        findContours(img_board, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+        largest_area = 0;
+        largest_area_index = 0;
+
+        // iterate through contours and keeps track of contour w/ largest area
+        for(int i = 0; i < board_contours.size(); i++)
+        {
+            if(contourArea(board_contours[i], false) > largest_area)
+            {
+                largest_area = contourArea(board_contours[i], false);
+                largest_area_index = i;
+            }
+        } 
+
+        // remove outer board contours
+        board_contours.erase(board_contours.begin() + largest_area_index);
+
+        if(board_contours.size() != 9) return;
+
+        img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
+        for(int i = 0; i < board_contours.size(); i++)
+        {
+            drawContours(img_board, board_contours, i, Scalar(255,255,255), CV_FILLED);
+        }
+
+        cv::Point img_center(img_board.size().width / 2, img_board.size().height / 2);
+        circle(img_board, img_center, 1, Scalar(180,40,40), CV_FILLED);
+
+        for(int i = 0; i < board_contours.size(); i++)
+        {
+            if(contourArea(board_contours[i], false) < 150)
+            {
+                board_contours.erase(board_contours.begin() + i);
+            } 
+        }
+
+        for(int i = 0; i <= board_contours.size() - 3; i+= 3)
+        {
+            sort(board_contours.begin() + i, board_contours.begin() + i + 3, x_descending);        
+        }
+
+        for(int i = board_contours.size() - 1; i >= 0; i--)
+        {
+            double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
+            double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
+            cv::Point centroid(x,y);  
+            cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+
+            _offset_cell[board_contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (img_center.x - centroid.x);
+            _offset_cell[board_contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (img_center.y - centroid.y);  
+            _offset_cell[board_contours.size() - 1 - i].z = 43100 /*constant*/ / board_area;
+        }
+
+        ROS_INFO("offset_x: %0.4f offset_y: %0.4f area: %0.3f", _offset_cell[2].x, _offset_cell[2].y, board_area);
+
+        imshow("[Arm Controller] rough processed image", img_binary);
+        imshow("[Arm Controller] processed image", img_board);
     // }
-
-    // ROS_INFO("offset_x: %0.4f offset_y: %0.4f", img_center.x - centroid.x, img_center.y - centroid.x);
-
-    imshow("[Arm Controller] rough processed image", img_binary);
-    imshow("[Arm Controller] processed image", img_board);
 
     if(_grip_mode)
     {
@@ -343,9 +324,6 @@ void ArmController::placeToken(int cell_num)
     {
         ros::Duration(0.25).sleep();
         hoverAboveBoard();
-        // hoverAboveCell(cell_num);
-
-
         // ros::Duration(0.5).sleep();
         // releaseToken(cell_num);
         // ros::Duration(0.25).sleep();
@@ -354,6 +332,7 @@ void ArmController::placeToken(int cell_num)
         // hoverAboveTokens(STRICTPOSE);
     }
 
+    ros::Duration(10).sleep();
     _release_mode = false;
 }
 
@@ -511,15 +490,10 @@ void ArmController::hoverAboveBoard()
 
 void ArmController::releaseToken(int cell_num)
 {
-    if((cell_num - 1) / 3 == 0) _req_pose_stamped.pose.position.x = CENTER_X + CELL_SIDE;
-    if((cell_num - 1) / 3 == 1) _req_pose_stamped.pose.position.x = CENTER_X;
-    if((cell_num - 1) / 3 == 2) _req_pose_stamped.pose.position.x = CENTER_X - CELL_SIDE;
-    if(cell_num % 3 == 0) _req_pose_stamped.pose.position.y = CENTER_Y - CELL_SIDE;
-    if(cell_num % 3 == 1) _req_pose_stamped.pose.position.y = CENTER_Y + CELL_SIDE;
-    if(cell_num % 3 == 2) _req_pose_stamped.pose.position.y = CENTER_Y;
-
-    _req_pose_stamped.pose.position.z = -0.13501169853;
-
+    _req_pose_stamped.pose.position.x = CENTER_X + _offset_cell[cell_num].x;
+    _req_pose_stamped.pose.position.y = CENTER_Y + _offset_cell[cell_num].y;
+    _req_pose_stamped.pose.position.z = 0.500 - _offset_cell[cell_num].z;
+    
     _req_pose_stamped.pose.orientation.x = 0.712801568376;
     _req_pose_stamped.pose.orientation.y = -0.700942136419;
     _req_pose_stamped.pose.orientation.z = -0.0127158080742;
@@ -789,3 +763,17 @@ float ArmController::getTokenPoints(vector<vector<cv::Point> > token_contours, s
     if(point == "x_min") return x_min;
     if(point == "x_max") return x_max;
 }
+
+
+
+
+
+
+string ArmController::int_to_string( const int a )
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
+
+
