@@ -17,6 +17,8 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <vector>
 // Image-handling libraries
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
@@ -65,11 +67,8 @@ private:
     float _curr_max_range;
     float _curr_min_range;
 
-
-    float _x_offset_token;
-    float _y_offset_token;
-    float _x_offset_cell[9];
-    float _y_offset_cell[9];
+    cv::Point _offset_token;    
+    std::vector<cv::Point> _offset_cell;
 
     ttt::Vacuum_Gripper * _gripper;
 

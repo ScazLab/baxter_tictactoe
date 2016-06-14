@@ -56,11 +56,9 @@ ArmController::ArmController(string limb): _img_trp(_n), _limb(limb)
 
     for(int i = 0; i < 9; i++)
     {
-        _x_offset_cell[i] = 0;
-        _y_offset_cell[i] = 0;
+        _offset_cell.push_back(cv::Point(0,0));
     }
-    _x_offset_token = 0;
-    _y_offset_token = 0;
+    _offset_token = cv::Point(0,0);
     _curr_range = 0;
     _curr_max_range = 0;
     _curr_min_range = 0;
@@ -73,6 +71,21 @@ ArmController::~ArmController() {
 }
 
 /*************************Callback Functions************************/
+
+string int_to_string( const int a )
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
+
+bool x_descending(vector<cv::Point> i, vector<cv::Point> j) 
+{
+    double x_i = moments(i, false).m10 / cv::moments(i, false).m00;
+    double x_j = moments(j, false).m10 / cv::moments(j, false).m00;
+
+    return x_i > x_j;
+}
 
 void ArmController::endpointCallback(const EndpointState& msg)
 {
@@ -111,7 +124,7 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
     cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
     // convert grayscale image to binary image, using 155 threshold value to 
     // isolate white-colored board
-    threshold(img_gray, img_binary, 90, 255, cv::THRESH_BINARY);
+    threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
 
     // a contour is an array of x-y coordinates describing the boundaries of an object
     vector<vector<cv::Point> > board_contours;
@@ -141,6 +154,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         }
     }
 
+    float board_area = contourArea(board_contours[largest_area_index], false);
+
     drawContours(img_board, board_contours, next_largest_area_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
     findContours(img_board, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
@@ -166,16 +181,47 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         drawContours(img_board, board_contours, i, Scalar(255,255,255), CV_FILLED);
     }
 
-    vector<cv::Point> cell_centroids;
+    cv::Point img_center(img_board.size().width / 2, img_board.size().height / 2);
+    circle(img_board, img_center, 1, Scalar(180,40,40), CV_FILLED);
 
     for(int i = 0; i < board_contours.size(); i++)
     {
+        if(contourArea(board_contours[i], false) < 150)
+        {
+            board_contours.erase(board_contours.begin() + i);
+        } 
+    }
+
+    for(int i = 0; i <= 6; i+= 3)
+    {
+        sort(board_contours.begin() + i, board_contours.begin() + i + 3, x_descending);        
+    }
+
+    // sort(board_contours.begin(), board_contours.begin() + 3, x_descending);        
+
+    for(int i = board_contours.size() - 1; i >= 0; i--)
+    {
         double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
         double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
-
-        cell_centroids.push_back(cv::Point(x,y)); 
-        circle(img_board, cv::Point(x,y), 3, Scalar(180, 40, 40), CV_FILLED);
+        cv::Point centroid(x,y);  
+        cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
     }
+
+    // sort(board_contours.begin(), board_contours.end(), x_descending);        
+
+    // for(int i = board_contours.size() - 1; i >= 0; i--)
+    // {
+    //     double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
+    //     double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
+    //     cv::Point centroid(x,y);  
+
+    //     cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+
+    //     _offset_cell[board_contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (img_center.x - centroid.x);
+    //     _offset_cell[board_contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (img_center.y - centroid.y);        
+    // }
+
+    // ROS_INFO("offset_x: %0.4f offset_y: %0.4f", img_center.x - centroid.x, img_center.y - centroid.x);
 
     imshow("[Arm Controller] rough processed image", img_binary);
     imshow("[Arm Controller] processed image", img_board);
@@ -237,8 +283,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
             circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
             double token_area = (x_max - x_min) * (y_max - y_min);
-            _x_offset_token = (4.7807/ token_area) * (x_mid - (img_token.size().width / 2));
-            _y_offset_token = ((4.7807 / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
+            _offset_token.x = (4.7807 /*constant*/ / token_area) * (x_mid - (img_token.size().width / 2));
+            _offset_token.y = ((4.7807 /*constant*/ / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
 
             // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
             // ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
@@ -247,8 +293,8 @@ void ArmController::imageCallback(const ImageConstPtr& msg)
         // when hand camera is blind due to being too close to token, go straight down;
         else
         {
-            _x_offset_token = 0;
-            _y_offset_token = 0;
+            _offset_token.x = 0;
+            _offset_token.y = 0;
         }
         imshow("[Arm Controller] rough processed image", img_token_rough);
         imshow("[Arm Controller] processed image", img_token);
@@ -392,9 +438,9 @@ bool ArmController::gripToken()
         ros::Rate loop_rate(500);
 
         _req_pose_stamped.header.frame_id = "base";
-        _req_pose_stamped.pose.position.x = prev_x + 0.07 * _x_offset_token; 
+        _req_pose_stamped.pose.position.x = prev_x + 0.07 * _offset_token.x;
         prev_x = _req_pose_stamped.pose.position.x;
-        _req_pose_stamped.pose.position.y = prev_y + 0.07 * _y_offset_token;
+        _req_pose_stamped.pose.position.y = prev_y + 0.07 * _offset_token.y;
         prev_y = _req_pose_stamped.pose.position.y;
 
                                  // z(t) = z(0) + v * t
