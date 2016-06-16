@@ -28,8 +28,32 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         left_arm_controller = new ArmController("left");
         right_arm_controller = new ArmController("right");
 
-        right_arm_controller->moveToRest();
-        left_arm_controller->moveToRest();        
+        std::string left = "left";
+        std::string right = "right";
+        int failure;
+        void *status;
+
+        pthread_t thread[2];
+        pthread_attr_t attr;
+
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+        // for(int i = 0; i < 2; i++)
+        // {
+        //     failure = pthread_create(&thread[i], &attr, 
+        //                             i == 0 ? left_arm_controller->moveToRest : right_arm_controller->moveToRest, 
+        //                             NULL);
+        //     if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
+        // }
+
+        // pthread_attr_destroy(&attr);
+        // for(int i = 0; i < 2; i++)
+        // {
+        //     failure = pthread_join(thread[i], &status);
+        //     if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
+        //     else ROS_INFO("[tictactoeBrain] The %s arm has moved to rest position", i == 0 ? "left" : "right");
+        // }
     }
 
     _number_of_tokens_on_board.set(0);

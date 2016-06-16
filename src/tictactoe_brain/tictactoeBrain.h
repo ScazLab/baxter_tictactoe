@@ -14,7 +14,7 @@
 #include "vacuum_gripper/vacuum_gripper.h"
 #include "arm_controller/arm_controller.h"
 
-
+#include <pthread.h>
 
 namespace ttt
 {

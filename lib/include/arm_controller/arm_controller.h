@@ -32,9 +32,12 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/Quaternion.h>
 #include <sensor_msgs/Range.h>
 // baxter_tictactoe libraries
 #include "vacuum_gripper/vacuum_gripper.h"
+// Threading libraries
+#include <pthread.h>
 
 enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION, GRIPPOSE};
 enum PoseType {LOOSE, STRICT, GRIP};
@@ -68,7 +71,7 @@ private:
     float _curr_max_range;
     float _curr_min_range;
 
-    cv::Point _offset_token;    
+    geometry_msgs::Point _offset_token;    
     std::vector<geometry_msgs::Point> _offset_cell;
 
     ttt::Vacuum_Gripper * _gripper;
@@ -76,11 +79,16 @@ private:
     // string indicating whether class instance is meant to control right/left limb
     std::string _limb;
 
-    bool _release_mode;
+    bool _scan_mode;
     bool _grip_mode;
     // indicates whether a token is within the hand camera's field of view before 
     // the arm attempts to pick up a token
     bool _token_present;
+    bool _board_scanned;
+
+
+    int _rest_state;
+
 
     double OFFSET_CONSTANT;
     int NUM_JOINTS;
@@ -158,6 +166,12 @@ private:
      */
 
     bool publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
+
+    void pushLimbs(baxter_core_msgs::JointCommand * joint_cmd);
+
+    void setPosition(geometry_msgs::Point * pt, float x, float y, float z);
+
+    void setOrientation(geometry_msgs::Quaternion * quat, float x, float y, float z, float w);
 
 
     /*************************Checking Functions************************/
@@ -278,6 +292,8 @@ public:
 
     /*************************Movement Functions************************/
 
+    void scanBoard();
+
     /*
      * move to position above tokens and pick up tokens
      * 
@@ -307,6 +323,8 @@ public:
      * return     N/A
      */
 
-    void moveToRest();
+    void * moveToRest(void);
+
+    static void * moveToRestHelper(void * context);
 
 };
