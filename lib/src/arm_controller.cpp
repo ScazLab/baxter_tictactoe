@@ -91,38 +91,41 @@ void ArmController::moveToRest(void * context)
 
 void * moveToRestThread(void * context)
 {
-  ArmController * ac = (ArmController *) context;
+    ArmController * ac = (ArmController *) context;
 
-  (ac->_req_pose_stamped).header.frame_id = "base";
-  ac->setPosition(&(ac->_req_pose_stamped).pose.position, 
-      0.292391, ac->_limb == "left" ? 0.611039 : -0.611039, 0.181133);
-  ac->setOrientation(&(ac->_req_pose_stamped).pose.orientation, 
-      0.028927, 0.686745, 0.00352694, 0.726314);
+    (ac->_req_pose_stamped).header.frame_id = "base";
+    ac->setPosition(&(ac->_req_pose_stamped).pose.position, 
+        0.292391, ac->_limb == "left" ? 0.611039 : -0.611039, 0.181133);
+    ac->setOrientation(&(ac->_req_pose_stamped).pose.orientation, 
+        0.028927, 0.686745, 0.00352694, 0.726314);
 
-  while(!(ac->hasPoseCompleted(ArmController::STRICT, (ac->_req_pose_stamped).pose)))
-  {
-      ros::Rate loop_rate(500);
+    while(!(ac->hasPoseCompleted(ArmController::STRICT, (ac->_req_pose_stamped).pose)))
+    {
+        cout << ac->_curr_pose << endl;
+        ros::Rate loop_rate(500);
 
-      JointCommand joint_cmd;
-      joint_cmd.mode = JointCommand::POSITION_MODE;
-      ac->pushLimbs(&joint_cmd);
-      joint_cmd.command.resize(ac->NUM_JOINTS);
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+        ac->pushLimbs(&joint_cmd);
+        joint_cmd.command.resize(ac->NUM_JOINTS);
 
-      joint_cmd.command[0] = ac->_limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
-      joint_cmd.command[1] = ac->_limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
-      joint_cmd.command[2] = ac->_limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
-      joint_cmd.command[3] = ac->_limb == "left" ? 2.2856313739492666   : 2.2695245756764697;
-      joint_cmd.command[4] = ac->_limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
-      joint_cmd.command[5] = ac->_limb == "left" ? -1.4684031092033123  : -1.469170099597255;
-      joint_cmd.command[6] = ac->_limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
+        joint_cmd.command[0] = ac->_limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
+        joint_cmd.command[1] = ac->_limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
+        joint_cmd.command[2] = ac->_limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
+        joint_cmd.command[3] = ac->_limb == "left" ? 2.2856313739492666   : 2.2695245756764697;
+        joint_cmd.command[4] = ac->_limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
+        joint_cmd.command[5] = ac->_limb == "left" ? -1.4684031092033123  : -1.469170099597255;
+        joint_cmd.command[6] = ac->_limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
-      (ac->_joint_cmd_pub).publish(joint_cmd);
-      loop_rate.sleep();
-  }
+        (ac->_joint_cmd_pub).publish(joint_cmd);
+        loop_rate.sleep();
 
-  ROS_INFO("The %s arm has been moved to rest", (ac->_limb).c_str());
-  ac->_state = ArmController::REST;
-  pthread_exit(NULL);  
+        ROS_INFO("publishing commands");
+    }
+
+    ROS_INFO("The %s arm has been moved to rest", (ac->_limb).c_str());
+    ac->_state = ArmController::REST;
+    pthread_exit(NULL);  
 }
 
 void ArmController::pushLimbs(JointCommand * joint_cmd)
@@ -736,6 +739,7 @@ bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time
 
 bool ArmController::hasPoseCompleted(PoseType type, Pose req_pose)
 {
+    // cout << _curr_pose << endl;
     bool same_pose = true;
 
     if(type == STRICT)
