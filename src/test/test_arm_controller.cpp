@@ -9,35 +9,24 @@ int main(int argc, char **argv)
     ArmController * left_arm_controller = new ArmController("left");
     ArmController * right_arm_controller = new ArmController("right");
 
-    string left = "left";
-    string right = "right";
-    int failure;
-    void *status;
+    left_arm_controller->moveToRest(left_arm_controller);
 
-    pthread_t thread[2];
-    pthread_attr_t attr;
+    ROS_INFO("parallel to moveToRest");
 
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-    for(long i = 0; i < 2; i++)
+    while(left_arm_controller->_state != ArmController::REST)
     {
-        failure = pthread_create(&thread[i], &attr, &ArmController::moveToRestHelper, i == 0 ? left_arm_controller : right_arm_controller);
-        if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
+        ros::Duration(0.1).sleep();
     }
 
-    pthread_attr_destroy(&attr);
-    for(int i = 0; i < 2; i++)
-    {
-        failure = pthread_join(thread[i], &status);
-        if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
-    }
+    // left_arm_controller->moveToRest(left_arm_controller);
+    // right_arm_controller->moveToRest(right_arm_controller);
 
-    ROS_INFO("[tictactoeBrain] The arm has moved to rest position");
-    // void* (ArmController::)(void*)
-    // void* (*)              (void*)
-
-    pthread_exit(NULL);
+    // while(left_arm_controller->_state != ArmController::REST || right_arm_controller->_state != ArmController::REST)
+    // {
+    //     ros::Duration(0.1).sleep();
+    // }
+    
+    ROS_INFO("Arms moved to rest");
 
     ros::shutdown();
     ros::spin();

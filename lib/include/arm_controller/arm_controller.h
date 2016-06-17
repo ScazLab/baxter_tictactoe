@@ -32,24 +32,163 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Quaternion.h>
 #include <sensor_msgs/Range.h>
 // baxter_tictactoe libraries
 #include "vacuum_gripper/vacuum_gripper.h"
 // Threading libraries
 #include <pthread.h>
 
-enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION, GRIPPOSE};
-enum PoseType {LOOSE, STRICT, GRIP};
+void * moveToRestThread(void * context);
 
 class ArmController
 {
 
-private:
-    ros::NodeHandle _n;
+
+public:
+
+    ArmController(std::string limb);
+    ~ArmController();
+
+    enum State {START, REST};
+    enum GoalType {LOOSEPOSE, STRICTPOSE, COLLISION, GRIPPOSE};
+    enum PoseType {LOOSE, STRICT, GRIP};
 
     // publishes joint angles commands in order to move arm
     ros::Publisher _joint_cmd_pub;
+
+
+    // PoseStamped message to be used as request value for IK solver service
+    geometry_msgs::PoseStamped _req_pose_stamped;
+    // Pose message used to store current pose; updated by endpointCallback()
+    geometry_msgs::Pose _curr_pose;
+
+    float _curr_range;
+    float _curr_max_range;
+    float _curr_min_range;
+
+    cv::Point _offset_token;    
+    std::vector<geometry_msgs::Point> _offset_cell;
+
+    ttt::Vacuum_Gripper * _gripper;
+
+    // string indicating whether class instance is meant to control right/left limb
+    std::string _limb;
+
+    bool _release_mode;
+    bool _grip_mode;
+    // indicates whether a token is within the hand camera's field of view before 
+    // the arm attempts to pick up a token
+    bool _token_present;
+
+    double OFFSET_CONSTANT;
+    int NUM_JOINTS;
+    double CENTER_X;
+    double CENTER_Y;
+    float IR_RANGE_THRESHOLD;
+
+    State _state;
+
+
+    /*
+     * moves the arm to a rest position when not performing a move
+     * 
+     * param      N/A
+     * 
+     * return     N/A
+     */
+
+    void moveToRest(void * context);
+
+    void pushLimbs(baxter_core_msgs::JointCommand * joint_cmd);
+
+    void setPosition(geometry_msgs::Point * pt, float x, float y, float z);
+     
+    void setOrientation(geometry_msgs::Quaternion * quat, float x, float y, float z, float w);
+
+    /*
+     * checks if the arm has completed its intended move by comparing
+     * the requested pose and the current pose
+     * 
+     * param      PoseType type indicating whether strict or loose accuracy in 
+     *            pose-checking is desired; geometry_msgs::Pose pose indicating
+     *            the desired destination pose
+     *             
+     * return     true if the parameters of the current pose is equal to the 
+     *            requested pose; false otherwise 
+     */
+
+    bool hasPoseCompleted(PoseType type, geometry_msgs::Pose pose);
+
+
+
+
+
+
+
+
+
+
+    /*************************Callback Functions************************/
+
+    /*
+     * callback function that sets the current pose to the pose received from 
+     * the endpoint state topic
+     * 
+     * param      N/A
+     * 
+     * return     N/A
+     */
+
+    void endpointCallback(const baxter_core_msgs::EndpointState& msg);
+
+    /*
+     * infrared sensor callback function that sets the current range to the range received
+     * from the left hand range state topic
+     * 
+     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * 
+     * return     N/A
+     */
+
+    void IRCallback(const sensor_msgs::RangeConstPtr& msg);
+
+    /*
+     * image callback function that displays the image stream from the hand camera 
+     * 
+     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * 
+     * return     N/A
+     */
+
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+
+
+    /*************************Movement Functions************************/
+
+    /*
+     * move to position above tokens and pick up tokens
+     * 
+     * param      N/A
+     * 
+     * return     N/A
+     */
+
+    void pickUpToken();
+
+    /*
+     * move arm to position above specified cell and place token 
+     * 
+     * param      an integer specifying which cell the token should
+     *             be placed in
+     * 
+     * return     N/A
+     */
+
+    void placeToken(int cell_num);
+
+private:
+    ros::NodeHandle _n;
+
     // subscribes to end-effector endpoint in order to find current pose
     ros::Subscriber _endpt_sub;
     // subscribes to left hand range in order to find current range
@@ -61,41 +200,6 @@ private:
     image_transport::ImageTransport _img_trp;
     // subscribes to hand camera image stream in order to locate tile
     image_transport::Subscriber _img_sub;
-
-    // PoseStamped message to be used as request value for IK solver service
-    geometry_msgs::PoseStamped _req_pose_stamped;
-    // Pose message used to store current pose; updated by endpointCallback()
-    geometry_msgs::Pose _curr_pose;
-
-    float _curr_range;
-    float _curr_max_range;
-    float _curr_min_range;
-
-    geometry_msgs::Point _offset_token;    
-    std::vector<geometry_msgs::Point> _offset_cell;
-
-    ttt::Vacuum_Gripper * _gripper;
-
-    // string indicating whether class instance is meant to control right/left limb
-    std::string _limb;
-
-    bool _scan_mode;
-    bool _grip_mode;
-    // indicates whether a token is within the hand camera's field of view before 
-    // the arm attempts to pick up a token
-    bool _token_present;
-    bool _board_scanned;
-
-
-    int _rest_state;
-
-
-    double OFFSET_CONSTANT;
-    int NUM_JOINTS;
-    double CENTER_X;
-    double CENTER_Y;
-    double CELL_SIDE;
-    float IR_RANGE_THRESHOLD;
 
     /*************************Movement Functions************************/
 
@@ -167,30 +271,10 @@ private:
 
     bool publishMoveCommand(std::vector<float> joint_angles, GoalType goal);
 
-    void pushLimbs(baxter_core_msgs::JointCommand * joint_cmd);
-
-    void setPosition(geometry_msgs::Point * pt, float x, float y, float z);
-
-    void setOrientation(geometry_msgs::Quaternion * quat, float x, float y, float z, float w);
-
 
     /*************************Checking Functions************************/
 
     bool checkForTimeout(int len, GoalType goal, ros::Time start_time);
-
-    /*
-     * checks if the arm has completed its intended move by comparing
-     * the requested pose and the current pose
-     * 
-     * param      PoseType type indicating whether strict or loose accuracy in 
-     *            pose-checking is desired; geometry_msgs::Pose pose indicating
-     *            the desired destination pose
-     *             
-     * return     true if the parameters of the current pose is equal to the 
-     *            requested pose; false otherwise 
-     */
-
-    bool hasPoseCompleted(PoseType type, geometry_msgs::Pose pose);
 
     /*
      * checks if end effector has made contact with a token by checking if 
@@ -249,82 +333,12 @@ private:
 
     std::string int_to_string(const int a);
 
-public:
-
-    ArmController(std::string limb);
-    ~ArmController();
 
 
-    /*************************Callback Functions************************/
+    
 
-    /*
-     * callback function that sets the current pose to the pose received from 
-     * the endpoint state topic
-     * 
-     * param      N/A
-     * 
-     * return     N/A
-     */
-
-    void endpointCallback(const baxter_core_msgs::EndpointState& msg);
-
-    /*
-     * infrared sensor callback function that sets the current range to the range received
-     * from the left hand range state topic
-     * 
-     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
-     * 
-     * return     N/A
-     */
-
-    void IRCallback(const sensor_msgs::RangeConstPtr& msg);
-
-    /*
-     * image callback function that displays the image stream from the hand camera 
-     * 
-     * param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
-     * 
-     * return     N/A
-     */
-
-    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-
-
-    /*************************Movement Functions************************/
-
-    void scanBoard();
-
-    /*
-     * move to position above tokens and pick up tokens
-     * 
-     * param      N/A
-     * 
-     * return     N/A
-     */
-
-    void pickUpToken();
-
-    /*
-     * move arm to position above specified cell and place token 
-     * 
-     * param      an integer specifying which cell the token should
-     *             be placed in
-     * 
-     * return     N/A
-     */
-
-    void placeToken(int cell_num);
-
-    /*
-     * moves the arm to a rest position when not performing a move
-     * 
-     * param      N/A
-     * 
-     * return     N/A
-     */
-
-    void * moveToRest(void);
-
-    static void * moveToRestHelper(void * context);
 
 };
+
+
+
