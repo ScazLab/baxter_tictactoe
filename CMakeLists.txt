@@ -199,7 +199,7 @@ target_link_libraries(test_arm_controller               arm_controller      vacu
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
 target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
 
-target_link_libraries(thread                            ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(thread                            ${CMAKE_THREAD_LIBS_INIT}                                           ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
