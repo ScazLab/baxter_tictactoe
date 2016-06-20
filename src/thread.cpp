@@ -1,80 +1,70 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <cstdio>
+#include <iostream>
 #include <cstdlib>
 
-#define NUM_THREADS 3
-#define TCOUNT 10
-#define COUNT_LIMIT 12
+using namespace std;
 
-int count = 0;
-int thread_ids[3] = {0,1,2};
-pthread_mutex_t count_mutex;
-pthread_cond_t count_threshold_cv;
-
-void *inc_count(void *t)
+/*STACK OVERFLOW CODE: ONLY USE FOR TESTING PURPOSES*/
+class MyThreadClass
 {
-    int i;
-    long my_id = (long)t;
+public:
+   MyThreadClass() {/* empty */}
+   virtual ~MyThreadClass() {/* empty */}
 
-    for(i = 0; i < TCOUNT; i++)
+   /** Returns true if the thread was successfully started, false if there was an error starting the thread */
+   bool StartInternalThread()
+   {
+      return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);
+   }
+
+   /** Will not return until the internal thread has exited. */
+   void WaitForInternalThreadToExit()
+   {
+      (void) pthread_join(_thread, NULL);
+   }
+
+protected:
+   /** Implement this method in your subclass with the code you want your thread to run. */
+   virtual void InternalThreadEntry() = 0;
+
+private:
+   static void * InternalThreadEntryFunc(void * This) {((MyThreadClass *)This)->InternalThreadEntry(); return NULL;}
+
+   pthread_t _thread;
+};
+
+class Fibonacci : public MyThreadClass
+{
+
+protected:
+    void InternalThreadEntry()
     {
-        pthread_mutex_lock(&count_mutex);
-        count++;
-        if(count == COUNT_LIMIT)
+        int fib_a = 0;
+        int fib_b = 1;
+        for(int i = 0; i < 40; i++)
         {
-            pthread_cond_signal(&count_threshold_cv);
-            printf("inc_count(): thread %ld, count = %d Threshold reached.\n", my_id, count);
+            int fib_c = fib_a + fib_b;
+            fib_a = fib_b;
+            fib_b = fib_c;
+            cout << "[thread] " << fib_c << endl;
         }
-        printf("inc_count(): thread %ld, count = %d, unlocking mutex\n", my_id, count);
-        pthread_mutex_unlock(&count_mutex);
-        sleep(1);
-    }
-    pthread_exit(NULL);
-}
+    }  
+};
 
-void *watch_count(void *t)
+int main(int argc, char const *argv[])
 {
-    long my_id = (long)t;
-    printf("Starting watch_count(): thread %ld\n", my_id);
-
-    pthread_mutex_lock(&count_mutex);
-    while(count < COUNT_LIMIT)
+    Fibonacci * fib = new Fibonacci();
+    fib->StartInternalThread();
+    for(int i = 0; i > -100; i--)
     {
-        printf("watch_count(): thread %ld Count= %d. Going into wait...\n", my_id,count);
-        pthread_cond_wait(&count_threshold_cv, &count_mutex);
-        printf("watch_count(): thread %ld Condition signal received.\n", my_id);
-        count += 125;
-        printf("watch_count(): thread %ld count now = %d.\n", my_id, count);
+        if(i == -50)
+        {
+            fib->WaitForInternalThreadToExit();
+        }
+        cout << "[main] " << i << endl;
     }
-    pthread_mutex_unlock(&count_mutex);
-    pthread_exit(NULL);
-}
 
-int main(int argc, char *argv[])
-{
-    int i, rc;
-    long t1=1, t2=2, t3=3;
-    pthread_t threads[3];
-    pthread_attr_t attr;
-
-    pthread_mutex_init(&count_mutex, NULL);
-    pthread_cond_init (&count_threshold_cv, NULL);
-
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    pthread_create(&threads[0], &attr, watch_count, (void *)t1);
-    pthread_create(&threads[1], &attr, inc_count, (void *)t2);
-    pthread_create(&threads[2], &attr, inc_count, (void *)t3);
-
-    for(i = 0; i < NUM_THREADS; i++)
-    {
-        pthread_join(threads[i], NULL);
-    }
-    printf ("Main(): Waited and joined with %d threads. Final value of count = %d. Done.\n", NUM_THREADS, count);
-    
-    pthread_attr_destroy(&attr);
-    pthread_mutex_destroy(&count_mutex);
-    pthread_cond_destroy(&count_threshold_cv);
-    pthread_exit(NULL);
+    return 0;
 }
