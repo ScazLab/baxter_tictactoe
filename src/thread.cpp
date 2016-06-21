@@ -58,12 +58,35 @@ public:
 
     static bool equalXDP(float x, float y, float z)
     {
-        // ROS_INFO("x: %0.3f y: %0.3f", x, y);
         float xTwoDP = roundf(x * pow(10, z)) / pow(10, z);
         float yTwoDP = roundf(y * pow(10, z)) / pow(10, z);
-
-        // ROS_INFO("xTwoDP: %0.3f yTwoDP: %0.3f", xTwoDP, yTwoDP);
         return xTwoDP == yTwoDP ? true : false;    
+    }
+
+    static void setPosition(Pose * pose, float x, float y, float z)
+    {
+        (*pose).position.x = x;
+        (*pose).position.y = y;
+        (*pose).position.z = z;
+    }
+     
+    static void setOrientation(Pose * pose, float x, float y, float z, float w)
+    {
+        (*pose).orientation.x = x;
+        (*pose).orientation.y = y;
+        (*pose).orientation.z = z;
+        (*pose).orientation.w = w;
+    }
+
+    static void setNames(JointCommand * joint_cmd, string limb)
+    {
+        (*joint_cmd).names.push_back(limb + "_s0");
+        (*joint_cmd).names.push_back(limb + "_s1");
+        (*joint_cmd).names.push_back(limb + "_e0");
+        (*joint_cmd).names.push_back(limb + "_e1");
+        (*joint_cmd).names.push_back(limb + "_w0");
+        (*joint_cmd).names.push_back(limb + "_w1");
+        (*joint_cmd).names.push_back(limb + "_w2");
     }
 };
 
@@ -149,16 +172,9 @@ protected:
 
         PoseStamped _req_pose_stamped;
         
-        // req_pose_stamped.pose
-        if(true){
-           _req_pose_stamped.header.frame_id = "base";
-           _req_pose_stamped.pose.position.x = 0.292391;
-           _req_pose_stamped.pose.position.y = _limb == "left" ? 0.611039 : -0.611039;
-           _req_pose_stamped.pose.position.z = 0.181133;
-           _req_pose_stamped.pose.orientation.x = 0.028927;
-           _req_pose_stamped.pose.orientation.y = 0.686745;
-           _req_pose_stamped.pose.orientation.z = 0.00352694;
-           _req_pose_stamped.pose.orientation.w = 0.726314;}
+       _req_pose_stamped.header.frame_id = "base";
+       Utils::setPosition(   &_req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+       Utils::setOrientation(&_req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
         while(!Utils::hasPoseCompleted(_curr_pose, _req_pose_stamped.pose))
         {
@@ -168,24 +184,16 @@ protected:
             joint_cmd.mode = JointCommand::POSITION_MODE;
 
             // joint_cmd.names
-            if(true){
-                joint_cmd.names.push_back(_limb + "_s0");
-                joint_cmd.names.push_back(_limb + "_s1");
-                joint_cmd.names.push_back(_limb + "_e0");
-                joint_cmd.names.push_back(_limb + "_e1");
-                joint_cmd.names.push_back(_limb + "_w0");
-                joint_cmd.names.push_back(_limb + "_w1");
-                joint_cmd.names.push_back(_limb + "_w2");}
+            Utils::setNames(&joint_cmd, _limb);
             joint_cmd.command.resize(7);
             // joint_cmd.angles
-            if(true){
-                joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
-                joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
-                joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
-                joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
-                joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
-                joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
-                joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;}
+            joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
+            joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
+            joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
+            joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
+            joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
+            joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
+            joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
             _joint_cmd_pub.publish(joint_cmd);
             loop_rate.sleep();
@@ -212,7 +220,10 @@ public:
         rest_class->StartInternalThread();
     }
 
-    // void pickUpToken(int cell_num) {PickUpTokenClass * rest_class = new PickUpTokenClass(_limb, cell_num);}
+    // void pickUpToken(int cell_num) {
+    //     PickUpTokenClass * pick_up_class = new PickUpTokenClass(_limb, cell_num);
+    //     pick_up_class->StartInternalThread();
+    // }
 
     // void putDownToken() {PutDownToken * rest_class = new PutDownToken(limb);}
 };
@@ -226,9 +237,9 @@ int main(int argc, char * argv[])
     ros::init(argc, argv, "thread");
 
     ArmController * left_ac = new ArmController("left");
-    ArmController * right_ac = new ArmController("right");
+    // ArmController * right_ac = new ArmController("right");
     left_ac->moveToRest();
-    right_ac->moveToRest();
+    // right_ac->moveToRest();
 
     ros::spin();
     ros::shutdown();
