@@ -29,15 +29,21 @@ using namespace std;
 using namespace baxter_core_msgs;
 using namespace geometry_msgs;
 using namespace sensor_msgs;
+using namespace cv;
 
 class Utils 
 {
 
 public: 
 
+    static bool hasCollided(float range, float max_range, float min_range)
+    {
+        if(range <= max_range && range >= min_range && range <= 0.060) return true;
+        else return false;
+    }
+
     static bool hasPoseCompleted(Pose a, Pose b)
     {
-        // cout << "curr " << _pose << " req " << req_pose << endl;
         bool same_pose = true;
         if(!withinXHundredth(a.position.x, b.position.x, 1))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
         if(!withinXHundredth(a.position.y, b.position.y, 1))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
@@ -152,9 +158,12 @@ private:
     pthread_t _thread;
 };
 
+
+
+
+
 class MoveToRestClass : public ROSThreadClass
 {
-
 public:
     MoveToRestClass(string limb): ROSThreadClass(limb) {}
     ~MoveToRestClass(){}
@@ -167,7 +176,6 @@ protected:
         while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
         {
             ros::Rate(100).sleep();
-            cout << "[thread] pose: " << _curr_pose << endl;
         }
 
         PoseStamped _req_pose_stamped;
@@ -204,6 +212,42 @@ protected:
     }  
 };
 
+class PickUpTokenClass : public ROSThreadClass
+{
+public:
+    PickUpTokenClass(string limb, int cell_num): ROSThreadClass(limb), _cell_num(cell_num)
+    {
+        namedWindow("[PickUpToken]", WINDOW_NORMAL);
+    }
+
+    ~PickUpTokenClass() {destroyWindow("[PickUpToken]");}
+
+protected:
+    void InternalThreadEntry()
+    {
+        while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
+        {
+            ros::Rate(100).sleep();
+            cout << "range/image not ready" << endl;
+        }
+
+        while(!Utils::hasCollided(_curr_range, _curr_min_range, _curr_max_range))
+        {
+            imshow("[PickUpToken]", _curr_img);
+            waitKey(30);
+        }
+
+        cout << "after collision" << endl;
+    }
+
+private:
+    int _cell_num;
+};
+
+
+
+
+
 class ArmController
 {
 
@@ -220,14 +264,13 @@ public:
         rest_class->StartInternalThread();
     }
 
-    // void pickUpToken(int cell_num) {
-    //     PickUpTokenClass * pick_up_class = new PickUpTokenClass(_limb, cell_num);
-    //     pick_up_class->StartInternalThread();
-    // }
+    void pickUpToken(int cell_num) {
+        PickUpTokenClass * pick_up_class = new PickUpTokenClass(_limb, cell_num);
+        pick_up_class->StartInternalThread();
+    }
 
     // void putDownToken() {PutDownToken * rest_class = new PutDownToken(limb);}
 };
-
 
 
 /* Main */
@@ -238,7 +281,8 @@ int main(int argc, char * argv[])
 
     ArmController * left_ac = new ArmController("left");
     // ArmController * right_ac = new ArmController("right");
-    left_ac->moveToRest();
+    // left_ac->moveToRest();
+    left_ac->pickUpToken(5);
     // right_ac->moveToRest();
 
     ros::spin();
