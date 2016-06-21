@@ -51,21 +51,23 @@ private:
     ros::Subscriber _endpt_sub;
     ros::Publisher _joint_cmd_pub;
     Pose _pose;
-
-    pthread_mutex_t _mutex;
-    pthread_cond_t _cond;
+    string _limb;
 
 public:
-    Test(): _n(_n), _endpt_sub(_endpt_sub)
+    Test(string limb): _limb(limb)
     {    
-        _endpt_sub = _n.subscribe("/robot/limb/left/endpoint_state", 1, &Test::endpointCallback, this);
-        _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/left/joint_command", 1);   
+        cout << "[constructor] initialization" << endl;
+        cout << "[constructor] " << _limb << endl;
+        _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &Test::endpointCallback, this);
+        _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
+        cout << "[constructor] handling of subscriber/publisher" << endl;
     }
 
-    void endpointCallback(const EndpointState& msg) {_pose = msg.pose; /*cout << "[callback] " << _pose << endl;*/}
+    void endpointCallback(const EndpointState& msg) {_pose = msg.pose; /* cout << "[callback] " << _pose << endl;*/}
+
+    // void endpointCallback2(const EndpointState& msg) {}
 
     void printCallback() {cout << "[func] " << _pose << endl;}
-    bool zeroPose() {_pose.position.x == 0 ? true : false;};
 
 protected:
     void InternalThreadEntry()
@@ -82,7 +84,7 @@ protected:
         if(true){
            _req_pose_stamped.header.frame_id = "base";
            _req_pose_stamped.pose.position.x = 0.292391;
-           _req_pose_stamped.pose.position.y = 0.611039;
+           _req_pose_stamped.pose.position.y = _limb == "left" ? 0.611039 : -0.611039;
            _req_pose_stamped.pose.position.z = 0.181133;
            _req_pose_stamped.pose.orientation.x = 0.028927;
            _req_pose_stamped.pose.orientation.y = 0.686745;
@@ -98,23 +100,23 @@ protected:
 
             // joint_cmd.names
             if(true){
-                joint_cmd.names.push_back("left_s0");
-                joint_cmd.names.push_back("left_s1");
-                joint_cmd.names.push_back("left_e0");
-                joint_cmd.names.push_back("left_e1");
-                joint_cmd.names.push_back("left_w0");
-                joint_cmd.names.push_back("left_w1");
-                joint_cmd.names.push_back("left_w2");}
+                joint_cmd.names.push_back(_limb + "_s0");
+                joint_cmd.names.push_back(_limb + "_s1");
+                joint_cmd.names.push_back(_limb + "_e0");
+                joint_cmd.names.push_back(_limb + "_e1");
+                joint_cmd.names.push_back(_limb + "_w0");
+                joint_cmd.names.push_back(_limb + "_w1");
+                joint_cmd.names.push_back(_limb + "_w2");}
             joint_cmd.command.resize(7);
             // joint_cmd.angles
             if(true){
-                joint_cmd.command[0] = 1.1508690861110316   ;
-                joint_cmd.command[1] = -0.6001699832601681  ;
-                joint_cmd.command[2] = -0.17449031462196582 ;
-                joint_cmd.command[3] = 2.2856313739492666   ;
-                joint_cmd.command[4] = 1.8680051044474626   ;
-                joint_cmd.command[5] = -1.4684031092033123  ;
-                joint_cmd.command[6] = 0.1257864246066039   ;}
+                joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
+                joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
+                joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
+                joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
+                joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
+                joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
+                joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;}
 
             _joint_cmd_pub.publish(joint_cmd);
             loop_rate.sleep();
@@ -156,17 +158,59 @@ protected:
     }
 };
 
+class ArmController : public MyThreadClass
+{
+
+private:
+    ros::NodeHandle _n;
+    ros::Subscriber _endpt_sub;
+    ros::Publisher _joint_cmd_pub;
+    Pose _pose;
+    string _limb;
+
+public:
+    Pose _curr_pose;
+
+    ArmController(string limb): _limb(limb)
+    { 
+        _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
+    }
+    virtual ~ArmController(){}
+
+    void endpointCallback(const EndpointState& msg) {_curr_pose = msg.pose; cout << _curr_pose << endl;}
+
+    // bool StartInternalThread()
+    // {
+    //    return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);
+    // }
+
+    // * Will not return until the internal thread has exited. 
+    // void WaitForInternalThreadToExit()
+    // {
+    //    (void) pthread_join(_thread, NULL);
+    // }
+
+protected:
+    virtual void InternalThreadEntry(){}
+};
+
+
+
+
 int main(int argc, char * argv[])
 {
     ros::init(argc, argv, "thread");
 
-    Test * foo = new Test();
-    foo->StartInternalThread();
-    ros::spin();
+    Test * left = new Test("left");
+    Test * right = new Test("right");
 
-    // foo->StartInternalThread();
-    // foo->WaitForInternalThreadToExit();
-    // cout << "[main] success" << endl;
-    ros::shutdown;
+    left->StartInternalThread();
+    right->StartInternalThread();
+
+    // ArmController * left_arm_controller = new ArmController("left");
+    // ArmController * right_arm_controller = new ArmController("right");
+
+    ros::spin();
+    ros::shutdown();
     return 0;
 }
