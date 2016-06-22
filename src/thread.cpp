@@ -228,20 +228,106 @@ protected:
         while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
         {
             ros::Rate(100).sleep();
-            cout << "range/image not ready" << endl;
         }
 
         while(!Utils::hasCollided(_curr_range, _curr_min_range, _curr_max_range))
         {
-            imshow("[PickUpToken]", _curr_img);
-            waitKey(30);
+            cv::Point offset = processImage();
         }
-
-        cout << "after collision" << endl;
     }
 
 private:
     int _cell_num;
+
+    void isolateBlue(Mat * output)
+    {
+        Mat hsv;
+        cvtColor(_curr_img, hsv, CV_BGR2HSV);
+        inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), *output);  
+    }
+
+    void isolateTokenContours(Mat input, Mat *output)
+    {
+        vector<vector<cv::Point> > contours, token_contours;
+        findContours(input, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+        int largest_index = 0, largest_area = 0;
+        for(int i = 0; i < contours.size(); i++)
+        {
+            bool not_gripper = true;
+            for(int j = 0; j < contours[i].size(); j++)
+            {
+                vector<cv::Point> contour = contours[i];
+                if(contour[j].y < 65) {not_gripper = false; break;}
+            }
+
+            bool is_triangle = true;
+            vector<cv::Point> contour;
+            approxPolyDP(contours[i], contour, 0.11 * arcLength(contours[i], true), true);
+
+            if(contour.size() != 3) is_triangle = false;
+
+            if(contourArea(contours[i]) > 200 && not_gripper == true && is_triangle == true)
+            {
+                token_contours.push_back(contours[i]);
+            }
+        }
+
+        *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+        // draw 'blue triangles' portion of token
+        for(int i = 0; i < token_contours.size(); i++)
+        {
+            drawContours(*output, token_contours, i, Scalar(255,255,255), CV_FILLED);
+        }
+
+        circle(*output, cv::Point((_curr_img.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
+    }
+
+    cv::Point processImage()
+    {
+        Mat blue, token_rough, token; 
+
+        isolateBlue(&blue);
+        isolateTokenContours(blue.clone(), &token_rough);
+
+
+
+
+        // // if 'noise' contours are present, do nothing
+        // if(token_contours.size() == 4)
+        // {
+        //     // find highest and lowest x and y values from token triangles contours
+        //     // to find x-y coordinate of top left token edge and token side length
+        //     float y_min = getTokenPoints(token_contours, "y_min");
+        //     float x_min = getTokenPoints(token_contours, "x_min");
+        //     float y_max = getTokenPoints(token_contours, "y_max");
+        //     float x_max = getTokenPoints(token_contours, "x_max");
+
+        //     // reconstruct token's square shape
+        //     Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
+        //     rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
+
+        //     // find and draw the center of the token and the image
+        //     double x_mid = x_min + ((x_max - x_min) / 2);
+        //     double y_mid = y_min + ((y_max - y_min) / 2);
+        //     circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        //     circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+
+        //     double token_area = (x_max - x_min) * (y_max - y_min);
+        //     _offset_token.x = (4.7807 /*constant*/ / token_area) * (x_mid - (img_token.size().width / 2));
+        //     _offset_token.y = ((4.7807 /*constant*/ / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
+        // }
+        // // when hand camera is blind due to being too close to token, go straight down;
+        // else
+        // {
+        //     _offset_token.x = 0;
+        //     _offset_token.y = 0;
+        // }
+
+        imshow("[PickUpToken]", token_rough);
+        waitKey(30);
+    }
+
 };
 
 
