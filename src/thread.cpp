@@ -193,15 +193,12 @@ class MoveToRestClass : public ROSThreadClass
         MoveToRestClass(string limb): ROSThreadClass(limb) {}
         ~MoveToRestClass(){}
 
-        void printCallback() {cout << "[func] " << _curr_pose << endl;}
-
     protected:
         void InternalThreadEntry()
         {
             while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
             {
                 ros::Rate(100).sleep();
-                cout << "callbacks not ready" << endl;
             }
 
             PoseStamped _req_pose_stamped;
@@ -231,11 +228,7 @@ class MoveToRestClass : public ROSThreadClass
 
                 _joint_cmd_pub.publish(joint_cmd);
                 loop_rate.sleep();
-
-                cout << "publish loop" << endl;
             }
-
-            cout << "pthread exit null" << endl;
 
             _state = REST;
             pthread_exit(NULL);  
@@ -252,7 +245,7 @@ class PickUpTokenClass : public ROSThreadClass
 
         ~PickUpTokenClass() {destroyWindow("[PickUpToken]");}
 
-        int _cell_num;
+        void setCell(int cell_num) {_cell_num = cell_num;}
 
     protected:
         void InternalThreadEntry()
@@ -263,17 +256,66 @@ class PickUpTokenClass : public ROSThreadClass
             }
 
             hoverAboveTokens();
-            // gripToken();
+            gripToken();
             // hoverAboveTokens();
 
             cout << "DONE" << endl;
+            _state = PICK_UP;
             pthread_exit(NULL);  
         }
 
     private:
+        int _cell_num;
         typedef vector<vector<cv::Point> > Contours;
 
-        void processImage(cv::Point * offset)
+        void hoverAboveTokens()
+        {
+            PoseStamped _req_pose_stamped;
+            
+            _req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &_req_pose_stamped.pose, 0.540, 0.660, 0.350);
+            Utils::setOrientation(&_req_pose_stamped.pose, 0.712801568376, 0.700942136419, 0.0127158080742, 0.0207931175453);
+            vector<double> joint_angles = getJointAngles(_req_pose_stamped);
+
+            while(!Utils::hasPoseCompleted(_curr_pose, _req_pose_stamped.pose))
+            {
+                ros::Rate loop_rate(500);
+
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
+
+                // joint_cmd.names
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
+                // joint_cmd.angles
+                for(int i = 0; i < joint_angles.size(); i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
+
+                _joint_cmd_pub.publish(joint_cmd);
+                loop_rate.sleep();
+            }
+        }
+
+        void gripToken()
+        {
+            cv::Point2d offset;
+            processImage(&offset);
+            while(offset.x == 0 && offset.y == 0)
+            {
+                ROS_WARN("No token detected by hand camera. Place token and press ENTER");
+                char c = cin.get();
+                processImage(&offset);
+            }
+
+            while(!Utils::hasCollided(_curr_range, _curr_min_range, _curr_max_range))
+            {
+                cout << "here" << endl;
+                processImage(&offset);
+            }
+        }
+
+        void processImage(cv::Point2d * offset)
         {
             Mat blue, token_rough, token; 
             Contours contours;
@@ -329,7 +371,7 @@ class PickUpTokenClass : public ROSThreadClass
             circle(*output, cv::Point((_curr_img.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
         }
 
-        void setOffset(Contours contours, cv::Point *offset, Mat *output)
+        void setOffset(Contours contours, cv::Point2d *offset, Mat *output)
         {
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
             // if 'noise' contours are present, do nothing
@@ -337,10 +379,10 @@ class PickUpTokenClass : public ROSThreadClass
             {
                 // find highest and lowest x and y values from token triangles contours
                 // to find x-y coordinate of top left token edge and token side length
-                float y_min = (contours[0])[0].y;
-                float x_min = (contours[0])[0].x;
-                float y_max = 0;
-                float x_max = 0;
+                double y_min = (contours[0])[0].y;
+                double x_min = (contours[0])[0].x;
+                double y_max = 0;
+                double x_max = 0;
 
                 for(int i = 0; i < contours.size(); i++)
                 {
@@ -366,49 +408,13 @@ class PickUpTokenClass : public ROSThreadClass
 
                 double token_area = (x_max - x_min) * (y_max - y_min);
 
-                float x_offset = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2));
-                float y_offset = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
-                *offset = cv::Point(x_offset, y_offset);
+                (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2));
+                (*offset).y = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
             }
             // when hand camera is blind due to being too close to token, go straight down;
-            else *offset = cv::Point(0,0);
-        }
-
-        void hoverAboveTokens()
-        {
-            PoseStamped _req_pose_stamped;
-            
-            _req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &_req_pose_stamped.pose, 0.540, 0.660, 0.350);
-            Utils::setOrientation(&_req_pose_stamped.pose, 0.712801568376, 0.700942136419, 0.0127158080742, 0.0207931175453);
-            vector<double> joint_angles = getJointAngles(_req_pose_stamped);
-
-            while(!Utils::hasPoseCompleted(_curr_pose, _req_pose_stamped.pose))
+            else 
             {
-                ros::Rate loop_rate(500);
-
-                JointCommand joint_cmd;
-                joint_cmd.mode = JointCommand::POSITION_MODE;
-
-                // joint_cmd.names
-                Utils::setNames(&joint_cmd, _limb);
-                joint_cmd.command.resize(7);
-                // joint_cmd.angles
-                for(int i = 0; i < joint_angles.size(); i++) {
-                    joint_cmd.command[i] = joint_angles[i];
-                }
-
-                _joint_cmd_pub.publish(joint_cmd);
-                loop_rate.sleep();
-            }
-        }
-
-        void gripToken()
-        {
-            while(!Utils::hasCollided(_curr_range, _curr_min_range, _curr_max_range))
-            {
-                cv::Point offset;
-                processImage(&offset);
+                *offset = cv::Point2d(0,0);
             }
         }
 };
@@ -419,7 +425,6 @@ class PickUpTokenClass : public ROSThreadClass
 
 class ArmController
 {
-
     private:
         std::string _limb;
         MoveToRestClass * rest_class;
@@ -441,15 +446,14 @@ class ArmController
 
         void moveToRest() 
         {
-            cout << "START" << endl;
             rest_class->StartInternalThread();
         }
 
-        // void pickUpToken(int cell_num) 
-        // {
-        //     pick_up_class->_cell_num = cell_num;
-        //     pick_up_class->StartInternalThread();
-        // }
+        void pickUpToken(int cell_num) 
+        {
+            pick_up_class->setCell(cell_num); 
+            pick_up_class->StartInternalThread();
+        }
 
         // void putDownToken() 
         // {
@@ -466,19 +470,14 @@ int main(int argc, char * argv[])
     ros::init(argc, argv, "thread");
 
     ArmController * left_ac = new ArmController("left");
-    // ArmController * right_ac = new ArmController("right");
+    
     left_ac->moveToRest();
-    // right_ac->moveToRest();
-
     while(left_ac->getState() != REST){ros::spinOnce();}
 
-    // right_ac->wait(REST);
-
-    cout << "Wait done" << endl;
-
-    // left_ac->pickUpToken(5);
+    left_ac->pickUpToken(5);
+    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
     // ros::spin();
-    ros::shutdown();
+    // ros::shutdown();
     return 0;
 }
