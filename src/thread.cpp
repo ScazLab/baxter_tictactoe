@@ -42,6 +42,7 @@ class Utils
 
         static bool hasCollided(float range, float max_range, float min_range)
         {
+            cout << range << " " << max_range << " " << min_range << endl;
             if(range <= max_range && range >= min_range && range <= 0.060) return true;
             else return false;
         }
@@ -201,16 +202,14 @@ class MoveToRestClass : public ROSThreadClass
                 ros::Rate(100).sleep();
             }
 
-            PoseStamped _req_pose_stamped;
+            PoseStamped req_pose_stamped;
             
-            _req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &_req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
-            Utils::setOrientation(&_req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
-            while(!Utils::hasPoseCompleted(_curr_pose, _req_pose_stamped.pose))
+            while(ros::ok())
             {
-                ros::Rate loop_rate(500);
-
                 JointCommand joint_cmd;
                 joint_cmd.mode = JointCommand::POSITION_MODE;
 
@@ -227,7 +226,8 @@ class MoveToRestClass : public ROSThreadClass
                 joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
                 _joint_cmd_pub.publish(joint_cmd);
-                loop_rate.sleep();
+                ros::Rate(500).sleep();
+                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose)) break;
             }
 
             _state = REST;
@@ -240,10 +240,15 @@ class PickUpTokenClass : public ROSThreadClass
     public:
         PickUpTokenClass(string limb): ROSThreadClass(limb)
         {
-            namedWindow("[PickUpToken]", WINDOW_NORMAL);
+            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+            namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
         }
 
-        ~PickUpTokenClass() {destroyWindow("[PickUpToken]");}
+        ~PickUpTokenClass() 
+        {
+            destroyWindow("[PickUpToken] Processed"); 
+            destroyWindow("[PickUpToken] Raw");
+        }
 
         void setCell(int cell_num) {_cell_num = cell_num;}
 
@@ -257,7 +262,8 @@ class PickUpTokenClass : public ROSThreadClass
 
             hoverAboveTokens();
             gripToken();
-            // hoverAboveTokens();
+            hoverAboveTokens();
+            _gripper->blow();
 
             cout << "DONE" << endl;
             _state = PICK_UP;
@@ -270,17 +276,15 @@ class PickUpTokenClass : public ROSThreadClass
 
         void hoverAboveTokens()
         {
-            PoseStamped _req_pose_stamped;
+            PoseStamped req_pose_stamped;
             
-            _req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &_req_pose_stamped.pose, 0.540, 0.660, 0.350);
-            Utils::setOrientation(&_req_pose_stamped.pose, 0.712801568376, 0.700942136419, 0.0127158080742, 0.0207931175453);
-            vector<double> joint_angles = getJointAngles(_req_pose_stamped);
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
-            while(!Utils::hasPoseCompleted(_curr_pose, _req_pose_stamped.pose))
+            while(!Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose))
             {
-                ros::Rate loop_rate(500);
-
                 JointCommand joint_cmd;
                 joint_cmd.mode = JointCommand::POSITION_MODE;
 
@@ -293,25 +297,72 @@ class PickUpTokenClass : public ROSThreadClass
                 }
 
                 _joint_cmd_pub.publish(joint_cmd);
-                loop_rate.sleep();
+                ros::Rate(500).sleep();
             }
         }
 
         void gripToken()
         {
             cv::Point2d offset;
-            processImage(&offset);
-            while(offset.x == 0 && offset.y == 0)
+            checkForToken(&offset);
+
+            PoseStamped req_pose_stamped;
+            ros::Time start_time = ros::Time::now();                
+            cv::Point2d prev_offset(0.540, 0.540);
+
+            while(ros::ok())
+            {
+                processImage(&offset);
+                cout << offset << endl;
+                ros::Time now_time = ros::Time::now();
+
+                req_pose_stamped.header.frame_id = "base";
+
+                Utils::setPosition(&req_pose_stamped.pose, 
+                                    prev_offset.x + 0.07 * offset.x,
+                                    prev_offset.y + 0.07 * offset.y,
+                                    0.375 + (-0.05) * (now_time - start_time).toSec());
+
+                prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+                prev_offset.y = prev_offset.y + 0.07 * offset.y;
+
+                Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+
+
+                vector<double> joint_angles = getJointAngles(req_pose_stamped);
+
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
+
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
+
+                for(int i = 0; i < 7; i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
+
+                _joint_cmd_pub.publish(joint_cmd);
+                ros::Rate(500).sleep();
+             
+                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range)) {break;}
+            }
+            _gripper->suck();
+        }   
+
+        void checkForToken(cv::Point2d * offset)
+        {
+            ros::Time start_1 = ros::Time::now();
+            while(offset->x == 0 && offset->y == 0)
+            {
+                processImage(offset);
+                if((start_1 - ros::Time::now()).toSec() > 1){break;}
+            }
+
+            while(offset->x == 0 && offset->y == 0)
             {
                 ROS_WARN("No token detected by hand camera. Place token and press ENTER");
                 char c = cin.get();
-                processImage(&offset);
-            }
-
-            while(!Utils::hasCollided(_curr_range, _curr_min_range, _curr_max_range))
-            {
-                cout << "here" << endl;
-                processImage(&offset);
+                processImage(offset);
             }
         }
 
@@ -319,12 +370,13 @@ class PickUpTokenClass : public ROSThreadClass
         {
             Mat blue, token_rough, token; 
             Contours contours;
-
+     
             isolateBlue(&blue);
             isolateTokenContours(blue.clone(), &token_rough, &contours);
             setOffset(contours, offset, &token);
 
-            imshow("[PickUpToken]", token);
+            imshow("[PickUpToken] Processed", blue);
+            imshow("[PickUpToken] Raw", token);
             waitKey(30);
         }
 
@@ -369,7 +421,7 @@ class PickUpTokenClass : public ROSThreadClass
             }
 
             circle(*output, cv::Point((_curr_img.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
-        }
+        }              
 
         void setOffset(Contours contours, cv::Point2d *offset, Mat *output)
         {
@@ -412,7 +464,7 @@ class PickUpTokenClass : public ROSThreadClass
                 (*offset).y = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
             }
             // when hand camera is blind due to being too close to token, go straight down;
-            else 
+            else if(contours.size() < 4)
             {
                 *offset = cv::Point2d(0,0);
             }
@@ -459,7 +511,7 @@ class ArmController
         // {
         //     put_down_class = new PutDownToken(limb);
         //     put_down_class->StartInternalThread();
-        // }
+        // }    
 };
 
 
@@ -471,8 +523,8 @@ int main(int argc, char * argv[])
 
     ArmController * left_ac = new ArmController("left");
     
-    left_ac->moveToRest();
-    while(left_ac->getState() != REST){ros::spinOnce();}
+    // left_ac->moveToRest();
+    // while(left_ac->getState() != REST){ros::spinOnce();}
 
     left_ac->pickUpToken(5);
     while(left_ac->getState() != PICK_UP){ros::spinOnce();}
