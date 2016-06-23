@@ -156,16 +156,11 @@ class ROSThreadClass
 
         virtual void InternalThreadEntry() = 0;
 
-        void hoverAboveTokens()
+        void goToPose(PoseStamped req_pose_stamped)
         {
-            PoseStamped req_pose_stamped;
-            
-            req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
             vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
-            while(!Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose))
+            while(ros::ok)
             {
                 JointCommand joint_cmd;
                 joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -180,6 +175,8 @@ class ROSThreadClass
 
                 _joint_cmd_pub.publish(joint_cmd);
                 ros::Rate(500).sleep();
+
+                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose)) {break;}
             }
         }
 
@@ -348,6 +345,15 @@ class PickUpTokenClass : public ROSThreadClass
             _gripper->suck();
         }   
 
+        void hoverAboveTokens()
+        {
+            PoseStamped req_pose_stamped;
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            goToPose(req_pose_stamped);
+        }
+
         void checkForToken(cv::Point2d * offset)
         {
             ros::Time start_1 = ros::Time::now();
@@ -503,58 +509,90 @@ class ScanBoardClass : public ROSThreadClass
     protected:
         void InternalThreadEntry()
         {
-            // ... 
-            // _offsets = something;
+            hoverAboveBoard();
+            
+            while(_curr_img.empty()) 
+            {
+                ros::Rate(100).sleep();
+            }
+            processImage();
+            
+            hoverAboveTokens();
             _state = SCAN;
             pthread_exit(NULL);
         }
 
     private:
         vector<cv::Point> _offsets;
+
+        void hoverAboveTokens()
+        {
+            PoseStamped req_pose_stamped;
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            goToPose(req_pose_stamped);
+        }
+
+        void hoverAboveBoard()
+        {
+            PoseStamped req_pose_stamped;
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.725, 0.200, 0.500);
+            Utils::setOrientation(&req_pose_stamped.pose, -0.00148564331811, 0.999783174154, -0.0153224515183, 0.0140221261632);
+            goToPose(req_pose_stamped);
+        }
+
+        void processImage()
+        {
+
+        }
 };
 
 class ArmController
 {
     private:
         std::string _limb;
-        MoveToRestClass * rest_class;
-        PickUpTokenClass * pick_class;
-        ScanBoardClass * scan_class;
-        PutDownTokenClass * put_class; 
+        MoveToRestClass * _rest_class;
+        PickUpTokenClass * _pick_class;
+        ScanBoardClass * _scan_class;
+        PutDownTokenClass * _put_class; 
 
     public:
         ArmController(string limb): _limb(limb) 
         {
-            rest_class = new MoveToRestClass(_limb);
-            pick_class = new PickUpTokenClass(_limb);
+            _rest_class = new MoveToRestClass(_limb);
+            _pick_class = new PickUpTokenClass(_limb);
+            _scan_class = new ScanBoardClass(_limb);
+            _put_class = new PutDownTokenClass(_limb);
         }
         ~ArmController(){}
 
         int getState()
         {
-            return max(rest_class->getState(), pick_class->getState());
+            return max(_rest_class->getState(), _pick_class->getState());
         }
 
         void moveToRest() 
         {
-            rest_class->StartInternalThread();
+            _rest_class->StartInternalThread();
         }
 
         void pickUpToken() 
         {
-            pick_class->StartInternalThread();
+            _pick_class->StartInternalThread();
         }
 
         void scanBoard()
         {
-            scan_class->StartInternalThread();
+            _scan_class->StartInternalThread();
         }
 
         void putDownToken(int cell) 
         {
-            put_class->setOffsets(scan_class->getOffsets());
-            put_class->setCell(cell);
-            put_class->StartInternalThread();
+            _put_class->setOffsets(_scan_class->getOffsets());
+            _put_class->setCell(cell);
+            _put_class->StartInternalThread();
         }    
 };
 
