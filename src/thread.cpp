@@ -27,8 +27,9 @@
 
 #define START 0
 #define REST 1
-#define PICK_UP 2
-#define PUT_DOWN 3
+#define SCAN 2
+#define PICK_UP 3
+#define PUT_DOWN 4
 
 using namespace std;
 using namespace baxter_core_msgs;
@@ -139,6 +140,7 @@ class ROSThreadClass
             catch(cv_bridge::Exception& e) {ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());}
             _curr_img = cv_ptr->image.clone();
         }
+
         int getState(){return _state;}
 
     protected:
@@ -153,6 +155,33 @@ class ROSThreadClass
         ttt::Vacuum_Gripper * _gripper;
 
         virtual void InternalThreadEntry() = 0;
+
+        void hoverAboveTokens()
+        {
+            PoseStamped req_pose_stamped;
+            
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            vector<double> joint_angles = getJointAngles(req_pose_stamped);
+
+            while(!Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose))
+            {
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
+
+                // joint_cmd.names
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
+                // joint_cmd.angles
+                for(int i = 0; i < joint_angles.size(); i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
+
+                _joint_cmd_pub.publish(joint_cmd);
+                ros::Rate(500).sleep();
+            }
+        }
 
         vector<double> getJointAngles(PoseStamped pose_stamped)
         {
@@ -185,7 +214,7 @@ class ROSThreadClass
         ros::ServiceClient _ik_client;
         image_transport::ImageTransport _img_trp;
         image_transport::Subscriber _img_sub;
-        pthread_t _thread;
+        pthread_t _thread;      
 };
 
 class MoveToRestClass : public ROSThreadClass
@@ -250,8 +279,6 @@ class PickUpTokenClass : public ROSThreadClass
             destroyWindow("[PickUpToken] Raw");
         }
 
-        void setCell(int cell_num) {_cell_num = cell_num;}
-
     protected:
         void InternalThreadEntry()
         {
@@ -271,35 +298,7 @@ class PickUpTokenClass : public ROSThreadClass
         }
 
     private:
-        int _cell_num;
         typedef vector<vector<cv::Point> > Contours;
-
-        void hoverAboveTokens()
-        {
-            PoseStamped req_pose_stamped;
-            
-            req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
-            vector<double> joint_angles = getJointAngles(req_pose_stamped);
-
-            while(!Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose))
-            {
-                JointCommand joint_cmd;
-                joint_cmd.mode = JointCommand::POSITION_MODE;
-
-                // joint_cmd.names
-                Utils::setNames(&joint_cmd, _limb);
-                joint_cmd.command.resize(7);
-                // joint_cmd.angles
-                for(int i = 0; i < joint_angles.size(); i++) {
-                    joint_cmd.command[i] = joint_angles[i];
-                }
-
-                _joint_cmd_pub.publish(joint_cmd);
-                ros::Rate(500).sleep();
-            }
-        }
 
         void gripToken()
         {
@@ -472,28 +471,68 @@ class PickUpTokenClass : public ROSThreadClass
 };
 
 
+class PutDownTokenClass : public ROSThreadClass
+{
+    public:
+        PutDownTokenClass(string limb): ROSThreadClass(limb) {}
+        ~PutDownTokenClass() {}
 
+        void setCell(int cell) {_cell = cell;}
+        void setOffsets(vector<cv::Point> offsets) {_offsets = offsets;}
 
+    protected:
+        void InternalThreadEntry()
+        {
+            _state = PUT_DOWN;
+            pthread_exit(NULL);  
+        }  
+
+    private:
+        int _cell;
+        vector<cv::Point> _offsets;
+};
+
+class ScanBoardClass : public ROSThreadClass 
+{
+    public:
+        ScanBoardClass(string limb): ROSThreadClass(limb) {}
+        ~ScanBoardClass() {}
+
+        vector<cv::Point> getOffsets() {return _offsets;}
+
+    protected:
+        void InternalThreadEntry()
+        {
+            // ... 
+            // _offsets = something;
+            _state = SCAN;
+            pthread_exit(NULL);
+        }
+
+    private:
+        vector<cv::Point> _offsets;
+};
 
 class ArmController
 {
     private:
         std::string _limb;
         MoveToRestClass * rest_class;
-        PickUpTokenClass * pick_up_class;
-        // PutDownToken * put_down_class; 
+        PickUpTokenClass * pick_class;
+        ScanBoardClass * scan_class;
+        PutDownTokenClass * put_class; 
 
     public:
         ArmController(string limb): _limb(limb) 
         {
             rest_class = new MoveToRestClass(_limb);
-            pick_up_class = new PickUpTokenClass(_limb);
+            pick_class = new PickUpTokenClass(_limb);
         }
         ~ArmController(){}
 
         int getState()
         {
-            return max(rest_class->getState(), pick_up_class->getState());
+            return max(rest_class->getState(), pick_class->getState());
         }
 
         void moveToRest() 
@@ -501,17 +540,22 @@ class ArmController
             rest_class->StartInternalThread();
         }
 
-        void pickUpToken(int cell_num) 
+        void pickUpToken() 
         {
-            pick_up_class->setCell(cell_num); 
-            pick_up_class->StartInternalThread();
+            pick_class->StartInternalThread();
         }
 
-        // void putDownToken() 
-        // {
-        //     put_down_class = new PutDownToken(limb);
-        //     put_down_class->StartInternalThread();
-        // }    
+        void scanBoard()
+        {
+            scan_class->StartInternalThread();
+        }
+
+        void putDownToken(int cell) 
+        {
+            put_class->setOffsets(scan_class->getOffsets());
+            put_class->setCell(cell);
+            put_class->StartInternalThread();
+        }    
 };
 
 
@@ -522,12 +566,20 @@ int main(int argc, char * argv[])
     ros::init(argc, argv, "thread");
 
     ArmController * left_ac = new ArmController("left");
-    
-    // left_ac->moveToRest();
-    // while(left_ac->getState() != REST){ros::spinOnce();}
+    ArmController * right_ac = new ArmController("right");
 
-    left_ac->pickUpToken(5);
+    left_ac->moveToRest();
+    right_ac->moveToRest();
+    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
+
+    left_ac->pickUpToken();
     while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+
+    left_ac->scanBoard();
+    while(left_ac->getState() != SCAN){ros::spinOnce();}
+
+    left_ac->putDownToken(5);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
     // ros::shutdown();
