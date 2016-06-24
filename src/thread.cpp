@@ -530,11 +530,6 @@ class ScanBoardClass : public ROSThreadClass
             processImage();
             hoverAboveTokens();
 
-            for(int i = 0; i < _offsets.size(); i++)
-            {
-                cout << _offsets[i].x << " " << _offsets[i].y << " " << _offsets[i].z << endl;
-            }
-
             _state = SCAN;
             pthread_exit(NULL);
         }
@@ -598,6 +593,7 @@ class ScanBoardClass : public ROSThreadClass
             *board_area = contourArea((*contours)[next_largest_index], false);
 
             drawContours(*output, *contours, next_largest_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
             findContours(*output, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
             largest = 0;
@@ -628,8 +624,6 @@ class ScanBoardClass : public ROSThreadClass
             {
                 drawContours(*output, *contours, i, Scalar(255,255,255), CV_FILLED);
             }
-
-            cout << (*contours).size() << endl;
         }
 
         static bool descendingX(vector<cv::Point> i, vector<cv::Point> j) 
@@ -674,12 +668,23 @@ class ScanBoardClass : public ROSThreadClass
 
             isolateBlack(&binary);
             isolateBoard(&contours, &board_area, binary, &board);
-            setOffsets(board_area, contours, &board);
 
-            imshow("[ScanBoard] Rough", binary);
+            imshow("[ScanBoard] Rough", _curr_img);
             imshow("[ScanBoard] Processed", board);
 
             waitKey(30);
+
+            while(contours.size() != 9)
+            {
+                ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
+                char c = cin.get();
+                isolateBlack(&binary);
+                isolateBoard(&contours, &board_area, binary, &board);
+            }
+            setOffsets(board_area, contours, &board);
+
+            cout << "done" << endl;
+
         }
 };
 
