@@ -100,6 +100,13 @@ class Utils
             (*joint_cmd).names.push_back(limb + "_w1");
             (*joint_cmd).names.push_back(limb + "_w2");
         }
+
+        static string intToString( const int a )
+        {
+            stringstream ss;
+            ss << a;
+            return ss.str();
+        }
 };
 
 // Class initializes overhead functions necessary to start a thread from within a class, 
@@ -264,21 +271,20 @@ class MoveToRestClass : public ROSThreadClass
 class PickUpTokenClass : public ROSThreadClass
 {
     public:
-        PickUpTokenClass(string limb): ROSThreadClass(limb)
-        {
-            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-            namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
-        }
+        PickUpTokenClass(string limb): ROSThreadClass(limb) {}
 
         ~PickUpTokenClass() 
         {
             destroyWindow("[PickUpToken] Processed"); 
-            destroyWindow("[PickUpToken] Raw");
+            destroyWindow("[PickUpToken] Rough");
         }
 
     protected:
         void InternalThreadEntry()
         {
+            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+            namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+
             while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
             {
                 ros::Rate(100).sleep();
@@ -377,11 +383,11 @@ class PickUpTokenClass : public ROSThreadClass
             Contours contours;
      
             isolateBlue(&blue);
-            isolateTokenContours(blue.clone(), &token_rough, &contours);
+            isolateToken(blue.clone(), &token_rough, &contours);
             setOffset(contours, offset, &token);
 
             imshow("[PickUpToken] Processed", blue);
-            imshow("[PickUpToken] Raw", token);
+            imshow("[PickUpToken] Rough", token);
             waitKey(30);
         }
 
@@ -392,7 +398,7 @@ class PickUpTokenClass : public ROSThreadClass
             inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), *output);  
         }
 
-        void isolateTokenContours(Mat input, Mat *output, Contours *contours)
+        void isolateToken(Mat input, Mat *output, Contours *contours)
         {
             Contours raw_contours;
             findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -484,7 +490,7 @@ class PutDownTokenClass : public ROSThreadClass
         ~PutDownTokenClass() {}
 
         void setCell(int cell) {_cell = cell;}
-        void setOffsets(vector<cv::Point> offsets) {_offsets = offsets;}
+        void setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
 
     protected:
         void InternalThreadEntry()
@@ -495,27 +501,37 @@ class PutDownTokenClass : public ROSThreadClass
 
     private:
         int _cell;
-        vector<cv::Point> _offsets;
+        vector<geometry_msgs::Point> _offsets;
 };
 
 class ScanBoardClass : public ROSThreadClass 
 {
     public:
         ScanBoardClass(string limb): ROSThreadClass(limb) {}
-        ~ScanBoardClass() {}
+        ~ScanBoardClass() 
+        {
+            destroyWindow("[ScanBoard] Rough");
+            destroyWindow("[ScanBoard] Processed");
+        }
 
-        vector<cv::Point> getOffsets() {return _offsets;}
+        vector<geometry_msgs::Point> getOffsets() {return _offsets;}
 
     protected:
         void InternalThreadEntry()
         {
+            namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
+            namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
+
             hoverAboveBoard();
-            
             while(_curr_img.empty()) 
             {
                 ros::Rate(100).sleep();
             }
-            processImage();
+
+            while(ros::ok)
+            {
+                processImage();
+            }
             
             hoverAboveTokens();
             _state = SCAN;
@@ -523,7 +539,8 @@ class ScanBoardClass : public ROSThreadClass
         }
 
     private:
-        vector<cv::Point> _offsets;
+        typedef vector<vector<cv::Point> > Contours;
+        vector<geometry_msgs::Point> _offsets;
 
         void hoverAboveTokens()
         {
@@ -538,14 +555,131 @@ class ScanBoardClass : public ROSThreadClass
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.725, 0.200, 0.500);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.00148564331811, 0.999783174154, -0.0153224515183, 0.0140221261632);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.730, 0.255, 0.435);
+            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
             goToPose(req_pose_stamped);
+        }
+
+        void isolateBlack(Mat * output)
+        {
+            Mat gray;
+            cvtColor(_curr_img, gray, CV_BGR2GRAY);
+            threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
+        }
+
+        void isolateBoard(Contours * contours, int * board_area, Mat input, Mat * output)
+        {
+            *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+            vector<cv::Vec4i> hierarchy; // captures contours within contours 
+
+            findContours(input, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+            double largest = 0, next_largest = 0;
+            int largest_index = 0, next_largest_index = 0;
+
+            // iterate through contours and keeps track of contour w/ 2nd-largest area
+            for(int i = 0; i < (*contours).size(); i++)
+            {
+                if(contourArea((*contours)[i], false) > largest)
+                {
+                    next_largest = largest;
+                    next_largest_index = largest_index;
+                    largest = contourArea((*contours)[i], false);
+                    largest_index = i;
+                }
+                else if(next_largest < contourArea((*contours)[i], false) && contourArea((*contours)[i], false) < largest)
+                {
+                    next_largest = contourArea((*contours)[i], false);
+                    next_largest_index = i;
+                }
+            }
+
+            *board_area = contourArea((*contours)[next_largest_index], false);
+
+            drawContours(*output, *contours, next_largest_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+            findContours(*output, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+            largest = 0;
+            largest_index = 0;
+
+            // iterate through contours and keeps track of contour w/ largest area
+            for(int i = 0; i < (*contours).size(); i++)
+            {
+                if(contourArea((*contours)[i], false) > largest)
+                {
+                    largest = contourArea((*contours)[i], false);
+                    largest_index = i;
+                }
+            } 
+
+            // remove outer board contours
+            (*contours).erase((*contours).begin() + largest_index);
+
+            for(int i = 0; i < (*contours).size(); i++)
+            {
+                if(contourArea((*contours)[i], false) < 200)
+                {
+                    (*contours).erase((*contours).begin() + i);
+                } 
+            }
+
+            for(int i = 0; i < (*contours).size(); i++)
+            {
+                drawContours(*output, *contours, i, Scalar(255,255,255), CV_FILLED);
+            }
+
+            cout << (*contours).size() << endl;
+        }
+
+        static bool descendingX(vector<cv::Point> i, vector<cv::Point> j) 
+        {
+            double x_i = moments(i, false).m10 / moments(i, false).m00;
+            double x_j = moments(j, false).m10 / moments(j, false).m00;
+
+            return x_i > x_j;
+        }
+
+        void setOffsets(int board_area, Contours contours, Mat * output)
+        {
+            cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
+            circle(*output, center, 1, Scalar(180,40,40), CV_FILLED);
+
+            for(int i = 0; i <= contours.size() - 3; i += 3)
+            {
+                std::sort(contours.begin() + i, contours.begin() + i + 3, descendingX);        
+            }
+
+            _offsets.resize(9);
+            for(int i = contours.size() - 1; i >= 0; i--)
+            {
+                double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
+                double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
+                cv::Point centroid(x,y);  
+
+                cv::putText(*output, Utils::intToString(contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+
+                _offsets[contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (center.x - centroid.x);
+                _offsets[contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (center.y - centroid.y);  
+                _offsets[contours.size() - 1 - i].z = 43100 /*constant*/ / board_area;
+            }
+
+            cout << contours.size() << endl;
         }
 
         void processImage()
         {
+            Contours contours;
+            Mat binary, board;
+            int board_area;
 
+            isolateBlack(&binary);
+            isolateBoard(&contours, &board_area, binary, &board);
+            setOffsets(board_area, contours, &board);
+
+            imshow("[ScanBoard] Rough", binary);
+            imshow("[ScanBoard] Processed", board);
+
+            waitKey(30);
         }
 };
 
@@ -606,18 +740,18 @@ int main(int argc, char * argv[])
     ArmController * left_ac = new ArmController("left");
     ArmController * right_ac = new ArmController("right");
 
-    left_ac->moveToRest();
-    right_ac->moveToRest();
-    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
+    // left_ac->moveToRest();
+    // right_ac->moveToRest();
+    // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
-    left_ac->pickUpToken();
-    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+    // left_ac->pickUpToken();
+    // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
 
-    left_ac->putDownToken(5);
-    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    // left_ac->putDownToken(5);
+    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
     // ros::shutdown();
