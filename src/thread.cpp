@@ -43,7 +43,6 @@ class Utils
 
         static bool hasCollided(float range, float max_range, float min_range)
         {
-            cout << range << " " << max_range << " " << min_range << endl;
             if(range <= max_range && range >= min_range && range <= 0.060) return true;
             else return false;
         }
@@ -294,7 +293,6 @@ class PickUpTokenClass : public ROSThreadClass
             gripToken();
             hoverAboveTokens();
 
-            cout << "DONE" << endl;
             _state = PICK_UP;
             pthread_exit(NULL);  
         }
@@ -314,7 +312,6 @@ class PickUpTokenClass : public ROSThreadClass
             while(ros::ok())
             {
                 processImage(&offset);
-                cout << offset << endl;
                 ros::Time now_time = ros::Time::now();
 
                 req_pose_stamped.header.frame_id = "base";
@@ -486,7 +483,7 @@ class PutDownTokenClass : public ROSThreadClass
     public:
         PutDownTokenClass(string limb): ROSThreadClass(limb)
         {
-            _center.x = 0.650; _center.y = 0.205; _center.z = 0.445;
+            _center.x = 0.730; _center.y = 0.225; _center.z = 0.445;
         }
         ~PutDownTokenClass() {}
 
@@ -554,9 +551,7 @@ class ScanBoardClass : public ROSThreadClass
             {
                 ros::Rate(100).sleep();
             }
-            processImage();
-            
-            // processImage();
+            processImage();            
             hoverAboveTokens();
 
             _state = SCAN;
@@ -674,7 +669,6 @@ class ScanBoardClass : public ROSThreadClass
             }
 
             _offsets.resize(9);
-            cout << board_area << endl;
             for(int i = contours.size() - 1; i >= 0; i--)
             {
                 double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
@@ -685,9 +679,7 @@ class ScanBoardClass : public ROSThreadClass
 
                 _offsets[contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (center.x - centroid.x);
                 _offsets[contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (center.y - centroid.y);  
-                _offsets[contours.size() - 1 - i].z = 45000.0 /*constant*/ / board_area;
-
-                cout << _offsets[contours.size() - 1 - i].z << endl;
+                _offsets[contours.size() - 1 - i].z = 45500.0 /*constant*/ / board_area;
             }
         }
 
@@ -719,8 +711,6 @@ class ScanBoardClass : public ROSThreadClass
                     char c = cin.get();    
                 }
             }
-
-            cout << "done" << endl;
         }
 };
 
@@ -748,20 +738,11 @@ class ArmController
             return max(_pick_class->getState(), max(_rest_class->getState(), _scan_class->getState()));
         }
 
-        void moveToRest() 
-        {
-            _rest_class->StartInternalThread();
-        }
+        void moveToRest() {_rest_class->StartInternalThread();}
 
-        void pickUpToken() 
-        {
-            _pick_class->StartInternalThread();
-        }
+        void pickUpToken() {_pick_class->StartInternalThread();}
 
-        void scanBoard()
-        {
-            _scan_class->StartInternalThread();
-        }
+        void scanBoard() {_scan_class->StartInternalThread();}
 
         void putDownToken(int cell) 
         {
@@ -788,11 +769,11 @@ int main(int argc, char * argv[])
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
 
-    // left_ac->pickUpToken();
-    // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+    left_ac->pickUpToken();
+    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    // left_ac->putDownToken(5);
-    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    left_ac->putDownToken(5);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
     ros::shutdown();
