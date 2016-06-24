@@ -527,13 +527,14 @@ class ScanBoardClass : public ROSThreadClass
             {
                 ros::Rate(100).sleep();
             }
-
-            while(ros::ok)
-            {
-                processImage();
-            }
-            
+            processImage();
             hoverAboveTokens();
+
+            for(int i = 0; i < _offsets.size(); i++)
+            {
+                cout << _offsets[i].x << " " << _offsets[i].y << " " << _offsets[i].z << endl;
+            }
+
             _state = SCAN;
             pthread_exit(NULL);
         }
@@ -650,6 +651,7 @@ class ScanBoardClass : public ROSThreadClass
             }
 
             _offsets.resize(9);
+            cout << board_area << endl;
             for(int i = contours.size() - 1; i >= 0; i--)
             {
                 double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
@@ -660,10 +662,8 @@ class ScanBoardClass : public ROSThreadClass
 
                 _offsets[contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (center.x - centroid.x);
                 _offsets[contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (center.y - centroid.y);  
-                _offsets[contours.size() - 1 - i].z = 43100 /*constant*/ / board_area;
+                _offsets[contours.size() - 1 - i].z = 43100.0 /*constant*/ / board_area;
             }
-
-            cout << contours.size() << endl;
         }
 
         void processImage()
@@ -704,7 +704,7 @@ class ArmController
 
         int getState()
         {
-            return max(_rest_class->getState(), _pick_class->getState());
+            return max(_rest_class->getState(), _scan_class->getState());
         }
 
         void moveToRest() 
@@ -754,6 +754,6 @@ int main(int argc, char * argv[])
     // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
-    // ros::shutdown();
+    ros::shutdown();
     return 0;
 }
