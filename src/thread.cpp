@@ -478,80 +478,23 @@ class PickUpTokenClass : public ROSThreadClass
         }
 };
 
-class PutDownTokenClass : public ROSThreadClass
-{
-    public:
-        PutDownTokenClass(string limb): ROSThreadClass(limb)
-        {
-            _center.x = 0.730; _center.y = 0.225; _center.z = 0.445;
-        }
-        ~PutDownTokenClass() {}
-
-        void setCell(int cell) {_cell = cell;}
-        void setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
-
-    protected:
-        void InternalThreadEntry()
-        {
-            hoverAboveBoard();
-            hoverAboveCell();
-            _gripper->blow();
-
-            _state = PUT_DOWN;
-            pthread_exit(NULL);  
-        }  
-
-    private:
-        int _cell;
-        geometry_msgs::Point _center; 
-        vector<geometry_msgs::Point> _offsets;
-
-        void hoverAboveBoard()
-        {
-            PoseStamped req_pose_stamped;
-            req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, _center.x, _center.y, 0.435);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
-            goToPose(req_pose_stamped);
-        }
-
-        void hoverAboveCell()
-        {
-            PoseStamped req_pose_stamped;
-            req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(&req_pose_stamped.pose, 
-                               _center.x /*+ _offsets[_cell - 1].x*/, 
-                               _center.y /*+ _offsets[_cell - 1].y*/, 
-                               _center.z - _offsets[_cell - 1].z);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
-            goToPose(req_pose_stamped);
-        }
-};
-
 class ScanBoardClass : public ROSThreadClass 
 {
     public:
         ScanBoardClass(string limb): ROSThreadClass(limb) {}
-        ~ScanBoardClass() 
-        {
-            destroyWindow("[ScanBoard] Rough");
-            destroyWindow("[ScanBoard] Processed");
-        }
+        ~ScanBoardClass() {}
 
         vector<geometry_msgs::Point> getOffsets() {return _offsets;}
 
     protected:
         void InternalThreadEntry()
         {
-            namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
-            namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
-
             hoverAboveBoard();
             while(_curr_img.empty()) 
             {
                 ros::Rate(100).sleep();
             }
-            processImage();            
+            processImage("test");  
             hoverAboveTokens();
 
             _state = SCAN;
@@ -661,7 +604,9 @@ class ScanBoardClass : public ROSThreadClass
         void setOffsets(int board_area, Contours contours, Mat * output)
         {
             cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
-            circle(*output, center, 1, Scalar(180,40,40), CV_FILLED);
+            circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
+            cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+
 
             for(int i = 0; i <= contours.size() - 3; i += 3)
             {
@@ -677,14 +622,16 @@ class ScanBoardClass : public ROSThreadClass
 
                 cv::putText(*output, Utils::intToString(contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
-                _offsets[contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (center.x - centroid.x);
-                _offsets[contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (center.y - centroid.y);  
+                _offsets[contours.size() - 1 - i].x = (100.0 /*constant*/ / board_area) * (center.x - centroid.x);
+                _offsets[contours.size() - 1 - i].y = (100.0 /*constant*/ / board_area) * (center.y - centroid.y);  
                 _offsets[contours.size() - 1 - i].z = 45500.0 /*constant*/ / board_area;
             }
         }
 
-        void processImage()
+        void processImage(string mode)
         {
+            namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
+            namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
             ros::Time start_time = ros::Time::now();
             while(ros::ok())
             {
@@ -696,14 +643,14 @@ class ScanBoardClass : public ROSThreadClass
                 isolateBoard(&contours, &board_area, binary.clone(), &board);
 
                 imshow("[ScanBoard] Rough", binary);
-                imshow("[ScanBoard] Processed", board);
 
                 waitKey(30);
 
                 if(contours.size() == 9)
                 {
                     setOffsets(board_area, contours, &board);
-                    break;
+                    imshow("[ScanBoard] Processed", board);
+                    if(mode != "test") break;
                 }
                 else if ((ros::Time::now() - start_time).toSec() > 3)
                 {
@@ -711,6 +658,65 @@ class ScanBoardClass : public ROSThreadClass
                     char c = cin.get();    
                 }
             }
+            destroyWindow("[ScanBoard] Rough");
+            destroyWindow("[ScanBoard] Processed");
+        }
+};
+
+class PutDownTokenClass : public ROSThreadClass
+{
+    public:
+        PutDownTokenClass(string limb): ROSThreadClass(limb)
+        {
+            _center.x = 0.730; _center.y = 0.225; _center.z = 0.250;
+        }
+        ~PutDownTokenClass() {}
+
+        void setCell(int cell) {_cell = cell;}
+        void setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
+
+    protected:
+        void InternalThreadEntry()
+        {
+            hoverAboveBoard();
+            cout << "cell " << _cell << endl;
+            cout << "_curr_pose\n" << _curr_pose.position << endl;
+            for(int i=0;i<_offsets.size();i++)
+            {
+                cout << "offset " << i << "\n" << _offsets[i] << endl;
+            }
+            hoverAboveCell();
+            // _gripper->blow();
+
+            _state = PUT_DOWN;
+            pthread_exit(NULL);  
+        }  
+
+    private:
+        int _cell;
+        geometry_msgs::Point _center; 
+        vector<geometry_msgs::Point> _offsets;
+
+        void hoverAboveBoard()
+        {
+            PoseStamped req_pose_stamped;
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(   &req_pose_stamped.pose, _center.x, _center.y, _center.z);
+            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
+            goToPose(req_pose_stamped);
+        }
+
+        void hoverAboveCell()
+        {
+            PoseStamped req_pose_stamped;
+            req_pose_stamped.header.frame_id = "base";
+            Utils::setPosition(&req_pose_stamped.pose, 
+                               _center.x - 0.2,//_offsets[_cell - 1].x, 
+                               _center.y - 0.2,//_offsets[_cell - 1].y, 
+                               _center.z /*- _offsets[_cell - 1].z*/);
+            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
+            goToPose(req_pose_stamped);
+            cout << "done with hover above cell" << endl;
         }
 };
 
@@ -735,7 +741,13 @@ class ArmController
 
         int getState()
         {
-            return max(_pick_class->getState(), max(_rest_class->getState(), _scan_class->getState()));
+            int state = 0;
+            if(_pick_class->getState() > state) state = _pick_class->getState();
+            if(_rest_class->getState() > state) state = _rest_class->getState();
+            if(_scan_class->getState() > state) state = _scan_class->getState();
+            if(_put_class->getState() > state) state = _put_class->getState();
+
+            return state;
         }
 
         void moveToRest() {_rest_class->StartInternalThread();}
@@ -769,10 +781,10 @@ int main(int argc, char * argv[])
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
 
-    left_ac->pickUpToken();
-    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+    // left_ac->pickUpToken();
+    // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    left_ac->putDownToken(5);
+    left_ac->putDownToken(1);
     while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
