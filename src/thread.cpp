@@ -47,16 +47,27 @@ class Utils
             else return false;
         }
 
-        static bool hasPoseCompleted(Pose a, Pose b)
+        static bool hasPoseCompleted(Pose a, Pose b, string mode)
         {
             bool same_pose = true;
-            if(!withinXHundredth(a.position.x, b.position.x, 1))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
-            if(!withinXHundredth(a.position.y, b.position.y, 1))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
+
+            if(mode == "strict")
+            {
+                if(!equalXDP(a.position.x, b.position.x, 2))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
+                if(!equalXDP(a.position.y, b.position.y, 3))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
+            }
+            else if(mode == "loose")
+            {
+                if(!equalXDP(a.position.x, b.position.x, 2))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
+                if(!equalXDP(a.position.y, b.position.y, 2))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
+            }
+
             if(!withinXHundredth(a.position.z, b.position.z, 1))       {same_pose = false; /*cout << "[pos z] " << (same_pose == false ? "false" : "true") << endl;*/}    
-            if(!withinXHundredth(a.orientation.x, b.orientation.x, 4)) {same_pose = false; /*cout << "[ori x] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.y, b.orientation.y, 4)) {same_pose = false; /*cout << "[ori y] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.z, b.orientation.z, 4)) {same_pose = false; /*cout << "[ori z] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.w, b.orientation.w, 4)) {same_pose = false; /*cout << "[ori w] " << (same_pose == false ? "false" : "true") << endl;*/}
+            if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {same_pose = false; /*cout << "[ori x] " << (same_pose == false ? "false" : "true") << endl;*/}  
+            if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {same_pose = false; /*cout << "[ori y] " << (same_pose == false ? "false" : "true") << endl;*/}  
+            if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {same_pose = false; /*cout << "[ori z] " << (same_pose == false ? "false" : "true") << endl;*/}  
+            if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {same_pose = false; /*cout << "[ori w] " << (same_pose == false ? "false" : "true") << endl;*/}
+
             return same_pose; 
         }
 
@@ -182,7 +193,31 @@ class ROSThreadClass
                 _joint_cmd_pub.publish(joint_cmd);
                 ros::Rate(500).sleep();
 
-                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose)) {break;}
+                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) {break;}
+            }
+        }
+
+        void goToPose(PoseStamped req_pose_stamped, string mode)
+        {
+            vector<double> joint_angles = getJointAngles(req_pose_stamped);
+
+            while(ros::ok)
+            {
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
+
+                // joint_cmd.names
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
+                // joint_cmd.angles
+                for(int i = 0; i < joint_angles.size(); i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
+
+                _joint_cmd_pub.publish(joint_cmd);
+                ros::Rate(500).sleep();
+
+                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) {break;}
             }
         }
 
@@ -259,7 +294,7 @@ class MoveToRestClass : public ROSThreadClass
 
                 _joint_cmd_pub.publish(joint_cmd);
                 ros::Rate(500).sleep();
-                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose)) break;
+                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) break;
             }
 
             _state = REST;
@@ -494,7 +529,7 @@ class ScanBoardClass : public ROSThreadClass
             {
                 ros::Rate(100).sleep();
             }
-            processImage("test");  
+            scan();
             hoverAboveTokens();
 
             _state = SCAN;
@@ -521,6 +556,84 @@ class ScanBoardClass : public ROSThreadClass
             Utils::setPosition(   &req_pose_stamped.pose, 0.730, 0.225, 0.445);
             Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
             goToPose(req_pose_stamped);
+        }
+
+        void scan()
+        {
+            float dist;
+            setDepth(&dist);
+            hoverAboveBoard();
+            processImage("run", dist);
+        }
+
+        void setDepth(float *dist)
+        {
+            float init_pos = _curr_pose.position;
+            ros::Time start_time = ros::Time::now();                
+
+            while(ros::ok())
+            {
+                req_pose_stamped.header.frame_id = "base";
+
+                Utils::setPosition(&req_pose_stamped.pose, 
+                                    init_pos.x,
+                                    init_pos.y,
+                                    init_pos.z + (-0.05) * (ros::Time::now() - start_time).toSec());
+
+                Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
+
+                vector<double> joint_angles = getJointAngles(req_pose_stamped);
+
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
+
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
+
+                for(int i = 0; i < 7; i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
+
+                _joint_cmd_pub.publish(joint_cmd);
+                ros::Rate(500).sleep();
+             
+                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range)) {break;}
+            }
+            *dist = init_pos.z - _curr_pose.position.z;
+        }
+
+        void processImage(string mode, dist)
+        {
+            namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
+            namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
+            ros::Time start_time = ros::Time::now();
+            while(ros::ok())
+            {
+                Contours contours;
+                Mat binary, board;
+                int board_area;
+
+                isolateBlack(&binary);
+                isolateBoard(&contours, &board_area, binary.clone(), &board);
+
+                imshow("[ScanBoard] Rough", binary);
+
+                waitKey(30);
+
+                if(contours.size() == 9)
+                {
+                    setOffsets(board_area, contours, &board, dist);
+                    imshow("[ScanBoard] Processed", board);
+                    if(mode != "test") break;
+                }
+                else if ((ros::Time::now() - start_time).toSec() > 3)
+                {
+                    ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
+                    char c = cin.get();    
+                }
+            }
+            destroyWindow("[ScanBoard] Rough");
+            destroyWindow("[ScanBoard] Processed");
         }
 
         void isolateBlack(Mat * output)
@@ -601,12 +714,11 @@ class ScanBoardClass : public ROSThreadClass
             return x_i > x_j;
         }
 
-        void setOffsets(int board_area, Contours contours, Mat * output)
+        void setOffsets(int board_area, Contours contours, Mat * output, float dist)
         {
             cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
             circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
             cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-
 
             for(int i = 0; i <= contours.size() - 3; i += 3)
             {
@@ -621,45 +733,12 @@ class ScanBoardClass : public ROSThreadClass
                 cv::Point centroid(x,y);  
 
                 cv::putText(*output, Utils::intToString(contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+                // circle(*output, centroid, 3, Scalar(180,40,40), CV_FILLED);
 
-                _offsets[contours.size() - 1 - i].x = (100.0 /*constant*/ / board_area) * (center.x - centroid.x);
-                _offsets[contours.size() - 1 - i].y = (100.0 /*constant*/ / board_area) * (center.y - centroid.y);  
-                _offsets[contours.size() - 1 - i].z = 45500.0 /*constant*/ / board_area;
+                _offsets[contours.size() - 1 - i].x = (center.y - centroid.y) * 0.0025 * dist + 0.013;  
+                _offsets[contours.size() - 1 - i].y = (center.x - centroid.x) * 0.0025 * dist;
+                _offsets[contours.size() - 1 - i].z = dist;
             }
-        }
-
-        void processImage(string mode)
-        {
-            namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
-            namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
-            ros::Time start_time = ros::Time::now();
-            while(ros::ok())
-            {
-                Contours contours;
-                Mat binary, board;
-                int board_area;
-
-                isolateBlack(&binary);
-                isolateBoard(&contours, &board_area, binary.clone(), &board);
-
-                imshow("[ScanBoard] Rough", binary);
-
-                waitKey(30);
-
-                if(contours.size() == 9)
-                {
-                    setOffsets(board_area, contours, &board);
-                    imshow("[ScanBoard] Processed", board);
-                    if(mode != "test") break;
-                }
-                else if ((ros::Time::now() - start_time).toSec() > 3)
-                {
-                    ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
-                    char c = cin.get();    
-                }
-            }
-            destroyWindow("[ScanBoard] Rough");
-            destroyWindow("[ScanBoard] Processed");
         }
 };
 
@@ -668,7 +747,7 @@ class PutDownTokenClass : public ROSThreadClass
     public:
         PutDownTokenClass(string limb): ROSThreadClass(limb)
         {
-            _center.x = 0.730; _center.y = 0.225; _center.z = 0.250;
+            _center.x = 0.730; _center.y = 0.225; _center.z = 0.400;
         }
         ~PutDownTokenClass() {}
 
@@ -685,6 +764,7 @@ class PutDownTokenClass : public ROSThreadClass
             {
                 cout << "offset " << i << "\n" << _offsets[i] << endl;
             }
+            ros::Duration(1).sleep();
             hoverAboveCell();
             // _gripper->blow();
 
@@ -702,7 +782,7 @@ class PutDownTokenClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, _center.x, _center.y, _center.z);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
             goToPose(req_pose_stamped);
         }
 
@@ -711,12 +791,19 @@ class PutDownTokenClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(&req_pose_stamped.pose, 
-                               _center.x - 0.2,//_offsets[_cell - 1].x, 
-                               _center.y - 0.2,//_offsets[_cell - 1].y, 
+                               _center.x + _offsets[_cell - 1].x, 
+                               _center.y + _offsets[_cell - 1].y, 
                                _center.z /*- _offsets[_cell - 1].z*/);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
             goToPose(req_pose_stamped);
             cout << "done with hover above cell" << endl;
+
+            /*
+                Measure offsets btw Cell 5 & 1 using ruler, then compare with offset values produced by equation
+                Use camera center to check accuracy of x/y offsets
+                Check y offsets first and then set gripper offset for x
+                May have to calibrate height due to gripper 
+            */
         }
 };
 
@@ -774,9 +861,9 @@ int main(int argc, char * argv[])
     ArmController * left_ac = new ArmController("left");
     ArmController * right_ac = new ArmController("right");
 
-    left_ac->moveToRest();
-    right_ac->moveToRest();
-    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
+    // left_ac->moveToRest();
+    // right_ac->moveToRest();
+    // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
@@ -784,8 +871,8 @@ int main(int argc, char * argv[])
     // left_ac->pickUpToken();
     // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    left_ac->putDownToken(1);
-    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    // left_ac->putDownToken(6);
+    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
     ros::shutdown();
