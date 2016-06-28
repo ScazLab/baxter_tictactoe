@@ -43,7 +43,7 @@ class Utils
 
         static bool hasCollided(float range, float max_range, float min_range)
         {
-            if(range <= max_range && range >= min_range && range <= 0.060) return true;
+            if(range <= max_range && range >= min_range && range <= 0.070) return true;
             else return false;
         }
 
@@ -528,9 +528,10 @@ class ScanBoardClass : public ROSThreadClass
             while(_curr_img.empty()) 
             {
                 ros::Rate(100).sleep();
+                cout << "loop" << endl;
             }
             scan();
-            hoverAboveTokens();
+            // hoverAboveTokens();
 
             _state = SCAN;
             pthread_exit(NULL);
@@ -539,13 +540,15 @@ class ScanBoardClass : public ROSThreadClass
     private:
         typedef vector<vector<cv::Point> > Contours;
         vector<geometry_msgs::Point> _offsets;
+        vector<cv::Point> _centroids;
+        vector<float> _center_to_cell;
 
         void hoverAboveTokens()
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
             goToPose(req_pose_stamped);
         }
 
@@ -553,8 +556,11 @@ class ScanBoardClass : public ROSThreadClass
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.730, 0.225, 0.445);
-            Utils::setOrientation(&req_pose_stamped.pose, -0.0377346368185, 0.999110393092, -0.013740320376, 0.0128733521281);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
+            // Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
+            // Utils::setPosition(   &req_pose_stamped.pose, 0.50, 0.00, 0.15);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+            cout << "before pose" << endl;
             goToPose(req_pose_stamped);
         }
 
@@ -563,24 +569,33 @@ class ScanBoardClass : public ROSThreadClass
             float dist;
             setDepth(&dist);
             hoverAboveBoard();
+            ros::Duration(2).sleep();
             processImage("run", dist);
+
+            /*
+                Measure offsets btw Cell 5 & 1 using ruler, then compare with offset values produced by equation
+                Use camera center to check accuracy of x/y offsets
+                Check y offsets first and then set gripper offset for x
+                May have to calibrate height due to gripper 
+            */
         }
 
         void setDepth(float *dist)
         {
-            float init_pos = _curr_pose.position;
+            geometry_msgs::Point init_pos = _curr_pose.position;
             ros::Time start_time = ros::Time::now();                
 
             while(ros::ok())
             {
+                PoseStamped req_pose_stamped;
                 req_pose_stamped.header.frame_id = "base";
 
                 Utils::setPosition(&req_pose_stamped.pose, 
                                     init_pos.x,
                                     init_pos.y,
-                                    init_pos.z + (-0.05) * (ros::Time::now() - start_time).toSec());
+                                    init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec());
 
-                Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
+                Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
                 vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
@@ -599,14 +614,19 @@ class ScanBoardClass : public ROSThreadClass
              
                 if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range)) {break;}
             }
-            *dist = init_pos.z - _curr_pose.position.z;
+            *dist = init_pos.z - _curr_pose.position.z + 0.04;
         }
 
-        void processImage(string mode, dist)
+        void processImage(string mode, float dist)
         {
             namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
             namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
             ros::Time start_time = ros::Time::now();
+            int j = 0;
+
+            _center_to_cell.resize(9);
+            for(int i = 0; i<9;i++) _center_to_cell[i] = 0.0;
+
             while(ros::ok())
             {
                 Contours contours;
@@ -616,13 +636,11 @@ class ScanBoardClass : public ROSThreadClass
                 isolateBlack(&binary);
                 isolateBoard(&contours, &board_area, binary.clone(), &board);
 
-                imshow("[ScanBoard] Rough", binary);
-
                 waitKey(30);
 
                 if(contours.size() == 9)
                 {
-                    setOffsets(board_area, contours, &board, dist);
+                    setOffsets(board_area, contours, &board, dist, j);
                     imshow("[ScanBoard] Processed", board);
                     if(mode != "test") break;
                 }
@@ -631,7 +649,22 @@ class ScanBoardClass : public ROSThreadClass
                     ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
                     char c = cin.get();    
                 }
+
+
+                Mat raw = _curr_img.clone();
+                for(int i=0;i<9;i++){line(raw, cv::Point(_curr_img.size().width / 2, _curr_img.size().height / 2), _centroids[i], cv::Scalar(10,255,255));}
+                imshow("[ScanBoard] Rough", raw);
+                // if(j == 9) break;
+                j++;
             }
+
+            for(int i = 0; i<9;i++) 
+            {
+                _center_to_cell[i] = _center_to_cell[i] / 10;
+                cout << "center to cell " << i  << " " << _center_to_cell[i] << endl;
+            }
+
+
             destroyWindow("[ScanBoard] Rough");
             destroyWindow("[ScanBoard] Processed");
         }
@@ -714,7 +747,7 @@ class ScanBoardClass : public ROSThreadClass
             return x_i > x_j;
         }
 
-        void setOffsets(int board_area, Contours contours, Mat * output, float dist)
+        void setOffsets(int board_area, Contours contours, Mat * output, float dist, int j)
         {
             cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
             circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
@@ -726,29 +759,33 @@ class ScanBoardClass : public ROSThreadClass
             }
 
             _offsets.resize(9);
+            _centroids.resize(9);
             for(int i = contours.size() - 1; i >= 0; i--)
             {
                 double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
                 double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
                 cv::Point centroid(x,y);  
 
-                cv::putText(*output, Utils::intToString(contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-                // circle(*output, centroid, 3, Scalar(180,40,40), CV_FILLED);
+                cv::putText(*output, Utils::intToString(contours.size() - 1 - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+                // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
 
-                _offsets[contours.size() - 1 - i].x = (center.y - centroid.y) * 0.0025 * dist + 0.013;  
-                _offsets[contours.size() - 1 - i].y = (center.x - centroid.x) * 0.0025 * dist;
-                _offsets[contours.size() - 1 - i].z = dist;
+                _offsets[contours.size() - 1 - i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+                _offsets[contours.size() - 1 - i].y = (centroid.x - center.x) * 0.0025 * dist;
+                _offsets[contours.size() - 1 - i].z = dist - 0.06;
+
+                if(j==0)_centroids[contours.size() - 1 - i] = centroid;
+
+                _center_to_cell[contours.size() - 1 - i] += sqrt( pow((_offsets[contours.size() - 1 - i].x),2) + pow((_offsets[contours.size() - 1 - i].y),2) );
             }
+
+            for(int i = 0; i <9;i++){cout << "offset " << i << "\n" << _offsets[i] << endl;}
         }
 };
 
 class PutDownTokenClass : public ROSThreadClass
 {
     public:
-        PutDownTokenClass(string limb): ROSThreadClass(limb)
-        {
-            _center.x = 0.730; _center.y = 0.225; _center.z = 0.400;
-        }
+        PutDownTokenClass(string limb): ROSThreadClass(limb) {}        
         ~PutDownTokenClass() {}
 
         void setCell(int cell) {_cell = cell;}
@@ -765,7 +802,7 @@ class PutDownTokenClass : public ROSThreadClass
                 cout << "offset " << i << "\n" << _offsets[i] << endl;
             }
             ros::Duration(1).sleep();
-            hoverAboveCell();
+            // hoverAboveCell();
             // _gripper->blow();
 
             _state = PUT_DOWN;
@@ -781,8 +818,11 @@ class PutDownTokenClass : public ROSThreadClass
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, _center.x, _center.y, _center.z);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x , 0.100 + _offsets[_cell - 1].y, -0.14);
+            // Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
+            // Utils::setPosition(   &req_pose_stamped.pose, 0.50, 0.00, 0.15);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+            cout << "before pose" << endl;
             goToPose(req_pose_stamped);
         }
 
@@ -791,19 +831,12 @@ class PutDownTokenClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(&req_pose_stamped.pose, 
-                               _center.x + _offsets[_cell - 1].x, 
-                               _center.y + _offsets[_cell - 1].y, 
-                               _center.z /*- _offsets[_cell - 1].z*/);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.0102063205325, 0.999730175314, -0.0151852376616, 0.0143113991619);
+                               _curr_pose.position.x, 
+                               _curr_pose.position.y, 
+                               -0.10); // - _offsets[_cell - 1].z);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
             goToPose(req_pose_stamped);
-            cout << "done with hover above cell" << endl;
-
-            /*
-                Measure offsets btw Cell 5 & 1 using ruler, then compare with offset values produced by equation
-                Use camera center to check accuracy of x/y offsets
-                Check y offsets first and then set gripper offset for x
-                May have to calibrate height due to gripper 
-            */
+            cout << "done with hover above cell" << endl;            
         }
 };
 
@@ -851,7 +884,6 @@ class ArmController
         }    
 };
 
-
 /* Main */
 
 int main(int argc, char * argv[])
@@ -871,8 +903,8 @@ int main(int argc, char * argv[])
     // left_ac->pickUpToken();
     // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    // left_ac->putDownToken(6);
-    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    left_ac->putDownToken(7);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     // ros::spin();
     ros::shutdown();
