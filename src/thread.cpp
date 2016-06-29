@@ -45,7 +45,7 @@ class Utils
         {
             float threshold;
             if(mode == "strict") threshold = 0.050;
-            if(mode == "loose") threshold = 0.070;
+            if(mode == "loose") threshold = 0.067;
             if(range <= max_range && range >= min_range && range <= threshold) return true;
             else return false;
         }
@@ -322,18 +322,11 @@ class PickUpTokenClass : public ROSThreadClass
     public:
         PickUpTokenClass(string limb): ROSThreadClass(limb) {}
 
-        ~PickUpTokenClass() 
-        {
-            destroyWindow("[PickUpToken] Processed"); 
-            destroyWindow("[PickUpToken] Rough");
-        }
+        ~PickUpTokenClass() {}
 
     protected:
         void InternalThreadEntry()
         {
-            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-            namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-
             while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
             {
                 ros::Rate(100).sleep();
@@ -352,8 +345,11 @@ class PickUpTokenClass : public ROSThreadClass
 
         void gripToken()
         {
+            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+            namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+
             cv::Point2d offset;
-            checkForToken(&offset);
+            // checkForToken(&offset);
 
             PoseStamped req_pose_stamped;
             ros::Time start_time = ros::Time::now();                
@@ -362,39 +358,42 @@ class PickUpTokenClass : public ROSThreadClass
             while(ros::ok())
             {
                 processImage(&offset);
-                ros::Time now_time = ros::Time::now();
+                // ros::Time now_time = ros::Time::now();
 
-                req_pose_stamped.header.frame_id = "base";
+                // req_pose_stamped.header.frame_id = "base";
 
-                Utils::setPosition(&req_pose_stamped.pose, 
-                                    prev_offset.x + 0.07 * offset.x,
-                                    prev_offset.y + 0.07 * offset.y,
-                                    0.375 + (-0.05) * (now_time - start_time).toSec());
+                // Utils::setPosition(&req_pose_stamped.pose, 
+                //                     prev_offset.x + 0.07 * offset.x,
+                //                     prev_offset.y + 0.07 * offset.y,
+                //                     0.375 + (-0.05) * (now_time - start_time).toSec());
 
-                prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
-                prev_offset.y = prev_offset.y + 0.07 * offset.y;
+                // prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+                // prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-                Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+                // Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
 
-                vector<double> joint_angles = getJointAngles(req_pose_stamped);
+                // vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
-                JointCommand joint_cmd;
-                joint_cmd.mode = JointCommand::POSITION_MODE;
+                // JointCommand joint_cmd;
+                // joint_cmd.mode = JointCommand::POSITION_MODE;
 
-                Utils::setNames(&joint_cmd, _limb);
-                joint_cmd.command.resize(7);
+                // Utils::setNames(&joint_cmd, _limb);
+                // joint_cmd.command.resize(7);
 
-                for(int i = 0; i < 7; i++) {
-                    joint_cmd.command[i] = joint_angles[i];
-                }
+                // for(int i = 0; i < 7; i++) {
+                //     joint_cmd.command[i] = joint_angles[i];
+                // }
 
-                _joint_cmd_pub.publish(joint_cmd);
-                ros::Rate(500).sleep();
+                // _joint_cmd_pub.publish(joint_cmd);
+                // ros::Rate(500).sleep();
              
-                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
+                // if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
             }
             _gripper->suck();
+
+            destroyWindow("[PickUpToken] Processed"); 
+            destroyWindow("[PickUpToken] Rough");
         }   
 
         void hoverAboveTokens()
@@ -402,7 +401,7 @@ class PickUpTokenClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
             goToPose(req_pose_stamped);
         }
 
@@ -425,15 +424,20 @@ class PickUpTokenClass : public ROSThreadClass
 
         void processImage(cv::Point2d * offset)
         {
-            Mat blue, token_rough, token; 
+            Mat black, blue, token_rough, token, board; 
             Contours contours;
+            vector<cv::Point> board_contour;
      
-            isolateBlue(&blue);
-            isolateToken(blue.clone(), &token_rough, &contours);
-            setOffset(contours, offset, &token);
+            isolateBlack(&black);
+            isolateBoard(black.clone(), &board, &board_contour);
 
-            imshow("[PickUpToken] Processed", blue);
-            imshow("[PickUpToken] Rough", token);
+            isolateBlue(&blue);
+
+            // isolateToken(blue.clone(), &token_rough, &contours);
+            // setOffset(contours, offset, &token);
+
+            imshow("[PickUpToken] Processed", black);
+            imshow("[PickUpToken] Rough", board);
             waitKey(30);
         }
 
@@ -442,6 +446,62 @@ class PickUpTokenClass : public ROSThreadClass
             Mat hsv;
             cvtColor(_curr_img, hsv, CV_BGR2HSV);
             inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), *output);  
+        }
+
+        void isolateBlack(Mat * output)
+        {
+            Mat gray;
+            cvtColor(_curr_img, gray, CV_BGR2GRAY);
+            threshold(gray, *output, 55, 255, cv::THRESH_BINARY_INV);
+        }
+
+        void isolateBoard(Mat input, Mat * output, vector<cv::Point> * contour)
+        {
+            *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+            vector<cv::Vec4i> hierarchy; // captures contours within contours 
+            Contours contours;
+ 
+            findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+ 
+            double largest = 0, next_largest = 0;
+            int largest_index = 0, next_largest_index = 0;
+ 
+            // iterate through contours and keeps track of contour w/ 2nd-largest area
+            for(int i = 0; i < contours.size(); i++)
+            {
+                if(contourArea(contours[i], false) > largest)
+                {
+                    next_largest = largest;
+                    next_largest_index = largest_index;
+                    largest = contourArea(contours[i], false);
+                    largest_index = i;
+                }
+                else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
+                {
+                    next_largest = contourArea(contours[i], false);
+                    next_largest_index = i;
+                }
+            }
+
+           drawContours(*output, contours, next_largest_index, Scalar(255,255,255), 1, 8, hierarchy);
+
+           // findContours(*output, contours, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+           // largest_index = 0; next_largest_index = 0;
+           
+           // // iterate through contours and keeps track of contour w/ 2nd-largest area
+           // for(int i = 0; i < contours.size(); i++)
+           // {
+           //     if(contourArea(contours[i], false) > largest)
+           //     {
+           //         largest = contourArea(contours[i], false);
+           //         largest_index = i;
+           //     }
+           // }
+
+           // *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+           // drawContours(*output, contours, largest_index, Scalar(255,255,255), CV_FILLED, 8);
+
         }
 
         void isolateToken(Mat input, Mat *output, Contours *contours)
@@ -518,7 +578,7 @@ class PickUpTokenClass : public ROSThreadClass
                 double token_area = (x_max - x_min) * (y_max - y_min);
 
                 (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2));
-                (*offset).y = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
+                (*offset).y = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) + 0.04; /*distance between gripper center and camera center*/
             }
             // when hand camera is blind due to being too close to token, go straight down;
             else if(contours.size() < 4)
@@ -907,13 +967,13 @@ class ArmController
         }    
 };
 
-/* Main */
+/*  Main */
 
 /* Notes 
     
+
     Try to go as low as possible. Go higher in increments if joint angles returns zero
     Scan once, move to center of cell 5 and scan again to improve accuracy
-
 */
 
 int main(int argc, char * argv[])
@@ -923,18 +983,18 @@ int main(int argc, char * argv[])
     ArmController * left_ac = new ArmController("left");
     ArmController * right_ac = new ArmController("right");
 
-    left_ac->moveToRest();
-    right_ac->moveToRest();
-    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
+    // left_ac->moveToRest();
+    // right_ac->moveToRest();
+    // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
-    left_ac->scanBoard();
-    while(left_ac->getState() != SCAN){ros::spinOnce();}
+    // left_ac->scanBoard();
+    // while(left_ac->getState() != SCAN){ros::spinOnce();}
 
     left_ac->pickUpToken();
     while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    left_ac->putDownToken(1);
-    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    // left_ac->putDownToken(1);
+    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
 
     ros::shutdown();
     return 0;
