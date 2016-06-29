@@ -41,9 +41,12 @@ class Utils
 {
     public: 
 
-        static bool hasCollided(float range, float max_range, float min_range)
+        static bool hasCollided(float range, float max_range, float min_range, string mode)
         {
-            if(range <= max_range && range >= min_range && range <= 0.070) return true;
+            float threshold;
+            if(mode == "strict") threshold = 0.050;
+            if(mode == "loose") threshold = 0.070;
+            if(range <= max_range && range >= min_range && range <= threshold) return true;
             else return false;
         }
 
@@ -53,20 +56,20 @@ class Utils
 
             if(mode == "strict")
             {
-                if(!equalXDP(a.position.x, b.position.x, 2))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
-                if(!equalXDP(a.position.y, b.position.y, 3))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
+                if(!equalXDP(a.position.x, b.position.x, 3)) {same_pose = false;} 
+                if(!equalXDP(a.position.y, b.position.y, 3)) {same_pose = false;} 
             }
             else if(mode == "loose")
             {
-                if(!equalXDP(a.position.x, b.position.x, 2))       {same_pose = false; /*cout << "[pos x] " << (same_pose == false ? "false" : "true") << endl;*/} 
-                if(!equalXDP(a.position.y, b.position.y, 2))       {same_pose = false; /*cout << "[pos y] " << (same_pose == false ? "false" : "true") << endl;*/} 
+                if(!equalXDP(a.position.x, b.position.x, 2)) {same_pose = false;} 
+                if(!equalXDP(a.position.y, b.position.y, 2)) {same_pose = false;} 
             }
 
-            if(!withinXHundredth(a.position.z, b.position.z, 1))       {same_pose = false; /*cout << "[pos z] " << (same_pose == false ? "false" : "true") << endl;*/}    
-            if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {same_pose = false; /*cout << "[ori x] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {same_pose = false; /*cout << "[ori y] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {same_pose = false; /*cout << "[ori z] " << (same_pose == false ? "false" : "true") << endl;*/}  
-            if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {same_pose = false; /*cout << "[ori w] " << (same_pose == false ? "false" : "true") << endl;*/}
+            if(!withinXHundredth(a.position.z, b.position.z, 1))       {same_pose = false;}    
+            if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {same_pose = false;}  
+            if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {same_pose = false;}  
+            if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {same_pose = false;}  
+            if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {same_pose = false;}
 
             return same_pose; 
         }
@@ -132,7 +135,9 @@ class ROSThreadClass
             _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ROSThreadClass::IRCallback, this);
             _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
             _gripper = new ttt::Vacuum_Gripper(ttt::left);
-            _state = START;
+            _init_time = ros::Time::now();
+            _state.x = START;
+            _state.y = 0;
         }
         virtual ~ROSThreadClass() {/* empty */}
 
@@ -158,7 +163,7 @@ class ROSThreadClass
             _curr_img = cv_ptr->image.clone();
         }
 
-        int getState(){return _state;}
+        geometry_msgs::Point getState() {return _state;}
 
     protected:
         ros::Publisher _joint_cmd_pub;
@@ -168,8 +173,10 @@ class ROSThreadClass
         geometry_msgs::Pose _curr_pose;
 
         std::string _limb;
-        int _state;
         ttt::Vacuum_Gripper * _gripper;
+
+        ros::Time _init_time;
+        geometry_msgs::Point _state; // member 'x' records state change, member 'y' stores time state was changed 
 
         virtual void InternalThreadEntry() = 0;
 
@@ -244,6 +251,12 @@ class ROSThreadClass
             }
         }
 
+        void setState(int state)
+        {
+            _state.x = state;
+            _state.y = (ros::Time::now() - _init_time).toSec();
+        }
+
     private:
         static void * InternalThreadEntryFunc(void * This) {((ROSThreadClass *)This)->InternalThreadEntry(); return NULL;}
         ros::NodeHandle _n;
@@ -264,40 +277,42 @@ class MoveToRestClass : public ROSThreadClass
     protected:
         void InternalThreadEntry()
         {
-            while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
-            {
-                ros::Rate(100).sleep();
-            }
 
-            PoseStamped req_pose_stamped;
+            // while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
+            // {
+            //     ros::Rate(100).sleep();
+            // }
+
+            // PoseStamped req_pose_stamped;
             
-            req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
+            // req_pose_stamped.header.frame_id = "base";
+            // Utils::setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+            // Utils::setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
-            while(ros::ok())
-            {
-                JointCommand joint_cmd;
-                joint_cmd.mode = JointCommand::POSITION_MODE;
+            // while(ros::ok())
+            // {
+            //     JointCommand joint_cmd;
+            //     joint_cmd.mode = JointCommand::POSITION_MODE;
 
-                // joint_cmd.names
-                Utils::setNames(&joint_cmd, _limb);
-                joint_cmd.command.resize(7);
-                // joint_cmd.angles
-                joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
-                joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
-                joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
-                joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
-                joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
-                joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
-                joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
+            //     // joint_cmd.names
+            //     Utils::setNames(&joint_cmd, _limb);
+            //     joint_cmd.command.resize(7);
+            //     // joint_cmd.angles
+            //     joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
+            //     joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
+            //     joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
+            //     joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
+            //     joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
+            //     joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
+            //     joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
-                _joint_cmd_pub.publish(joint_cmd);
-                ros::Rate(500).sleep();
-                if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) break;
-            }
+            //     _joint_cmd_pub.publish(joint_cmd);
+            //     ros::Rate(500).sleep();
+            //     if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) break;
+            // }
 
-            _state = REST;
+            ros::Duration(2).sleep();
+            setState(REST);
             pthread_exit(NULL);  
         }  
 };
@@ -316,19 +331,20 @@ class PickUpTokenClass : public ROSThreadClass
     protected:
         void InternalThreadEntry()
         {
-            namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-            namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+            // namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+            // namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
 
-            while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
-            {
-                ros::Rate(100).sleep();
-            }
+            // while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
+            // {
+            //     ros::Rate(100).sleep();
+            // }
 
-            hoverAboveTokens();
-            gripToken();
-            hoverAboveTokens();
+            // hoverAboveTokens();
+            // gripToken();
+            // hoverAboveTokens();
 
-            _state = PICK_UP;
+            ros::Duration(2).sleep();
+            setState(PICK_UP);
             pthread_exit(NULL);  
         }
 
@@ -377,7 +393,7 @@ class PickUpTokenClass : public ROSThreadClass
                 _joint_cmd_pub.publish(joint_cmd);
                 ros::Rate(500).sleep();
              
-                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range)) {break;}
+                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
             }
             _gripper->suck();
         }   
@@ -533,7 +549,7 @@ class ScanBoardClass : public ROSThreadClass
             scan();
             // hoverAboveTokens();
 
-            _state = SCAN;
+            setState(SCAN);
             pthread_exit(NULL);
         }
 
@@ -571,13 +587,6 @@ class ScanBoardClass : public ROSThreadClass
             hoverAboveBoard();
             ros::Duration(2).sleep();
             processImage("run", dist);
-
-            /*
-                Measure offsets btw Cell 5 & 1 using ruler, then compare with offset values produced by equation
-                Use camera center to check accuracy of x/y offsets
-                Check y offsets first and then set gripper offset for x
-                May have to calibrate height due to gripper 
-            */
         }
 
         void setDepth(float *dist)
@@ -612,7 +621,7 @@ class ScanBoardClass : public ROSThreadClass
                 _joint_cmd_pub.publish(joint_cmd);
                 ros::Rate(500).sleep();
              
-                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range)) {break;}
+                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) {break;}
             }
             *dist = init_pos.z - _curr_pose.position.z + 0.04;
         }
@@ -794,18 +803,18 @@ class PutDownTokenClass : public ROSThreadClass
     protected:
         void InternalThreadEntry()
         {
-            hoverAboveBoard();
-            cout << "cell " << _cell << endl;
-            cout << "_curr_pose\n" << _curr_pose.position << endl;
-            for(int i=0;i<_offsets.size();i++)
-            {
-                cout << "offset " << i << "\n" << _offsets[i] << endl;
-            }
-            ros::Duration(1).sleep();
-            // hoverAboveCell();
+            // hoverAboveBoard();
+            // cout << "cell " << _cell << endl;
+            // cout << "_curr_pose\n" << _curr_pose.position << endl;
+            // for(int i=0;i<_offsets.size();i++)
+            // {
+            //     cout << "offset " << i << "\n" << _offsets[i] << endl;
+            // }
+            // ros::Duration(1).sleep();
             // _gripper->blow();
 
-            _state = PUT_DOWN;
+            ros::Duration(2).sleep();
+            setState(PUT_DOWN);
             pthread_exit(NULL);  
         }  
 
@@ -861,11 +870,34 @@ class ArmController
 
         int getState()
         {
+            float len_time = 0;
             int state = 0;
-            if(_pick_class->getState() > state) state = _pick_class->getState();
-            if(_rest_class->getState() > state) state = _rest_class->getState();
-            if(_scan_class->getState() > state) state = _scan_class->getState();
-            if(_put_class->getState() > state) state = _put_class->getState();
+
+            if(_rest_class->getState().y > len_time) 
+            {
+                len_time = _rest_class->getState().y; 
+                state = _rest_class->getState().x;            
+            }
+
+            if(_pick_class->getState().y > len_time) 
+            {
+                len_time = _pick_class->getState().y; 
+                state = _pick_class->getState().x;
+            }
+
+            if(_scan_class->getState().y > len_time) 
+            {
+                len_time = _scan_class->getState().y; 
+                state = _scan_class->getState().x;
+            }
+
+            if(_put_class->getState().y > len_time) 
+            {
+                len_time = _put_class->getState().y; 
+                state = _put_class->getState().x;            
+            }
+
+            cout << "time of last state change: " << len_time << " state: " << state << endl;
 
             return state;
         }
@@ -891,20 +923,28 @@ int main(int argc, char * argv[])
     ros::init(argc, argv, "thread");
 
     ArmController * left_ac = new ArmController("left");
-    ArmController * right_ac = new ArmController("right");
+    // ArmController * right_ac = new ArmController("right");
 
-    // left_ac->moveToRest();
+
+    left_ac->moveToRest();
     // right_ac->moveToRest();
     // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
-    left_ac->scanBoard();
-    while(left_ac->getState() != SCAN){ros::spinOnce();}
+    while(!(left_ac->getState() == REST)){} 
+
+
+
+    // left_ac->scanBoard();
+    // while(left_ac->getState() != SCAN){ros::spinOnce();}
 
     // left_ac->pickUpToken();
     // while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
     left_ac->putDownToken(7);
     while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+
+    left_ac->pickUpToken();
+    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
     // ros::spin();
     ros::shutdown();
