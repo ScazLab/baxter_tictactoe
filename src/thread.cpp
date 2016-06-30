@@ -182,7 +182,7 @@ class ROSThreadClass
 
         void goToPose(PoseStamped req_pose_stamped)
         {
-            vector<double> joint_angles = getJointAngles(req_pose_stamped);
+            vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
             while(ros::ok)
             {
@@ -206,7 +206,7 @@ class ROSThreadClass
 
         void goToPose(PoseStamped req_pose_stamped, string mode)
         {
-            vector<double> joint_angles = getJointAngles(req_pose_stamped);
+            vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
             while(ros::ok)
             {
@@ -228,29 +228,59 @@ class ROSThreadClass
             }
         }
 
-        vector<double> getJointAngles(PoseStamped pose_stamped)
+        vector<double> getJointAngles(PoseStamped * pose_stamped)
         {
-            SolvePositionIK ik_srv;
-            ik_srv.request.pose_stamp.push_back(pose_stamped);
+            vector<double> joint_angles;
+            bool all_zeros = true;
 
-            if(_ik_client.call(ik_srv))
+            while(all_zeros)
             {
-                vector<double> joint_angles = ik_srv.response.joints[0].position;
-                bool all_zeros = true;
-                for(int i = 0; i < joint_angles.size(); i++){
-                    if(joint_angles[i] != 0) {all_zeros = false; break;}
-                }
-                if(all_zeros == true) 
+                cout << *pose_stamped << endl;
+                SolvePositionIK ik_srv;
+                ik_srv.request.pose_stamp.push_back(*pose_stamped);
+                
+                if(_ik_client.call(ik_srv))
                 {
-                    ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+                    joint_angles = ik_srv.response.joints[0].position;
+                    for(int i = 0; i < joint_angles.size(); i++)
+                    {
+                        if(joint_angles[i] != 0) 
+                        {
+                            all_zeros = false; 
+                            break;
+                        }
+                    }
+
+                    if(all_zeros == true) 
+                    {
+                        ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+                        (*pose_stamped).pose.position.z += 0.005;
+                    }   
                 }
-                return joint_angles;
             }
-            else {
-                ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
-                vector<double> empty; 
-                return empty;
-            }
+
+            return joint_angles;
+
+            // vector<double> joint_angles;
+            // SolvePositionIK ik_srv;
+            // if(_ik_client.call(ik_srv))
+            // {
+            //     vector<double> joint_angles = ik_srv.response.joints[0].position;
+            //     bool all_zeros = true;
+            //     for(int i = 0; i < joint_angles.size(); i++){
+            //         if(joint_angles[i] != 0) {all_zeros = false; break;}
+            //     }
+            //     if(all_zeros == true) 
+            //     {
+            //         ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+            //     }
+            //     return joint_angles;
+            // }
+            // else {
+            //     ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
+            //     vector<double> empty; 
+            //     return empty;
+            // }
         }
 
         void setState(int state)
@@ -334,7 +364,7 @@ class PickUpTokenClass : public ROSThreadClass
 
             hoverAboveTokens();
             gripToken();
-            // hoverAboveTokens();
+            hoverAboveTokens();
 
             setState(PICK_UP);
             pthread_exit(NULL);  
@@ -349,7 +379,7 @@ class PickUpTokenClass : public ROSThreadClass
             namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
 
             cv::Point2d offset;
-            // checkForToken(&offset);
+            checkForToken(&offset);
 
             PoseStamped req_pose_stamped;
             ros::Time start_time = ros::Time::now();                
@@ -358,36 +388,36 @@ class PickUpTokenClass : public ROSThreadClass
             while(ros::ok())
             {
                 processImage(&offset);
-                // ros::Time now_time = ros::Time::now();
+                ros::Time now_time = ros::Time::now();
 
-                // req_pose_stamped.header.frame_id = "base";
+                req_pose_stamped.header.frame_id = "base";
 
-                // Utils::setPosition(&req_pose_stamped.pose, 
-                //                     prev_offset.x + 0.07 * offset.x,
-                //                     prev_offset.y + 0.07 * offset.y,
-                //                     0.375 + (-0.05) * (now_time - start_time).toSec());
+                Utils::setPosition(&req_pose_stamped.pose, 
+                                    prev_offset.x + 0.07 * offset.x,
+                                    prev_offset.y + 0.07 * offset.y,
+                                    0.375 + (-0.05) * (now_time - start_time).toSec());
 
-                // prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
-                // prev_offset.y = prev_offset.y + 0.07 * offset.y;
+                prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+                prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-                // Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+                Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
-                // vector<double> joint_angles = getJointAngles(req_pose_stamped);
+                vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
-                // JointCommand joint_cmd;
-                // joint_cmd.mode = JointCommand::POSITION_MODE;
+                JointCommand joint_cmd;
+                joint_cmd.mode = JointCommand::POSITION_MODE;
 
-                // Utils::setNames(&joint_cmd, _limb);
-                // joint_cmd.command.resize(7);
+                Utils::setNames(&joint_cmd, _limb);
+                joint_cmd.command.resize(7);
 
-                // for(int i = 0; i < 7; i++) {
-                //     joint_cmd.command[i] = joint_angles[i];
-                // }
+                for(int i = 0; i < 7; i++) {
+                    joint_cmd.command[i] = joint_angles[i];
+                }
 
-                // _joint_cmd_pub.publish(joint_cmd);
-                // ros::Rate(500).sleep();
+                _joint_cmd_pub.publish(joint_cmd);
+                ros::Rate(500).sleep();
              
-                // if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
+                if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
             }
             _gripper->suck();
 
@@ -603,7 +633,7 @@ class PickUpTokenClass : public ROSThreadClass
                 double token_area = (x_max - x_min) * (y_max - y_min);
 
                 (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2)); 
-                (*offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid) + 0.013; /*distance between gripper center and camera center*/
+                (*offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/
             }
             // when hand camera is blind due to being too close to token, go straight down;
             else if(contours.size() < 4)
@@ -633,7 +663,6 @@ class ScanBoardClass : public ROSThreadClass
             scan();
             hoverAboveTokens();
 
-            cout << "done with scanning" << endl;
             setState(SCAN);
             pthread_exit(NULL);
         }
@@ -648,8 +677,8 @@ class ScanBoardClass : public ROSThreadClass
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
             goToPose(req_pose_stamped);
         }
 
@@ -690,7 +719,7 @@ class ScanBoardClass : public ROSThreadClass
 
                 Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
-                vector<double> joint_angles = getJointAngles(req_pose_stamped);
+                vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
                 JointCommand joint_cmd;
                 joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -890,6 +919,8 @@ class PutDownTokenClass : public ROSThreadClass
                 cout << "offset " << i << "\n" << _offsets[i] << endl;
             }
             hoverAboveBoard();
+            ros::Duration(1).sleep();
+            hoverAboveCell();
             ros::Duration(1.5).sleep();
             _gripper->blow();
 
@@ -902,7 +933,7 @@ class PutDownTokenClass : public ROSThreadClass
         geometry_msgs::Point _center; 
         vector<geometry_msgs::Point> _offsets;
 
-        void hoverAboveBoard()
+        void hoverAboveCell()
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
@@ -912,17 +943,16 @@ class PutDownTokenClass : public ROSThreadClass
             Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
             goToPose(req_pose_stamped);
+
         }
 
-        void hoverAboveCell()
+        void hoverAboveBoard()
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(&req_pose_stamped.pose, 
-                               _curr_pose.position.x, 
-                               _curr_pose.position.y, 
-                               -0.10); // - _offsets[_cell - 1].z);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.200);
             Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+            cout << "before pose" << endl;
             goToPose(req_pose_stamped);
         }
 };
@@ -992,10 +1022,7 @@ class ArmController
         }    
 };
 
-/*  Main */
-
 /* Notes 
-    Try to go as low as possible. Go higher in increments if joint angles returns zero
     Scan once, move to center of cell 5 and scan again to improve accuracy
 */
 
@@ -1010,14 +1037,25 @@ int main(int argc, char * argv[])
     // right_ac->moveToRest();
     // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
-    // left_ac->scanBoard();
-    // while(left_ac->getState() != SCAN){ros::spinOnce();}
+    left_ac->scanBoard();
+    while(left_ac->getState() != SCAN){ros::spinOnce();}
+
+    cout << "done" << endl;
 
     left_ac->pickUpToken();
     while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    // left_ac->putDownToken(1);
-    // while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
+    left_ac->putDownToken(7);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}     
+
+    left_ac->pickUpToken();
+    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+
+    left_ac->putDownToken(3);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}    
+
+    left_ac->moveToRest();
+    while(!(left_ac->getState() == REST)) {ros::spinOnce();}
 
     ros::shutdown();
     return 0;
