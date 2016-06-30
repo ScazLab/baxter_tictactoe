@@ -429,7 +429,7 @@ class PickUpTokenClass : public ROSThreadClass
             vector<cv::Point> board_contour;
      
             isolateBlack(&black);
-            isolateBoard(black.clone(), &board, &board_contour);
+            isolateBoard(black.clone(), &board);
 
             isolateBlue(&blue);
 
@@ -455,7 +455,7 @@ class PickUpTokenClass : public ROSThreadClass
             threshold(gray, *output, 55, 255, cv::THRESH_BINARY_INV);
         }
 
-        void isolateBoard(Mat input, Mat * output, vector<cv::Point> * contour)
+        void isolateBoard(Mat input, Mat * output)
         {
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
             vector<cv::Vec4i> hierarchy; // captures contours within contours 
@@ -483,25 +483,36 @@ class PickUpTokenClass : public ROSThreadClass
                 }
             }
 
-           drawContours(*output, contours, next_largest_index, Scalar(255,255,255), 1, 8, hierarchy);
+            *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+            // drawContours(*output, contours, next_largest_index, Scalar(255,255,255), 1);
 
-           // findContours(*output, contours, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+            vector<cv::Point> contour = contours[next_largest_index];
+            int right_x = 0;
+            int low_y = _curr_img.size().height;
+            
+            for(int i = 0; i < contour.size(); i++)
+            {
+                if(contour[i].x > right_x) right_x = contour[i].x;
+                if(contour[i].y < low_y) low_y = contour[i].y;
+            }
 
-           // largest_index = 0; next_largest_index = 0;
-           
-           // // iterate through contours and keeps track of contour w/ 2nd-largest area
-           // for(int i = 0; i < contours.size(); i++)
-           // {
-           //     if(contourArea(contours[i], false) > largest)
-           //     {
-           //         largest = contourArea(contours[i], false);
-           //         largest_index = i;
-           //     }
-           // }
+            // line(*output, cv::Point(_curr_img.size().width / 2, low_y), cv::Point(_curr_img.size().width / 2, low_y), cv::Scalar(130,256,256), 3);
+            // line(*output, cv::Point(right_x, _curr_img.size().height), cv::Point(right_x, _curr_img.size().height), cv::Scalar(130,256,256), 3);
+            // line(*output, cv::Point(_curr_img.size().width / 2, low_y + 10), cv::Point(_curr_img.size().width / 2, high_y - 10), cv::Scalar(130,256,256), 3);
 
-           // *output = Mat::zeros(_curr_img.size(), CV_8UC1);
-           // drawContours(*output, contours, largest_index, Scalar(255,255,255), CV_FILLED, 8);
 
+
+            line(*output, cv::Point(right_x, low_y), cv::Point(0, low_y), cv::Scalar(130,256,256));
+            line(*output, cv::Point(right_x, low_y), cv::Point(right_x, _curr_img.size().height), cv::Scalar(130,256,256));
+
+
+            /*
+                draw some lines to get the xy orientation
+                find highest y, rightmost x
+                corner is (x,y)
+                'forbidden zone' is within (0,y)(x,y) and (x,0)(x,y)
+            */
+    
         }
 
         void isolateToken(Mat input, Mat *output, Contours *contours)
@@ -970,8 +981,6 @@ class ArmController
 /*  Main */
 
 /* Notes 
-    
-
     Try to go as low as possible. Go higher in increments if joint angles returns zero
     Scan once, move to center of cell 5 and scan again to improve accuracy
 */
