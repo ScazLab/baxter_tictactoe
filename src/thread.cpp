@@ -426,18 +426,17 @@ class PickUpTokenClass : public ROSThreadClass
         {
             Mat black, blue, token_rough, token, board; 
             Contours contours;
-            vector<cv::Point> board_contour;
+            cv::Point board_corner;
      
             isolateBlack(&black);
-            isolateBoard(black.clone(), &board);
+            isolateBoard(black.clone(), &board, &board_corner);
 
             isolateBlue(&blue);
-
-            // isolateToken(blue.clone(), &token_rough, &contours);
+            isolateToken(blue.clone(), board_corner, &token_rough, &contours);
             // setOffset(contours, offset, &token);
 
-            imshow("[PickUpToken] Processed", black);
-            imshow("[PickUpToken] Rough", board);
+            // imshow("[PickUpToken] Processed", board);
+            imshow("[PickUpToken] Rough", token_rough);
             waitKey(30);
         }
 
@@ -455,7 +454,7 @@ class PickUpTokenClass : public ROSThreadClass
             threshold(gray, *output, 55, 255, cv::THRESH_BINARY_INV);
         }
 
-        void isolateBoard(Mat input, Mat * output)
+        void isolateBoard(Mat input, Mat * output, cv::Point * board_corner)
         {
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
             vector<cv::Vec4i> hierarchy; // captures contours within contours 
@@ -484,7 +483,6 @@ class PickUpTokenClass : public ROSThreadClass
             }
 
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
-            // drawContours(*output, contours, next_largest_index, Scalar(255,255,255), 1);
 
             vector<cv::Point> contour = contours[next_largest_index];
             int right_x = 0;
@@ -496,28 +494,21 @@ class PickUpTokenClass : public ROSThreadClass
                 if(contour[i].y < low_y) low_y = contour[i].y;
             }
 
-            // line(*output, cv::Point(_curr_img.size().width / 2, low_y), cv::Point(_curr_img.size().width / 2, low_y), cv::Scalar(130,256,256), 3);
-            // line(*output, cv::Point(right_x, _curr_img.size().height), cv::Point(right_x, _curr_img.size().height), cv::Scalar(130,256,256), 3);
-            // line(*output, cv::Point(_curr_img.size().width / 2, low_y + 10), cv::Point(_curr_img.size().width / 2, high_y - 10), cv::Scalar(130,256,256), 3);
-
-
+            (*board_corner).x = right_x;
+            (*board_corner).y = low_y;
 
             line(*output, cv::Point(right_x, low_y), cv::Point(0, low_y), cv::Scalar(130,256,256));
             line(*output, cv::Point(right_x, low_y), cv::Point(right_x, _curr_img.size().height), cv::Scalar(130,256,256));
 
+            circle(*output, cv::Point(right_x - 20, low_y + 20), 3, cv::Scalar(130,256,256));
+            circle(*output, cv::Point(right_x + 20, low_y + 20), 3, cv::Scalar(130,256,256));
+            circle(*output, cv::Point(right_x - 20, low_y - 20), 3, cv::Scalar(130,256,256));
 
-            /*
-                draw some lines to get the xy orientation
-                find highest y, rightmost x
-                corner is (x,y)
-                'forbidden zone' is within (0,y)(x,y) and (x,0)(x,y)
-            */
-    
         }
 
-        void isolateToken(Mat input, Mat *output, Contours *contours)
+        void isolateToken(Mat input, cv::Point board_corner, Mat *output, Contours *contours)
         {
-            Contours raw_contours;
+            Contours raw_contours, clean_contours;
             findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
             int largest_index = 0, largest_area = 0;
@@ -538,8 +529,33 @@ class PickUpTokenClass : public ROSThreadClass
 
                 if(contourArea(raw_contours[i]) > 200 && not_gripper == true && is_triangle == true)
                 {
-                    (*contours).push_back(raw_contours[i]);
+                    clean_contours.push_back(raw_contours[i]);
                 }
+            }
+
+            // multiple tokens detected, or board lines detected
+            if(clean_contours.size() > 4)
+            {
+                for(int i = 0; i < clean_contours.size(); i++) 
+                {
+                    bool within_board = false;
+                    vector<cv::Point> contour = clean_contours[i];
+                    for(int j = 0; j < contour.size(); j++)
+                    {
+                        cv::Point pt = contour[j];
+                        if(pt.x < board_corner.x && pt.y > board_corner.y)
+                        {
+                            within_board = true;
+                            break;
+                        }
+                    }
+
+                    if(!within_board) (*contours).push_back(contour);
+                }
+            }
+            else if(clean_contours.size() == 4)
+            {
+                *contours = clean_contours;
             }
 
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
@@ -548,12 +564,22 @@ class PickUpTokenClass : public ROSThreadClass
                 drawContours(*output, (*contours), i, Scalar(255,255,255), CV_FILLED);
             }
 
+
+            line(*output, cv::Point(board_corner.x, board_corner.y), cv::Point(0, board_corner.y), cv::Scalar(130,256,256));
+            line(*output, cv::Point(board_corner.x, board_corner.y), cv::Point(board_corner.x, _curr_img.size().height), cv::Scalar(130,256,256));
+
             circle(*output, cv::Point((_curr_img.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
         }              
 
         void setOffset(Contours contours, cv::Point2d *offset, Mat *output)
         {
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+            
+            for(int i = 0; i <contours.size(); i++)
+            {
+                drawContours(*output, contours, i, Scalar(255,255,255), CV_FILLED);
+            }
+            
             // if 'noise' contours are present, do nothing
             if(contours.size() == 4)
             {
