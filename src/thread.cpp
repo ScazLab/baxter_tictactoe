@@ -334,7 +334,7 @@ class PickUpTokenClass : public ROSThreadClass
 
             hoverAboveTokens();
             gripToken();
-            hoverAboveTokens();
+            // hoverAboveTokens();
 
             setState(PICK_UP);
             pthread_exit(NULL);  
@@ -372,7 +372,6 @@ class PickUpTokenClass : public ROSThreadClass
 
                 // Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
-
                 // vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
                 // JointCommand joint_cmd;
@@ -400,8 +399,8 @@ class PickUpTokenClass : public ROSThreadClass
         {
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
-            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+            Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
             goToPose(req_pose_stamped);
         }
 
@@ -426,16 +425,16 @@ class PickUpTokenClass : public ROSThreadClass
         {
             Mat black, blue, token_rough, token, board; 
             Contours contours;
-            cv::Point board_corner;
+            int board_y;
      
             isolateBlack(&black);
-            isolateBoard(black.clone(), &board, &board_corner);
+            isolateBoard(black.clone(), &board, &board_y);
 
             isolateBlue(&blue);
-            isolateToken(blue.clone(), board_corner, &token_rough, &contours);
-            // setOffset(contours, offset, &token);
+            isolateToken(blue.clone(), board_y, &token_rough, &contours);
+            setOffset(contours, offset, &token);
 
-            // imshow("[PickUpToken] Processed", board);
+            imshow("[PickUpToken] Processed", _curr_img.clone());
             imshow("[PickUpToken] Rough", token_rough);
             waitKey(30);
         }
@@ -454,7 +453,7 @@ class PickUpTokenClass : public ROSThreadClass
             threshold(gray, *output, 55, 255, cv::THRESH_BINARY_INV);
         }
 
-        void isolateBoard(Mat input, Mat * output, cv::Point * board_corner)
+        void isolateBoard(Mat input, Mat * output, int * board_y)
         {
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
             vector<cv::Vec4i> hierarchy; // captures contours within contours 
@@ -485,28 +484,21 @@ class PickUpTokenClass : public ROSThreadClass
             *output = Mat::zeros(_curr_img.size(), CV_8UC1);
 
             vector<cv::Point> contour = contours[next_largest_index];
-            int right_x = 0;
             int low_y = _curr_img.size().height;
             
             for(int i = 0; i < contour.size(); i++)
             {
-                if(contour[i].x > right_x) right_x = contour[i].x;
                 if(contour[i].y < low_y) low_y = contour[i].y;
             }
 
-            (*board_corner).x = right_x;
-            (*board_corner).y = low_y;
+            *board_y = low_y;
 
-            line(*output, cv::Point(right_x, low_y), cv::Point(0, low_y), cv::Scalar(130,256,256));
-            line(*output, cv::Point(right_x, low_y), cv::Point(right_x, _curr_img.size().height), cv::Scalar(130,256,256));
-
-            circle(*output, cv::Point(right_x - 20, low_y + 20), 3, cv::Scalar(130,256,256));
-            circle(*output, cv::Point(right_x + 20, low_y + 20), 3, cv::Scalar(130,256,256));
-            circle(*output, cv::Point(right_x - 20, low_y - 20), 3, cv::Scalar(130,256,256));
-
+            line(*output, cv::Point(0, low_y), cv::Point(_curr_img.size().width, low_y), cv::Scalar(130,256,256));
+            // line(*output, cv::Point(0, low_y - 10), cv::Point(_curr_img.size().width - 50, low_y - 10), cv::Scalar(130,256,256));
+            // line(*output, cv::Point(0, low_y + 10), cv::Point(_curr_img.size().width - 100, low_y + 10), cv::Scalar(130,256,256));
         }
 
-        void isolateToken(Mat input, cv::Point board_corner, Mat *output, Contours *contours)
+        void isolateToken(Mat input, int board_y, Mat *output, Contours *contours)
         {
             Contours raw_contours, clean_contours;
             findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -530,6 +522,7 @@ class PickUpTokenClass : public ROSThreadClass
                 if(contourArea(raw_contours[i]) > 200 && not_gripper == true && is_triangle == true)
                 {
                     clean_contours.push_back(raw_contours[i]);
+                    // (*contours).push_back(raw_contours[i]);
                 }
             }
 
@@ -543,13 +536,12 @@ class PickUpTokenClass : public ROSThreadClass
                     for(int j = 0; j < contour.size(); j++)
                     {
                         cv::Point pt = contour[j];
-                        if(pt.x < board_corner.x && pt.y > board_corner.y)
+                        if(pt.y > board_y)
                         {
                             within_board = true;
                             break;
                         }
                     }
-
                     if(!within_board) (*contours).push_back(contour);
                 }
             }
@@ -564,11 +556,7 @@ class PickUpTokenClass : public ROSThreadClass
                 drawContours(*output, (*contours), i, Scalar(255,255,255), CV_FILLED);
             }
 
-
-            line(*output, cv::Point(board_corner.x, board_corner.y), cv::Point(0, board_corner.y), cv::Scalar(130,256,256));
-            line(*output, cv::Point(board_corner.x, board_corner.y), cv::Point(board_corner.x, _curr_img.size().height), cv::Scalar(130,256,256));
-
-            circle(*output, cv::Point((_curr_img.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
+            line(*output, cv::Point(0, board_y), cv::Point(_curr_img.size().width, board_y), cv::Scalar(130,256,256));
         }              
 
         void setOffset(Contours contours, cv::Point2d *offset, Mat *output)
@@ -614,8 +602,8 @@ class PickUpTokenClass : public ROSThreadClass
 
                 double token_area = (x_max - x_min) * (y_max - y_min);
 
-                (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2));
-                (*offset).y = ((4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid)) + 0.04; /*distance between gripper center and camera center*/
+                (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2)); 
+                (*offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid) + 0.013; /*distance between gripper center and camera center*/
             }
             // when hand camera is blind due to being too close to token, go straight down;
             else if(contours.size() < 4)
@@ -661,7 +649,7 @@ class ScanBoardClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.540, 0.375);
-            Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
+            Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
             goToPose(req_pose_stamped);
         }
 
