@@ -1,885 +1,944 @@
 #include "arm_controller/arm_controller.h"
 
+using namespace std;
 using namespace baxter_core_msgs;
 using namespace geometry_msgs;
 using namespace sensor_msgs;
-using namespace std;
-using namespace ttt;
 using namespace cv;
 
-/*
-    TASKS:
-    Make arm move at same time
-    Threshold out black boundaries of board and remove tokens on board
-*/
+/**************************************************************************/
+/*                               Utils                                    */
+/**************************************************************************/
 
-/**************************** PUBLIC ******************************/
-
-ArmController::ArmController(string limb): _img_trp(_n), _limb(limb)
-{ 
-    if(_limb != "left" && _limb != "right"){
-        ROS_ERROR("[Arm Controller] Invalid limb. Acceptable values are: right / left");
-        ros::shutdown();
-    }
-
-    ROS_DEBUG_STREAM(cout << "[Arm Controller] " << _limb << endl);
-
-    // see header file for descriptions
-    _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
-    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ArmController::endpointCallback, this);
-    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ArmController::imageCallback, this);
-
-    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ArmController::IRCallback, this);
-
-    _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
-    _gripper = new Vacuum_Gripper(ttt::left);
-
-    namedWindow("[Arm Controller] raw image", WINDOW_NORMAL);
-    namedWindow("[Arm Controller] rough processed image", WINDOW_NORMAL);
-    namedWindow("[Arm Controller] processed image", WINDOW_NORMAL);
-
-    NUM_JOINTS = 7;
-    OFFSET_CONSTANT = 0.1;
-    CENTER_X = 0.725;
-    CENTER_Y = 0.200; 
-    IR_RANGE_THRESHOLD = 0.060;
-
-    _release_mode = false;
-    _grip_mode = false;
-    _token_present = false;
-
-    for(int i = 0; i < 9; i++)
-    {
-        geometry_msgs::Point pt;
-        pt.x = 0; pt.y = 0; pt.z = 0;
-        _offset_cell.push_back(pt);
-    }
-    _offset_token = cv::Point(0,0);
-    _curr_range = 0;
-    _curr_max_range = 0;
-    _curr_min_range = 0;
-
-    _state = START;
-}
-
-void ArmController::moveToRest(void * context) 
+bool Utils::hasCollided(float range, float max_range, float min_range, string mode)
 {
-    int rc;
-    pthread_t thread;
-    
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-        ROS_INFO("  before thread creation");
-
-    rc = pthread_create(&thread, &attr, moveToRestThread, context);
-    if(rc) ROS_ERROR("pthread_create: error code %d", rc);
-
-        ROS_INFO("  after thread creation");
-
-    pthread_attr_destroy(&attr);
-
-        ROS_INFO("  after destruction of thread attribute");
-
-    pthread_exit(NULL);
-
-        ROS_INFO("  after exit from thread");
-
-    return;
-}
-
-void * moveToRestThread(void * context)
-{
-    ArmController * ac = (ArmController *) context;
-
-    (ac->_req_pose_stamped).header.frame_id = "base";
-    ac->setPosition(&(ac->_req_pose_stamped).pose.position, 
-        0.292391, ac->_limb == "left" ? 0.611039 : -0.611039, 0.181133);
-    ac->setOrientation(&(ac->_req_pose_stamped).pose.orientation, 
-        0.028927, 0.686745, 0.00352694, 0.726314);
-
-    while(!(ac->hasPoseCompleted(ArmController::STRICT, (ac->_req_pose_stamped).pose)))
-    {
-        cout << ac->_curr_pose << endl;
-        ros::Rate loop_rate(500);
-
-        JointCommand joint_cmd;
-        joint_cmd.mode = JointCommand::POSITION_MODE;
-        ac->pushLimbs(&joint_cmd);
-        joint_cmd.command.resize(ac->NUM_JOINTS);
-
-        joint_cmd.command[0] = ac->_limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
-        joint_cmd.command[1] = ac->_limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
-        joint_cmd.command[2] = ac->_limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
-        joint_cmd.command[3] = ac->_limb == "left" ? 2.2856313739492666   : 2.2695245756764697;
-        joint_cmd.command[4] = ac->_limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
-        joint_cmd.command[5] = ac->_limb == "left" ? -1.4684031092033123  : -1.469170099597255;
-        joint_cmd.command[6] = ac->_limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
-
-        (ac->_joint_cmd_pub).publish(joint_cmd);
-        loop_rate.sleep();
-
-        ROS_INFO("publishing commands");
-    }
-
-    ROS_INFO("The %s arm has been moved to rest", (ac->_limb).c_str());
-    ac->_state = ArmController::REST;
-    pthread_exit(NULL);  
-}
-
-void ArmController::pushLimbs(JointCommand * joint_cmd)
-{
-    joint_cmd->names.push_back(_limb + "_s0");
-    joint_cmd->names.push_back(_limb + "_s1");
-    joint_cmd->names.push_back(_limb + "_e0");
-    joint_cmd->names.push_back(_limb + "_e1");
-    joint_cmd->names.push_back(_limb + "_w0");
-    joint_cmd->names.push_back(_limb + "_w1");
-    joint_cmd->names.push_back(_limb + "_w2");
-}
- 
-void ArmController::setPosition(geometry_msgs::Point * pt, float x, float y, float z)
-{
-    pt->x = x;
-    pt->y = y;
-    pt->z = z;
-}
- 
-void ArmController::setOrientation(geometry_msgs::Quaternion * quat, float x, float y, float z, float w)
-{
-    quat->x = x;
-    quat->y = y;
-    quat->z = z;
-    quat->w = w;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/************************* OLD **********************/
-
-ArmController::~ArmController() {
-    destroyWindow("[Arm Controller] raw image");
-    destroyWindow("[Arm Controller] rough processed image");
-    destroyWindow("[Arm Controller] processed image");
-}
-
-bool x_descending(vector<cv::Point> i, vector<cv::Point> j) 
-{
-    double x_i = moments(i, false).m10 / cv::moments(i, false).m00;
-    double x_j = moments(j, false).m10 / cv::moments(j, false).m00;
-
-    return x_i > x_j;
-}
-
-/*************************Callback Functions************************/
-
-void ArmController::endpointCallback(const EndpointState& msg)
-{
-    // update current pose
-    _curr_pose = msg.pose;
-}
-
-void ArmController::IRCallback(const RangeConstPtr& msg)
-{
-    // ROS_DEBUG_STREAM(cout << "range: " << msg->range << " max range: " << msg->max_range << " min range: " << msg->min_range << endl);
-    // ROS_DEBUG_STREAM(cout << "range: " << _curr_range << " max range: " << _curr_max_range << " min range: " << _curr_min_range << endl);
-
-    // update current range
-    _curr_range = msg->range;
-    _curr_max_range = msg->max_range;
-    _curr_min_range = msg->min_range;
-}
-
-void ArmController::imageCallback(const ImageConstPtr& msg)
-{
-    cv_bridge::CvImageConstPtr cv_ptr;
-    try
-    {
-        cv_ptr = cv_bridge::toCvShare(msg);
-    }
-    catch(cv_bridge::Exception& e)
-    {
-        ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());
-    }
-
-    // if(_release_mode)
-    // {
-        Mat img_gray, img_binary, img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-
-        cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
-        // convert grayscale image to binary image
-        threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
-
-        vector<vector<cv::Point> > board_contours;
-        vector<cv::Vec4i> hierarchy; // captures contours within contours 
-
-        findContours(img_binary, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-        double largest_area = 0, next_largest_area = 0;
-        int largest_area_index = 0, next_largest_area_index = 0;
-
-        // iterate through contours and keeps track of contour w/ 2nd-largest area
-        for(int i = 0; i < board_contours.size(); i++)
-        {
-            if(contourArea(board_contours[i], false) > largest_area)
-            {
-                next_largest_area = largest_area;
-                next_largest_area_index = largest_area_index;
-                largest_area = contourArea(board_contours[i], false);
-                largest_area_index = i;
-            }
-            else if(next_largest_area < contourArea(board_contours[i], false) && contourArea(board_contours[i], false) < largest_area)
-            {
-                next_largest_area = contourArea(board_contours[i], false);
-                next_largest_area_index = i;
-            }
-        }
-
-        float board_area = contourArea(board_contours[next_largest_area_index], false);
-
-        drawContours(img_board, board_contours, next_largest_area_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
-        findContours(img_board, board_contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-        largest_area = 0;
-        largest_area_index = 0;
-
-        // iterate through contours and keeps track of contour w/ largest area
-        for(int i = 0; i < board_contours.size(); i++)
-        {
-            if(contourArea(board_contours[i], false) > largest_area)
-            {
-                largest_area = contourArea(board_contours[i], false);
-                largest_area_index = i;
-            }
-        } 
-
-        // remove outer board contours
-        board_contours.erase(board_contours.begin() + largest_area_index);
-
-        if(board_contours.size() != 9) return;
-
-        img_board = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-        for(int i = 0; i < board_contours.size(); i++)
-        {
-            drawContours(img_board, board_contours, i, Scalar(255,255,255), CV_FILLED);
-        }
-
-        cv::Point img_center(img_board.size().width / 2, img_board.size().height / 2);
-        circle(img_board, img_center, 1, Scalar(180,40,40), CV_FILLED);
-
-        for(int i = 0; i < board_contours.size(); i++)
-        {
-            if(contourArea(board_contours[i], false) < 150)
-            {
-                board_contours.erase(board_contours.begin() + i);
-            } 
-        }
-
-        for(int i = 0; i <= board_contours.size() - 3; i+= 3)
-        {
-            sort(board_contours.begin() + i, board_contours.begin() + i + 3, x_descending);        
-        }
-
-        for(int i = board_contours.size() - 1; i >= 0; i--)
-        {
-            double x = moments(board_contours[i], false).m10 / cv::moments(board_contours[i], false).m00;
-            double y = moments(board_contours[i], false).m01 / cv::moments(board_contours[i], false).m00;
-            cv::Point centroid(x,y);  
-            cv::putText(img_board, int_to_string(board_contours.size() - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-
-            _offset_cell[board_contours.size() - 1 - i].x = (4.7807 /*constant*/ / board_area) * (img_center.x - centroid.x);
-            _offset_cell[board_contours.size() - 1 - i].y = (4.7807 /*constant*/ / board_area) * (img_center.y - centroid.y);  
-            _offset_cell[board_contours.size() - 1 - i].z = 43100 /*constant*/ / board_area;
-        }
-
-        ROS_INFO("offset_x: %0.4f offset_y: %0.4f area: %0.3f", _offset_cell[2].x, _offset_cell[2].y, board_area);
-
-        imshow("[Arm Controller] rough processed image", img_binary);
-        imshow("[Arm Controller] processed image", img_board);
-    // }
-
-    if(_grip_mode)
-    {
-        Mat img_hsv;
-        Mat img_hsv_blue;
-        Mat img_token_rough = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-        Mat img_token = Mat::zeros(cv_ptr->image.size(), CV_8UC1);
-
-        // removes non-blue elements of image 
-        cvtColor(cv_ptr->image.clone(), img_hsv, CV_BGR2HSV);
-        inRange(img_hsv, Scalar(60,90,10), Scalar(130,256,256), img_hsv_blue);
-
-        vector<vector<cv::Point> > token_contours = getTokenContours(img_hsv_blue);
-
-        // draw 'blue triangles' portion of token
-        for(int i = 0; i < token_contours.size(); i++)
-        {
-            drawContours(img_token_rough, token_contours, i, Scalar(255,255,255), CV_FILLED);
-        }
-
-        circle(img_token_rough, cv::Point((img_token.size().width / 2) + 45, 65), 3, Scalar(180, 40, 40), CV_FILLED);
-
-        // check if token is within camera's field of view when hovering above tokens
-        geometry_msgs::Pose above_tokens;
-        above_tokens.position.x = 0.540;
-        above_tokens.position.x = 0.540;
-        above_tokens.position.y = 0.660;    
-        above_tokens.position.z = 0.350;
-        above_tokens.orientation.x = 0.712801568376;
-        above_tokens.orientation.y = -0.700942136419;
-        above_tokens.orientation.z = -0.0127158080742;
-        above_tokens.orientation.z = -0.0127158080742;
-        above_tokens.orientation.w = -0.0207931175453;
-
-        if(hasPoseCompleted(STRICT, above_tokens) && token_contours.size() == 4) _token_present = true;
-        else _token_present = false;
-
-        // if 'noise' contours are present, do nothing
-        if(token_contours.size() == 4)
-        {
-            // find highest and lowest x and y values from token triangles contours
-            // to find x-y coordinate of top left token edge and token side length
-            float y_min = getTokenPoints(token_contours, "y_min");
-            float x_min = getTokenPoints(token_contours, "x_min");
-            float y_max = getTokenPoints(token_contours, "y_max");
-            float x_max = getTokenPoints(token_contours, "x_max");
-
-            // reconstruct token's square shape
-            Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-            rectangle(img_token, token, Scalar(255,255,255), CV_FILLED);
-
-            // find and draw the center of the token and the image
-            double x_mid = x_min + ((x_max - x_min) / 2);
-            double y_mid = y_min + ((y_max - y_min) / 2);
-            circle(img_token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-            circle(img_token, cv::Point(img_token.size().width / 2, img_token.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
-
-            double token_area = (x_max - x_min) * (y_max - y_min);
-            _offset_token.x = (4.7807 /*constant*/ / token_area) * (x_mid - (img_token.size().width / 2));
-            _offset_token.y = ((4.7807 /*constant*/ / token_area) * ((img_token.size().height / 2) - y_mid)) - 0.013; /*distance between gripper center and camera center*/
-
-            // ROS_INFO("x_diff: %0.6f   y_diff: %0.6f", x_mid - (img_token.size().width / 2), y_mid - (img_token.size().height / 2));
-            // ROS_INFO("token_area: %0.6f   w: %0.6f", token_area, (44.08 / token_area));
-            // ROS_INFO("x_offset: %0.6f y_offset: %0.6f\n", _x_offset_token, _y_offset_token);
-        }
-        // when hand camera is blind due to being too close to token, go straight down;
-        else
-        {
-            _offset_token.x = 0;
-            _offset_token.y = 0;
-        }
-        imshow("[Arm Controller] rough processed image", img_token_rough);
-        imshow("[Arm Controller] processed image", img_token);
-    }
-
-    imshow("[Arm Controller] raw image", cv_ptr->image.clone());
-
-    waitKey(30);
-}
-
-/*************************Movement Functions************************/
-
-void ArmController::pickUpToken()
-{
-    _grip_mode = true;
-
-    if(_limb == "right") 
-    {
-        ROS_ERROR("[Arm Controller] Right arm should not pick up tokens");
-    }
-    else if(_limb == "left")
-    {
-        ROS_WARN("Arm will not move until token is in the hand camera's field of view");
-        bool no_token = true;
-        while(no_token)
-        {
-            hoverAboveTokens(STRICTPOSE);
-            ros::Duration(2).sleep();
-            if(gripToken()) no_token = false;
-            hoverAboveTokens(LOOSEPOSE);                        
-        }
-    }
-
-    _grip_mode = false;
-}
-
-void ArmController::placeToken(int cell_num)
-{
-    _release_mode = true;
-
-    if(_limb == "right") 
-    {
-        ROS_ERROR("[Arm Controller] Right arm should not pick up tokens");
-    }
-    else if(_limb == "left")
-    {
-        ros::Duration(0.25).sleep();
-        hoverAboveBoard();
-        // ros::Duration(0.5).sleep();
-        // releaseToken(cell_num);
-        // ros::Duration(0.25).sleep();
-        // hoverAboveBoard();
-        // ros::Duration(0.25).sleep();
-        // hoverAboveTokens(STRICTPOSE);
-    }
-
-    ros::Duration(10).sleep();
-    _release_mode = false;
-}
-
-/**************************** PRIVATE ******************************/
-
-/*************************Movement Functions************************/
-
-void ArmController::hoverAboveTokens(GoalType goal)
-{
-    _req_pose_stamped.header.frame_id = "base";
-    _req_pose_stamped.pose.position.x = 0.540;
-    _req_pose_stamped.pose.position.y = 0.660;    
-    _req_pose_stamped.pose.position.z = 0.350;
-
-    _req_pose_stamped.pose.orientation.x = 0.712801568376;
-    _req_pose_stamped.pose.orientation.y = -0.700942136419;
-    _req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    // req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    _req_pose_stamped.pose.orientation.w = -0.0207931175453;
-    // req_pose_stamped.pose.orientation.w = -0.0207931175453;
-
-    vector<float> joint_angles = getJointAngles(_req_pose_stamped);
-    publishMoveCommand(joint_angles, goal);
-}
-
-bool ArmController::gripToken()
-{
-    ros::Time start_time = ros::Time::now();
-    
-    double prev_x = 0.540;
-    double prev_y = 0.660;
-    
-    if(_token_present == false) return false;
-    
-    while(ros::ok())
-    {
-        ros::Time curr_time = ros::Time::now();
-        ros::Rate loop_rate(500);
-
-        _req_pose_stamped.header.frame_id = "base";
-        _req_pose_stamped.pose.position.x = prev_x + 0.07 * _offset_token.x;
-        prev_x = _req_pose_stamped.pose.position.x;
-        _req_pose_stamped.pose.position.y = prev_y + 0.07 * _offset_token.y;
-        prev_y = _req_pose_stamped.pose.position.y;
-
-                                 // z(t) = z(0) + v * t
-        _req_pose_stamped.pose.position.z = 0.350 + (-0.05) * (curr_time - start_time).toSec();
-
-        // ROS_INFO("_x_offset_token: %0.4f", _x_offset_token);
-        // ROS_INFO("x: %0.4f y: %0.4f y: z: %0.4f range: %0.4f", req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y, req_pose_stamped.pose.position.z, _curr_range);
-
-        _req_pose_stamped.pose.orientation.x = 0.712801568376;
-        _req_pose_stamped.pose.orientation.y = -0.700942136419;
-        _req_pose_stamped.pose.orientation.z = -0.0127158080742;
-        _req_pose_stamped.pose.orientation.w = -0.0207931175453;
-
-        vector<float> joint_angles = getJointAngles(_req_pose_stamped);
-
-        JointCommand joint_cmd;
-
-        // command in position mode
-        joint_cmd.mode = JointCommand::POSITION_MODE;
-
-        // command joints in the order shown in baxter_interface
-        joint_cmd.names.push_back(_limb + "_s0");
-        joint_cmd.names.push_back(_limb + "_s1");
-        joint_cmd.names.push_back(_limb + "_e0");
-        joint_cmd.names.push_back(_limb + "_e1");
-        joint_cmd.names.push_back(_limb + "_w0");
-        joint_cmd.names.push_back(_limb + "_w1");
-        joint_cmd.names.push_back(_limb + "_w2");
-
-        // set your calculated velocities
-        joint_cmd.command.resize(NUM_JOINTS);
-
-        // set joint angles
-        for(int i = 0; i < NUM_JOINTS; i++)
-        {
-            joint_cmd.command[i] = joint_angles[i];
-        }
-
-        _joint_cmd_pub.publish(joint_cmd);
-        loop_rate.sleep();
-
-        ros::spinOnce();
-        if(hasCollided()) 
-        {
-            _gripper->suck();
-            break;
-        }
-    }
-
-    return true;
-}
-
-void ArmController::hoverAboveBoard()
-{
-    _req_pose_stamped.header.frame_id = "base";
-    _req_pose_stamped.pose.position.x = CENTER_X;
-    _req_pose_stamped.pose.position.y = CENTER_Y;
-    _req_pose_stamped.pose.position.z = 0.500;
-
-    _req_pose_stamped.pose.orientation.x = -0.00148564331811;
-    _req_pose_stamped.pose.orientation.y = 0.999783174154;
-    _req_pose_stamped.pose.orientation.z = -0.0153224515183;
-    _req_pose_stamped.pose.orientation.w = 0.0140221261632;
-
-    vector<float> joint_angles = getJointAngles(_req_pose_stamped);
-    publishMoveCommand(joint_angles, LOOSEPOSE);   
-}
-
-void ArmController::releaseToken(int cell_num)
-{
-    _req_pose_stamped.pose.position.x = CENTER_X + _offset_cell[cell_num].x;
-    _req_pose_stamped.pose.position.y = CENTER_Y + _offset_cell[cell_num].y;
-    _req_pose_stamped.pose.position.z = 0.500 - _offset_cell[cell_num].z;
-    
-    _req_pose_stamped.pose.orientation.x = 0.712801568376;
-    _req_pose_stamped.pose.orientation.y = -0.700942136419;
-    _req_pose_stamped.pose.orientation.z = -0.0127158080742;
-    _req_pose_stamped.pose.orientation.w = -0.0207931175453;
-
-    vector<float> joint_angles = getJointAngles(_req_pose_stamped);
-    publishMoveCommand(joint_angles, STRICTPOSE);   
-    _gripper->blow();
-}
-
-/*************************Location Control Functions************************/
-
-vector<float> ArmController::getJointAngles(PoseStamped pose_stamped)
-{
-    // IK solver service
-    SolvePositionIK ik_srv;
-
-    ik_srv.request.pose_stamp.push_back(pose_stamped);
-    _ik_client.call(ik_srv);
-
-    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.request << endl);
-    // ROS_DEBUG_STREAM(cout << "[Arm Controller] " << ik_srv.response << endl);   
-    
-    // if service is successfully called
-    if(_ik_client.call(ik_srv))
-    {
-        // ROS_DEBUG("[Arm Controller] Service called");
-
-        // store joint angles values received from service
-        vector<float> joint_angles;
-        joint_angles.resize(NUM_JOINTS);
-        for(int i = 0; i < ik_srv.response.joints[0].position.size(); i++)
-        {
-            joint_angles[i] = ik_srv.response.joints[0].position[i];
-        }
-
-        bool all_zeros = true;
-        for(int i = 0; i < joint_angles.size(); i++){
-            if(joint_angles[i] == 0) all_zeros = false;
-            // ROS_DEBUG("[Arm Controller] Joint angles %d: %0.4f", i, joint_angles[i]);
-        }
-        if(all_zeros == false) ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
-
-        return joint_angles;
-    }
-    else 
-    {
-        ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
-        vector<float> empty;
-        return empty;
-    }
-}
-
-bool ArmController::publishMoveCommand(vector<float> joint_angles, GoalType goal) 
-{
-    ros::Rate loop_rate(100);
-    JointCommand joint_cmd;
-
-    // command in position mode
-    joint_cmd.mode = JointCommand::POSITION_MODE;
-
-    // command joints in the order shown in baxter_interface
-    joint_cmd.names.push_back(_limb + "_s0");
-    joint_cmd.names.push_back(_limb + "_s1");
-    joint_cmd.names.push_back(_limb + "_e0");
-    joint_cmd.names.push_back(_limb + "_e1");
-    joint_cmd.names.push_back(_limb + "_w0");
-    joint_cmd.names.push_back(_limb + "_w1");
-    joint_cmd.names.push_back(_limb + "_w2");
-
-    // set your calculated velocities
-    joint_cmd.command.resize(NUM_JOINTS);
-
-    // set joint angles
-    for(int i = 0; i < NUM_JOINTS; i++)
-    {
-        joint_cmd.command[i] = joint_angles[i];
-    }
-
-    // record time at which joint angles was published to arm
-    ros::Time start_time = ros::Time::now();
-
-    while(ros::ok())
-    {
-        // ROS_DEBUG("[Arm Controller] In the loop");
-        _joint_cmd_pub.publish(joint_cmd);
-        ros::spinOnce();
-        loop_rate.sleep();
-
-        if(goal == STRICTPOSE)
-        {
-            if(hasPoseCompleted(STRICT, _req_pose_stamped.pose)) 
-            {
-                ROS_DEBUG("[Arm Controller] Move completed");
-                return true;
-            }     
-            else if(checkForTimeout(10, STRICTPOSE, start_time)) return false; 
-        }
-        else if(goal == LOOSEPOSE)
-        {
-            if(hasPoseCompleted(LOOSE, _req_pose_stamped.pose)) 
-            {
-                ROS_DEBUG("[Arm Controller] Move completed");
-                return true;
-            }     
-            else if(checkForTimeout(8, LOOSEPOSE, start_time)) return false; 
-        }
-        else if(goal == COLLISION)
-        {
-            if(hasCollided())
-            {
-                _gripper->suck();
-                return true;
-            }
-            else if(checkForTimeout(10, COLLISION, start_time)) return false; 
-        }
-     }   
-}
-
-/*************************Checking Functions************************/
-
-bool ArmController::checkForTimeout(int len, GoalType goal, ros::Time start_time)
-{
-    // if (int len) seconds has elapsed and goal has not been achieved,
-    // throw an error
-    string goal_str = (goal == LOOSEPOSE || goal == STRICTPOSE)? "pose" : "collision";
-    ros::Time curr_time = ros::Time::now();
-    if((curr_time - start_time).toSec() > len)
-    {
-        ROS_ERROR("[Arm Controller] %d seconds have elapsed. Goal type [%s] was not achieved", len, goal_str.c_str());
-        return true;
-    } 
-    else {
-        // ROS_DEBUG("[Arm Controller] Time limit not reached");
-        return false;  
-    }
-}
-
-bool ArmController::hasPoseCompleted(PoseType type, Pose req_pose)
-{
-    // cout << _curr_pose << endl;
-    bool same_pose = true;
-
-    if(type == STRICT)
-    {
-        if(!withinXHundredth(_curr_pose.position.x, req_pose.position.x, 1)  || 
-            !withinXHundredth(_curr_pose.position.y, req_pose.position.y, 1) || 
-            !withinXHundredth(_curr_pose.position.z, req_pose.position.z, 2) ||   
-            !equalXDP(_curr_pose.orientation.x, req_pose.orientation.x, 2)   || 
-            !equalXDP(_curr_pose.orientation.y, req_pose.orientation.y, 2)   || 
-            !equalXDP(_curr_pose.orientation.z, req_pose.orientation.z, 2)   || 
-            !equalXDP(_curr_pose.orientation.w, req_pose.orientation.w, 2)) same_pose = false;
-    }
-    else if(type == LOOSE)
-    {
-        if(!withinXHundredth(_curr_pose.position.x, req_pose.position.x, 4)         ||
-            !withinXHundredth(_curr_pose.position.y, req_pose.position.y, 4)        ||
-            !withinXHundredth(_curr_pose.position.z, req_pose.position.z, 4)        ||
-            !withinXHundredth(_curr_pose.orientation.x, req_pose.orientation.x, 4)  ||
-            !withinXHundredth(_curr_pose.orientation.y, req_pose.orientation.y, 4)  ||
-            !withinXHundredth(_curr_pose.orientation.z, req_pose.orientation.z, 4)  ||
-            !withinXHundredth(_curr_pose.orientation.w, req_pose.orientation.w, 4)) same_pose = false;
-    }
-
-    return same_pose;    
-}
-
-bool ArmController::hasCollided()
-{
-    // ROS_DEBUG_STREAM(cout << " range: " << _curr_range << " max range: " << _curr_max_range << " min range: " << _curr_min_range << endl);
-    if(_curr_range != 0 && _curr_max_range !=0 && _curr_min_range != 0)
-    {
-        if(_curr_range <= _curr_max_range && _curr_range >= _curr_min_range && _curr_range <= IR_RANGE_THRESHOLD)
-        {
-            ROS_INFO("[Arm Controller] Collision");
-            ROS_INFO("range: %0.3f max range: %0.3f min range: %0.3f", _curr_range, _curr_max_range, _curr_min_range);
-
-            return true;
-        }
-        else return false;
-    }
+    float threshold;
+    if(mode == "strict") threshold = 0.050;
+    if(mode == "loose") threshold = 0.067;
+    if(range <= max_range && range >= min_range && range <= threshold) return true;
     else return false;
 }
 
-bool ArmController::withinXHundredth(float x, float y, float z)
+bool Utils::hasPoseCompleted(Pose a, Pose b, string mode)
+{
+    bool same_pose = true;
+
+    if(mode == "strict")
+    {
+        if(!equalXDP(a.position.x, b.position.x, 3)) {same_pose = false;} 
+        if(!equalXDP(a.position.y, b.position.y, 3)) {same_pose = false;} 
+    }
+    else if(mode == "loose")
+    {
+        if(!equalXDP(a.position.x, b.position.x, 2)) {same_pose = false;} 
+        if(!equalXDP(a.position.y, b.position.y, 2)) {same_pose = false;} 
+    }
+
+    if(!withinXHundredth(a.position.z, b.position.z, 1))       {same_pose = false;}    
+    if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {same_pose = false;}  
+    if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {same_pose = false;}  
+    if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {same_pose = false;}  
+    if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {same_pose = false;}
+
+    return same_pose; 
+}
+
+bool Utils::withinXHundredth(float x, float y, float z)
 {
     float diff = abs(x - y);
     float diffTwoDP = roundf(diff * 100) / 100;
     return diffTwoDP <= (0.01 * z) ? true : false;
 }
 
-bool ArmController::equalXDP(float x, float y, float z)
+bool Utils::equalXDP(float x, float y, float z)
 {
-    // ROS_INFO("x: %0.3f y: %0.3f", x, y);
     float xTwoDP = roundf(x * pow(10, z)) / pow(10, z);
     float yTwoDP = roundf(y * pow(10, z)) / pow(10, z);
-
-    // ROS_INFO("xTwoDP: %0.3f yTwoDP: %0.3f", xTwoDP, yTwoDP);
     return xTwoDP == yTwoDP ? true : false;    
 }
 
-/*************************Visual Servoing Functions************************/
-
-vector<vector<cv::Point> > ArmController::getTokenContours(Mat img_hsv_blue)
+void Utils::setPosition(Pose * pose, float x, float y, float z)
 {
-    // find contours of blue elements in image
-    vector<vector<cv::Point> > contours;
-    vector<vector<cv::Point> > token_contours;
-    findContours(img_hsv_blue, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    int largest_index = 0;
-    int largest_area = 0;
-
-    for(int i = 0; i < contours.size(); i++)
-    {
-        // remove any element with y < 65 (gripper area)
-        bool not_gripper = true;
-        for(int j = 0; j < contours[i].size(); j++)
-        {
-            vector<cv::Point> contour = contours[i];
-            if(contour[j].y < 65)
-            {
-                not_gripper = false;
-                break;
-            }
-        }
-
-        bool is_triangle = true;
-        vector<cv::Point> contour;
-        approxPolyDP(contours[i], contour, 0.1 * arcLength(contours[i], true), true);
-        if(contour.size() != 3) is_triangle = false;
-
-        // removes 'noise' elements (all approx. have size < 150)
-        if(contourArea(contours[i]) > 200 && not_gripper == true && is_triangle == true)
-        {
-            token_contours.push_back(contours[i]);
-        }
-    }
-
-    // printf("\nsize: %lu\n", token_contours.size());
-    
-    return token_contours;
+    (*pose).position.x = x;
+    (*pose).position.y = y;
+    (*pose).position.z = z;
+}
+ 
+void Utils::setOrientation(Pose * pose, float x, float y, float z, float w)
+{
+    (*pose).orientation.x = x;
+    (*pose).orientation.y = y;
+    (*pose).orientation.z = z;
+    (*pose).orientation.w = w;
 }
 
-float ArmController::getTokenPoints(vector<vector<cv::Point> > token_contours, string point)
+void Utils::setNames(JointCommand * joint_cmd, string limb)
 {
-    // find highest and lowest x and y values from token triangles contours
-    // to find x-y coordinate of top left token edge and token side length
-    float y_min = (token_contours[0])[0].y;
-    float x_min = (token_contours[0])[0].x;
-    float y_max = 0;
-    float x_max = 0;
-
-    for(int i = 0; i < token_contours.size(); i++)
-    {
-        vector<cv::Point> contour = token_contours[i];
-        for(int j = 0; j < contour.size(); j++)
-        {
-            if(y_min > contour[j].y) y_min = contour[j].y;
-            if(x_min > contour[j].x) x_min = contour[j].x;
-            if(y_max < contour[j].y) y_max = contour[j].y;
-            if(x_max < contour[j].x) x_max = contour[j].x;
-        }
-    }
-
-    if(point == "y_min") return y_min;
-    if(point == "y_max") return y_max;
-    if(point == "x_min") return x_min;
-    if(point == "x_max") return x_max;
+    (*joint_cmd).names.push_back(limb + "_s0");
+    (*joint_cmd).names.push_back(limb + "_s1");
+    (*joint_cmd).names.push_back(limb + "_e0");
+    (*joint_cmd).names.push_back(limb + "_e1");
+    (*joint_cmd).names.push_back(limb + "_w0");
+    (*joint_cmd).names.push_back(limb + "_w1");
+    (*joint_cmd).names.push_back(limb + "_w2");
 }
 
-
-
-
-
-
-string ArmController::int_to_string( const int a )
+string Utils::intToString( const int a )
 {
     stringstream ss;
     ss << a;
     return ss.str();
 }
 
+/**************************************************************************/
+/*                          ROSThreadClass                                */
+/**************************************************************************/
+
+ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
+{
+    _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
+    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ROSThreadClass::endpointCallback, this);
+    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ROSThreadClass::imageCallback, this);
+    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ROSThreadClass::IRCallback, this);
+    _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
+    _gripper = new ttt::Vacuum_Gripper(ttt::left);
+    _init_time = ros::Time::now();
+    _state.x = START;
+    _state.y = 0;
+}
+ROSThreadClass::~ROSThreadClass() {/* empty */}
+
+/** Returns true if the thread was successfully started, false if there was an error starting the thread */
+bool ROSThreadClass::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
+
+/** Will not return until the internal thread has exited. */
+void ROSThreadClass::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL);}
+
+void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg) {_curr_pose = msg.pose;}
+
+void ROSThreadClass::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
+{
+    _curr_range = msg->range; 
+    _curr_max_range = msg->max_range; 
+    _curr_min_range = msg->min_range;
+}
+
+void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try {cv_ptr = cv_bridge::toCvShare(msg);}
+    catch(cv_bridge::Exception& e) {ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());}
+    _curr_img = cv_ptr->image.clone();
+}
+
+geometry_msgs::Point ROSThreadClass::getState() {return _state;}
+
+void ROSThreadClass::InternalThreadEntry() {};
+
+void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
+{
+    vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+
+    while(ros::ok)
+    {
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        // joint_cmd.names
+        Utils::setNames(&joint_cmd, _limb);
+        joint_cmd.command.resize(7);
+        // joint_cmd.angles
+        for(int i = 0; i < joint_angles.size(); i++) {
+            joint_cmd.command[i] = joint_angles[i];
+        }
+
+        _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(500).sleep();
+
+        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) {break;}
+    }
+}
+
+void ROSThreadClass::goToPose(PoseStamped req_pose_stamped, string mode)
+{
+    vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+
+    while(ros::ok)
+    {
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        // joint_cmd.names
+        Utils::setNames(&joint_cmd, _limb);
+        joint_cmd.command.resize(7);
+        // joint_cmd.angles
+        for(int i = 0; i < joint_angles.size(); i++) {
+            joint_cmd.command[i] = joint_angles[i];
+        }
+
+        _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(500).sleep();
+
+        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) {break;}
+    }
+}
+
+vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
+{
+    vector<double> joint_angles;
+    bool all_zeros = true;
+
+    while(all_zeros)
+    {
+        cout << *pose_stamped << endl;
+        SolvePositionIK ik_srv;
+        ik_srv.request.pose_stamp.push_back(*pose_stamped);
+        
+        if(_ik_client.call(ik_srv))
+        {
+            joint_angles = ik_srv.response.joints[0].position;
+            for(int i = 0; i < joint_angles.size(); i++)
+            {
+                if(joint_angles[i] != 0) 
+                {
+                    all_zeros = false; 
+                    break;
+                }
+            }
+
+            if(all_zeros == true) 
+            {
+                ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+                (*pose_stamped).pose.position.z += 0.005;
+            }   
+        }
+    }
+
+    return joint_angles;
+
+    // vector<double> joint_angles;
+    // SolvePositionIK ik_srv;
+    // if(_ik_client.call(ik_srv))
+    // {
+    //     vector<double> joint_angles = ik_srv.response.joints[0].position;
+    //     bool all_zeros = true;
+    //     for(int i = 0; i < joint_angles.size(); i++){
+    //         if(joint_angles[i] != 0) {all_zeros = false; break;}
+    //     }
+    //     if(all_zeros == true) 
+    //     {
+    //         ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+    //     }
+    //     return joint_angles;
+    // }
+    // else {
+    //     ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
+    //     vector<double> empty; 
+    //     return empty;
+    // }
+}
+
+void ROSThreadClass::setState(int state)
+{
+    _state.x = state;
+    _state.y = (ros::Time::now() - _init_time).toSec();
+}
+
+void * ROSThreadClass::InternalThreadEntryFunc(void * This) 
+{
+    ((ROSThreadClass *)This)->InternalThreadEntry(); 
+    return NULL;
+}
+
+/**************************************************************************/
+/*                         MoveToRestClass                                */
+/**************************************************************************/
+
+MoveToRestClass::MoveToRestClass(string limb): ROSThreadClass(limb) {}
+MoveToRestClass::~MoveToRestClass(){}
+
+void MoveToRestClass::InternalThreadEntry()
+{
+    while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
+    {
+        ros::Rate(100).sleep();
+    }
+
+    PoseStamped req_pose_stamped;
+    
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
+
+    while(ros::ok())
+    {
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        // joint_cmd.names
+        Utils::setNames(&joint_cmd, _limb);
+        joint_cmd.command.resize(7);
+        // joint_cmd.angles
+        joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
+        joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
+        joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
+        joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
+        joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
+        joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
+        joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
+
+        _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(500).sleep();
+        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) break;
+    }
+
+    setState(REST);
+    pthread_exit(NULL);  
+}  
+
+/**************************************************************************/
+/*                         PickUpTokenClass                               */
+/**************************************************************************/
+
+// Private
+PickUpTokenClass::PickUpTokenClass(string limb): ROSThreadClass(limb) {}
+PickUpTokenClass::~PickUpTokenClass() {}
+
+// Protected
+void PickUpTokenClass::InternalThreadEntry()
+{
+    while((_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0) || _curr_img.empty())
+    {
+        ros::Rate(100).sleep();
+    }
+
+    hoverAboveTokens();
+    gripToken();
+    hoverAboveTokens();
+
+    setState(PICK_UP);
+    pthread_exit(NULL);  
+}
+
+// Public
+typedef vector<vector<cv::Point> > Contours;
+
+void PickUpTokenClass::gripToken()
+{
+    namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+    namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+
+    cv::Point2d offset;
+    checkForToken(&offset);
+
+    PoseStamped req_pose_stamped;
+    ros::Time start_time = ros::Time::now();                
+    cv::Point2d prev_offset(0.540, 0.540);
+
+    while(ros::ok())
+    {
+        processImage(&offset);
+        ros::Time now_time = ros::Time::now();
+
+        req_pose_stamped.header.frame_id = "base";
+
+        Utils::setPosition(&req_pose_stamped.pose, 
+                            prev_offset.x + 0.07 * offset.x,
+                            prev_offset.y + 0.07 * offset.y,
+                            0.375 + (-0.05) * (now_time - start_time).toSec());
+
+        prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+        prev_offset.y = prev_offset.y + 0.07 * offset.y;
+
+        Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+
+        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        Utils::setNames(&joint_cmd, _limb);
+        joint_cmd.command.resize(7);
+
+        for(int i = 0; i < 7; i++) {
+            joint_cmd.command[i] = joint_angles[i];
+        }
+
+        _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(500).sleep();
+     
+        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) {break;}
+    }
+    _gripper->suck();
+
+    destroyWindow("[PickUpToken] Processed"); 
+    destroyWindow("[PickUpToken] Rough");
+}   
+
+void PickUpTokenClass::hoverAboveTokens()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    goToPose(req_pose_stamped);
+}
+
+void PickUpTokenClass::checkForToken(cv::Point2d * offset)
+{
+    ros::Time start_time = ros::Time::now();
+    while(offset->x == 0 && offset->y == 0)
+    {
+        processImage(offset);
+        if((ros::Time::now() - start_time).toSec() > 1){break;}
+    }
+
+    while(offset->x == 0 && offset->y == 0)
+    {
+        ROS_WARN("No token detected by hand camera. Place token and press ENTER");
+        char c = cin.get();
+        processImage(offset);
+    }
+}
+
+void PickUpTokenClass::processImage(cv::Point2d * offset)
+{
+    Mat black, blue, token_rough, token, board; 
+    Contours contours;
+    int board_y;
+
+    isolateBlack(&black);
+    isolateBoard(black.clone(), &board, &board_y);
+
+    isolateBlue(&blue);
+    isolateToken(blue.clone(), board_y, &token_rough, &contours);
+    setOffset(contours, offset, &token);
+
+    imshow("[PickUpToken] Processed", _curr_img.clone());
+    imshow("[PickUpToken] Rough", token_rough);
+    waitKey(30);
+}
+
+void PickUpTokenClass::isolateBlue(Mat * output)
+{
+    Mat hsv;
+    cvtColor(_curr_img, hsv, CV_BGR2HSV);
+    inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), *output);  
+}
+
+void PickUpTokenClass::isolateBlack(Mat * output)
+{
+    Mat gray;
+    cvtColor(_curr_img, gray, CV_BGR2GRAY);
+    threshold(gray, *output, 55, 255, cv::THRESH_BINARY_INV);
+}
+
+void PickUpTokenClass::isolateBoard(Mat input, Mat * output, int * board_y)
+{
+    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+    vector<cv::Vec4i> hierarchy; // captures contours within contours 
+    Contours contours;
+
+    findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    double largest = 0, next_largest = 0;
+    int largest_index = 0, next_largest_index = 0;
+
+    // iterate through contours and keeps track of contour w/ 2nd-largest area
+    for(int i = 0; i < contours.size(); i++)
+    {
+        if(contourArea(contours[i], false) > largest)
+        {
+            next_largest = largest;
+            next_largest_index = largest_index;
+            largest = contourArea(contours[i], false);
+            largest_index = i;
+        }
+        else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
+        {
+            next_largest = contourArea(contours[i], false);
+            next_largest_index = i;
+        }
+    }
+
+    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+
+    vector<cv::Point> contour = contours[next_largest_index];
+    int low_y = _curr_img.size().height;
+    
+    for(int i = 0; i < contour.size(); i++)
+    {
+        if(contour[i].y < low_y) low_y = contour[i].y;
+    }
+
+    *board_y = low_y;
+
+    line(*output, cv::Point(0, low_y), cv::Point(_curr_img.size().width, low_y), cv::Scalar(130,256,256));
+    // line(*output, cv::Point(0, low_y - 10), cv::Point(_curr_img.size().width - 50, low_y - 10), cv::Scalar(130,256,256));
+    // line(*output, cv::Point(0, low_y + 10), cv::Point(_curr_img.size().width - 100, low_y + 10), cv::Scalar(130,256,256));
+}
+
+void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat *output, Contours *contours)
+{
+    Contours raw_contours, clean_contours;
+    findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    int largest_index = 0, largest_area = 0;
+    for(int i = 0; i < raw_contours.size(); i++)
+    {
+        bool not_gripper = true;
+        for(int j = 0; j < raw_contours[i].size(); j++)
+        {
+            vector<cv::Point> contour = raw_contours[i];
+            if(contour[j].y < 65) {not_gripper = false; break;}
+        }
+
+        bool is_triangle = true;
+        vector<cv::Point> contour;
+        approxPolyDP(raw_contours[i], contour, 0.11 * arcLength(raw_contours[i], true), true);
+
+        if(contour.size() != 3) is_triangle = false;
+
+        if(contourArea(raw_contours[i]) > 200 && not_gripper == true && is_triangle == true)
+        {
+            clean_contours.push_back(raw_contours[i]);
+            // (*contours).push_back(raw_contours[i]);
+        }
+    }
+
+    // multiple tokens detected, or board lines detected
+    if(clean_contours.size() > 4)
+    {
+        for(int i = 0; i < clean_contours.size(); i++) 
+        {
+            bool within_board = false;
+            vector<cv::Point> contour = clean_contours[i];
+            for(int j = 0; j < contour.size(); j++)
+            {
+                cv::Point pt = contour[j];
+                if(pt.y > board_y)
+                {
+                    within_board = true;
+                    break;
+                }
+            }
+            if(!within_board) (*contours).push_back(contour);
+        }
+    }
+    else if(clean_contours.size() == 4)
+    {
+        *contours = clean_contours;
+    }
+
+    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+    for(int i = 0; i < (*contours).size(); i++)
+    {
+        drawContours(*output, (*contours), i, Scalar(255,255,255), CV_FILLED);
+    }
+
+    line(*output, cv::Point(0, board_y), cv::Point(_curr_img.size().width, board_y), cv::Scalar(130,256,256));
+}              
+
+void PickUpTokenClass::setOffset(Contours contours, cv::Point2d *offset, Mat *output)
+{
+    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+    
+    for(int i = 0; i <contours.size(); i++)
+    {
+        drawContours(*output, contours, i, Scalar(255,255,255), CV_FILLED);
+    }
+    
+    // if 'noise' contours are present, do nothing
+    if(contours.size() == 4)
+    {
+        // find highest and lowest x and y values from token triangles contours
+        // to find x-y coordinate of top left token edge and token side length
+        double y_min = (contours[0])[0].y;
+        double x_min = (contours[0])[0].x;
+        double y_max = 0;
+        double x_max = 0;
+
+        for(int i = 0; i < contours.size(); i++)
+        {
+            vector<cv::Point> contour = contours[i];
+            for(int j = 0; j < contour.size(); j++)
+            {
+                if(y_min > contour[j].y) y_min = contour[j].y;
+                if(x_min > contour[j].x) x_min = contour[j].x;
+                if(y_max < contour[j].y) y_max = contour[j].y;
+                if(x_max < contour[j].x) x_max = contour[j].x;
+            }
+        }
+
+        // reconstruct token's square shape
+        Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
+        rectangle(*output, token, Scalar(255,255,255), CV_FILLED);
+
+        // find and draw the center of the token and the image
+        double x_mid = x_min + ((x_max - x_min) / 2);
+        double y_mid = y_min + ((y_max - y_min) / 2);
+        circle(*output, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(*output, cv::Point(_curr_img.size().width / 2, _curr_img.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+
+        double token_area = (x_max - x_min) * (y_max - y_min);
+
+        (*offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img.size().width / 2)); 
+        (*offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img.size().height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/
+    }
+    // when hand camera is blind due to being too close to token, go straight down;
+    else if(contours.size() < 4)
+    {
+        *offset = cv::Point2d(0,0);
+    }
+}
+
+/**************************************************************************/
+/*                          ScanBoardClass                                */
+/**************************************************************************/
+
+// Private
+ScanBoardClass::ScanBoardClass(string limb): ROSThreadClass(limb) {}
+ScanBoardClass::~ScanBoardClass() {}
+
+vector<geometry_msgs::Point> ScanBoardClass::getOffsets() {return _offsets;}
+
+// Protected
+void ScanBoardClass::InternalThreadEntry()
+{
+    hoverAboveBoard();
+    while(_curr_img.empty()) 
+    {
+        ros::Rate(100).sleep();
+        cout << "loop" << endl;
+    }
+    scan();
+    hoverAboveTokens();
+
+    setState(SCAN);
+    pthread_exit(NULL);
+}
+
+// Public
+void ScanBoardClass::hoverAboveTokens()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    goToPose(req_pose_stamped);
+}
+
+void ScanBoardClass::hoverAboveBoard()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    goToPose(req_pose_stamped);
+}
+
+void ScanBoardClass::scan()
+{
+    float dist;
+    setDepth(&dist);
+    hoverAboveBoard();
+    processImage("run", dist);
+}
+
+void ScanBoardClass::setDepth(float *dist)
+{
+    geometry_msgs::Point init_pos = _curr_pose.position;
+    ros::Time start_time = ros::Time::now();                
+
+    while(ros::ok())
+    {
+        PoseStamped req_pose_stamped;
+        req_pose_stamped.header.frame_id = "base";
+
+        Utils::setPosition(&req_pose_stamped.pose, 
+                            init_pos.x,
+                            init_pos.y,
+                            init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec());
+
+        Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+
+        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
+
+        Utils::setNames(&joint_cmd, _limb);
+        joint_cmd.command.resize(7);
+
+        for(int i = 0; i < 7; i++) {
+            joint_cmd.command[i] = joint_angles[i];
+        }
+
+        _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(500).sleep();
+     
+        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) {break;}
+    }
+    *dist = init_pos.z - _curr_pose.position.z + 0.04;
+}
+
+void ScanBoardClass::ScanBoardClass::processImage(string mode, float dist)
+{
+    namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
+    namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
+    ros::Time start_time = ros::Time::now();
+    int j = 0;
+
+    _center_to_cell.resize(9);
+    for(int i = 0; i<9;i++) _center_to_cell[i] = 0.0;
+
+    while(ros::ok())
+    {
+        Contours contours;
+        Mat binary, board;
+        int board_area;
+
+        isolateBlack(&binary);
+        isolateBoard(&contours, &board_area, binary.clone(), &board);
+
+        waitKey(30);
+
+        if(contours.size() == 9)
+        {
+            setOffsets(board_area, contours, &board, dist, j);
+            imshow("[ScanBoard] Processed", board);
+            if(mode != "test") break;
+        }
+        else if ((ros::Time::now() - start_time).toSec() > 3)
+        {
+            ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
+            char c = cin.get();    
+        }
+
+
+        Mat raw = _curr_img.clone();
+        for(int i=0;i<9;i++){line(raw, cv::Point(_curr_img.size().width / 2, _curr_img.size().height / 2), _centroids[i], cv::Scalar(10,255,255));}
+        imshow("[ScanBoard] Rough", raw);
+        j++;
+    }
+
+    for(int i = 0; i<9;i++) 
+    {
+        _center_to_cell[i] = _center_to_cell[i] / 10;
+    }
+
+    destroyWindow("[ScanBoard] Rough");
+    destroyWindow("[ScanBoard] Processed");
+}
+
+void ScanBoardClass::isolateBlack(Mat * output)
+{
+    Mat gray;
+    cvtColor(_curr_img, gray, CV_BGR2GRAY);
+    threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
+}
+
+void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, Mat input, Mat * output)
+{
+    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
+    vector<cv::Vec4i> hierarchy; // captures contours within contours 
+
+    findContours(input, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    double largest = 0, next_largest = 0;
+    int largest_index = 0, next_largest_index = 0;
+
+    // iterate through contours and keeps track of contour w/ 2nd-largest area
+    for(int i = 0; i < (*contours).size(); i++)
+    {
+        if(contourArea((*contours)[i], false) > largest)
+        {
+            next_largest = largest;
+            next_largest_index = largest_index;
+            largest = contourArea((*contours)[i], false);
+            largest_index = i;
+        }
+        else if(next_largest < contourArea((*contours)[i], false) && contourArea((*contours)[i], false) < largest)
+        {
+            next_largest = contourArea((*contours)[i], false);
+            next_largest_index = i;
+        }
+    }
+
+    *board_area = contourArea((*contours)[next_largest_index], false);
+
+    drawContours(*output, *contours, next_largest_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
+    findContours(*output, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    largest = 0;
+    largest_index = 0;
+
+    // iterate through contours and keeps track of contour w/ largest area
+    for(int i = 0; i < (*contours).size(); i++)
+    {
+        if(contourArea((*contours)[i], false) > largest)
+        {
+            largest = contourArea((*contours)[i], false);
+            largest_index = i;
+        }
+    } 
+
+    // remove outer board contours
+    (*contours).erase((*contours).begin() + largest_index);
+
+    for(int i = 0; i < (*contours).size(); i++)
+    {
+        if(contourArea((*contours)[i], false) < 200)
+        {
+            (*contours).erase((*contours).begin() + i);
+        } 
+    }
+
+    for(int i = 0; i < (*contours).size(); i++)
+    {
+        drawContours(*output, *contours, i, Scalar(255,255,255), CV_FILLED);
+    }
+}
+
+bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j) 
+{
+    double x_i = moments(i, false).m10 / moments(i, false).m00;
+    double x_j = moments(j, false).m10 / moments(j, false).m00;
+
+    return x_i > x_j;
+}
+
+void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output, float dist, int j)
+{
+    cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
+    circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
+    cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+
+    for(int i = 0; i <= contours.size() - 3; i += 3)
+    {
+        std::sort(contours.begin() + i, contours.begin() + i + 3, descendingX);        
+    }
+
+    _offsets.resize(9);
+    _centroids.resize(9);
+    for(int i = contours.size() - 1; i >= 0; i--)
+    {
+        double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
+        double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
+        cv::Point centroid(x,y);  
+
+        cv::putText(*output, Utils::intToString(contours.size() - 1 - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
+
+        _offsets[contours.size() - 1 - i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+        _offsets[contours.size() - 1 - i].y = (centroid.x - center.x) * 0.0025 * dist;
+        _offsets[contours.size() - 1 - i].z = dist - 0.09;
+
+        if(j==0)_centroids[contours.size() - 1 - i] = centroid;
+
+        _center_to_cell[contours.size() - 1 - i] += sqrt( pow((_offsets[contours.size() - 1 - i].x),2) + pow((_offsets[contours.size() - 1 - i].y),2) );
+    }
+}
+
+/**************************************************************************/
+/*                         PutDownTokenClass                              */
+/**************************************************************************/
+
+PutDownTokenClass::PutDownTokenClass(string limb): ROSThreadClass(limb) {}        
+PutDownTokenClass::~PutDownTokenClass() {}
+
+void PutDownTokenClass::setCell(int cell) {_cell = cell;}
+void PutDownTokenClass::setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
+
+void PutDownTokenClass::InternalThreadEntry()
+{
+    hoverAboveBoard();
+    ros::Duration(1).sleep();
+    hoverAboveCell();
+    ros::Duration(1.5).sleep();
+    _gripper->blow();
+
+    setState(PUT_DOWN);
+    pthread_exit(NULL);  
+}  
+
+void PutDownTokenClass::hoverAboveCell()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x , 0.100 + _offsets[_cell - 1].y, 0.445 - _offsets[_cell - 1].z);
+    // Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
+    // Utils::setPosition(   &req_pose_stamped.pose, 0.50, 0.00, 0.15);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+
+    goToPose(req_pose_stamped);
+}
+
+void PutDownTokenClass::hoverAboveBoard()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.200);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    goToPose(req_pose_stamped);
+}
+
+/**************************************************************************/
+/*                            ArmController                               */
+/**************************************************************************/
+
+ArmController::ArmController(string limb): _limb(limb) 
+{
+    _rest_class = new MoveToRestClass(_limb);
+    _pick_class = new PickUpTokenClass(_limb);
+    _scan_class = new ScanBoardClass(_limb);
+    _put_class = new PutDownTokenClass(_limb);
+}
+ArmController::~ArmController(){}
+
+int ArmController::getState()
+{
+    float len_time = 0;
+    int state = 0;
+
+    if(_rest_class->getState().y > len_time) 
+    {
+        len_time = _rest_class->getState().y; 
+        state = _rest_class->getState().x;            
+    }
+
+    if(_pick_class->getState().y > len_time) 
+    {
+        len_time = _pick_class->getState().y; 
+        state = _pick_class->getState().x;
+    }
+
+    if(_scan_class->getState().y > len_time) 
+    {
+        len_time = _scan_class->getState().y; 
+        state = _scan_class->getState().x;
+    }
+
+    if(_put_class->getState().y > len_time) 
+    {
+        len_time = _put_class->getState().y; 
+        state = _put_class->getState().x;            
+    }
+
+    return state;
+}
+
+void ArmController::moveToRest() {_rest_class->StartInternalThread();}
+
+void ArmController::pickUpToken() {_pick_class->StartInternalThread();}
+
+void ArmController::scanBoard() {_scan_class->StartInternalThread();}
+
+void ArmController::putDownToken(int cell) 
+{
+    _put_class->setOffsets(_scan_class->getOffsets());
+    _put_class->setCell(cell);
+    _put_class->StartInternalThread();
+}    
 

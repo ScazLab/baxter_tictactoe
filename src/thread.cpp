@@ -687,10 +687,7 @@ class ScanBoardClass : public ROSThreadClass
             PoseStamped req_pose_stamped;
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
-            // Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
-            // Utils::setPosition(   &req_pose_stamped.pose, 0.50, 0.00, 0.15);
             Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
-            cout << "before pose" << endl;
             goToPose(req_pose_stamped);
         }
 
@@ -783,7 +780,6 @@ class ScanBoardClass : public ROSThreadClass
             {
                 _center_to_cell[i] = _center_to_cell[i] / 10;
             }
-
 
             destroyWindow("[ScanBoard] Rough");
             destroyWindow("[ScanBoard] Processed");
@@ -912,12 +908,6 @@ class PutDownTokenClass : public ROSThreadClass
     protected:
         void InternalThreadEntry()
         {
-            cout << "cell " << _cell << endl;
-            cout << "_curr_pose\n" << _curr_pose.position << endl;
-            for(int i=0;i<_offsets.size();i++)
-            {
-                cout << "offset " << i << "\n" << _offsets[i] << endl;
-            }
             hoverAboveBoard();
             ros::Duration(1).sleep();
             hoverAboveCell();
@@ -943,7 +933,6 @@ class PutDownTokenClass : public ROSThreadClass
             Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
             goToPose(req_pose_stamped);
-
         }
 
         void hoverAboveBoard()
@@ -952,7 +941,6 @@ class PutDownTokenClass : public ROSThreadClass
             req_pose_stamped.header.frame_id = "base";
             Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.200);
             Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
-            cout << "before pose" << endl;
             goToPose(req_pose_stamped);
         }
 };
@@ -1022,10 +1010,6 @@ class ArmController
         }    
 };
 
-/* Notes 
-    Scan once, move to center of cell 5 and scan again to improve accuracy
-*/
-
 int main(int argc, char * argv[])
 {
     ros::init(argc, argv, "thread");
@@ -1033,26 +1017,18 @@ int main(int argc, char * argv[])
     ArmController * left_ac = new ArmController("left");
     ArmController * right_ac = new ArmController("right");
 
-    // left_ac->moveToRest();
-    // right_ac->moveToRest();
-    // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
+    left_ac->moveToRest();
+    right_ac->moveToRest();
+    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
-
-    cout << "done" << endl;
 
     left_ac->pickUpToken();
     while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
     left_ac->putDownToken(7);
-    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}     
-
-    left_ac->pickUpToken();
-    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
-
-    left_ac->putDownToken(3);
-    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}    
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}       
 
     left_ac->moveToRest();
     while(!(left_ac->getState() == REST)) {ros::spinOnce();}

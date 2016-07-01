@@ -1,34 +1,31 @@
+#include <ros/ros.h>
+#include <ros/console.h>
 #include "arm_controller/arm_controller.h"
 
-using namespace std;
-
-int main(int argc, char **argv)
+int main(int argc, char * argv[])
 {
-    ros::init(argc, argv, "arm_controller");
+    ros::init(argc, argv, "thread");
 
-    ArmController * left_arm_controller = new ArmController("left");
-    ArmController * right_arm_controller = new ArmController("right");
+    ArmController * left_ac = new ArmController("left");
+    ArmController * right_ac = new ArmController("right");
 
-    left_arm_controller->moveToRest(left_arm_controller);
+    left_ac->moveToRest();
+    right_ac->moveToRest();
+    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) {ros::spinOnce();}
 
-    ROS_INFO("parallel to moveToRest");
+    left_ac->scanBoard();
+    while(left_ac->getState() != SCAN){ros::spinOnce();}
 
-    while(left_arm_controller->_state != ArmController::REST)
-    {
-        ros::Duration(0.1).sleep();
-    }
+    left_ac->pickUpToken();
+    while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-    // left_arm_controller->moveToRest(left_arm_controller);
-    // right_arm_controller->moveToRest(right_arm_controller);
+    left_ac->putDownToken(7);
+    while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}       
 
-    // while(left_arm_controller->_state != ArmController::REST || right_arm_controller->_state != ArmController::REST)
-    // {
-    //     ros::Duration(0.1).sleep();
-    // }
-    
-    ROS_INFO("Arms moved to rest");
+    left_ac->moveToRest();
+    while(!(left_ac->getState() == REST)) {ros::spinOnce();}
 
     ros::shutdown();
-    ros::spin();
     return 0;
 }
+
