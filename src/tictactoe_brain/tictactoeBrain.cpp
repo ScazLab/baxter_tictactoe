@@ -1,6 +1,7 @@
 #include "tictactoeBrain.h"
 
 using namespace ttt;
+using namespace std;
 
 bool ttt::operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2)
 {
@@ -19,41 +20,25 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 
 // traj=false -> arm movement done via inverse kinematics (ArmController)
 // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-// traj=false preferred due to simpler and more robust implementation 
 tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) : _robot_color(robot_color), traj(traj), _move_commander("place_token", true) // true causes the client to spin its own thread
 {
     ROS_DEBUG("[tictactoeBrain] traj = %d", traj);
     if(traj == false)
     {
-        left_arm_controller = new ArmController("left");
-        right_arm_controller = new ArmController("right");
+        _left_ac = new ArmController("left");
+        _right_ac = new ArmController("right");
 
         std::string left = "left";
         std::string right = "right";
         int failure;
         void *status;
 
-        pthread_t thread[2];
-        pthread_attr_t attr;
+        _left_ac->moveToRest();
+        _right_ac->moveToRest();
+        while(!(_left_ac->getState() == REST && _right_ac->getState() == REST)) {ros::spinOnce();}
 
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-        // for(int i = 0; i < 2; i++)
-        // {
-        //     failure = pthread_create(&thread[i], &attr, 
-        //                             i == 0 ? left_arm_controller->moveToRest : right_arm_controller->moveToRest, 
-        //                             NULL);
-        //     if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
-        // }
-
-        // pthread_attr_destroy(&attr);
-        // for(int i = 0; i < 2; i++)
-        // {
-        //     failure = pthread_join(thread[i], &status);
-        //     if(failure) ROS_ERROR("[tictactoeBrain] ERROR; return code from pthread_create() is %d\n", failure);
-        //     else ROS_INFO("[tictactoeBrain] The %s arm has moved to rest position", i == 0 ? "left" : "right");
-        // }
+        _left_ac->scanBoard();
+        while(_left_ac->getState() != SCAN){ros::spinOnce();}
     }
 
     _number_of_tokens_on_board.set(0);
@@ -429,8 +414,10 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
 
             if(traj == false)
             {
-                left_arm_controller->pickUpToken();
-                left_arm_controller->placeToken(cell_to_move);
+                _left_ac->pickUpToken();
+                while(_left_ac->getState() != PICK_UP){ros::spinOnce();}
+                _left_ac->putDownToken(cell_to_move);
+                while(_left_ac->getState() != PUT_DOWN){ros::spinOnce();}  
             }
 
             if(traj == true)
@@ -444,7 +431,6 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
                 else
                 {
                     ROS_ERROR_STREAM("[tictactoeBrain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
-                    //What do we do now?
                 }            
             }
 
@@ -460,9 +446,9 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
             ROS_INFO("[tictactoeBrain] Waiting for the participant's move.");
             say_sentence("It is your turn",0.1);
             wait_for_opponent_turn(n_opponent_tokens); /* Waiting for my turn: the participant 
-                                                                has to place one token, so we wait 
-                                                                until the number of the opponent's 
-                                                                tokens increases. */
+                                                          has to place one token, so we wait 
+                                                          until the number of the opponent's 
+                                                          tokens increases. */
         }
         robot_turn=!robot_turn;
     }

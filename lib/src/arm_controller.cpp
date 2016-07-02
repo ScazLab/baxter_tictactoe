@@ -187,10 +187,10 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 {
     vector<double> joint_angles;
     bool all_zeros = true;
+    // ros::Time start = ros::Time::now();
 
     while(all_zeros)
     {
-        cout << *pose_stamped << endl;
         SolvePositionIK ik_srv;
         ik_srv.request.pose_stamp.push_back(*pose_stamped);
         
@@ -208,34 +208,14 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 
             if(all_zeros == true) 
             {
-                ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
+                ROS_ERROR("[Arm Controller] No solution found. Trying to find another solution...");
                 (*pose_stamped).pose.position.z += 0.005;
             }   
         }
+
     }
 
     return joint_angles;
-
-    // vector<double> joint_angles;
-    // SolvePositionIK ik_srv;
-    // if(_ik_client.call(ik_srv))
-    // {
-    //     vector<double> joint_angles = ik_srv.response.joints[0].position;
-    //     bool all_zeros = true;
-    //     for(int i = 0; i < joint_angles.size(); i++){
-    //         if(joint_angles[i] != 0) {all_zeros = false; break;}
-    //     }
-    //     if(all_zeros == true) 
-    //     {
-    //         ROS_ERROR("[Arm Controller] Angles are all 0 radians (No solution found)");
-    //     }
-    //     return joint_angles;
-    // }
-    // else {
-    //     ROS_ERROR("[Arm Controller] SolvePositionIK service was unsuccessful");
-    //     vector<double> empty; 
-    //     return empty;
-    // }
 }
 
 void ROSThreadClass::setState(int state)
@@ -312,9 +292,9 @@ void PickUpTokenClass::InternalThreadEntry()
         ros::Rate(100).sleep();
     }
 
-    hoverAboveTokens();
+    hoverAboveTokens("high");
     gripToken();
-    hoverAboveTokens();
+    hoverAboveTokens("low");
 
     setState(PICK_UP);
     pthread_exit(NULL);  
@@ -375,11 +355,11 @@ void PickUpTokenClass::gripToken()
     destroyWindow("[PickUpToken] Rough");
 }   
 
-void PickUpTokenClass::hoverAboveTokens()
+void PickUpTokenClass::hoverAboveTokens(std::string height)
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height == "high" ? 0.400 : 0.150);
     Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
     goToPose(req_pose_stamped);
 }
@@ -609,7 +589,6 @@ void ScanBoardClass::InternalThreadEntry()
     while(_curr_img.empty()) 
     {
         ros::Rate(100).sleep();
-        cout << "loop" << endl;
     }
     scan();
     hoverAboveTokens();
@@ -623,7 +602,7 @@ void ScanBoardClass::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.450);
+    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
     Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
     goToPose(req_pose_stamped);
 }
@@ -682,7 +661,7 @@ void ScanBoardClass::setDepth(float *dist)
     *dist = init_pos.z - _curr_pose.position.z + 0.04;
 }
 
-void ScanBoardClass::ScanBoardClass::processImage(string mode, float dist)
+void ScanBoardClass::processImage(string mode, float dist)
 {
     namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
     namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
@@ -815,9 +794,9 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
     cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
-    for(int i = 0; i <= contours.size() - 3; i += 3)
+    for(int i = contours.size(); i >= 3; i -= 3)
     {
-        std::sort(contours.begin() + i, contours.begin() + i + 3, descendingX);        
+        std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);        
     }
 
     _offsets.resize(9);
@@ -828,16 +807,16 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
         double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
         cv::Point centroid(x,y);  
 
-        cv::putText(*output, Utils::intToString(contours.size() - 1 - i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
 
-        _offsets[contours.size() - 1 - i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
-        _offsets[contours.size() - 1 - i].y = (centroid.x - center.x) * 0.0025 * dist;
-        _offsets[contours.size() - 1 - i].z = dist - 0.09;
+        _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+        _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
+        _offsets[i].z = dist - 0.09;
 
-        if(j==0)_centroids[contours.size() - 1 - i] = centroid;
+        if(j==0)_centroids[i] = centroid;
 
-        _center_to_cell[contours.size() - 1 - i] += sqrt( pow((_offsets[contours.size() - 1 - i].x),2) + pow((_offsets[contours.size() - 1 - i].y),2) );
+        _center_to_cell[i] += sqrt( pow((_offsets[contours.size() - 1 - i].x),2) + pow((_offsets[contours.size() - 1 - i].y),2) );
     }
 }
 
@@ -854,10 +833,12 @@ void PutDownTokenClass::setOffsets(vector<geometry_msgs::Point> offsets) {_offse
 void PutDownTokenClass::InternalThreadEntry()
 {
     hoverAboveBoard();
-    ros::Duration(1).sleep();
+    ros::Duration(0.5).sleep();
     hoverAboveCell();
-    ros::Duration(1.5).sleep();
+    ros::Duration(0.5).sleep();
     _gripper->blow();
+    hoverAboveBoard();
+    hoverAboveTokens();
 
     setState(PUT_DOWN);
     pthread_exit(NULL);  
@@ -881,6 +862,15 @@ void PutDownTokenClass::hoverAboveBoard()
     req_pose_stamped.header.frame_id = "base";
     Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.200);
     Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    goToPose(req_pose_stamped);
+}
+
+void PutDownTokenClass::hoverAboveTokens()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
     goToPose(req_pose_stamped);
 }
 
