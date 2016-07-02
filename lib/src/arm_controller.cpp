@@ -187,7 +187,8 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 {
     vector<double> joint_angles;
     bool all_zeros = true;
-    // ros::Time start = ros::Time::now();
+    ros::Time start = ros::Time::now();
+    float thresh_z = (*pose_stamped).pose.position.z + 0.040;
 
     while(all_zeros)
     {
@@ -208,11 +209,16 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 
             if(all_zeros == true) 
             {
-                ROS_ERROR("[Arm Controller] No solution found. Trying to find another solution...");
                 (*pose_stamped).pose.position.z += 0.005;
             }   
         }
 
+        if((ros::Time::now() - start).toSec() > 5 || (*pose_stamped).pose.position.z > thresh_z) 
+        {
+            ROS_ERROR("[Arm Controller] Arm cannot reach requested position. Releasing any object being gripped by arm...");
+            _gripper->blow();
+            break;
+        }
     }
 
     return joint_angles;
