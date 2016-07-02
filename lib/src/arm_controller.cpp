@@ -627,7 +627,7 @@ void ScanBoardClass::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);
+    processImage("test", dist);
 }
 
 void ScanBoardClass::setDepth(float *dist)
@@ -672,10 +672,6 @@ void ScanBoardClass::processImage(string mode, float dist)
     namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
     namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
     ros::Time start_time = ros::Time::now();
-    int j = 0;
-
-    _center_to_cell.resize(9);
-    for(int i = 0; i<9;i++) _center_to_cell[i] = 0.0;
 
     while(ros::ok())
     {
@@ -688,9 +684,11 @@ void ScanBoardClass::processImage(string mode, float dist)
 
         waitKey(30);
 
+        cout << contours.size() << endl;
+
         if(contours.size() == 9)
         {
-            setOffsets(board_area, contours, &board, dist, j);
+            setOffsets(board_area, contours, &board, dist);
             imshow("[ScanBoard] Processed", board);
             if(mode != "test") break;
         }
@@ -700,16 +698,8 @@ void ScanBoardClass::processImage(string mode, float dist)
             char c = cin.get();    
         }
 
-
-        Mat raw = _curr_img.clone();
-        for(int i=0;i<9;i++){line(raw, cv::Point(_curr_img.size().width / 2, _curr_img.size().height / 2), _centroids[i], cv::Scalar(10,255,255));}
-        imshow("[ScanBoard] Rough", raw);
-        j++;
-    }
-
-    for(int i = 0; i<9;i++) 
-    {
-        _center_to_cell[i] = _center_to_cell[i] / 10;
+        imshow("[ScanBoard] Rough", _curr_img.clone());
+        imshow("[ScanBoard] Processed", board);
     }
 
     destroyWindow("[ScanBoard] Rough");
@@ -794,7 +784,7 @@ bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output, float dist, int j)
+void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output, float dist)
 {
     cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
@@ -806,7 +796,6 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
     }
 
     _offsets.resize(9);
-    _centroids.resize(9);
     for(int i = contours.size() - 1; i >= 0; i--)
     {
         double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
@@ -819,10 +808,6 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
         _offsets[i].z = dist - 0.09;
-
-        if(j==0)_centroids[i] = centroid;
-
-        _center_to_cell[i] += sqrt( pow((_offsets[contours.size() - 1 - i].x),2) + pow((_offsets[contours.size() - 1 - i].y),2) );
     }
 }
 

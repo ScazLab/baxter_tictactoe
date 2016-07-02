@@ -129,7 +129,7 @@ class PickUpTokenClass : public ROSThreadClass
 
         void gripToken();
 
-        void hoverAboveTokens();
+        void hoverAboveTokens(std::string height);
 
         void checkForToken(cv::Point2d * offset);
 
@@ -160,8 +160,6 @@ class ScanBoardClass : public ROSThreadClass
     private:
         typedef std::vector<std::vector<cv::Point> > Contours;
         std::vector<geometry_msgs::Point> _offsets;
-        std::vector<cv::Point> _centroids;
-        std::vector<float> _center_to_cell;
 
         void hoverAboveTokens();
 
@@ -179,7 +177,7 @@ class ScanBoardClass : public ROSThreadClass
 
         static bool descendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
-        void setOffsets(int board_area, Contours contours, cv::Mat * output, float dist, int j);
+        void setOffsets(int board_area, Contours contours, cv::Mat * output, float dist);
 };
 
 class PutDownTokenClass : public ROSThreadClass
@@ -202,6 +200,8 @@ class PutDownTokenClass : public ROSThreadClass
         void hoverAboveCell();
 
         void hoverAboveBoard();
+
+        void hoverAboveTokens();
 };
 
 class ArmController
