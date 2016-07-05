@@ -94,6 +94,7 @@ string Utils::intToString( const int a )
 /*                          ROSThreadClass                                */
 /**************************************************************************/
 
+// Public
 ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
@@ -108,10 +109,8 @@ ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
 }
 ROSThreadClass::~ROSThreadClass() {/* empty */}
 
-/** Returns true if the thread was successfully started, false if there was an error starting the thread */
 bool ROSThreadClass::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
 
-/** Will not return until the internal thread has exited. */
 void ROSThreadClass::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL);}
 
 void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg) {_curr_pose = msg.pose;}
@@ -133,6 +132,7 @@ void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
 geometry_msgs::Point ROSThreadClass::getState() {return _state;}
 
+// Protected
 void ROSThreadClass::InternalThreadEntry() {};
 
 void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
@@ -230,6 +230,7 @@ void ROSThreadClass::setState(int state)
     _state.y = (ros::Time::now() - _init_time).toSec();
 }
 
+// Private
 void * ROSThreadClass::InternalThreadEntryFunc(void * This) 
 {
     ((ROSThreadClass *)This)->InternalThreadEntry(); 
@@ -240,9 +241,11 @@ void * ROSThreadClass::InternalThreadEntryFunc(void * This)
 /*                         MoveToRestClass                                */
 /**************************************************************************/
 
+// Public
 MoveToRestClass::MoveToRestClass(string limb): ROSThreadClass(limb) {}
 MoveToRestClass::~MoveToRestClass(){}
 
+// Protected
 void MoveToRestClass::InternalThreadEntry()
 {
     while(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0)
@@ -286,7 +289,7 @@ void MoveToRestClass::InternalThreadEntry()
 /*                         PickUpTokenClass                               */
 /**************************************************************************/
 
-// Private
+// Public
 PickUpTokenClass::PickUpTokenClass(string limb): ROSThreadClass(limb) {}
 PickUpTokenClass::~PickUpTokenClass() {}
 
@@ -306,7 +309,7 @@ void PickUpTokenClass::InternalThreadEntry()
     pthread_exit(NULL);  
 }
 
-// Public
+// Private
 typedef vector<vector<cv::Point> > Contours;
 
 void PickUpTokenClass::gripToken()
@@ -402,7 +405,7 @@ void PickUpTokenClass::processImage(cv::Point2d * offset)
 
     imshow("[PickUpToken] Processed", _curr_img.clone());
     imshow("[PickUpToken] Rough", token_rough);
-    waitKey(30);
+    waitKey(30);        
 }
 
 void PickUpTokenClass::isolateBlue(Mat * output)
@@ -460,8 +463,7 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat * output, int * board_y)
     *board_y = low_y;
 
     line(*output, cv::Point(0, low_y), cv::Point(_curr_img.size().width, low_y), cv::Scalar(130,256,256));
-    // line(*output, cv::Point(0, low_y - 10), cv::Point(_curr_img.size().width - 50, low_y - 10), cv::Scalar(130,256,256));
-    // line(*output, cv::Point(0, low_y + 10), cv::Point(_curr_img.size().width - 100, low_y + 10), cv::Scalar(130,256,256));
+    line(*output, cv::Point(0, low_y - 10), cv::Point(_curr_img.size().width - 10, low_y - 10), cv::Scalar(130,256,256));
 }
 
 void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat *output, Contours *contours)
@@ -488,32 +490,27 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat *output, Contour
         if(contourArea(raw_contours[i]) > 200 && not_gripper == true && is_triangle == true)
         {
             clean_contours.push_back(raw_contours[i]);
-            // (*contours).push_back(raw_contours[i]);
         }
     }
 
-    // multiple tokens detected, or board lines detected
-    if(clean_contours.size() > 4)
+    for(int i = 0; i < clean_contours.size(); i++) 
     {
-        for(int i = 0; i < clean_contours.size(); i++) 
+        bool within_board = false;
+        vector<cv::Point> contour = clean_contours[i];
+        for(int j = 0; j < contour.size(); j++)
         {
-            bool within_board = false;
-            vector<cv::Point> contour = clean_contours[i];
-            for(int j = 0; j < contour.size(); j++)
+            cv::Point pt = contour[j];
+            if(pt.y > board_y)
             {
-                cv::Point pt = contour[j];
-                if(pt.y > board_y)
-                {
-                    within_board = true;
-                    break;
-                }
+                within_board = true;
+                break;
             }
-            if(!within_board) (*contours).push_back(contour);
         }
-    }
-    else if(clean_contours.size() == 4)
-    {
-        *contours = clean_contours;
+
+        if(within_board == false) 
+        {
+            (*contours).push_back(contour);
+        }
     }
 
     *output = Mat::zeros(_curr_img.size(), CV_8UC1);
@@ -582,7 +579,7 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d *offset, Mat *ou
 /*                          ScanBoardClass                                */
 /**************************************************************************/
 
-// Private
+// Public
 ScanBoardClass::ScanBoardClass(string limb): ROSThreadClass(limb) {}
 ScanBoardClass::~ScanBoardClass() {}
 
@@ -603,7 +600,7 @@ void ScanBoardClass::InternalThreadEntry()
     pthread_exit(NULL);
 }
 
-// Public
+// Private
 void ScanBoardClass::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
@@ -627,7 +624,7 @@ void ScanBoardClass::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("test", dist);
+    processImage("run", dist);
 }
 
 void ScanBoardClass::setDepth(float *dist)
@@ -815,12 +812,14 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
 /*                         PutDownTokenClass                              */
 /**************************************************************************/
 
+// Public
 PutDownTokenClass::PutDownTokenClass(string limb): ROSThreadClass(limb) {}        
 PutDownTokenClass::~PutDownTokenClass() {}
 
 void PutDownTokenClass::setCell(int cell) {_cell = cell;}
 void PutDownTokenClass::setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
 
+// Protected
 void PutDownTokenClass::InternalThreadEntry()
 {
     hoverAboveBoard();
@@ -835,6 +834,7 @@ void PutDownTokenClass::InternalThreadEntry()
     pthread_exit(NULL);  
 }  
 
+// Private
 void PutDownTokenClass::hoverAboveCell()
 {
     PoseStamped req_pose_stamped;
