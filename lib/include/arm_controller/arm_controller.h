@@ -444,9 +444,13 @@ class ScanBoardClass : public ROSThreadClass
          * return     N/A
          */
 
-        void setOffsets(int board_area, Contours contours, cv::Mat * output, float dist);
+        void setOffsets(int board_area, Contours contours, float dist, cv::Mat *output, std::vector<cv::Point> *centroids);
+
+        void setZone(Contours contours, float dist, std::vector<cv::Point> *centroids);
 
         bool offsetsReachable();
+
+        bool pointReachable(cv::Point centroid, float dist);
 };
 
 class PutDownTokenClass : public ROSThreadClass

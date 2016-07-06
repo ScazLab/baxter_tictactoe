@@ -628,7 +628,7 @@ void ScanBoardClass::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);        
+    processImage("test", dist);        
 
 }
 
@@ -678,34 +678,66 @@ void ScanBoardClass::processImage(string mode, float dist)
     while(ros::ok())
     {
         Contours contours;
-        Mat binary, board;
+        vector<cv::Point> centroids;
+        Mat binary, board, zone = _curr_img.clone();
         int board_area;
 
         isolateBlack(&binary);
         isolateBoard(&contours, &board_area, binary.clone(), &board);
 
-        waitKey(30);
+        waitKey(3);
 
         if(contours.size() == 9)
         {
-            setOffsets(board_area, contours, &board, dist);
+            setOffsets(board_area, contours, dist, &board, &centroids);
             imshow("[ScanBoard] Processed", board);
-        }
-        else if ((ros::Time::now() - start_time).toSec() > 3)
-        {
-            ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
-            char c = cin.get();    
+        
+            if(offsetsReachable() && mode == "run"){
+                cout << "Board is positioned correctly! Proceed with game" << endl;
+                break;
+            }
+            else if(!offsetsReachable()) {
+                cout << "Board is outside the reachable zone" << endl;
+                setZone(contours, dist, &centroids);
+
+                // calls to IK solver in drawZone takes too long; makes the image update
+                // very slow and hard for users to calibrate board position, which is why
+                // and i nner loop is needed
+                while(ros::ok())
+                {
+
+                    zone = _curr_img.clone();
+                    line(zone, centroids[0], centroids[2], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[2], centroids[8], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[0], centroids[6], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[6], centroids[8], cv::Scalar(0,0,255), 1);
+
+                    double y_min = (contours[0])[0].y;
+                    double x_min = (contours[0])[0].x;
+                    double y_max = 0;
+                    double x_max = 0;
+
+                    for(int i = 0; i < contours.size(); i++)
+                    {
+                        vector<cv::Point> contour = contours[i];
+                        for(int j = 0; j < contour.size(); j++)
+                        {
+                            if(y_min > contour[j].y) y_min = contour[j].y;
+                            if(x_min > contour[j].x) x_min = contour[j].x;
+                            if(y_max < contour[j].y) y_max = contour[j].y;
+                            if(x_max < contour[j].x) x_max = contour[j].x;
+                        }
+                    }
+
+                    line(zone, cv::Point(x_max, y_min), cv::Point(x_max, y_min), cv::Scalar(0,0,255), 5);
+
+                    imshow("[ScanBoard] Rough", zone);
+                    waitKey(3);
+                }
+            }
         }
 
-        if(offsetsReachable()){
-            cout << "Board is positioned correctly! Proceed with game" << endl;
-            break;
-        }
-        else {
-            ROS_ERROR("Board cells are outside of Baxter's reach");
-        }
-
-        imshow("[ScanBoard] Rough", _curr_img.clone());
+        imshow("[ScanBoard] Rough", zone);
         imshow("[ScanBoard] Processed", board);
     }
 
@@ -791,7 +823,7 @@ bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output, float dist)
+void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
 {
     cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
@@ -803,11 +835,14 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
     }
 
     _offsets.resize(9);
+    (*centroids).resize(9);
     for(int i = contours.size() - 1; i >= 0; i--)
     {
         double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
         cv::Point centroid(x,y);  
+
+        (*centroids)[i] = centroid;
 
         cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
@@ -816,6 +851,24 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
         _offsets[i].z = dist - 0.085;
     }
+}
+
+void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> * centroids)
+{
+
+    while(pointReachable((*centroids)[0], dist)) {(*centroids)[0].x += 10.0;}
+    while(pointReachable((*centroids)[2], dist)) {(*centroids)[2].x -= 10.0;}
+    // while(pointReachable((*centroids)[6], dist)) {(*centroids)[6].x += 10.0;}
+    // while(pointReachable((*centroids)[8], dist)) {(*centroids)[8].x -= 10.0;}
+
+    while(!pointReachable((*centroids)[0], dist)) {(*centroids)[0].x -= 5.0;}
+    while(!pointReachable((*centroids)[2], dist)) {(*centroids)[2].x += 5.0;}
+    while(!pointReachable((*centroids)[6], dist)) {(*centroids)[6].x -= 5.0;}
+    while(!pointReachable((*centroids)[8], dist)) {(*centroids)[8].x += 5.0;}
+
+
+
+
 }
 
 bool ScanBoardClass::offsetsReachable()
@@ -843,6 +896,35 @@ bool ScanBoardClass::offsetsReachable()
         if(all_zeros) return false;    
     }
     return true;
+}
+
+bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
+{
+    cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
+    geometry_msgs::Point offset;
+
+    offset.x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+    offset.y = (centroid.x - center.x) * 0.0025 * dist;
+    offset.z = dist - 0.085;
+
+    PoseStamped pose_stamped;
+    pose_stamped.header.frame_id = "base";
+    Utils::setPosition( &pose_stamped.pose, 
+                        0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
+    Utils::setOrientation(&pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+
+    vector<double> joint_angles = getJointAngles(&pose_stamped);
+    bool all_zeros = true;
+    for(int j = 0; j < joint_angles.size(); j++)
+    {
+        if(joint_angles[j] != 0) 
+        {
+            all_zeros = false;
+            break;
+        }
+    }    
+    
+    return all_zeros ? false : true;
 }
 
 /**************************************************************************/
