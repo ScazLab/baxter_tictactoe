@@ -6,6 +6,10 @@ using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace cv;
 
+/*
+    pthread locks
+*/
+
 /**************************************************************************/
 /*                               Utils                                    */
 /**************************************************************************/
@@ -188,7 +192,7 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
     vector<double> joint_angles;
     bool all_zeros = true;
     ros::Time start = ros::Time::now();
-    float thresh_z = (*pose_stamped).pose.position.z + 0.040;
+    float thresh_z = (*pose_stamped).pose.position.z + 0.055;
 
     while(all_zeros)
     {
@@ -594,7 +598,7 @@ void ScanBoardClass::InternalThreadEntry()
         ros::Rate(100).sleep();
     }
     scan();
-    hoverAboveTokens();
+    // hoverAboveTokens();
 
     setState(SCAN);
     pthread_exit(NULL);
@@ -624,7 +628,8 @@ void ScanBoardClass::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);
+    processImage("run", dist);        
+
 }
 
 void ScanBoardClass::setDepth(float *dist)
@@ -681,18 +686,23 @@ void ScanBoardClass::processImage(string mode, float dist)
 
         waitKey(30);
 
-        cout << contours.size() << endl;
-
         if(contours.size() == 9)
         {
             setOffsets(board_area, contours, &board, dist);
             imshow("[ScanBoard] Processed", board);
-            if(mode != "test") break;
         }
         else if ((ros::Time::now() - start_time).toSec() > 3)
         {
             ROS_WARN("No board detected by hand camera. Make sure nothing is blocking the camera's view of the board, and press ENTER");
             char c = cin.get();    
+        }
+
+        if(offsetsReachable()){
+            cout << "Board is positioned correctly! Proceed with game" << endl;
+            break;
+        }
+        else {
+            ROS_ERROR("Board cells are outside of Baxter's reach");
         }
 
         imshow("[ScanBoard] Rough", _curr_img.clone());
@@ -804,8 +814,35 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, Mat * output,
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
-        _offsets[i].z = dist - 0.09;
+        _offsets[i].z = dist - 0.085;
     }
+}
+
+bool ScanBoardClass::offsetsReachable()
+{
+    for(int i = 0; i < 9; i++)
+    {
+        PoseStamped req_pose_stamped;
+        req_pose_stamped.header.frame_id = "base";
+        Utils::setPosition( &req_pose_stamped.pose, 
+                            0.575 + _offsets[i].x, 
+                            0.100 + _offsets[i].y, 
+                            0.445 - _offsets[i].z);
+        Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+
+        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+        bool all_zeros = true;
+        for(int j = 0; j < joint_angles.size(); j++)
+        {
+            if(joint_angles[j] != 0) 
+            {
+                all_zeros = false;
+                break;
+            }
+        }    
+        if(all_zeros) return false;    
+    }
+    return true;
 }
 
 /**************************************************************************/
@@ -839,10 +876,10 @@ void PutDownTokenClass::hoverAboveCell()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x , 0.100 + _offsets[_cell - 1].y, 0.445 - _offsets[_cell - 1].z);
-    // Utils::setOrientation(&req_pose_stamped.pose, 0.018350630972, 0.999675441242, -0.0122454573994, 0.0127403019765);
-    // Utils::setPosition(   &req_pose_stamped.pose, 0.50, 0.00, 0.15);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x, 
+                        0.100 + _offsets[_cell - 1].y, 
+                        0.445 - _offsets[_cell - 1].z);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
     goToPose(req_pose_stamped);
 }
@@ -851,8 +888,10 @@ void PutDownTokenClass::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.200);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
+                        0.100 + _offsets[4].y, 
+                        0.200);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
     goToPose(req_pose_stamped);
 }
 
