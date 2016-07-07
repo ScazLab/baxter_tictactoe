@@ -219,7 +219,7 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 
         if((ros::Time::now() - start).toSec() > 5 || (*pose_stamped).pose.position.z > thresh_z) 
         {
-            ROS_ERROR("[Arm Controller] Arm cannot reach requested position. Releasing any object being gripped by arm...");
+            // ROS_ERROR("[Arm Controller] Arm cannot reach requested position. Releasing any object being gripped by arm...");
             _gripper->blow();
             break;
         }
@@ -598,7 +598,7 @@ void ScanBoardClass::InternalThreadEntry()
         ros::Rate(100).sleep();
     }
     scan();
-    // hoverAboveTokens();
+    hoverAboveTokens();
 
     setState(SCAN);
     pthread_exit(NULL);
@@ -628,7 +628,7 @@ void ScanBoardClass::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("test", dist);        
+    processImage("run", dist);        
 
 }
 
@@ -672,77 +672,74 @@ void ScanBoardClass::setDepth(float *dist)
 void ScanBoardClass::processImage(string mode, float dist)
 {
     namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
-    namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
+    // namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
     ros::Time start_time = ros::Time::now();
 
     while(ros::ok())
     {
         Contours contours;
-        vector<cv::Point> centroids;
+        vector<cv::Point> centroids, board_corners, cell_to_corner;
         Mat binary, board, zone = _curr_img.clone();
         int board_area;
 
         isolateBlack(&binary);
-        isolateBoard(&contours, &board_area, binary.clone(), &board);
+        isolateBoard(&contours, &board_area, &board_corners, binary.clone(), &board);
 
         waitKey(3);
 
         if(contours.size() == 9)
         {
             setOffsets(board_area, contours, dist, &board, &centroids);
-            imshow("[ScanBoard] Processed", board);
+            // imshow("[ScanBoard] Processed", board);
         
             if(offsetsReachable() && mode == "run"){
-                cout << "Board is positioned correctly! Proceed with game" << endl;
+                cout << "[Scan Board] Board is positioned correctly! Proceed with game" << endl;
                 break;
             }
             else if(!offsetsReachable()) {
-                cout << "Board is outside the reachable zone" << endl;
-                setZone(contours, dist, &centroids);
+                cout << "[Scan Board] Please move board within reachable zone" << endl;
+                setZone(contours, dist, board_corners, &centroids, &cell_to_corner);
 
-                // calls to IK solver in drawZone takes too long; makes the image update
+                // calls to IK solver in setZone takes too long; makes the image update
                 // very slow and hard for users to calibrate board position, which is why
-                // and i nner loop is needed
+                // and inner loop is needed
+                ros::Time start = ros::Time::now();
+                int interval = 5;
                 while(ros::ok())
                 {
-
                     zone = _curr_img.clone();
-                    line(zone, centroids[0], centroids[2], cv::Scalar(0,0,255), 1);
-                    line(zone, centroids[2], centroids[8], cv::Scalar(0,0,255), 1);
-                    line(zone, centroids[0], centroids[6], cv::Scalar(0,0,255), 1);
-                    line(zone, centroids[6], centroids[8], cv::Scalar(0,0,255), 1);
 
-                    double y_min = (contours[0])[0].y;
-                    double x_min = (contours[0])[0].x;
-                    double y_max = 0;
-                    double x_max = 0;
+                    line(zone, centroids[0] + cell_to_corner[0], centroids[2] + cell_to_corner[1], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[2] + cell_to_corner[1], centroids[8] + cell_to_corner[3], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[0] + cell_to_corner[0], centroids[6] + cell_to_corner[2], cv::Scalar(0,0,255), 1);
+                    line(zone, centroids[6] + cell_to_corner[2], centroids[8] + cell_to_corner[3], cv::Scalar(0,0,255), 1);
 
-                    for(int i = 0; i < contours.size(); i++)
+                    if((ros::Time::now() - start).toSec() > interval)
                     {
-                        vector<cv::Point> contour = contours[i];
-                        for(int j = 0; j < contour.size(); j++)
+                        vector<cv::Point> temp_centroids, temp_board_corners;
+                        isolateBlack(&binary);
+                        isolateBoard(&contours, &board_area, &temp_board_corners, binary.clone(), &board);
+                        if(contours.size() == 9)
                         {
-                            if(y_min > contour[j].y) y_min = contour[j].y;
-                            if(x_min > contour[j].x) x_min = contour[j].x;
-                            if(y_max < contour[j].y) y_max = contour[j].y;
-                            if(x_max < contour[j].x) x_max = contour[j].x;
+                            setOffsets(board_area, contours, dist, &board, &temp_centroids);
                         }
+                        if(offsetsReachable()) {break;}
+                        interval += 5;
                     }
 
-                    line(zone, cv::Point(x_max, y_min), cv::Point(x_max, y_min), cv::Scalar(0,0,255), 5);
-
                     imshow("[ScanBoard] Rough", zone);
+                    
                     waitKey(3);
                 }
             }
         }
 
         imshow("[ScanBoard] Rough", zone);
-        imshow("[ScanBoard] Processed", board);
+        // imshow("[ScanBoard] Processed", board);
     }
 
     destroyWindow("[ScanBoard] Rough");
-    destroyWindow("[ScanBoard] Processed");
+    // destroyWindow("[ScanBoard] Processed");
 }
 
 void ScanBoardClass::isolateBlack(Mat * output)
@@ -752,7 +749,7 @@ void ScanBoardClass::isolateBlack(Mat * output)
     threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
 }
 
-void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, Mat input, Mat * output)
+void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, vector<cv::Point> * board_corners, Mat input, Mat * output)
 {
     *output = Mat::zeros(_curr_img.size(), CV_8UC1);
     vector<cv::Vec4i> hierarchy; // captures contours within contours 
@@ -797,6 +794,27 @@ void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, Mat inp
             largest_index = i;
         }
     } 
+
+    vector<cv::Point> board_outline = (*contours)[largest_index];
+
+    /* Set board corners and board area*/
+    double y_min = board_outline[0].y;
+    double x_min = board_outline[0].x;
+    double y_max = 0;
+    double x_max = 0;
+
+    for(int i = 0; i < board_outline.size(); i++)
+    {
+        if(y_min > board_outline[i].y) y_min = board_outline[i].y;
+        if(x_min > board_outline[i].x) x_min = board_outline[i].x;
+        if(y_max < board_outline[i].y) y_max = board_outline[i].y;
+        if(x_max < board_outline[i].x) x_max = board_outline[i].x;
+    }
+    
+    (*board_corners).push_back(cv::Point(x_max, y_max));
+    (*board_corners).push_back(cv::Point(x_min, y_max));
+    (*board_corners).push_back(cv::Point(x_max, y_min));
+    (*board_corners).push_back(cv::Point(x_min, y_min));
 
     // remove outer board contours
     (*contours).erase((*contours).begin() + largest_index);
@@ -853,22 +871,24 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, M
     }
 }
 
-void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> * centroids)
+void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> board_corners, vector<cv::Point> * centroids, vector<cv::Point> * cell_to_corner)
 {
+    (*cell_to_corner).resize(4);
+
+    (*cell_to_corner)[0] = cv::Point(board_corners[0].x - (*centroids)[0].x, board_corners[0].y - (*centroids)[0].y);
+    (*cell_to_corner)[1] = cv::Point(board_corners[1].x - (*centroids)[2].x, board_corners[1].y - (*centroids)[2].y);
+    (*cell_to_corner)[2] = cv::Point(board_corners[2].x - (*centroids)[6].x, board_corners[2].y - (*centroids)[6].y);
+    (*cell_to_corner)[3] = cv::Point(board_corners[3].x - (*centroids)[8].x, board_corners[3].y - (*centroids)[8].y);
 
     while(pointReachable((*centroids)[0], dist)) {(*centroids)[0].x += 10.0;}
     while(pointReachable((*centroids)[2], dist)) {(*centroids)[2].x -= 10.0;}
-    // while(pointReachable((*centroids)[6], dist)) {(*centroids)[6].x += 10.0;}
-    // while(pointReachable((*centroids)[8], dist)) {(*centroids)[8].x -= 10.0;}
+    while(pointReachable((*centroids)[6], dist)) {(*centroids)[6].x += 10.0;}
+    while(pointReachable((*centroids)[8], dist)) {(*centroids)[8].x -= 10.0;}
 
     while(!pointReachable((*centroids)[0], dist)) {(*centroids)[0].x -= 5.0;}
     while(!pointReachable((*centroids)[2], dist)) {(*centroids)[2].x += 5.0;}
     while(!pointReachable((*centroids)[6], dist)) {(*centroids)[6].x -= 5.0;}
     while(!pointReachable((*centroids)[8], dist)) {(*centroids)[8].x += 5.0;}
-
-
-
-
 }
 
 bool ScanBoardClass::offsetsReachable()

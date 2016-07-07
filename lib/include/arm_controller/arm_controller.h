@@ -425,7 +425,7 @@ class ScanBoardClass : public ROSThreadClass
 
         void isolateBlack(cv::Mat * output);
 
-        void isolateBoard(Contours * contours, int * board_area, cv::Mat input, cv::Mat * output);
+        void isolateBoard(Contours * contours, int * board_area, std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
 
         /*
          * finds cell with the higher centroid
@@ -446,7 +446,7 @@ class ScanBoardClass : public ROSThreadClass
 
         void setOffsets(int board_area, Contours contours, float dist, cv::Mat *output, std::vector<cv::Point> *centroids);
 
-        void setZone(Contours contours, float dist, std::vector<cv::Point> *centroids);
+        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners, std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
 
         bool offsetsReachable();
 
