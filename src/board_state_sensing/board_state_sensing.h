@@ -1,6 +1,8 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include <string>
+#include <iostream>
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/DefineCells.h"
@@ -41,4 +43,6 @@ public:
     ~BoardState();
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+
+    std::string intToString( const int a );
 };

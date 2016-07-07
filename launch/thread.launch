@@ -1,0 +1,6 @@
+<!--defines the area of the cells in the game-->
+<launch>
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
+
+    <node name="thread" pkg="baxter_tictactoe" type="thread" respawn="false" output="screen" launch-prefix="valgrind"></node>
+</launch>

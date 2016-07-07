@@ -238,9 +238,6 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             pthread_mutex_unlock(&mutex);   
         }
 
-
-
-
         // // find leftmost and rightmost centroid
         // cv::Point leftmost_x(cell_centroids[0]);
         // cv::Point rightmost_x(cell_centroids[0]);

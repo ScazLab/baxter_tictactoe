@@ -46,6 +46,8 @@ void BoardState::init()
     ROS_INFO("Area threshold: %g", area_threshold);
     ROS_INFO("Show param set to %i", doShow);
 
+    cv::namedWindow("[Board_State_Sensor] cell outlines", cv::WINDOW_NORMAL);
+
     if (doShow)
     {
         cv::namedWindow("[Board_State_Sensor] red  masked image of the board");
@@ -58,11 +60,19 @@ BoardState::BoardState(bool _show): image_transport(node_handle), doShow(_show) 
 
 BoardState::~BoardState()
 {
+    cv::destroyWindow("[Board_State_Sensor] cell outlines");
     if (doShow)
     {
         cv::destroyWindow("[Board_State_Sensor] red  masked image of the board");
         cv::destroyWindow("[Board_State_Sensor] blue masked image of the board");
     }
+}
+
+std::string BoardState::intToString( const int a )
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
 }
 
 void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -86,6 +96,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     DefineCells srv;
 
+    // if(client.call(srv) && board.cells.size() != 9)
     if(client.call(srv) && board.cells.size() != 9)
     {
         board.cells.clear();
@@ -221,7 +232,23 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         ROS_DEBUG("[Board_State_Sensor] NOT publishing new state - same state encountered");
     }
 
-    if (doShow) cv::waitKey(50);
+
+    cv::Mat img_aux = cv_ptr->image.clone();
+
+    // drawing all cells of the board game
+    cv::drawContours(img_aux,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
+    for(int i = 0; i < board.cells.size(); i++)
+    {
+        cv::Point cell_centroid;
+        board.cells[i].get_cell_centroid(cell_centroid);
+        //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
+        // cv::line(img_aux, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
+        cv::putText(img_aux, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
+    }
+
+    cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
+
+    /*if (doShow) */cv::waitKey(50);
     ros::Duration(2).sleep();
 }
 
@@ -248,4 +275,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-

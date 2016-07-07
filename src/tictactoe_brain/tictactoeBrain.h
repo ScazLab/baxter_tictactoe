@@ -68,8 +68,8 @@ private:
                                                             decides the next move. We use a pointer 
                                                             because we could have different strategies. */
 
-    ArmController * left_arm_controller;
-    ArmController * right_arm_controller;
+    ArmController * _left_ac;
+    ArmController * _right_ac;
 
     bool has_cheated;
 
