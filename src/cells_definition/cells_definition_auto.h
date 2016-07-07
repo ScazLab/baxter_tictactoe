@@ -11,7 +11,7 @@
 #define CELLS_DEFINITION_AUTO_H
 
 #include <pthread.h>
-
+#include <iostream>
 #include <string>
 
 #include <ros/ros.h>
@@ -74,6 +74,12 @@ private:
      * @return     centroid of the contour
      */
 	cv::Point findCentroid(std::vector<cv::Point> contour);
+
+    std::string intToString( const int a );
+
+    static bool ascendingY(std::vector<cv::Point> i, std::vector<cv::Point> j);
+
+    static bool ascendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
 public:
 

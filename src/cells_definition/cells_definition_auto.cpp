@@ -13,7 +13,7 @@ cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("
     
     service = node_handle.advertiseService("baxter_tictactoe/define_cells", &cellsDefinition::defineCells, this);
     
-    cv::namedWindow(cellsDefinition::window_name);
+    cv::namedWindow(cellsDefinition::window_name, cv::WINDOW_NORMAL);
 }
 
 cellsDefinition::~cellsDefinition()
@@ -90,6 +90,29 @@ cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
 	double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
 	cv::Point point(x,y);
 	return point;
+}
+
+std::string cellsDefinition::intToString( const int a )
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
+
+bool cellsDefinition::ascendingY(vector<cv::Point> i, vector<cv::Point> j) 
+{
+    double y_i = moments(i, false).m01 / moments(i, false).m00;
+    double y_j = moments(j, false).m01 / moments(j, false).m00;
+
+    return y_i < y_j;
+}
+
+bool cellsDefinition::ascendingX(vector<cv::Point> i, vector<cv::Point> j) 
+{
+    double x_i = moments(i, false).m10 / moments(i, false).m00;
+    double x_j = moments(j, false).m10 / moments(j, false).m00;
+
+    return x_i < x_j;
 }
 
 void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
@@ -174,7 +197,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         board.cells.clear();
         pthread_mutex_unlock(&mutex);
 
-       // aproximate cell contours to quadrilaterals
+        // aproximate cell contours to quadrilaterals
         vector<vector<cv::Point> > apx_contours;
         for(int i = 0; i < contours.size(); i++)
         {
@@ -199,57 +222,75 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
         // sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
         // test shows that findContours apparently finds contours in ascending order of y-coordinate already)
+            
+        std::sort(apx_contours.begin(), apx_contours.end(), ascendingY);        
 
-        // find leftmost and rightmost centroid
-        cv::Point leftmost_x(cell_centroids[0]);
-        cv::Point rightmost_x(cell_centroids[0]);
-        cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
-
-        for(int i = 0; i < cell_centroids.size(); i++)
+        for(int i = 0; i <=6; i += 3)
         {
-            if(cell_centroids[i].x < leftmost_x.x) {
-                leftmost_x = cell_centroids[i];
-            }
-            if(cell_centroids[i].x > rightmost_x.x) {
-                rightmost_x = cell_centroids[i];
-            }
+            std::sort(apx_contours.begin() + i, apx_contours.begin() + i + 3, ascendingX);        
+        }
+
+        for(int i = 0; i < apx_contours.size(); i++)
+        {
+            Cell cell(apx_contours[i]);
+            pthread_mutex_lock(&mutex);
+            board.cells.push_back(cell);
+            pthread_mutex_unlock(&mutex);   
         }
 
 
-        // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
-        // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
-        // in ascending order. (Note that x and y values are compared using cell centroids)
-        if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
-        {
-            for(int i = apx_contours.size() - 1; i >= 0; i--)
-            {
-                Cell cell(apx_contours[i]);
-                pthread_mutex_lock(&mutex);
-                board.cells.push_back(cell);
-                pthread_mutex_unlock(&mutex);
-            }
-        }
-        // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
-        // the leftmost cell, the board is tilted to the left (counter-clockwise). 
-        // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
-        // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
-        // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
-        // (Note that x and y values are compared using cell centroids)
-        else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
-        {
-            int side_len = sqrt(apx_contours.size() + 1);
-            // int thickness = contours.size();
-            for(int i = side_len; i >= 1; i--)
-            {
-                for(int j = side_len; j >= 1; j--)
-                {
-                    Cell cell(apx_contours[i * side_len - j]);
-                    pthread_mutex_lock(&mutex);
-                    board.cells.push_back(cell);
-                    pthread_mutex_unlock(&mutex);
-                }       
-            }
-        }        
+
+
+        // // find leftmost and rightmost centroid
+        // cv::Point leftmost_x(cell_centroids[0]);
+        // cv::Point rightmost_x(cell_centroids[0]);
+        // cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
+
+        // for(int i = 0; i < cell_centroids.size(); i++)
+        // {
+        //     if(cell_centroids[i].x < leftmost_x.x) {
+        //         leftmost_x = cell_centroids[i];
+        //     }
+        //     if(cell_centroids[i].x > rightmost_x.x) {
+        //         rightmost_x = cell_centroids[i];
+        //     }
+        // }
+
+
+        // // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
+        // // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
+        // // in ascending order. (Note that x and y values are compared using cell centroids)
+        // if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
+        // {
+        //     for(int i = apx_contours.size() - 1; i >= 0; i--)
+        //     {
+        //         Cell cell(apx_contours[i]);
+        //         pthread_mutex_lock(&mutex);
+        //         board.cells.push_back(cell);
+        //         pthread_mutex_unlock(&mutex);
+        //     }
+        // }
+        // // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
+        // // the leftmost cell, the board is tilted to the left (counter-clockwise). 
+        // // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
+        // // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
+        // // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
+        // // (Note that x and y values are compared using cell centroids)
+        // else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
+        // {
+        //     int side_len = sqrt(apx_contours.size() + 1);
+        //     // int thickness = contours.size();
+        //     for(int i = side_len; i >= 1; i--)
+        //     {
+        //         for(int j = side_len; j >= 1; j--)
+        //         {
+        //             Cell cell(apx_contours[i * side_len - j]);
+        //             pthread_mutex_lock(&mutex);
+        //             board.cells.push_back(cell);
+        //             pthread_mutex_unlock(&mutex);
+        //         }       
+        //     }
+        // }        
 
         pthread_mutex_lock(&mutex);
         img_loaded = true;
@@ -264,11 +305,6 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
-    // for(int i = 0; i < board.cells.size(); i++){
-    //     vector<vector<cv::Point> > disp_contours;
-    //     disp_contours.push_back(board.cells[i].contours);
-    //     drawContours(img_gray, disp_contours, 0, cv::Scalar(0,255,255), 3, 8);
-    // }
 
     cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
     cv::imshow(cellsDefinition::window_name, board_cells);
