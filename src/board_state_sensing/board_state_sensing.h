@@ -6,6 +6,7 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/DefineCells.h"
+#include "baxter_tictactoe/ScanState.h"
 
 class BoardState
 {
@@ -14,7 +15,8 @@ private:
 
     ros::NodeHandle node_handle;
     ros::Publisher  board_publisher;
-    ros::ServiceClient client;
+    ros::ServiceClient cells_client;
+    ros::ServiceClient scan_client;
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber     image_subscriber;
 

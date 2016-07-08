@@ -91,28 +91,38 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
-    ROS_ASSERT_MSG(client, "Empty client");
+    bool scan_done = false;
+    scan_client = node_handle.serviceClient<ScanState>("/baxter_tictactoe/scan_state");
+    ScanState scan_srv;
 
-    DefineCells srv;
+    if(scan_client.call(scan_srv))
+    {
+        scan_done = scan_srv.response.state;
+    }
+
+
+    cells_client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
+    ROS_ASSERT_MSG(cells_client, "Empty client");
+
+    DefineCells cells_srv;
 
     // if(client.call(srv) && board.cells.size() != 9)
-    if(client.call(srv) && board.cells.size() != 9)
+    if(cells_client.call(cells_srv) && scan_done && board.cells.size() != 9)
     {
         board.cells.clear();
-        int cells_num = srv.response.board.cells.size();
+        int cells_num = cells_srv.response.board.cells.size();
         for(int i = 0; i < cells_num; i++)
         {
             cell.contours.clear();
-            int edges_num = srv.response.board.cells[i].contours.size();
+            int edges_num = cells_srv.response.board.cells[i].contours.size();
             for(int j = 0; j < edges_num; j++)
             {
                 
-                cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
+                cv::Point point(cells_srv.response.board.cells[i].contours[j].x, cells_srv.response.board.cells[i].contours[j].y);
                 cell.contours.push_back(point);
             }
 
-            switch(srv.response.board.cells[i].state)
+            switch(cells_srv.response.board.cells[i].state)
             {
                 case MsgCell::EMPTY:
                     cell.state = empty;

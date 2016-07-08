@@ -2,6 +2,7 @@
 
 using namespace ttt;
 using namespace std;
+using namespace baxter_tictactoe;
 
 bool ttt::operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2)
 {
@@ -20,7 +21,7 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 
 // traj=false -> arm movement done via inverse kinematics (ArmController)
 // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) : _robot_color(robot_color), traj(traj), _move_commander("place_token", true) // true causes the client to spin its own thread
+tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) : _robot_color(robot_color), traj(traj), _setup(false), _move_commander("place_token", true) // true causes the client to spin its own thread
 {
     ROS_DEBUG("[tictactoeBrain] traj = %d", traj);
     if(traj == false)
@@ -40,6 +41,7 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         _left_ac->scanBoard();
         while(_left_ac->getState() != SCAN){ros::spinOnce();}
     }
+    _setup = true;
 
     _number_of_tokens_on_board.set(0);
 
@@ -74,6 +76,7 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
     _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
+    _scan_state = _nh.advertiseService("baxter_tictactoe/scan_state", &tictactoeBrain::scanState, this);
 
     qsrand(ros::Time::now().nsec);
     set_strategy(strategy);
@@ -86,6 +89,12 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
         ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");       
     }
+}
+
+bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res)
+{
+    res.state = _setup == true ? true : false;
+    return true;
 }
 
 void tictactoeBrain::new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)
@@ -406,11 +415,14 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     {
         if (robot_turn) // Robot's turn
         {
+            cout << "robot turn" << endl;
+
             // n_robot_tokens=get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
             n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
             say_sentence("It is my turn",0.3);
             int cell_to_move = get_next_move(cheating);
             ROS_DEBUG_STREAM("[tictactoeBrain] Robot's token to " << cell_to_move);
+            cout << "get next move" << endl;
 
             if(traj == false)
             {
@@ -418,6 +430,7 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
                 while(_left_ac->getState() != PICK_UP){ros::spinOnce();}
                 _left_ac->putDownToken(cell_to_move);
                 while(_left_ac->getState() != PUT_DOWN){ros::spinOnce();}  
+                cout << "after arm movement" << endl;
             }
 
             if(traj == true)
@@ -443,12 +456,15 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
         }
         else // Participant's turn
         {
+            cout << "participant turn" << endl;
+
             ROS_INFO("[tictactoeBrain] Waiting for the participant's move.");
             say_sentence("It is your turn",0.1);
             wait_for_opponent_turn(n_opponent_tokens); /* Waiting for my turn: the participant 
                                                           has to place one token, so we wait 
                                                           until the number of the opponent's 
                                                           tokens increases. */
+            cout << "after participant move" << endl;
         }
         robot_turn=!robot_turn;
     }

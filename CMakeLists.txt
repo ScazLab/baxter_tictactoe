@@ -65,6 +65,7 @@ add_message_files(FILES
 add_service_files(FILES
     SetTrajectoryType.srv
     DefineCells.srv
+    ScanState.srv
 )
 
 #Required for generating the messages related to actionlib
