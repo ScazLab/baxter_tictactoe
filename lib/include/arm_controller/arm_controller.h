@@ -132,6 +132,13 @@ class ROSThreadClass
         ROSThreadClass(std::string limb);
         virtual ~ROSThreadClass();
 
+        pthread_mutex_t _mutex_img;
+        pthread_mutex_t _mutex_pos;    
+        // pthread_mutex_t _mutex_rng;
+
+        pthread_mutexattr_t _attr_img;
+        pthread_mutexattr_t _attr_pos;
+
         /*
          * starts thread that executes the internal thread entry function
          * 
@@ -201,7 +208,7 @@ class ROSThreadClass
         std::string _limb;
         ttt::Vacuum_Gripper * _gripper;
         ros::Time _init_time;
-        geometry_msgs::Point _state; // member 'x' records state change, member 'y' stores time state was changed 
+        geometry_msgs::Point _state; // member 'x' records state change, member 'y' stores time state was changed     
 
         /*
          * function that will be spun out as a thread
@@ -245,6 +252,8 @@ class ROSThreadClass
          */    
 
         void setState(int state);
+
+        void pause();
 
     private:
         static void * InternalThreadEntryFunc(void * This);
@@ -321,7 +330,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void checkForToken(cv::Point2d * offset);
+        void checkForToken(cv::Point2d &offset);
 
         /*
          * identifies token and calculates offset distance required to move hand camera
@@ -332,7 +341,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void processImage(cv::Point2d * offset);
+        void processImage(cv::Point2d &offset);
 
         /*
          * isolates blue colored object in raw image
@@ -341,7 +350,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void isolateBlue(cv::Mat * output);
+        void isolateBlue(cv::Mat &output);
 
         /*
          * isolates black colored object in raw image
@@ -350,7 +359,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void isolateBlack(cv::Mat * output);
+        void isolateBlack(cv::Mat &output);
 
         /*
          * isolates board boundaries from image 
@@ -360,7 +369,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void isolateBoard(cv::Mat input, cv::Mat * output, int * board_y);
+        void isolateBoard(cv::Mat input, cv::Mat &output, int &board_y);
 
         /*
          * isolates token from image
@@ -371,7 +380,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void isolateToken(cv::Mat input, int board_y, cv::Mat *output, Contours *contours);
+        void isolateToken(cv::Mat input, int board_y, cv::Mat &output, Contours &contours);
 
         /*
          * calculates offset distance from arm to token
@@ -381,7 +390,7 @@ class PickUpTokenClass : public ROSThreadClass
          * return     N/A
          */
 
-        void setOffset(Contours contours, cv::Point2d *offset, cv::Mat *output);
+        void setOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 };
 
 class ScanBoardClass : public ROSThreadClass 
