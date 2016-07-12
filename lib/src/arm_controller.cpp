@@ -7,8 +7,8 @@ using namespace sensor_msgs;
 using namespace cv;
 
 /*
-    pthread change printf to pause()
     gripToken's isolateBlack/Board when token is outside of board's view
+
     putDownToken's hoverAboveCell drop height and threshold
     scanBoard moving to 5th cell's y before re-scanning
     scanBoard seed angles for preventing scan pose that blocks head camera
@@ -143,9 +143,8 @@ void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg
     pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_pos);
     _curr_pose = msg.pose;
-    pause();
+    _curr_position = _curr_pose.position;
     pthread_mutex_unlock(&_mutex_pos);
-    pause();
 }
 
 void ROSThreadClass::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
@@ -165,10 +164,10 @@ void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
  
     pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_img);
-    pause();  
     _curr_img = cv_ptr->image.clone();
+    _curr_img_size = _curr_img.size();
+    _curr_img_empty = _curr_img.empty();
     pthread_mutex_unlock(&_mutex_img);   
-    pause();    
 }
 
 geometry_msgs::Point ROSThreadClass::getState() {return _state;}
@@ -201,15 +200,10 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
         pthread_mutex_lock(&_mutex_pos);   
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
-            pause();
             pthread_mutex_unlock(&_mutex_pos);
             break;
         }
-        else 
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_pos);
-        }
+        else {pthread_mutex_unlock(&_mutex_pos);}
     }
 }
 
@@ -237,15 +231,10 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped, string mode)
         pthread_mutex_lock(&_mutex_pos);   
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
-            pause();
             pthread_mutex_unlock(&_mutex_pos);
             break;
         }
-        else 
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_pos);
-        }
+        else {pthread_mutex_unlock(&_mutex_pos);}
     }
 }
 
@@ -281,7 +270,6 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 
         if((ros::Time::now() - start).toSec() > 5 || (*pose_stamped).pose.position.z > thresh_z) 
         {
-            // ROS_ERROR("[Arm Controller] Arm cannot reach requested position. Releasing any object being gripped by arm...");
             _gripper->blow();
             break;
         }
@@ -322,20 +310,9 @@ void MoveToRestClass::InternalThreadEntry()
 {
     while(ros::ok())
     {
-        ros::Rate(100).sleep();
-
-        pause();  // don't remove these prints or it will crash ahahah
-        pthread_mutex_lock(&_mutex_pos);   
-        if(!(_curr_pose.position.x == 0 && _curr_pose.position.y == 0 && _curr_pose.position.z == 0))
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_pos);            
+        if(!(_curr_position.x == 0 && _curr_position.y == 0 && _curr_position.z == 0))
+        {       
             break;
-        }
-        else 
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_pos);
         }
     }
 
@@ -369,15 +346,10 @@ void MoveToRestClass::InternalThreadEntry()
         pthread_mutex_lock(&_mutex_pos);   
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
-            pause();
             pthread_mutex_unlock(&_mutex_pos);               
             break;
         }
-        else 
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_pos);        
-        }
+        else {pthread_mutex_unlock(&_mutex_pos);}
     }
 
     setState(REST);
@@ -419,22 +391,8 @@ void PickUpTokenClass::InternalThreadEntry()
 
     while(ros::ok())
     {
-        pause();  // don't remove these prints or it will crash ahahah
-        pthread_mutex_lock(&_mutex_img);   
-        if(!_curr_img.empty())
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_img);
-            break;
-        }        
-        else 
-        {
-            pause();
-            pthread_mutex_unlock(&_mutex_img);            
-        }
-        ros::Rate(100).sleep();
+        if(!_curr_img_empty) break;
     }
-
 
     hoverAboveTokens("high");
     gripToken();
@@ -453,7 +411,6 @@ void PickUpTokenClass::gripToken()
     namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
     resizeWindow("[PickUpToken] Processed", 1000, 1000);
     resizeWindow("[PickUpToken] Rough", 1000, 1000);
-
 
     cv::Point2d offset;
     checkForToken(offset);
@@ -570,10 +527,8 @@ void PickUpTokenClass::isolateBlue(Mat &output)
 
     pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_img);   
-    pause();  // don't remove these prints or it will crash ahahah
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
     pthread_mutex_unlock(&_mutex_img);   
-    pause();  // don't remove these prints or it will crash ahahah
 
     inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
 }
@@ -584,24 +539,15 @@ void PickUpTokenClass::isolateBlack(Mat &output)
 
     pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_img);   
-    pause();  // don't remove these prints or it will crash ahahah
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
     pthread_mutex_unlock(&_mutex_img);  
-    pause();  // don't remove these prints or it will crash ahahah 
 
     threshold(gray, output, 55, 255, cv::THRESH_BINARY_INV);
 }
 
 void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
 {
-    pause();  // don't remove these prints or it will crash ahahah
-    pthread_mutex_lock(&_mutex_pos);   
-    pause();
-    Mat curr = _curr_img.clone();
-    pause();
-    pthread_mutex_unlock(&_mutex_pos);
-
-    output = Mat::zeros(curr.size(), CV_8UC1);
+    output = Mat::zeros(_curr_img_size, CV_8UC1);
 
     vector<cv::Vec4i> hierarchy; // captures contours within contours 
     Contours contours;
@@ -628,10 +574,10 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
         }
     }
 
-    output = Mat::zeros(curr.size(), CV_8UC1);
+    output = Mat::zeros(_curr_img_size, CV_8UC1);
 
     vector<cv::Point> contour = contours[next_largest_index];
-    int low_y = curr.size().height;
+    int low_y = _curr_img_size.height;
     
     for(int i = 0; i < contour.size(); i++)
     {
@@ -640,18 +586,12 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
 
     board_y = low_y;
 
-    line(output, cv::Point(0, low_y), cv::Point(curr.size().width, low_y), cv::Scalar(130,256,256));
-    line(output, cv::Point(0, low_y - 10), cv::Point(curr.size().width - 10, low_y - 10), cv::Scalar(130,256,256));
+    line(output, cv::Point(0, low_y), cv::Point(_curr_img_size.width, low_y), cv::Scalar(130,256,256));
+    line(output, cv::Point(0, low_y - 10), cv::Point(_curr_img_size.width - 10, low_y - 10), cv::Scalar(130,256,256));
 }
 
 void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
 {
-    pause();  // don't remove these prints or it will crash ahahah
-    pthread_mutex_lock(&_mutex_pos);   
-    pause();
-    Mat curr = _curr_img.clone();
-    pause();
-    pthread_mutex_unlock(&_mutex_pos);
 
     Contours raw_contours, clean_contours;
     findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -698,25 +638,18 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contour
         }
     }
 
-    output = Mat::zeros(curr.size(), CV_8UC1);
+    output = Mat::zeros(_curr_img_size, CV_8UC1);
     for(int i = 0; i < (contours).size(); i++)
     {
         drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
     }
 
-    line(output, cv::Point(0, board_y), cv::Point(curr.size().width, board_y), cv::Scalar(130,256,256));
+    line(output, cv::Point(0, board_y), cv::Point(_curr_img_size.width, board_y), cv::Scalar(130,256,256));
 }              
 
 void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 {
-    pause();  // don't remove these prints or it will crash ahahah
-    pthread_mutex_lock(&_mutex_pos);   
-    pause();
-    Mat curr = _curr_img.clone();
-    pause();
-    pthread_mutex_unlock(&_mutex_pos);
-
-    output = Mat::zeros(curr.size(), CV_8UC1);
+    output = Mat::zeros(_curr_img_size, CV_8UC1);
 
     for(int i = 0; i <contours.size(); i++)
     {
@@ -754,12 +687,12 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
         double y_mid = y_min + ((y_max - y_min) / 2);
         circle(output, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
 
-        circle(output, cv::Point(curr.size().width / 2, curr.size().height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+        circle(output, cv::Point(_curr_img_size.width / 2, _curr_img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
         double token_area = (x_max - x_min) * (y_max - y_min);
 
-        (offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (curr.size().width / 2)); 
-        (offset).y = (4.7807 /*constant*/ / token_area) * ((curr.size().height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/
+        (offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img_size.width / 2)); 
+        (offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img_size.height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/
     }
     // when hand camera is blind due to being too close to token, go straight down;
     else if(contours.size() < 4)
@@ -793,16 +726,9 @@ void ScanBoardClass::InternalThreadEntry()
 {
     hoverAboveBoard();
 
-    while(ros::ok()) 
+    while(ros::ok())
     {
-        // pthread_mutex_lock(&_mutex_img);
-        if(!_curr_img.empty())
-        {
-            // pthread_mutex_unlock(&_mutex_img);
-            break;
-        }
-        // else {pthread_mutex_unlock(&_mutex_img);}
-        ros::Rate(100).sleep();
+        if(!_curr_img_empty) break;
     }
 
     scan();
@@ -831,19 +757,29 @@ void ScanBoardClass::hoverAboveBoard()
     goToPose(req_pose_stamped);
 }
 
+void ScanBoardClass::hoverAboveCenter()
+{
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    Utils::setPosition( &req_pose_stamped.pose, 0.575, 0.100 + _offsets[4].y, 0.445);
+    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    goToPose(req_pose_stamped);
+}
+
 void ScanBoardClass::scan()
 {
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);        
+    processImage("run", dist);  
+
+    // hoverAboveCenter();
+    // processImage("run", dist);   
 }
 
 void ScanBoardClass::setDepth(float *dist)
 {
-    // pthread_mutex_lock(&_mutex_pos);
-    geometry_msgs::Point init_pos = _curr_pose.position;
-    // pthread_mutex_unlock(&_mutex_pos);
+    geometry_msgs::Point init_pos = _curr_position;
 
     ros::Time start_time = ros::Time::now();                
 
@@ -883,9 +819,7 @@ void ScanBoardClass::setDepth(float *dist)
         // else {pthread_mutex_lock(&_mutex_rng);}
     }
 
-    // pthread_mutex_lock(&_mutex_pos);
-    *dist = init_pos.z - _curr_pose.position.z + 0.04;
-    // pthread_mutex_unlock(&_mutex_pos);
+    *dist = init_pos.z - _curr_position.z + 0.04;
 }
 
 void ScanBoardClass::processImage(string mode, float dist)
@@ -896,13 +830,14 @@ void ScanBoardClass::processImage(string mode, float dist)
 
     while(ros::ok())
     {
-        // pthread_mutex_lock(&_mutex_img);   
-        Mat curr = _curr_img.clone();
-        // pthread_mutex_unlock(&_mutex_img);   
-
         Contours contours;
         vector<cv::Point> centroids, board_corners, cell_to_corner;
-        Mat binary, board, zone = curr;
+        
+        pause();
+        pthread_mutex_lock(&_mutex_img);   
+        Mat binary, board, zone = _curr_img.clone();
+        pthread_mutex_unlock(&_mutex_img);   
+
         int board_area;
 
         isolateBlack(&binary);
@@ -930,10 +865,10 @@ void ScanBoardClass::processImage(string mode, float dist)
                 int interval = 10;
                 while(ros::ok())
                 {
-                    // pthread_mutex_lock(&_mutex_img);   
-                    Mat curr = _curr_img.clone();
-                    // pthread_mutex_unlock(&_mutex_img);   
-                    zone = curr;
+                    pause();
+                    pthread_mutex_lock(&_mutex_img);   
+                    Mat zone = _curr_img.clone();
+                    pthread_mutex_unlock(&_mutex_img);  
 
                     line(zone, centroids[0] + cell_to_corner[0], centroids[2] + cell_to_corner[1], cv::Scalar(0,0,255), 1);
                     line(zone, centroids[2] + cell_to_corner[1], centroids[8] + cell_to_corner[3], cv::Scalar(0,0,255), 1);
@@ -974,17 +909,16 @@ void ScanBoardClass::processImage(string mode, float dist)
 void ScanBoardClass::isolateBlack(Mat * output)
 {
     Mat gray;
-    // pthread_mutex_lock(&_mutex_img);   
+    pause();
+    pthread_mutex_lock(&_mutex_img);   
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
-    // pthread_mutex_unlock(&_mutex_img);   
+    pthread_mutex_unlock(&_mutex_img);   
     threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
 }
 
 void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, vector<cv::Point> * board_corners, Mat input, Mat * output)
 {
-    // pthread_mutex_lock(&_mutex_img);   
-    *output = Mat::zeros(_curr_img.size(), CV_8UC1);
-    // pthread_mutex_unlock(&_mutex_img);   
+    *output = Mat::zeros(_curr_img_size, CV_8UC1);
 
     vector<cv::Vec4i> hierarchy; // captures contours within contours 
 
@@ -1077,9 +1011,7 @@ bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j)
 
 void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
 {
-    // pthread_mutex_lock(&_mutex_img);   
-    cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
-    // pthread_mutex_unlock(&_mutex_img);   
+    cv::Point center(_curr_img_size.width / 2, _curr_img_size.height / 2);
 
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
     cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
@@ -1104,7 +1036,7 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, M
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
-        _offsets[i].z = dist - 0.070;
+        _offsets[i].z = dist - 0.065;
     }
 }
 
@@ -1157,9 +1089,7 @@ bool ScanBoardClass::offsetsReachable()
 
 bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
 {
-    // pthread_mutex_lock(&_mutex_img);   
-    cv::Point center(_curr_img.size().width / 2, _curr_img.size().height / 2);
-    // pthread_mutex_unlock(&_mutex_img);   
+    cv::Point center(_curr_img_size.width / 2, _curr_img_size.height / 2);
 
     geometry_msgs::Point offset;
 

@@ -203,8 +203,11 @@ class ROSThreadClass
     protected:
         ros::Publisher _joint_cmd_pub;
         cv::Mat _curr_img;
+        cv::Size _curr_img_size;
+        bool _curr_img_empty;
         float _curr_range, _curr_max_range, _curr_min_range;
         geometry_msgs::Pose _curr_pose;
+        geometry_msgs::Point _curr_position;
         std::string _limb;
         ttt::Vacuum_Gripper * _gripper;
         ros::Time _init_time;
@@ -425,6 +428,8 @@ class ScanBoardClass : public ROSThreadClass
          */
 
         void hoverAboveBoard();
+
+        void hoverAboveCenter();
 
         void scan();
 
