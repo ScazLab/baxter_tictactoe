@@ -8,9 +8,6 @@ using namespace cv;
 
 /*
     gripToken's isolateBlack/Board when token is outside of board's view
-
-    putDownToken's hoverAboveCell drop height and threshold
-    scanBoard moving to 5th cell's y before re-scanning
     scanBoard seed angles for preventing scan pose that blocks head camera
 */
 
@@ -394,9 +391,39 @@ void PickUpTokenClass::InternalThreadEntry()
         if(!_curr_img_empty) break;
     }
 
-    hoverAboveTokens("high");
+    // hoverAboveTokens("high");
     gripToken();
-    hoverAboveTokens("low");
+    cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+    // hoverAboveTokens("high");
+    // gripToken();
+    // cout << "--------------------------------------------------------------------" << endl;
+
+
+    // hoverAboveTokens("low");
 
     setState(PICK_UP);
     pthread_exit(NULL);  
@@ -407,10 +434,14 @@ typedef vector<vector<cv::Point> > Contours;
 
 void PickUpTokenClass::gripToken()
 {
+    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
     namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-    resizeWindow("[PickUpToken] Processed", 1000, 1000);
-    resizeWindow("[PickUpToken] Rough", 1000, 1000);
+    // namedWindow("[PickUpToken] Final", WINDOW_NORMAL);
+    resizeWindow("[PickUpToken] Raw",       700, 500);
+    resizeWindow("[PickUpToken] Processed", 700, 500);
+    resizeWindow("[PickUpToken] Rough",     700, 500);
+    // resizeWindow("[PickUpToken] Final",     700, 500);
 
     cv::Point2d offset;
     checkForToken(offset);
@@ -421,55 +452,50 @@ void PickUpTokenClass::gripToken()
 
     while(ros::ok())
     {
-        cout << "gripToken(): before image processing" << endl;
         processImage(offset);
-        cout << "gripToken(): before setting pose" << endl;
 
-        ros::Time now_time = ros::Time::now();
+            // ros::Time now_time = ros::Time::now();
 
-        req_pose_stamped.header.frame_id = "base";
+            // req_pose_stamped.header.frame_id = "base";
 
-        Utils::setPosition(&req_pose_stamped.pose, 
-                            prev_offset.x + 0.07 * offset.x,
-                            prev_offset.y + 0.07 * offset.y,
-                            0.375 + (-0.05) * (now_time - start_time).toSec());
+            // Utils::setPosition(&req_pose_stamped.pose, 
+            //                     prev_offset.x + 0.07 * offset.x,
+            //                     prev_offset.y + 0.07 * offset.y,
+            //                     0.375 + (-0.05) * (now_time - start_time).toSec());
 
-        prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
-        prev_offset.y = prev_offset.y + 0.07 * offset.y;
+            // prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+            // prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-        Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+            // Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
-        cout << "gripToken(): before getting and pulbishing joint angles" << endl;
+            // vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
-        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+            // JointCommand joint_cmd;
+            // joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        JointCommand joint_cmd;
-        joint_cmd.mode = JointCommand::POSITION_MODE;
+            // Utils::setNames(&joint_cmd, _limb);
+            // joint_cmd.command.resize(7);
 
-        Utils::setNames(&joint_cmd, _limb);
-        joint_cmd.command.resize(7);
+            // for(int i = 0; i < 7; i++) {
+            //     joint_cmd.command[i] = joint_angles[i];
+            // }
 
-        for(int i = 0; i < 7; i++) {
-            joint_cmd.command[i] = joint_angles[i];
-        }
+            // _joint_cmd_pub.publish(joint_cmd);
+            ros::Rate(500).sleep();
+        
+        if(_curr_position.z < 0.1) break;
 
-        _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
-     
-        cout << "gripToken(): before collision checking" << endl;
-
-        // pthread_mutex_lock(&_mutex_rng);
-        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
-        {
-            // pthread_mutex_unlock(&_mutex_rng);
-            break;
-        }
-        // else {pthread_mutex_unlock(&_mutex_rng);}
+        // if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
+        // {
+        //     break;
+        // }
     }
-    _gripper->suck();
+    // _gripper->suck();
 
+    destroyWindow("[PickUpToken] Raw");
     destroyWindow("[PickUpToken] Processed"); 
     destroyWindow("[PickUpToken] Rough");
+    // destroyWindow("[PickUpToken] Final");
 }   
 
 void PickUpTokenClass::hoverAboveTokens(std::string height)
@@ -504,20 +530,18 @@ void PickUpTokenClass::processImage(cv::Point2d &offset)
     Contours contours;
     int board_y;
 
-    ROS_INFO("   processImage(): before isolating black");
     isolateBlack(black);
-    ROS_INFO("   processImage(): before isolating board");
     isolateBoard(black.clone(), board, board_y);
 
-    ROS_INFO("   processImage(): before isolating blue");
     isolateBlue(blue);
-    ROS_INFO("   processImage(): before isolating token");
     isolateToken(blue.clone(), board_y, token_rough, contours);
-    ROS_INFO("   processImage(): before setting offsets");
     setOffset(contours, offset, token);
 
-    // imshow("[PickUpToken] Processed", _curr_img.clone());
+    imshow("[PickUpToken] Raw", _curr_img.clone());
+    imshow("[PickUpToken] Processed", black);
     imshow("[PickUpToken] Rough", token_rough);
+    // imshow("[PickUpToken] Final", token);
+
     waitKey(30);
 }
 
@@ -651,13 +675,13 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
 {
     output = Mat::zeros(_curr_img_size, CV_8UC1);
 
-    for(int i = 0; i <contours.size(); i++)
+    // when hand camera is blind due to being too close to token, go straight down;
+    if(contours.size() < 2)
     {
-        drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
+        offset = cv::Point2d(0,0);
+        cout << "offset " << offset.x << " " << offset.y << endl;
     }
-    
-    // if 'noise' contours are present, do nothing
-    if(contours.size() == 4)
+    else if(contours.size() <= 4)
     {
         // find highest and lowest x and y values from token triangles contours
         // to find x-y coordinate of top left token edge and token side length
@@ -693,11 +717,8 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
 
         (offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img_size.width / 2)); 
         (offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img_size.height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/
-    }
-    // when hand camera is blind due to being too close to token, go straight down;
-    else if(contours.size() < 4)
-    {
-        offset = cv::Point2d(0,0);
+        
+        cout << "offset " << offset.x << " " << offset.y << endl;       
     }
 }
 
@@ -729,6 +750,7 @@ void ScanBoardClass::InternalThreadEntry()
     while(ros::ok())
     {
         if(!_curr_img_empty) break;
+        ros::Rate(1000).sleep();
     }
 
     scan();
@@ -757,24 +779,12 @@ void ScanBoardClass::hoverAboveBoard()
     goToPose(req_pose_stamped);
 }
 
-void ScanBoardClass::hoverAboveCenter()
-{
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition( &req_pose_stamped.pose, 0.575, 0.100 + _offsets[4].y, 0.445);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
-    goToPose(req_pose_stamped);
-}
-
 void ScanBoardClass::scan()
 {
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);  
-
-    // hoverAboveCenter();
-    // processImage("run", dist);   
+    processImage("run", dist);   
 }
 
 void ScanBoardClass::setDepth(float *dist)
@@ -899,11 +909,11 @@ void ScanBoardClass::processImage(string mode, float dist)
         }
 
         imshow("[ScanBoard] Rough", zone);
-        // imshow("[ScanBoard] Processed", board);
+        imshow("[ScanBoard] Processed", board);
     }
 
     destroyWindow("[ScanBoard] Rough");
-    // destroyWindow("[ScanBoard] Processed");
+    destroyWindow("[ScanBoard] Processed");
 }
 
 void ScanBoardClass::isolateBlack(Mat * output)
@@ -1025,13 +1035,13 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, M
     (*centroids).resize(9);
     for(int i = contours.size() - 1; i >= 0; i--)
     {
-        double x = moments(contours[i], false).m10 / cv::moments(contours[i], false).m00;
-        double y = moments(contours[i], false).m01 / cv::moments(contours[i], false).m00;
+        double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
+        double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
         cv::Point centroid(x,y);  
 
         (*centroids)[i] = centroid;
 
-        cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        // cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
@@ -1067,9 +1077,9 @@ bool ScanBoardClass::offsetsReachable()
         PoseStamped req_pose_stamped;
         req_pose_stamped.header.frame_id = "base";
         Utils::setPosition( &req_pose_stamped.pose, 
-                            0.575 + _offsets[i].x, 
-                            0.100 + _offsets[i].y, 
-                            0.445 - _offsets[i].z);
+                            _curr_position.x + _offsets[i].x, 
+                            _curr_position.y + _offsets[i].y, 
+                            _curr_position.z - _offsets[i].z);
         Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
