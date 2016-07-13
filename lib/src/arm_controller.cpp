@@ -481,9 +481,9 @@ void PickUpTokenClass::gripToken()
             // }
 
             // _joint_cmd_pub.publish(joint_cmd);
-            ros::Rate(500).sleep();
+            // ros::Rate(500).sleep();
         
-        if(_curr_position.z < 0.1) break;
+        if(_curr_position.z < 0.0) break;
 
         // if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
         // {
@@ -538,8 +538,8 @@ void PickUpTokenClass::processImage(cv::Point2d &offset)
     setOffset(contours, offset, token);
 
     imshow("[PickUpToken] Raw", _curr_img.clone());
-    imshow("[PickUpToken] Processed", black);
-    imshow("[PickUpToken] Rough", token_rough);
+    imshow("[PickUpToken] Processed", token_rough);
+    imshow("[PickUpToken] Rough", blue);
     // imshow("[PickUpToken] Final", token);
 
     waitKey(30);
@@ -601,17 +601,29 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
     output = Mat::zeros(_curr_img_size, CV_8UC1);
 
     vector<cv::Point> contour = contours[next_largest_index];
+
+    drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED);
+
     int low_y = _curr_img_size.height;
-    
+    int x_min = (contours[0])[0].x;
+    int x_max = 0;    
+
     for(int i = 0; i < contour.size(); i++)
     {
         if(contour[i].y < low_y) low_y = contour[i].y;
+        if(contour[i].x < x_min) x_min = contour[i].x;
+        if(contour[i].x > x_max) x_max = contour[i].x;
     }
 
-    board_y = low_y;
+    if(x_max - x_min > 250) {
+        board_y = low_y;
+    }
+    else 
+    {
+        board_y = _curr_img_size.height;
+    }
 
-    line(output, cv::Point(0, low_y), cv::Point(_curr_img_size.width, low_y), cv::Scalar(130,256,256));
-    line(output, cv::Point(0, low_y - 10), cv::Point(_curr_img_size.width - 10, low_y - 10), cv::Scalar(130,256,256));
+    line(output, cv::Point(0, board_y), cv::Point(_curr_img_size.width, board_y), cv::Scalar(130,256,256), 5);
 }
 
 void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
