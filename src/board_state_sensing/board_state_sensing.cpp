@@ -76,7 +76,7 @@ std::string BoardState::intToString( const int a )
 }
 
 void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{
+{    
     board.resetState();
 
     //converting ROS image format to opencv image format
@@ -100,13 +100,11 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         scan_done = scan_srv.response.state;
     }
 
-
     cells_client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
     ROS_ASSERT_MSG(cells_client, "Empty client");
 
     DefineCells cells_srv;
 
-    // if(client.call(srv) && board.cells.size() != 9)
     if(cells_client.call(cells_srv) && scan_done && board.cells.size() != 9)
     {
         board.cells.clear();
@@ -258,8 +256,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
 
-    /*if (doShow) */cv::waitKey(50);
-    ros::Duration(2).sleep();
+    /*if (doShow) */
+    cv::waitKey(50);
 }
 
 int main(int argc, char** argv)

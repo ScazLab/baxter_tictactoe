@@ -4,34 +4,40 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition() : image_transport(node_handle), window_name("[Cells_Definition_Auto] cell boundaries")
+cellsDefinition::cellsDefinition() : image_transport(node_handle)
 {
     img_loaded = false;
-    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_init(&mutex_b, NULL);
+    pthread_mutex_init(&mutex_i, NULL);
     
 	image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);  
     
     service = node_handle.advertiseService("baxter_tictactoe/define_cells", &cellsDefinition::defineCells, this);
-    
-    cv::namedWindow(cellsDefinition::window_name, cv::WINDOW_NORMAL);
+
+    // cv::namedWindow("[Cells_Definition_Auto] cell boundaries", cv::WINDOW_NORMAL);
+    // cv::resizeWindow("[Cells_Definition_Auto] cell boundaries", 1000, 1000);
+
+    // cv::namedWindow("[Cells_Definition_Auto] raw", cv::WINDOW_NORMAL);
+    // cv::resizeWindow("[Cells_Definition_Auto] raw", 1000, 1000);
 }
 
-cellsDefinition::~cellsDefinition()
+cellsDefinition::~cellsDefinition() 
 {
-	cv::destroyWindow(cellsDefinition::window_name);
+    // cv::destroyWindow("[Cells_Definition_Auto] cell boundaries");
+    // cv::destroyWindow("[Cells_Definition_Auto] raw");
 }
 
 bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
 {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&mutex_i);
     bool img_loaded_copy = img_loaded;
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&mutex_i);
 
     if(img_loaded_copy == true)
     {
         MsgCell cell;
 
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex_b);
         for(int i = 0; i < board.cells.size(); i++)
         {
             cell.state = MsgCell::EMPTY;
@@ -44,7 +50,7 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             }
             res.board.cells[i] = cell;
         }
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&mutex_b);
 
         return true;    
     }
@@ -193,9 +199,9 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
     if(contours.size() == 9)
     {
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex_b);
         board.cells.clear();
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&mutex_b);
 
         // aproximate cell contours to quadrilaterals
         vector<vector<cv::Point> > apx_contours;
@@ -233,79 +239,29 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         for(int i = 0; i < apx_contours.size(); i++)
         {
             Cell cell(apx_contours[i]);
-            pthread_mutex_lock(&mutex);
+            pthread_mutex_lock(&mutex_b);
             board.cells.push_back(cell);
-            pthread_mutex_unlock(&mutex);   
+            pthread_mutex_unlock(&mutex_b);   
         }
 
-        // // find leftmost and rightmost centroid
-        // cv::Point leftmost_x(cell_centroids[0]);
-        // cv::Point rightmost_x(cell_centroids[0]);
-        // cv::Point highest_y(cell_centroids[cell_centroids.size() - 1]);
-
-        // for(int i = 0; i < cell_centroids.size(); i++)
-        // {
-        //     if(cell_centroids[i].x < leftmost_x.x) {
-        //         leftmost_x = cell_centroids[i];
-        //     }
-        //     if(cell_centroids[i].x > rightmost_x.x) {
-        //         rightmost_x = cell_centroids[i];
-        //     }
-        // }
-
-
-        // // if the x-coordinate of the highest cell is closer to the leftmost cell than it is to the
-        // // the rightmost cell, the board is tilted to the right (clockwise). Hence Cell 1 to 9 have y-coordinates 
-        // // in ascending order. (Note that x and y values are compared using cell centroids)
-        // if( (rightmost_x.x - highest_y.x) > (highest_y.x - leftmost_x.x))
-        // {
-        //     for(int i = apx_contours.size() - 1; i >= 0; i--)
-        //     {
-        //         Cell cell(apx_contours[i]);
-        //         pthread_mutex_lock(&mutex);
-        //         board.cells.push_back(cell);
-        //         pthread_mutex_unlock(&mutex);
-        //     }
-        // }
-        // // if the x-coordinate of the highest cell is closer to the rightmost cell than it is to the
-        // // the leftmost cell, the board is tilted to the left (counter-clockwise). 
-        // // Hence the y-coordinates of elements on each row ([1,2,3], [4,5,6], [7,8,9]) decreases from
-        // // left to right, and the lowest y-coordinate of the (i-1)th row is higher than the highest y-coordinate
-        // // of the (i)th row, such that the y-coordinates of Cell 1 to 9, in ascending order, is 3-2-1-6-5-4-9-8-7 
-        // // (Note that x and y values are compared using cell centroids)
-        // else if( (rightmost_x.x - highest_y.x) <= (highest_y.x - leftmost_x.x))
-        // {
-        //     int side_len = sqrt(apx_contours.size() + 1);
-        //     // int thickness = contours.size();
-        //     for(int i = side_len; i >= 1; i--)
-        //     {
-        //         for(int j = side_len; j >= 1; j--)
-        //         {
-        //             Cell cell(apx_contours[i * side_len - j]);
-        //             pthread_mutex_lock(&mutex);
-        //             board.cells.push_back(cell);
-        //             pthread_mutex_unlock(&mutex);
-        //         }       
-        //     }
-        // }        
-
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex_i);
         img_loaded = true;
-        pthread_mutex_unlock(&mutex);
-        // ROS_INFO("[imageCallback(server node)] Image callback has been successfully executed");
+        pthread_mutex_unlock(&mutex_i);
     }
     else
     {
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex_i);
         img_loaded = false;
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&mutex_i);
         // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
 
-    cv::setMouseCallback(cellsDefinition::window_name, onMouseClick, this);
-    cv::imshow(cellsDefinition::window_name, board_cells);
-    cv::waitKey(30);
+    cv::setMouseCallback("[Cells_Definition_Auto] cell boundaries", onMouseClick, this);
+    // cv::imshow("[Cells_Definition_Auto] cell boundaries", board_cells);
+    // cv::imshow("[Cells_Definition_Auto] raw", cv_ptr->image.clone());
+
+    cv::waitKey(3);
 }
 
 

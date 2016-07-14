@@ -38,6 +38,8 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         _right_ac->moveToRest();
         while(!(_left_ac->getState() == REST && _right_ac->getState() == REST)) {ros::spinOnce();}
 
+        cout << "state = REST" << endl;
+
         _left_ac->scanBoard();
         while(_left_ac->getState() != SCAN){ros::spinOnce();}
     }
@@ -57,11 +59,11 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
    
-    if(traj == true)
-    {
-        _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
-        set_movement_type(movement_type);    
-    }
+    // if(traj == true)
+    // {
+    //     _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
+    //     set_movement_type(movement_type);    
+    // }
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
@@ -226,25 +228,25 @@ int tictactoeBrain::victory_move()
     return -1;
 }
 
-bool tictactoeBrain::set_movement_type(bool b)
-{
-    movement_type=b;
-    baxter_tictactoe::SetTrajectoryType srv;
-    srv.request.smooth=(movement_type?true:false);
+// bool tictactoeBrain::set_movement_type(bool b)
+// {
+//     movement_type=b;
+//     baxter_tictactoe::SetTrajectoryType srv;
+//     srv.request.smooth=(movement_type?true:false);
 
-    if(_clnt_movement_type.call(srv))
-    {
-        if (!srv.response.error)
-        {
-            ROS_INFO_STREAM("[tictactoeBrain] Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
-            return true;
-        }
-        ROS_ERROR_STREAM("[tictactoeBrain] Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
-        return false;
-    }
-    ROS_ERROR("[tictactoeBrain] Failed to call service set_movement_type");
-    return false;
-}
+//     if(_clnt_movement_type.call(srv))
+//     {
+//         if (!srv.response.error)
+//         {
+//             ROS_INFO_STREAM("[tictactoeBrain] Movements set to " << (srv.request.smooth?"smooth":"mechanistic"));
+//             return true;
+//         }
+//         ROS_ERROR_STREAM("[tictactoeBrain] Error setting movements to " << (srv.request.smooth?"smooth":"mechanistic"));
+//         return false;
+//     }
+//     ROS_ERROR("[tictactoeBrain] Failed to call service set_movement_type");
+//     return false;
+// }
 
 int tictactoeBrain::get_next_move(bool& cheating)
 {
@@ -405,10 +407,10 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     // say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
     // say_sentence(" and the red tokens in the red square on the left side of the board",6);
     say_sentence("I start the game.",2);
-    set_movement_type(movement_type);
+    // set_movement_type(movement_type);
 
     ROS_WARN("[tictactoeBrain] PRESS ENTER TO START THE GAME");
-    std::cin.get();        
+    std::cin.get();
     uint8_t n_opponent_tokens=0;
     // uint8_t n_robot_tokens=0;
     while ((winner=get_winner())==0 && !is_board_full())
@@ -419,15 +421,20 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
 
             // n_robot_tokens=get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
             n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
-            say_sentence("It is my turn",0.3);
+            say_sentence("It is my turn", 0.3);
             int cell_to_move = get_next_move(cheating);
             ROS_DEBUG_STREAM("[tictactoeBrain] Robot's token to " << cell_to_move);
             cout << "get next move" << endl;
 
             if(traj == false)
             {
+                cout << "before arm movement" << endl;
                 _left_ac->pickUpToken();
-                while(_left_ac->getState() != PICK_UP){ros::spinOnce();}
+                while(_left_ac->getState() != PICK_UP)
+                {
+                    ros::spinOnce();
+                }
+
                 _left_ac->putDownToken(cell_to_move);
                 while(_left_ac->getState() != PUT_DOWN){ros::spinOnce();}  
                 cout << "after arm movement" << endl;

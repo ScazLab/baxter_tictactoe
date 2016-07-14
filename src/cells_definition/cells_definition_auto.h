@@ -57,7 +57,8 @@ private:
 
     bool img_loaded;
 
-    pthread_mutex_t mutex;
+    pthread_mutex_t mutex_b;
+    pthread_mutex_t mutex_i;
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or  

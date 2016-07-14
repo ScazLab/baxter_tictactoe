@@ -429,8 +429,6 @@ class ScanBoardClass : public ROSThreadClass
 
         void hoverAboveBoard();
 
-        void hoverAboveCenter();
-
         void scan();
 
         void setDepth(float *dist);
@@ -481,7 +479,6 @@ class PutDownTokenClass : public ROSThreadClass
 
     private:
         int _cell;
-        geometry_msgs::Point _center; 
         std::vector<geometry_msgs::Point> _offsets;
 
         void hoverAboveCell();

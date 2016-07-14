@@ -32,6 +32,7 @@ int main(int argc, char** argv)
     }
 
     ttt::tictactoeBrain brain(traj); //random strategy by default
+
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
 
@@ -57,7 +58,9 @@ int main(int argc, char** argv)
             brain.set_strategy("smart-cheating");
         }
 
+        cout << "pre: play one game" << endl;
         game_result=brain.play_one_game(cheating);
+        cout << "post: play one game" << endl;
 
         switch(game_result)
         {

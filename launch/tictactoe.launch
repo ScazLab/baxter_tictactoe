@@ -21,6 +21,5 @@
     <param name="cheating" type="bool" value="true" />
     <param name="smooth" type="bool" value="true" />
 
-    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" args="--traj $(arg traj)" respawn="false" output="screen" required="true"/>
-
+    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" args="--traj $(arg traj)" launch-prefix="xterm -e gdb --args" respawn="false" output="screen" required="true"/> 
 </launch>

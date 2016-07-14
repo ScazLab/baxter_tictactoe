@@ -7,7 +7,7 @@ using namespace sensor_msgs;
 using namespace cv;
 
 /*
-    gripToken's isolateToken check if two contours overlap (gripper and token fragment)
+    dest reached after backswing or before backswing and sleep prevents arm from putting
     scanBoard seed angles for preventing scan pose that blocks head camera
 */
 
@@ -201,6 +201,8 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
             break;
         }
         else {pthread_mutex_unlock(&_mutex_pos);}
+
+        // cout << "gotopose" << endl;
     }
 }
 
@@ -390,36 +392,7 @@ void PickUpTokenClass::InternalThreadEntry()
 
     hoverAboveTokens("high");
     gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-    hoverAboveTokens("high");
-    gripToken();
-    cout << "----------------------------------------" << endl;
-
-    // hoverAboveTokens("low");
+    hoverAboveTokens("low");
 
     setState(PICK_UP);
     pthread_exit(NULL);  
@@ -456,9 +429,9 @@ void PickUpTokenClass::gripToken()
         Utils::setPosition(&req_pose_stamped.pose, 
                             prev_offset.x + 0.07 * offset.x,
                             prev_offset.y + 0.07 * offset.y,
-                            0.375 + (-0.05) * (now_time - start_time).toSec());
+                            0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec());
 
-        prev_offset.x = prev_offset.x + 0.07 * offset.x; //cv::Point(req_pose_stamped.pose.position.x, req_pose_stamped.pose.position.y);
+        prev_offset.x = prev_offset.x + 0.07 * offset.x; 
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
         Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
@@ -478,14 +451,14 @@ void PickUpTokenClass::gripToken()
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(500).sleep();
         
-        if(_curr_position.z < -0.05) break;
+        // if(_curr_position.z < -0.05) break;
 
-        // if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
-        // {
-        //     break;
-        // }
+        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
+        {
+            break;
+        }
     }
-    // _gripper->suck();
+    _gripper->suck();
 
     destroyWindow("[PickUpToken] Raw");
     destroyWindow("[PickUpToken] Processed"); 
@@ -615,7 +588,7 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
         if(contour[i].x > x_max) x_max = contour[i].x;
     }
 
-    if(x_max - x_min > 500) {
+    if(x_max - x_min > 275) {
         board_y = low_y;
     }
     else 
@@ -713,7 +686,6 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
     if(contours.size() < 2)
     {
         offset = cv::Point2d(0,0);
-        cout << "offset " << offset.x << offset.y << endl;
     }
     else if(contours.size() <= 4)
     {
@@ -749,13 +721,10 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
 
         double token_area = (x_max - x_min) * (y_max - y_min);
 
-        (offset).x = (4.7807 /*constant*/ / token_area) * (x_mid - (_curr_img_size.width / 2)); 
-        (offset).y = (4.7807 /*constant*/ / token_area) * ((_curr_img_size.height / 2) - y_mid) - 0.013; /*distance between gripper center and camera center*/        
-        
-        cout << "offset " << offset.x << offset.y << endl;
+        (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_curr_img_size.width / 2)); 
+        (offset).y = (/*4.7807*/ 5 / token_area) * ((_curr_img_size.height / 2) - y_mid) - 0.0075; /*distance between gripper center and camera center*/         
     }
 }
-
 
 
 
@@ -785,6 +754,7 @@ void ScanBoardClass::InternalThreadEntry()
     {
         if(!_curr_img_empty) break;
         ros::Rate(1000).sleep();
+        cout << "stuck" << endl;
     }
 
     scan();
@@ -854,13 +824,10 @@ void ScanBoardClass::setDepth(float *dist)
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(500).sleep();
      
-        // pthread_mutex_lock(&_mutex_rng); 
         if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) 
         {
-            // pthread_mutex_unlock(&_mutex_rng); 
             break;
         }
-        // else {pthread_mutex_lock(&_mutex_rng);}
     }
 
     *dist = init_pos.z - _curr_position.z + 0.04;
@@ -1077,6 +1044,7 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, M
 
         // cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
+        line(*output, centroid, center, cv::Scalar(180,40,40), 1);
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
@@ -1161,6 +1129,17 @@ bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
     return all_zeros ? false : true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
 /**************************************************************************/
 /*                         PutDownTokenClass                              */
 /**************************************************************************/
@@ -1177,7 +1156,7 @@ void PutDownTokenClass::InternalThreadEntry()
 {
     hoverAboveBoard();
     hoverAboveCell();
-    ros::Duration(0.5).sleep();
+    ros::Duration(1.5).sleep();
     _gripper->blow();
     hoverAboveBoard();
     hoverAboveTokens();
@@ -1195,6 +1174,7 @@ void PutDownTokenClass::hoverAboveCell()
                         0.100 + _offsets[_cell - 1].y, 
                         0.445 - _offsets[_cell - 1].z);
     Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    cout << "HERE" << endl;
 
     goToPose(req_pose_stamped);
 }
