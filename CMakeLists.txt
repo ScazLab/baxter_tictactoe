@@ -155,8 +155,6 @@ add_executable(test_trajectory_xml_parser       src/test/test_trajectory_xml_par
 add_executable(test_loading_trajectory_xml      src/test/test_loading_trajectory_xml.cpp)
 add_executable(test_arm_controller              src/test/test_arm_controller.cpp)
 
-add_executable(thread                           src/thread.cpp)
-
 ## Add cmake target dependencies of the executable
 
 add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -178,8 +176,6 @@ add_dependencies(test_arm_controller            baxter_tictactoe_generate_messag
 add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(thread                         baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
 ## Specify libraries to link a library or executable target against
 
 target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
@@ -200,7 +196,6 @@ target_link_libraries(test_arm_controller               arm_controller      vacu
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
 target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
 
-target_link_libraries(thread                            vacuum_gripper      ${CMAKE_THREAD_LIBS_INIT}                       ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
