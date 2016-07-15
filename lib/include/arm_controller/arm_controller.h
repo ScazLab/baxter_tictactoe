@@ -405,6 +405,14 @@ class ScanBoardClass : public ROSThreadClass
         std::vector<geometry_msgs::Point> getOffsets();
 
     protected:
+
+        /*
+         * scan the board 
+         * 
+         * param      N/A
+         * return     N/A
+         */
+
         void InternalThreadEntry();
 
     private:
@@ -429,13 +437,54 @@ class ScanBoardClass : public ROSThreadClass
 
         void hoverAboveBoard();
 
+        /*
+         * scan the board and calculate cell offsets
+         * 
+         * param      N/A
+         * return     N/A
+         */
+
         void scan();
+
+        /*
+         * move arm downwards until collision w/ a surface; calculate
+         * distance between surface and arm starting point
+         * 
+         * param      float * dist indicating the distance btw. the surface
+         *            and the arm's starting point
+         * return     N/A
+         */
 
         void setDepth(float *dist);
 
+        /*
+         * calculate cell offsets; also prompts user to move board withing 'reachable zone'
+         * (displayed on screen) if board is out of reach of Baxter's arm 
+         * 
+         * param      string mode (test/run) indicating a test (does not exit out of scanning loop)
+         *            or an actual run (quits once scanning finished)
+         * return     N/A
+         */
+
         void processImage(std::string mode, float dist);
 
+        /*
+         * isolates black colored object in raw image
+         * 
+         * param      Mat displaying black colored objects in raw image
+         * return     N/A
+         */
+
         void isolateBlack(cv::Mat * output);
+
+        /*
+         * isolates board boundaries from image 
+         * 
+         * param      input Mat, output Mat displaying board boundaries, output Contours
+         *            storing board contours, integer indicating the area of the board,
+         *            and a vector<cv::Point> of the board's four corners
+         * return     N/A
+         */
 
         void isolateBoard(Contours * contours, int * board_area, std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
 
@@ -458,9 +507,33 @@ class ScanBoardClass : public ROSThreadClass
 
         void setOffsets(int board_area, Contours contours, float dist, cv::Mat *output, std::vector<cv::Point> *centroids);
 
-        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners, std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
+        /*
+         * calculates the perimeter of the area representing all points reachable to the Baxter arm
+         * 
+         * param      board contours, distance between starting position and play surface, coordinates of all 
+         *            4 board corners. input vector containing cell centroids, input vector representing 
+         *            distance between center of corner cell and corner of corner cell
+         * return     N/A
+         */
 
+        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners, std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
+       
+        /*
+         * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
+         * 
+         * param      N/A
+         * return     true if offsets are all reachable; false otherwise
+         */
+       
         bool offsetsReachable();
+
+        /*
+         * checks if Baxter's arm has a joint angles solution for a certain point on the board
+         * scanning image
+         * 
+         * param      N/A
+         * return     true if point is reachable; false otherwise
+         */
 
         bool pointReachable(cv::Point centroid, float dist);
 };
@@ -475,15 +548,44 @@ class PutDownTokenClass : public ROSThreadClass
         void setOffsets(std::vector<geometry_msgs::Point> offsets);
 
     protected:
+
+        /*
+         * puts down token in specified cell
+         * 
+         * param      N/A
+         * return     N/A
+         */
+
         void InternalThreadEntry();
 
     private:
         int _cell;
         std::vector<geometry_msgs::Point> _offsets;
 
+        /*
+         * hover arm above specified cell
+         * 
+         * param      N/A
+         * return     N/A
+         */
+
         void hoverAboveCell();
 
+        /*
+         * hover arm above the board
+         * 
+         * param      N/A
+         * return     N/A
+         */
+
         void hoverAboveBoard();
+
+        /*
+         * hover arm above tokens
+         * 
+         * param      N/A
+         * return     N/A
+         */
 
         void hoverAboveTokens();
 };
