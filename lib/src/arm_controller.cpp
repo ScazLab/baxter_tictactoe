@@ -6,11 +6,6 @@ using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace cv;
 
-/*
-    dest reached after backswing or before backswing and sleep prevents arm from putting
-    scanBoard seed angles for preventing scan pose that blocks head camera
-*/
-
 /**************************************************************************/
 /*                               Utils                                    */
 /**************************************************************************/
@@ -111,25 +106,12 @@ ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
     _init_time = ros::Time::now();
     _state.x = START;
     _state.y = 0;
-    
-    // pthread_mutexattr_init(&_attr_img);
-    // pthread_mutexattr_init(&_attr_pos);
-
-    // pthread_mutexattr_settype(&_attr_img, PTHREAD_MUTEX_ERRORCHECK);
-    // pthread_mutexattr_settype(&_attr_pos, PTHREAD_MUTEX_ERRORCHECK);
 
     pthread_mutex_init(&_mutex_img, NULL);
     pthread_mutex_init(&_mutex_pos, NULL);
-    // pthread_mutex_init(&_mutex_rng, NULL);
 }
 
-ROSThreadClass::~ROSThreadClass() {
-    // pthread_mutexattr_destroy(&_attr_img);
-    pthread_mutexattr_destroy(&_attr_pos);
-    pthread_mutex_destroy(&_mutex_img);
-    // pthread_mutex_destroy(&_mutex_pos);
-    // pthread_mutex_destroy(&_mutex_rng);
-}
+ROSThreadClass::~ROSThreadClass() {}
 
 bool ROSThreadClass::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
 
@@ -137,7 +119,7 @@ void ROSThreadClass::WaitForInternalThreadToExit() {(void) pthread_join(_thread,
 
 void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
-    pause();  // don't remove these prints or it will crash ahahah
+    pause();  
     pthread_mutex_lock(&_mutex_pos);
     _curr_pose = msg.pose;
     _curr_position = _curr_pose.position;
@@ -146,11 +128,9 @@ void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg
 
 void ROSThreadClass::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
 {
-    // pthread_mutex_lock(&_mutex_rng);   
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
-    // pthread_mutex_unlock(&_mutex_rng);   
 }
 
 void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -261,12 +241,16 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
                 }
             }
 
+            // if position cannot be reached, try a position with the same x-y coordinates
+            // but higher z (useful when placing tokens)
             if(all_zeros == true) 
             {
                 (*pose_stamped).pose.position.z += 0.005;
             }   
         }
 
+        // if no solution is found within 5 seconds or no solution within the acceptable z-coordinate
+        // threshold is found, then no solution exists and exit oufof loop
         if((ros::Time::now() - start).toSec() > 5 || (*pose_stamped).pose.position.z > thresh_z) 
         {
             _gripper->blow();
@@ -280,10 +264,13 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
 void ROSThreadClass::setState(int state)
 {
     _state.x = state;
+    // store the time elapsed between object initialization and state change
     _state.y = (ros::Time::now() - _init_time).toSec();
 }
 
 // for syncing mutex locks (crash/errors occur if not used)
+// pause() changes timing of execution of thread locks, but unclear
+// why crash occurs w/o it and needs to be investigated
 void ROSThreadClass::pause()
 {
     ros::Rate(1000).sleep();
@@ -307,6 +294,7 @@ MoveToRestClass::~MoveToRestClass(){}
 // Protected
 void MoveToRestClass::InternalThreadEntry()
 {
+    // wait for endpoint callback
     while(ros::ok())
     {
         if(!(_curr_position.x == 0 && _curr_position.y == 0 && _curr_position.z == 0))
@@ -341,7 +329,7 @@ void MoveToRestClass::InternalThreadEntry()
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(500).sleep();
 
-        pause();  // don't remove these prints or it will crash ahahah
+        pause();  
         pthread_mutex_lock(&_mutex_pos);   
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
@@ -375,6 +363,7 @@ PickUpTokenClass::~PickUpTokenClass() {}
 // Protected
 void PickUpTokenClass::InternalThreadEntry()
 {
+    // wait for IR sensor callback
     while(ros::ok())
     {
         if(!(_curr_range == 0 && _curr_min_range == 0 && _curr_max_range == 0))
@@ -385,6 +374,7 @@ void PickUpTokenClass::InternalThreadEntry()
         ros::Rate(100).sleep();
     }
 
+    // wait for image callback
     while(ros::ok())
     {
         if(!_curr_img_empty) break;
@@ -406,13 +396,13 @@ void PickUpTokenClass::gripToken()
     namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
     namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-    // namedWindow("[PickUpToken] Final", WINDOW_NORMAL);
     resizeWindow("[PickUpToken] Raw",       700, 500);
     resizeWindow("[PickUpToken] Processed", 700, 500);
     resizeWindow("[PickUpToken] Rough",     700, 500);
-    // resizeWindow("[PickUpToken] Final",     700, 500);
 
     cv::Point2d offset;
+    // check if token is present before starting movement loop 
+    // (prevent gripper from colliding with play surface)
     checkForToken(offset);
 
     PoseStamped req_pose_stamped;
@@ -426,6 +416,7 @@ void PickUpTokenClass::gripToken()
 
         req_pose_stamped.header.frame_id = "base";
 
+        // move incrementally towards token
         Utils::setPosition(&req_pose_stamped.pose, 
                             prev_offset.x + 0.07 * offset.x,
                             prev_offset.y + 0.07 * offset.y,
@@ -478,9 +469,11 @@ void PickUpTokenClass::hoverAboveTokens(std::string height)
 void PickUpTokenClass::checkForToken(cv::Point2d &offset)
 {
     ros::Time start_time = ros::Time::now();
+
     while(ros::ok())
     {
         processImage(offset);
+
         if(!(offset.x == 0 && offset.y == 0) || (ros::Time::now() - start_time).toSec() > 1)
         {
             break;
@@ -491,6 +484,7 @@ void PickUpTokenClass::checkForToken(cv::Point2d &offset)
     {
         if(!(offset.x == 0 && offset.y == 0)) {break;}
 
+        // loop halts until a key is pressed
         ROS_WARN("No token detected by hand camera. Place token and press ENTER");
         char c = cin.get();
         processImage(offset);
@@ -523,7 +517,8 @@ void PickUpTokenClass::isolateBlue(Mat &output)
     Mat hsv;
 
     pause();  // don't remove these prints or it will crash ahahah
-    pthread_mutex_lock(&_mutex_img);   
+    pthread_mutex_lock(&_mutex_img); 
+    // convert image color format from BGR to HSV  
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
     pthread_mutex_unlock(&_mutex_img);   
 
@@ -536,6 +531,7 @@ void PickUpTokenClass::isolateBlack(Mat &output)
 
     pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_img);   
+    // convert image color format from BGR to grayscale
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
     pthread_mutex_unlock(&_mutex_img);  
 
@@ -549,6 +545,7 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
     vector<cv::Vec4i> hierarchy; // captures contours within contours 
     Contours contours;
 
+    // find outer board contours
     findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     double largest = 0, next_largest = 0;
@@ -573,10 +570,14 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
 
     output = Mat::zeros(_curr_img_size, CV_8UC1);
 
+    // contour w/ 2nd largest area is most likely the inner board
     vector<cv::Point> contour = contours[next_largest_index];
 
     drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED);
 
+    // find the lowest y-coordinate of the board; to be used as a cutoff point above which
+    // all contours are ignored (e.g token contours that are above low_y are already placed
+    // on the board and should not be picked up)
     int low_y = _curr_img_size.height;
     int x_min = (contours[0])[0].x;
     int x_max = 0;    
@@ -588,6 +589,9 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
         if(contour[i].x > x_max) x_max = contour[i].x;
     }
 
+    // if width of the contour is narrower than 275, 2nd largest contour
+    // is NOT the board (and board is out of the image's view). Hence,
+    // no cutoff point needs to be specified
     if(x_max - x_min > 275) {
         board_y = low_y;
     }
@@ -607,8 +611,11 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contour
     int gripper_area = -1;
     int gripper_index = 0;
 
-    // find gripper contours
-
+    // find gripper contours. gripper contours are always attached to bottom part of image
+    // (Note that imshow will show the bottom (x=0) part inverted and 
+    // on top of the display window). if there are multiple contours that contain points w/ x=0
+    // the gripper contour is the contour with the largest area as a combination of the contours
+    // of the gripper AND  a token fragment will always be larger than just a token fragment
     for(int i = 0; i < raw_contours.size(); i++)
     {
         vector<cv::Point> contour = raw_contours[i];
@@ -631,8 +638,11 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contour
         }
     }
 
+    // remove gripper contour
     raw_contours.erase(raw_contours.begin() + gripper_index);
 
+    // remove contours that have areas that are too small (noise) and
+    // contours that do not have an approx. triangular shape (not token fragment)
     int largest_index = 0, largest_area = 0;
     for(int i = 0; i < raw_contours.size(); i++)
     {
@@ -649,6 +659,7 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contour
         }
     }
 
+    // remove contours that are inside the board (e.g token placed on a cell)
     for(int i = 0; i < clean_contours.size(); i++) 
     {
         bool within_board = false;
@@ -750,11 +761,11 @@ void ScanBoardClass::InternalThreadEntry()
 {
     hoverAboveBoard();
 
+    // wait for image callback
     while(ros::ok())
     {
         if(!_curr_img_empty) break;
         ros::Rate(1000).sleep();
-        cout << "stuck" << endl;
     }
 
     scan();
@@ -797,6 +808,7 @@ void ScanBoardClass::setDepth(float *dist)
 
     ros::Time start_time = ros::Time::now();                
 
+    // move downwards until collision with surface
     while(ros::ok())
     {
         PoseStamped req_pose_stamped;
@@ -830,6 +842,7 @@ void ScanBoardClass::setDepth(float *dist)
         }
     }
 
+    // offset to account for height difference between IR camera and tip of vacuum gripper
     *dist = init_pos.z - _curr_position.z + 0.04;
 }
 
@@ -1056,16 +1069,22 @@ void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> bo
 {
     (*cell_to_corner).resize(4);
 
+    // calculate offset between the center of corner cells and the corners of the board
     (*cell_to_corner)[0] = cv::Point(board_corners[0].x - (*centroids)[0].x, board_corners[0].y - (*centroids)[0].y);
     (*cell_to_corner)[1] = cv::Point(board_corners[1].x - (*centroids)[2].x, board_corners[1].y - (*centroids)[2].y);
     (*cell_to_corner)[2] = cv::Point(board_corners[2].x - (*centroids)[6].x, board_corners[2].y - (*centroids)[6].y);
     (*cell_to_corner)[3] = cv::Point(board_corners[3].x - (*centroids)[8].x, board_corners[3].y - (*centroids)[8].y);
 
+    // if the centroid of a corner cell is reachable, 
+    // iterate and check if a location 10 pixels further from arm is still reachable
+    // to establish a boundary of how far Baxter's arm can reach
     while(pointReachable((*centroids)[0], dist)) {(*centroids)[0].x += 10.0;}
     while(pointReachable((*centroids)[2], dist)) {(*centroids)[2].x -= 10.0;}
     while(pointReachable((*centroids)[6], dist)) {(*centroids)[6].x += 10.0;}
     while(pointReachable((*centroids)[8], dist)) {(*centroids)[8].x -= 10.0;}
 
+    // if the centroid of a corner cell is unreachable, 
+    // iterate and check if a location 10 pixels closer is reachable
     while(!pointReachable((*centroids)[0], dist)) {(*centroids)[0].x -= 5.0;}
     while(!pointReachable((*centroids)[2], dist)) {(*centroids)[2].x += 5.0;}
     while(!pointReachable((*centroids)[6], dist)) {(*centroids)[6].x -= 5.0;}
@@ -1085,6 +1104,9 @@ bool ScanBoardClass::offsetsReachable()
         Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+        
+        // if IK solver returns a joint angles solution with all zeros, 
+        // then no solution was found
         bool all_zeros = true;
         for(int j = 0; j < joint_angles.size(); j++)
         {
@@ -1101,6 +1123,7 @@ bool ScanBoardClass::offsetsReachable()
 
 bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
 {
+    // convert image location into real world pose coordinates
     cv::Point center(_curr_img_size.width / 2, _curr_img_size.height / 2);
 
     geometry_msgs::Point offset;
@@ -1115,6 +1138,8 @@ bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
                         0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
     Utils::setOrientation(&pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
 
+    // if IK solver gives joint angles solution with all zeros;
+    // no solution was found
     vector<double> joint_angles = getJointAngles(&pose_stamped);
     bool all_zeros = true;
     for(int j = 0; j < joint_angles.size(); j++)
@@ -1217,6 +1242,9 @@ int ArmController::getState()
     float len_time = 0;
     int state = 0;
 
+    // find class with the most recent state change
+    // and set ArmController's new state to that
+    // class' state
     if(_rest_class->getState().y > len_time) 
     {
         len_time = _rest_class->getState().y; 
