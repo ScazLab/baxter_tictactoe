@@ -143,7 +143,9 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         // if board has not been loaded, return (if board was already previously loaded, 
         // the old board is displayed)
         if(board.cells.size() != 9)
-        {
+        {        
+            ROS_WARN("No board detected by head camera. Place board and press ENTER");
+            char c = cin.get();
             return;            
         }
     }     
