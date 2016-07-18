@@ -51,7 +51,8 @@ private:
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
     ros::ServiceClient _clnt_movement_type;
-    ros::ServiceServer _scan_state;
+    ros::ServiceClient _scan_client;
+    ros::ServiceServer _scan_server;
 
     std::string _voice_type; // It determines the type of voice.
 

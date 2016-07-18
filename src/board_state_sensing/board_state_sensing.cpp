@@ -40,7 +40,11 @@ void BoardState::init()
 
     ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/area_threshold",area_threshold),
                                                                     "No area threshold!");
-    
+    for(int i = 0; i < last_msg_board.cells.size(); i++)
+    {
+        last_msg_board.cells[i].state = undefined;
+    }
+
     ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
     ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
     ROS_INFO("Area threshold: %g", area_threshold);
@@ -91,13 +95,13 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    bool scan_done = false;
-    scan_client = node_handle.serviceClient<ScanState>("/baxter_tictactoe/scan_state");
+    bool arm_scan = false;
+    scan_client = node_handle.serviceClient<ScanState>("/baxter_tictactoe/ready_scan");
     ScanState scan_srv;
 
     if(scan_client.call(scan_srv))
     {
-        scan_done = scan_srv.response.state;
+        arm_scan = scan_srv.response.state;
     }
 
     cells_client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
@@ -105,7 +109,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     DefineCells cells_srv;
 
-    if(cells_client.call(cells_srv) && scan_done && board.cells.size() != 9)
+    if(cells_client.call(cells_srv) && arm_scan && board.cells.size() != 9)
     {
         board.cells.clear();
         int cells_num = cells_srv.response.board.cells.size();
@@ -142,17 +146,16 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         // if board has not been loaded, return (if board was already previously loaded, 
         // the old board is displayed)
-        if(board.cells.size() != 9)
+        if(board.cells.size() != 9 && arm_scan)
         {        
-            ROS_WARN("No board detected by head camera. Place board and press ENTER");
-            char c = cin.get();
             return;            
         }
     }     
 
     MsgBoard msg_board;
     for(int i = 0; i < msg_board.cells.size(); i++){
-        msg_board.cells[i].state = MsgCell::UNDEFINED;
+        // msg_board.cells[i].state = MsgCell::UNDEFINED;
+        msg_board.cells[i].state = MsgCell::EMPTY;
     }
     msg_board.header.stamp = msg->header.stamp;
     msg_board.header.frame_id = msg->header.frame_id;
@@ -208,40 +211,10 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         msg_board.cells[j].state=cell->state;
     }
 
-    ROS_DEBUG("Board state is %s", board.stateToString().c_str());
-
-    for (int i = 0; i < msg_board.cells.size(); ++i)
-    {
-        switch(msg_board.cells[i].state)
-        {
-            case MsgCell::EMPTY:
-                ROS_DEBUG("Cell %d State: empty", i);
-                break;
-            case MsgCell::RED:
-                ROS_DEBUG("Cell %d State: red", i);
-                break;
-            case MsgCell::BLUE:
-                ROS_DEBUG("Cell %d State: blue", i);
-                break;
-            case MsgCell::UNDEFINED:
-                ROS_DEBUG("Cell %d State: undefined", i);
-                break; 
-        }
-    }
-
-    ROS_DEBUG("\n");
-
-    if(last_msg_board!=msg_board)
-    {
-        board_publisher.publish(msg_board);
-        ROS_DEBUG("[Board_State_Sensor] Publishing new state");
-        last_msg_board=msg_board;
-        ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
-    }
-    else {
-        ROS_DEBUG("[Board_State_Sensor] NOT publishing new state - same state encountered");
-    }
-
+    board_publisher.publish(msg_board);
+    ROS_DEBUG("[Board_State_Sensor] Publishing new state");
+    last_msg_board=msg_board;
+    ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
 
     cv::Mat img_aux = cv_ptr->image.clone();
 

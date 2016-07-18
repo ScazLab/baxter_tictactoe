@@ -43,7 +43,6 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         _left_ac->scanBoard();
         while(_left_ac->getState() != SCAN){ros::spinOnce();}
     }
-    _setup = true;
 
     _number_of_tokens_on_board.set(0);
 
@@ -78,7 +77,7 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
     _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
-    _scan_state = _nh.advertiseService("baxter_tictactoe/scan_state", &tictactoeBrain::scanState, this);
+    _scan_server = _nh.advertiseService("baxter_tictactoe/ready_scan", &tictactoeBrain::scanState, this);
 
     qsrand(ros::Time::now().nsec);
     set_strategy(strategy);
@@ -91,6 +90,24 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
         ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");       
     }
+
+    _setup = true; // indicates whether board has been scanned by arm camera 
+                   // (signal to boardStateSensing that the board's position 
+                   // is locked and ready to scanned by head camera)
+
+    while(ros::ok())
+    {
+        TTT_State_type arr = _ttt_state.get();       
+        if(arr != aux) 
+        {
+            break;
+        }
+        else 
+        {
+            ROS_WARN("Board was not detected. Make sure board is within the head camera's view and is not obscured. Press ENTER afterwards.");
+            char c = cin.get();
+        }
+    }
 }
 
 bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res)
@@ -101,6 +118,7 @@ bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res
 
 void tictactoeBrain::new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)
 {
+    cout << "new ttt state" << endl;
     if ((msg->cells)!=_ttt_state.get()) {
         ROS_DEBUG_STREAM("[tictactoeBrain] New TTT board state detected at ." << msg->header.stamp);
         _ttt_state.set(msg->cells);
@@ -400,6 +418,7 @@ void tictactoeBrain::set_strategy(std::string strategy)
 
 unsigned short int tictactoeBrain::play_one_game(bool& cheating)
 {
+
     bool robot_turn=true;
     unsigned short int winner=0; // no winner
     has_cheated=false;
@@ -407,7 +426,6 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     // say_sentence("Please place the blue tokens in the blue box on the right side of the board",6);
     // say_sentence(" and the red tokens in the red square on the left side of the board",6);
     say_sentence("I start the game.",2);
-    // set_movement_type(movement_type);
 
     ROS_WARN("[tictactoeBrain] PRESS ENTER TO START THE GAME");
     std::cin.get();
