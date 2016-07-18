@@ -45,7 +45,6 @@ class Utils
          *             
          * return     true if end effector has made contact; false otherwise
          */
-
         static bool hasCollided(float range, float max_range, float min_range, std::string mode);
 
         /*
@@ -58,7 +57,6 @@ class Utils
          * return     true if the parameters of the current pose is equal to the 
          *            requested pose; false otherwise 
          */
- 
         static bool hasPoseCompleted(geometry_msgs::Pose a, geometry_msgs::Pose b, std::string mode);
 
         /*
@@ -69,7 +67,6 @@ class Utils
          *             
          * return     true if they are within 0.0z; false otherwise
          */
- 
         static bool withinXHundredth(float x, float y, float z);
 
         /*
@@ -79,7 +76,6 @@ class Utils
          *             
          * return     true if they are equal up to z decimal points; false otherwise
          */
- 
         static bool equalXDP(float x, float y, float z);
  
         /*
@@ -89,7 +85,6 @@ class Utils
          *             
          * return     N/A
          */
-
         static void setPosition(geometry_msgs::Pose * pose, float x, float y, float z);
 
         /*
@@ -99,7 +94,6 @@ class Utils
          *             
          * return     N/A
          */
-         
         static void setOrientation(geometry_msgs::Pose * pose, float x, float y, float z, float w);
  
         /*
@@ -110,7 +104,6 @@ class Utils
          *             
          * return     N/A
          */
-
         static void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
 
         /*
@@ -120,7 +113,6 @@ class Utils
          *             
          * return     converted string
          */
- 
         static std::string intToString( const int a );
 };
 
@@ -146,7 +138,6 @@ class ROSThreadClass
          * 
          * return     true if thread was successfully launched; false otherwise
          */        
-
         bool StartInternalThread();
 
         /*
@@ -156,7 +147,6 @@ class ROSThreadClass
          * 
          * return     true if thread was successfully launched; false otherwise
          */      
-
         void WaitForInternalThreadToExit();
 
         /*
@@ -167,7 +157,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */
-
         void endpointCallback(const baxter_core_msgs::EndpointState& msg);
 
         /*
@@ -178,7 +167,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */
-
         void IRCallback(const sensor_msgs::RangeConstPtr& msg);
 
         /*
@@ -188,7 +176,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */
-
         void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
         /*
@@ -197,7 +184,6 @@ class ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         geometry_msgs::Point getState();
 
     protected:
@@ -220,7 +206,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */
-
         virtual void InternalThreadEntry() = 0;
 
         /*
@@ -231,7 +216,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */
-
         void goToPose(geometry_msgs::PoseStamped req_pose_stamped);
 
         void goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode);
@@ -243,7 +227,6 @@ class ROSThreadClass
          * 
          * return     array of joint angles solution
          */
-
         std::vector<double> getJointAngles(geometry_msgs::PoseStamped * pose_stamped);
 
         /*
@@ -253,7 +236,6 @@ class ROSThreadClass
          * 
          * return     N/A
          */    
-
         void setState(int state);
 
         void pause();
@@ -283,7 +265,6 @@ class MoveToRestClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void InternalThreadEntry();
 };
 
@@ -301,7 +282,6 @@ class PickUpTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void InternalThreadEntry();
 
     private:
@@ -313,7 +293,6 @@ class PickUpTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void gripToken();
 
         /*
@@ -322,7 +301,6 @@ class PickUpTokenClass : public ROSThreadClass
          * param      string (high/low) indicating requested height of arm
          * return     N/A
          */
-
         void hoverAboveTokens(std::string height);
 
         /*
@@ -332,7 +310,6 @@ class PickUpTokenClass : public ROSThreadClass
          *            and the token
          * return     N/A
          */
-
         void checkForToken(cv::Point2d &offset);
 
         /*
@@ -343,7 +320,6 @@ class PickUpTokenClass : public ROSThreadClass
          *            and the token
          * return     N/A
          */
-
         void processImage(cv::Point2d &offset);
 
         /*
@@ -352,7 +328,6 @@ class PickUpTokenClass : public ROSThreadClass
          * param      Mat displaying blue colored objects in raw image
          * return     N/A
          */
-
         void isolateBlue(cv::Mat &output);
 
         /*
@@ -361,7 +336,6 @@ class PickUpTokenClass : public ROSThreadClass
          * param      Mat displaying black colored objects in raw image
          * return     N/A
          */
-
         void isolateBlack(cv::Mat &output);
 
         /*
@@ -371,7 +345,6 @@ class PickUpTokenClass : public ROSThreadClass
          *            and integer indicating lowest y coordinate of board boundaries
          * return     N/A
          */
-
         void isolateBoard(cv::Mat input, cv::Mat &output, int &board_y);
 
         /*
@@ -382,7 +355,6 @@ class PickUpTokenClass : public ROSThreadClass
          *            and contours of blue-colored objects in image
          * return     N/A
          */
-
         void isolateToken(cv::Mat input, int board_y, cv::Mat &output, Contours &contours);
 
         /*
@@ -392,7 +364,6 @@ class PickUpTokenClass : public ROSThreadClass
          *            and contours of blue-colored objects in image, and an output Mat displaying token
          * return     N/A
          */
-
         void setOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 };
 
@@ -412,7 +383,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void InternalThreadEntry();
 
     private:
@@ -425,7 +395,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void hoverAboveTokens();
 
         /*
@@ -434,7 +403,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void hoverAboveBoard();
 
         /*
@@ -443,7 +411,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void scan();
 
         /*
@@ -454,7 +421,6 @@ class ScanBoardClass : public ROSThreadClass
          *            and the arm's starting point
          * return     N/A
          */
-
         void setDepth(float *dist);
 
         /*
@@ -465,7 +431,6 @@ class ScanBoardClass : public ROSThreadClass
          *            or an actual run (quits once scanning finished)
          * return     N/A
          */
-
         void processImage(std::string mode, float dist);
 
         /*
@@ -474,7 +439,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      Mat displaying black colored objects in raw image
          * return     N/A
          */
-
         void isolateBlack(cv::Mat * output);
 
         /*
@@ -485,7 +449,6 @@ class ScanBoardClass : public ROSThreadClass
          *            and a vector<cv::Point> of the board's four corners
          * return     N/A
          */
-
         void isolateBoard(Contours * contours, int * board_area, std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
 
         /*
@@ -494,7 +457,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      returns true if cell i has a higher centroid than cell j; false otherwise
          * return     N/A
          */
-
         static bool descendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
         /*
@@ -504,7 +466,6 @@ class ScanBoardClass : public ROSThreadClass
          *            from arm to board surface
          * return     N/A
          */
-
         void setOffsets(int board_area, Contours contours, float dist, cv::Mat *output, std::vector<cv::Point> *centroids);
 
         /*
@@ -515,7 +476,6 @@ class ScanBoardClass : public ROSThreadClass
          *            distance between center of corner cell and corner of corner cell
          * return     N/A
          */
-
         void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners, std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
        
         /*
@@ -524,7 +484,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     true if offsets are all reachable; false otherwise
          */
-       
         bool offsetsReachable();
 
         /*
@@ -534,7 +493,6 @@ class ScanBoardClass : public ROSThreadClass
          * param      N/A
          * return     true if point is reachable; false otherwise
          */
-
         bool pointReachable(cv::Point centroid, float dist);
 };
 
@@ -555,7 +513,6 @@ class PutDownTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void InternalThreadEntry();
 
     private:
@@ -568,7 +525,6 @@ class PutDownTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void hoverAboveCell();
 
         /*
@@ -577,7 +533,6 @@ class PutDownTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void hoverAboveBoard();
 
         /*
@@ -586,7 +541,6 @@ class PutDownTokenClass : public ROSThreadClass
          * param      N/A
          * return     N/A
          */
-
         void hoverAboveTokens();
 };
 
@@ -609,7 +563,6 @@ class ArmController
          * param      N/A
          * return     integer indicating arm's latest state
          */
-
         int getState();
 
         void moveToRest();

@@ -58,9 +58,7 @@ int main(int argc, char** argv)
             brain.set_strategy("smart-cheating");
         }
 
-        cout << "pre: play one game" << endl;
         game_result=brain.play_one_game(cheating);
-        cout << "post: play one game" << endl;
 
         switch(game_result)
         {

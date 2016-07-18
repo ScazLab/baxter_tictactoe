@@ -6,6 +6,14 @@ using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace cv;
 
+/*
+    BoardStateSensing error at start
+    Drop token faster
+    Flag option for turning off display windows when run as part of baxterTictactoe
+    Get rid of imageScreen node error and show something else via boardScheme
+    Error-checking when cellsDefinitionAuto does not see board
+*/
+
 /**************************************************************************/
 /*                               Utils                                    */
 /**************************************************************************/
@@ -119,11 +127,11 @@ void ROSThreadClass::WaitForInternalThreadToExit() {(void) pthread_join(_thread,
 
 void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
-    pause();  
-    pthread_mutex_lock(&_mutex_pos);
+    // pause();  
+    // pthread_mutex_lock(&_mutex_pos);
     _curr_pose = msg.pose;
     _curr_position = _curr_pose.position;
-    pthread_mutex_unlock(&_mutex_pos);
+    // pthread_mutex_unlock(&_mutex_pos);
 }
 
 void ROSThreadClass::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
@@ -171,18 +179,17 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
         }
 
         _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
+        // ros::Rate(500).sleep();
 
-        pause();  // don't remove these prints or it will crash ahahah
-        pthread_mutex_lock(&_mutex_pos);   
+        // pause();  // don't remove these prints or it will crash ahahah
+        // pthread_mutex_lock(&_mutex_pos);   
+
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
-            pthread_mutex_unlock(&_mutex_pos);
+            // pthread_mutex_unlock(&_mutex_pos);
             break;
         }
-        else {pthread_mutex_unlock(&_mutex_pos);}
-
-        // cout << "gotopose" << endl;
+        // else {pthread_mutex_unlock(&_mutex_pos);}
     }
 }
 
@@ -204,16 +211,16 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped, string mode)
         }
 
         _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
+        // ros::Rate(500).sleep();
 
-        pause();  // don't remove these prints or it will crash ahahah
-        pthread_mutex_lock(&_mutex_pos);   
+        // pause();  // don't remove these prints or it will crash ahahah
+        // pthread_mutex_lock(&_mutex_pos);   
         if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
-            pthread_mutex_unlock(&_mutex_pos);
+            // pthread_mutex_unlock(&_mutex_pos);
             break;
         }
-        else {pthread_mutex_unlock(&_mutex_pos);}
+        // else {pthread_mutex_unlock(&_mutex_pos);}
     }
 }
 
@@ -792,6 +799,8 @@ void ScanBoardClass::hoverAboveBoard()
     Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
     Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
     goToPose(req_pose_stamped);
+
+    // 0.576, 0.102, 0.443
 }
 
 void ScanBoardClass::scan()
@@ -1199,7 +1208,6 @@ void PutDownTokenClass::hoverAboveCell()
                         0.100 + _offsets[_cell - 1].y, 
                         0.445 - _offsets[_cell - 1].z);
     Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
-    cout << "HERE" << endl;
 
     goToPose(req_pose_stamped);
 }

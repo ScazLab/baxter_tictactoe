@@ -26,28 +26,23 @@ int main(int argc, char * argv[])
     ArmController * left_ac = new ArmController("left");
     ArmController * right_ac = new ArmController("right");
 
-    // left_ac->moveToRest();
-    // right_ac->moveToRest();
-    // while(!(left_ac->getState() == REST && right_ac->getState() == REST)) 
-    // {
-    //     ros::spinOnce();
-    // }
+    left_ac->moveToRest();
+    right_ac->moveToRest();
+    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) 
+    {
+        ros::spinOnce();
+    }
 
     left_ac->scanBoard();
     while(left_ac->getState() != SCAN){ros::spinOnce();}
 
-    for(int j = 0; j < 5; j++)
+    for(int i = 0; i < 9; i++)
     {
-        for(int i = 0; i < 9; i++)
-        {
-            left_ac->pickUpToken();
-            while(left_ac->getState() != PICK_UP){ros::spinOnce();}
+        left_ac->pickUpToken();
+        while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
-            left_ac->putDownToken(i + 1);
-            while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}    
-
-            ROS_INFO("%d", (j*9) + (i+1));           
-        }
+        left_ac->putDownToken(i + 1);
+        while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}    
     }
 
   
