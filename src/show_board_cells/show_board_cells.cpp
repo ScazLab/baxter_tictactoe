@@ -53,7 +53,7 @@ public:
         //     ROS_BREAK();
         // }
 
-        cv::namedWindow(CellDisplay::WINDOW);
+        cv::namedWindow(CellDisplay::WINDOW, cv::WINDOW_NORMAL);
     }
 
     ~CellDisplay()

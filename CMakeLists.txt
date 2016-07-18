@@ -23,6 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 find_package(OpenCV 2.4 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Threads)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -64,6 +65,7 @@ add_message_files(FILES
 add_service_files(FILES
     SetTrajectoryType.srv
     DefineCells.srv
+    ScanState.srv
 )
 
 #Required for generating the messages related to actionlib
@@ -180,7 +182,7 @@ target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
 target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper          arm_controller          ${catkin_LIBRARIES})
+target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper          arm_controller          ${catkin_LIBRARIES}         ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
@@ -193,6 +195,7 @@ target_link_libraries(test_trajectory_player            trajectory_player   traj
 target_link_libraries(test_arm_controller               arm_controller      vacuum_gripper          ${OpenCV_LIBS}          ${catkin_LIBRARIES})
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
 target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
+
 #############
 ## Install ##
 #############

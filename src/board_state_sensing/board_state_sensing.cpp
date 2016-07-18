@@ -40,11 +40,17 @@ void BoardState::init()
 
     ROS_ASSERT_MSG(node_handle.getParam("baxter_tictactoe/area_threshold",area_threshold),
                                                                     "No area threshold!");
-    
+    for(int i = 0; i < last_msg_board.cells.size(); i++)
+    {
+        last_msg_board.cells[i].state = undefined;
+    }
+
     ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
     ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
     ROS_INFO("Area threshold: %g", area_threshold);
     ROS_INFO("Show param set to %i", doShow);
+
+    cv::namedWindow("[Board_State_Sensor] cell outlines", cv::WINDOW_NORMAL);
 
     if (doShow)
     {
@@ -58,6 +64,7 @@ BoardState::BoardState(bool _show): image_transport(node_handle), doShow(_show) 
 
 BoardState::~BoardState()
 {
+    cv::destroyWindow("[Board_State_Sensor] cell outlines");
     if (doShow)
     {
         cv::destroyWindow("[Board_State_Sensor] red  masked image of the board");
@@ -65,8 +72,15 @@ BoardState::~BoardState()
     }
 }
 
-void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+std::string BoardState::intToString( const int a )
 {
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
+
+void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{    
     board.resetState();
 
     //converting ROS image format to opencv image format
@@ -81,27 +95,36 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
-    ROS_ASSERT_MSG(client, "Empty client");
+    bool arm_scan = false;
+    scan_client = node_handle.serviceClient<ScanState>("/baxter_tictactoe/ready_scan");
+    ScanState scan_srv;
 
-    DefineCells srv;
+    if(scan_client.call(scan_srv))
+    {
+        arm_scan = scan_srv.response.state;
+    }
 
-    if(client.call(srv) && board.cells.size() != 9)
+    cells_client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
+    ROS_ASSERT_MSG(cells_client, "Empty client");
+
+    DefineCells cells_srv;
+
+    if(cells_client.call(cells_srv) && arm_scan && board.cells.size() != 9)
     {
         board.cells.clear();
-        int cells_num = srv.response.board.cells.size();
+        int cells_num = cells_srv.response.board.cells.size();
         for(int i = 0; i < cells_num; i++)
         {
             cell.contours.clear();
-            int edges_num = srv.response.board.cells[i].contours.size();
+            int edges_num = cells_srv.response.board.cells[i].contours.size();
             for(int j = 0; j < edges_num; j++)
             {
                 
-                cv::Point point(srv.response.board.cells[i].contours[j].x, srv.response.board.cells[i].contours[j].y);
+                cv::Point point(cells_srv.response.board.cells[i].contours[j].x, cells_srv.response.board.cells[i].contours[j].y);
                 cell.contours.push_back(point);
             }
 
-            switch(srv.response.board.cells[i].state)
+            switch(cells_srv.response.board.cells[i].state)
             {
                 case MsgCell::EMPTY:
                     cell.state = empty;
@@ -123,15 +146,16 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         // if board has not been loaded, return (if board was already previously loaded, 
         // the old board is displayed)
-        if(board.cells.size() != 9)
-        {
+        if(board.cells.size() != 9 && arm_scan)
+        {        
             return;            
         }
     }     
 
     MsgBoard msg_board;
     for(int i = 0; i < msg_board.cells.size(); i++){
-        msg_board.cells[i].state = MsgCell::UNDEFINED;
+        // msg_board.cells[i].state = MsgCell::UNDEFINED;
+        msg_board.cells[i].state = MsgCell::EMPTY;
     }
     msg_board.header.stamp = msg->header.stamp;
     msg_board.header.frame_id = msg->header.frame_id;
@@ -187,42 +211,28 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         msg_board.cells[j].state=cell->state;
     }
 
-    ROS_DEBUG("Board state is %s", board.stateToString().c_str());
+    board_publisher.publish(msg_board);
+    ROS_DEBUG("[Board_State_Sensor] Publishing new state");
+    last_msg_board=msg_board;
+    ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
 
-    for (int i = 0; i < msg_board.cells.size(); ++i)
+    cv::Mat img_aux = cv_ptr->image.clone();
+
+    // drawing all cells of the board game
+    cv::drawContours(img_aux,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
+    for(int i = 0; i < board.cells.size(); i++)
     {
-        switch(msg_board.cells[i].state)
-        {
-            case MsgCell::EMPTY:
-                ROS_DEBUG("Cell %d State: empty", i);
-                break;
-            case MsgCell::RED:
-                ROS_DEBUG("Cell %d State: red", i);
-                break;
-            case MsgCell::BLUE:
-                ROS_DEBUG("Cell %d State: blue", i);
-                break;
-            case MsgCell::UNDEFINED:
-                ROS_DEBUG("Cell %d State: undefined", i);
-                break; 
-        }
+        cv::Point cell_centroid;
+        board.cells[i].get_cell_centroid(cell_centroid);
+        //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
+        // cv::line(img_aux, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
+        cv::putText(img_aux, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
     }
 
-    ROS_DEBUG("\n");
+    cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
 
-    if(last_msg_board!=msg_board)
-    {
-        board_publisher.publish(msg_board);
-        ROS_DEBUG("[Board_State_Sensor] Publishing new state");
-        last_msg_board=msg_board;
-        ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
-    }
-    else {
-        ROS_DEBUG("[Board_State_Sensor] NOT publishing new state - same state encountered");
-    }
-
-    if (doShow) cv::waitKey(50);
-    ros::Duration(2).sleep();
+    /*if (doShow) */
+    cv::waitKey(50);
 }
 
 int main(int argc, char** argv)
@@ -248,4 +258,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
