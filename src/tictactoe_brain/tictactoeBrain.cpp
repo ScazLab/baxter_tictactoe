@@ -38,8 +38,6 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         _right_ac->moveToRest();
         while(!(_left_ac->getState() == REST && _right_ac->getState() == REST)) {ros::spinOnce();}
 
-        cout << "state = REST" << endl;
-
         _left_ac->scanBoard();
         while(_left_ac->getState() != SCAN){ros::spinOnce();}
     }
@@ -118,7 +116,6 @@ bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res
 
 void tictactoeBrain::new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg)
 {
-    cout << "new ttt state" << endl;
     if ((msg->cells)!=_ttt_state.get()) {
         ROS_DEBUG_STREAM("[tictactoeBrain] New TTT board state detected at ." << msg->header.stamp);
         _ttt_state.set(msg->cells);
