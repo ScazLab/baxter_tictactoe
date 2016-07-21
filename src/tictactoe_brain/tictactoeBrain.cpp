@@ -110,6 +110,12 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     }
 }
 
+tictactoeBrain::~tictactoeBrain()
+{
+    delete _left_ac;
+    delete _right_ac;
+}
+
 bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res)
 {
     res.state = _setup == true ? true : false;

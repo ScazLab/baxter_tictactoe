@@ -1243,7 +1243,14 @@ ArmController::ArmController(string limb): _limb(limb)
     _scan_class = new ScanBoardClass(_limb);
     _put_class = new PutDownTokenClass(_limb);
 }
-ArmController::~ArmController(){}
+
+ArmController::~ArmController()
+{
+    delete _rest_class;
+    delete _pick_class;
+    delete _scan_class;
+    delete _put_class;
+}
 
 int ArmController::getState()
 {

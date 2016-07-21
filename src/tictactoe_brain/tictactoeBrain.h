@@ -154,7 +154,7 @@ public:
 
     tictactoeBrain(bool traj, cellState robot_color=blue, std::string strategy="random");
 
-    ~tictactoeBrain() {};
+    ~tictactoeBrain();
 
     /**
      * Returns the cell where the next token is gonna be placed.
