@@ -424,7 +424,7 @@ void PickUpToken::gripToken()
         prev_offset.x = prev_offset.x + 0.07 * offset.x; 
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-        Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+        Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
@@ -461,7 +461,7 @@ void PickUpToken::hoverAboveTokens(std::string height)
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
     Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height == "high" ? 0.400 : 0.150);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -771,7 +771,7 @@ void ScanBoard::hoverAboveTokens()
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
     Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -1093,7 +1093,7 @@ bool ScanBoard::offsetsReachable()
                             _curr_position.x + _offsets[i].x, 
                             _curr_position.y + _offsets[i].y, 
                             _curr_position.z - _offsets[i].z);
-        Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+        Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
         
@@ -1128,7 +1128,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
     pose_stamped.header.frame_id = "base";
     Utils::setPosition( &pose_stamped.pose, 
                         0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
-    Utils::setOrientation(&pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
     // if IK solver gives joint angles solution with all zeros;
     // no solution was found
@@ -1179,7 +1179,7 @@ void PutDownToken::hoverAboveCell()
     Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x, 
                         0.100 + _offsets[_cell - 1].y, 
                         0.445 - _offsets[_cell - 1].z);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
     goToPose(req_pose_stamped);
 }
@@ -1191,7 +1191,7 @@ void PutDownToken::hoverAboveBoard()
     Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
                         0.100 + _offsets[4].y, 
                         0.200);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -1200,7 +1200,7 @@ void PutDownToken::hoverAboveTokens()
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
     Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453);
+    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
