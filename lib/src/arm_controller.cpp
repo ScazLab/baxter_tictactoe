@@ -18,7 +18,7 @@ using namespace cv;
 /*                               Utils                                    */
 /**************************************************************************/
 
-bool Utils::hasCollided(float range, float max_range, float min_range, string mode)
+bool hasCollided(float range, float max_range, float min_range, string mode)
 {
     float threshold;
     if(mode == "strict") threshold = 0.050;
@@ -27,7 +27,7 @@ bool Utils::hasCollided(float range, float max_range, float min_range, string mo
     else return false;
 }
 
-bool Utils::hasPoseCompleted(Pose a, Pose b, string mode)
+bool hasPoseCompleted(Pose a, Pose b, string mode)
 {
     bool same_pose = true;
 
@@ -51,28 +51,28 @@ bool Utils::hasPoseCompleted(Pose a, Pose b, string mode)
     return same_pose; 
 }
 
-bool Utils::withinXHundredth(float x, float y, float z)
+bool withinXHundredth(float x, float y, float z)
 {
     float diff = abs(x - y);
     float diffTwoDP = roundf(diff * 100) / 100;
     return diffTwoDP <= (0.01 * z) ? true : false;
 }
 
-bool Utils::equalXDP(float x, float y, float z)
+bool equalXDP(float x, float y, float z)
 {
     float xTwoDP = roundf(x * pow(10, z)) / pow(10, z);
     float yTwoDP = roundf(y * pow(10, z)) / pow(10, z);
     return xTwoDP == yTwoDP ? true : false;    
 }
 
-void Utils::setPosition(Pose * pose, float x, float y, float z)
+void setPosition(Pose * pose, float x, float y, float z)
 {
     (*pose).position.x = x;
     (*pose).position.y = y;
     (*pose).position.z = z;
 }
  
-void Utils::setOrientation(Pose * pose, float x, float y, float z, float w)
+void setOrientation(Pose * pose, float x, float y, float z, float w)
 {
     (*pose).orientation.x = x;
     (*pose).orientation.y = y;
@@ -80,7 +80,7 @@ void Utils::setOrientation(Pose * pose, float x, float y, float z, float w)
     (*pose).orientation.w = w;
 }
 
-void Utils::setNames(JointCommand * joint_cmd, string limb)
+void setNames(JointCommand * joint_cmd, string limb)
 {
     (*joint_cmd).names.push_back(limb + "_s0");
     (*joint_cmd).names.push_back(limb + "_s1");
@@ -91,7 +91,7 @@ void Utils::setNames(JointCommand * joint_cmd, string limb)
     (*joint_cmd).names.push_back(limb + "_w2");
 }
 
-string Utils::intToString( const int a )
+string intToString( const int a )
 {
     stringstream ss;
     ss << a;
@@ -171,7 +171,7 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped)
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        Utils::setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, _limb);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         for(int i = 0; i < joint_angles.size(); i++) {
@@ -184,7 +184,7 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped)
         // pause();  // don't remove these prints or it will crash ahahah
         // pthread_mutex_lock(&_mutex_pos);   
 
-        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
+        if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
             // pthread_mutex_unlock(&_mutex_pos);
             break;
@@ -203,7 +203,7 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        Utils::setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, _limb);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         for(int i = 0; i < joint_angles.size(); i++) {
@@ -215,7 +215,7 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 
         // pause();  // don't remove these prints or it will crash ahahah
         // pthread_mutex_lock(&_mutex_pos);   
-        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
+        if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
             // pthread_mutex_unlock(&_mutex_pos);
             break;
@@ -313,8 +313,8 @@ void MoveToRest::InternalThreadEntry()
     PoseStamped req_pose_stamped;
     
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
+    setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+    setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
     while(ros::ok())
     {
@@ -322,7 +322,7 @@ void MoveToRest::InternalThreadEntry()
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        Utils::setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, _limb);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
@@ -338,7 +338,7 @@ void MoveToRest::InternalThreadEntry()
 
         pause();  
         pthread_mutex_lock(&_mutex_pos);   
-        if(Utils::hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
+        if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
             pthread_mutex_unlock(&_mutex_pos);               
             break;
@@ -416,7 +416,7 @@ void PickUpToken::gripToken()
         req_pose_stamped.header.frame_id = "base";
 
         // move incrementally towards token
-        Utils::setPosition(&req_pose_stamped.pose, 
+        setPosition(&req_pose_stamped.pose, 
                             prev_offset.x + 0.07 * offset.x,
                             prev_offset.y + 0.07 * offset.y,
                             0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec());
@@ -424,14 +424,14 @@ void PickUpToken::gripToken()
         prev_offset.x = prev_offset.x + 0.07 * offset.x; 
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-        Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+        setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        Utils::setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, _limb);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -443,7 +443,7 @@ void PickUpToken::gripToken()
         
         // if(_curr_position.z < -0.05) break;
 
-        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
+        if(hasCollided(_curr_range, _curr_max_range, _curr_min_range, "strict")) 
         {
             break;
         }
@@ -460,8 +460,8 @@ void PickUpToken::hoverAboveTokens(std::string height)
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height == "high" ? 0.400 : 0.150);
-    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height == "high" ? 0.400 : 0.150);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -770,8 +770,8 @@ void ScanBoard::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
-    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -779,8 +779,8 @@ void ScanBoard::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
-    Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+    setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
+    setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
     goToPose(req_pose_stamped);
 
     // 0.576, 0.102, 0.443
@@ -806,19 +806,19 @@ void ScanBoard::setDepth(float *dist)
         PoseStamped req_pose_stamped;
         req_pose_stamped.header.frame_id = "base";
 
-        Utils::setPosition(&req_pose_stamped.pose, 
+        setPosition(&req_pose_stamped.pose, 
                             init_pos.x,
                             init_pos.y,
                             init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec());
 
-        Utils::setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+        setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        Utils::setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, _limb);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -828,7 +828,7 @@ void ScanBoard::setDepth(float *dist)
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(500).sleep();
      
-        if(Utils::hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) 
+        if(hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) 
         {
             break;
         }
@@ -1047,7 +1047,7 @@ void ScanBoard::setOffsets(int board_area, Contours contours, float dist, Mat *o
 
         (*centroids)[i] = centroid;
 
-        // cv::putText(*output, Utils::intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        // cv::putText(*output, intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
         line(*output, centroid, center, cv::Scalar(180,40,40), 1);
 
@@ -1089,11 +1089,11 @@ bool ScanBoard::offsetsReachable()
     {
         PoseStamped req_pose_stamped;
         req_pose_stamped.header.frame_id = "base";
-        Utils::setPosition( &req_pose_stamped.pose, 
+        setPosition( &req_pose_stamped.pose, 
                             _curr_position.x + _offsets[i].x, 
                             _curr_position.y + _offsets[i].y, 
                             _curr_position.z - _offsets[i].z);
-        Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+        setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles = getJointAngles(&req_pose_stamped);
         
@@ -1126,9 +1126,9 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 
     PoseStamped pose_stamped;
     pose_stamped.header.frame_id = "base";
-    Utils::setPosition( &pose_stamped.pose, 
+    setPosition( &pose_stamped.pose, 
                         0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
-    Utils::setOrientation(&pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setOrientation(&pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
     // if IK solver gives joint angles solution with all zeros;
     // no solution was found
@@ -1176,10 +1176,10 @@ void PutDownToken::hoverAboveCell()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x, 
+    setPosition( &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x, 
                         0.100 + _offsets[_cell - 1].y, 
                         0.445 - _offsets[_cell - 1].z);
-    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
     goToPose(req_pose_stamped);
 }
@@ -1188,10 +1188,10 @@ void PutDownToken::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
+    setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
                         0.100 + _offsets[4].y, 
                         0.200);
-    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 
@@ -1199,8 +1199,8 @@ void PutDownToken::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
-    Utils::setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
-    Utils::setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }
 

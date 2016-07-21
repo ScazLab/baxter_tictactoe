@@ -33,90 +33,85 @@
 
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
-class Utils 
-{
-    public: 
+/*
+ * checks if end effector has made contact with a token by checking if 
+ * the range of the infrared sensor has fallen below the threshold value
+ * 
+ * param      current range values of the IR sensor, and a string 
+ *            (strict/loose) indicating whether to use a high or low
+ *            threshold value
+ *             
+ * return     true if end effector has made contact; false otherwise
+ */
+bool hasCollided(float range, float max_range, float min_range, std::string mode);
 
-        /*
-         * checks if end effector has made contact with a token by checking if 
-         * the range of the infrared sensor has fallen below the threshold value
-         * 
-         * param      current range values of the IR sensor, and a string 
-         *            (strict/loose) indicating whether to use a high or low
-         *            threshold value
-         *             
-         * return     true if end effector has made contact; false otherwise
-         */
-        static bool hasCollided(float range, float max_range, float min_range, std::string mode);
+/*
+ * checks if the arm has completed its intended move by comparing
+ * the requested pose and the current pose
+ * 
+ * param      requested pose and current pose, and a string (strict/loose)
+ *            indicating the desired level of checking accuracy 
+ *             
+ * return     true if the parameters of the current pose is equal to the 
+ *            requested pose; false otherwise 
+ */
+bool hasPoseCompleted(geometry_msgs::Pose a, geometry_msgs::Pose b, std::string mode);
 
-        /*
-         * checks if the arm has completed its intended move by comparing
-         * the requested pose and the current pose
-         * 
-         * param      requested pose and current pose, and a string (strict/loose)
-         *            indicating the desired level of checking accuracy 
-         *             
-         * return     true if the parameters of the current pose is equal to the 
-         *            requested pose; false otherwise 
-         */
-        static bool hasPoseCompleted(geometry_msgs::Pose a, geometry_msgs::Pose b, std::string mode);
+/*
+ * checks if two numbers rounded up to 2 decimal points are within 0.0z (z is specified no.) to each other 
+ * 
+ * param      two floats x and y specifying the numbers to be checked,
+ *            and a float z determining the desired accuracy
+ *             
+ * return     true if they are within 0.0z; false otherwise
+ */
+bool withinXHundredth(float x, float y, float z);
 
-        /*
-         * checks if two numbers rounded up to 2 decimal points are within 0.0z (z is specified no.) to each other 
-         * 
-         * param      two floats x and y specifying the numbers to be checked,
-         *            and a float z determining the desired accuracy
-         *             
-         * return     true if they are within 0.0z; false otherwise
-         */
-        static bool withinXHundredth(float x, float y, float z);
+/*
+ * checks if two decimal numbers are equal to each other up to z of decimal points
+ * 
+ * param      two floats x and y, and a float z specifying the desired accuracy
+ *             
+ * return     true if they are equal up to z decimal points; false otherwise
+ */
+bool equalXDP(float x, float y, float z);
 
-        /*
-         * checks if two decimal numbers are equal to each other up to z of decimal points
-         * 
-         * param      two floats x and y, and a float z specifying the desired accuracy
-         *             
-         * return     true if they are equal up to z decimal points; false otherwise
-         */
-        static bool equalXDP(float x, float y, float z);
- 
-        /*
-         * sets the position of a pose
-         * 
-         * param      Pose* pose, and three floats indicating the x-y-z coordinates of a position
-         *             
-         * return     N/A
-         */
-        static void setPosition(geometry_msgs::Pose * pose, float x, float y, float z);
+/*
+ * sets the position of a pose
+ * 
+ * param      Pose* pose, and three floats indicating the x-y-z coordinates of a position
+ *             
+ * return     N/A
+ */
+void setPosition(geometry_msgs::Pose * pose, float x, float y, float z);
 
-        /*
-         * sets the orientation of a pose
-         * 
-         * param      Pose* pose, and three floats indicating the x-y-z-w coordinates of an orientation
-         *             
-         * return     N/A
-         */
-        static void setOrientation(geometry_msgs::Pose * pose, float x, float y, float z, float w);
- 
-        /*
-         * sets the joint names of a JointCommand
-         * 
-         * param      JointCommand * joint_cmd, and a string (left/right) indicating which arm is
-         *            being moved
-         *             
-         * return     N/A
-         */
-        static void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
+/*
+ * sets the orientation of a pose
+ * 
+ * param      Pose* pose, and three floats indicating the x-y-z-w coordinates of an orientation
+ *             
+ * return     N/A
+ */
+void setOrientation(geometry_msgs::Pose * pose, float x, float y, float z, float w);
 
-        /*
-         * converts an integer to a string
-         * 
-         * param      integer to be converted
-         *             
-         * return     converted string
-         */
-        static std::string intToString( const int a );
-};
+/*
+ * sets the joint names of a JointCommand
+ * 
+ * param      JointCommand * joint_cmd, and a string (left/right) indicating which arm is
+ *            being moved
+ *             
+ * return     N/A
+ */
+void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
+
+/*
+ * converts an integer to a string
+ * 
+ * param      integer to be converted
+ *             
+ * return     converted string
+ */
+std::string intToString( const int a );
 
 // Class initializes overhead functions necessary to start a thread from within a class, 
 // and overhead ROS features: subscriber/publishers, services, callback functions etc.
