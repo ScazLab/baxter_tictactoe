@@ -5,7 +5,7 @@ namespace ttt
 
 Vacuum_Gripper::Vacuum_Gripper(vacuum_gripper_type gripper)
 {
-    ROS_INFO("Vacuum_Gripper constructor");
+    // ROS_INFO("Vacuum_Gripper constructor");
     _gripper=gripper;
 
     _pub_command_grip = _nh.advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/command", 1);

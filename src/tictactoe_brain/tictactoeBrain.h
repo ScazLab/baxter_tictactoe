@@ -6,6 +6,7 @@
 #include <baxter_tictactoe/MsgCell.h>
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/SetTrajectoryType.h>
+#include "baxter_tictactoe/ScanState.h"
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
@@ -14,7 +15,7 @@
 #include "vacuum_gripper/vacuum_gripper.h"
 #include "arm_controller/arm_controller.h"
 
-
+#include <pthread.h>
 
 namespace ttt
 {
@@ -50,13 +51,16 @@ private:
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
     ros::ServiceClient _clnt_movement_type;
+    ros::ServiceClient _scan_client;
+    ros::ServiceServer _scan_server;
 
     std::string _voice_type; // It determines the type of voice.
 
     bool traj;             // traj=false -> arm movement done via inverse kinematics (ArmController)
                            // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
                            // traj=false preferred due to simpler and more robust implementation 
-    
+    bool _setup;
+
     bool movement_type;    // It determines the type of movements: smooth and natural or more mechanistic and robotic.
     bool cheating;         // It determines if the robot can cheat or not.
 
@@ -68,10 +72,13 @@ private:
                                                             decides the next move. We use a pointer 
                                                             because we could have different strategies. */
 
-    ArmController * left_arm_controller;
-    ArmController * right_arm_controller;
+    ArmController * _left_ac;
+    ArmController * _right_ac;
 
     bool has_cheated;
+
+    bool scanState(baxter_tictactoe::ScanState::Request &req, 
+                   baxter_tictactoe::ScanState::Response &res);
 
     /**
      * It handles the message published when the state of a cell has changed. The new TTT board state

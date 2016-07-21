@@ -32,6 +32,7 @@ int main(int argc, char** argv)
     }
 
     ttt::tictactoeBrain brain(traj); //random strategy by default
+
     brain.set_strategy("smart");
     ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
 
