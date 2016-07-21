@@ -34,13 +34,13 @@ target_link_libraries(move_maker             trajectory_player             traje
 target_link_libraries(arm_controller         vacuum_gripper                ${catkin_LIBRARIES})
 
 ## Mark libraries for installation
-install (TARGETS ${PROJECT_NAME}
+install (TARGETS ${PROJECT_NAME} arm_controller vacuum_gripper
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 ## Mark cpp header files for installation
-install(DIRECTORY lib/include/
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/baxterTictactoe ${PROJECT_SOURCE_DIR}/include/arm_controller ${PROJECT_SOURCE_DIR}/include/vacuum_gripper
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"
 )

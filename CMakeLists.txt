@@ -109,8 +109,8 @@ generate_messages(DEPENDENCIES
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS lib/include/
-    LIBRARIES baxterTictactoe 
+    INCLUDE_DIRS lib/include
+    LIBRARIES baxterTictactoe vacuum_gripper arm_controller
     CATKIN_DEPENDS message_runtime
 )
 
@@ -215,9 +215,9 @@ target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
 #  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #)
 
-install(DIRECTORY include/ 
-    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
+# install(DIRECTORY include/ 
+#     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(DIRECTORY launch/

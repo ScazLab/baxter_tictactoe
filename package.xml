@@ -40,8 +40,8 @@
 
   </description>
   <author>Álvaro Castro González [acgonzal@ing.uc3m.es]</author>
-  <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
   <maintainer email="alessandro.roncone@yale.edu">Alessandro Roncone</maintainer>
+  <maintainer email="olivier.mangin@yale.edu">Olivier Mangin</maintainer>
   <maintainer email="johnamadeo.daniswara@yale.edu">John Amadeo Daniswara</maintainer>
   <license>GNU GPL v2</license>
 
@@ -65,7 +65,7 @@
   <exec_depend>usb_cam</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 
-  <export>
+  <!-- <export>
     <cpp cflags="-I${prefix}/src -I${prefix}/msg_gen/cpp/include" lflags="-L${prefix}/lib -Wl,-rpath,${prefix}/lib"/>
-  </export>
+  </export> -->
 </package>
