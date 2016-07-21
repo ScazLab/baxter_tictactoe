@@ -99,16 +99,16 @@ string Utils::intToString( const int a )
 }
 
 /**************************************************************************/
-/*                          ROSThreadClass                                */
+/*                          ROSThread                                */
 /**************************************************************************/
 
 // Public
-ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
+ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
-    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ROSThreadClass::endpointCallback, this);
-    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ROSThreadClass::imageCallback, this);
-    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ROSThreadClass::IRCallback, this);
+    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ROSThread::endpointCallback, this);
+    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ROSThread::imageCallback, this);
+    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ROSThread::IRCallback, this);
     _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
     _gripper = new ttt::Vacuum_Gripper(ttt::left);
     _init_time = ros::Time::now();
@@ -119,13 +119,13 @@ ROSThreadClass::ROSThreadClass(string limb): _img_trp(_n), _limb(limb)
     pthread_mutex_init(&_mutex_pos, NULL);
 }
 
-ROSThreadClass::~ROSThreadClass() {}
+ROSThread::~ROSThread() {}
 
-bool ROSThreadClass::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
+bool ROSThread::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
 
-void ROSThreadClass::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL);}
+void ROSThread::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL);}
 
-void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
+void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
     // pause();  
     // pthread_mutex_lock(&_mutex_pos);
@@ -134,14 +134,14 @@ void ROSThreadClass::endpointCallback(const baxter_core_msgs::EndpointState& msg
     // pthread_mutex_unlock(&_mutex_pos);
 }
 
-void ROSThreadClass::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
+void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
 {
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
 }
 
-void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+void ROSThread::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
     cv_bridge::CvImageConstPtr cv_ptr;
     try {cv_ptr = cv_bridge::toCvShare(msg);}
@@ -155,13 +155,13 @@ void ROSThreadClass::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     pthread_mutex_unlock(&_mutex_img);   
 }
 
-geometry_msgs::Point ROSThreadClass::getState() {return _state;}
+geometry_msgs::Point ROSThread::getState() {return _state;}
 
 // Protected
 
-void ROSThreadClass::InternalThreadEntry() {};
+void ROSThread::InternalThreadEntry() {};
 
-void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
+void ROSThread::goToPose(PoseStamped req_pose_stamped)
 {
     vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
@@ -193,7 +193,7 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped)
     }
 }
 
-void ROSThreadClass::goToPose(PoseStamped req_pose_stamped, string mode)
+void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
     vector<double> joint_angles = getJointAngles(&req_pose_stamped);
 
@@ -224,7 +224,7 @@ void ROSThreadClass::goToPose(PoseStamped req_pose_stamped, string mode)
     }
 }
 
-vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
+vector<double> ROSThread::getJointAngles(PoseStamped * pose_stamped)
 {
     vector<double> joint_angles;
     bool all_zeros = true;
@@ -268,7 +268,7 @@ vector<double> ROSThreadClass::getJointAngles(PoseStamped * pose_stamped)
     return joint_angles;
 }
 
-void ROSThreadClass::setState(int state)
+void ROSThread::setState(int state)
 {
     _state.x = state;
     // store the time elapsed between object initialization and state change
@@ -278,28 +278,28 @@ void ROSThreadClass::setState(int state)
 // for syncing mutex locks (crash/errors occur if not used)
 // pause() changes timing of execution of thread locks, but unclear
 // why crash occurs w/o it and needs to be investigated
-void ROSThreadClass::pause()
+void ROSThread::pause()
 {
     ros::Rate(1000).sleep();
 }
 
 // Private
-void * ROSThreadClass::InternalThreadEntryFunc(void * This) 
+void * ROSThread::InternalThreadEntryFunc(void * This) 
 {
-    ((ROSThreadClass *)This)->InternalThreadEntry(); 
+    ((ROSThread *)This)->InternalThreadEntry(); 
     return NULL;
 }
 
 /**************************************************************************/
-/*                         MoveToRestClass                                */
+/*                         MoveToRest                                */
 /**************************************************************************/
 
 // Public
-MoveToRestClass::MoveToRestClass(string limb): ROSThreadClass(limb) {}
-MoveToRestClass::~MoveToRestClass(){}
+MoveToRest::MoveToRest(string limb): ROSThread(limb) {}
+MoveToRest::~MoveToRest(){}
 
 // Protected
-void MoveToRestClass::InternalThreadEntry()
+void MoveToRest::InternalThreadEntry()
 {
     // wait for endpoint callback
     while(ros::ok())
@@ -351,24 +351,16 @@ void MoveToRestClass::InternalThreadEntry()
 }  
 
 
-
-
-
-
-
-
-
-
 /**************************************************************************/
-/*                         PickUpTokenClass                               */
+/*                         PickUpToken                               */
 /**************************************************************************/
 
 // Public
-PickUpTokenClass::PickUpTokenClass(string limb): ROSThreadClass(limb) {}
-PickUpTokenClass::~PickUpTokenClass() {}
+PickUpToken::PickUpToken(string limb): ROSThread(limb) {}
+PickUpToken::~PickUpToken() {}
 
 // Protected
-void PickUpTokenClass::InternalThreadEntry()
+void PickUpToken::InternalThreadEntry()
 {
     // wait for IR sensor callback
     while(ros::ok())
@@ -398,7 +390,7 @@ void PickUpTokenClass::InternalThreadEntry()
 // Private
 typedef vector<vector<cv::Point> > Contours;
 
-void PickUpTokenClass::gripToken()
+void PickUpToken::gripToken()
 {
     namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
@@ -464,7 +456,7 @@ void PickUpTokenClass::gripToken()
     // destroyWindow("[PickUpToken] Final");
 }   
 
-void PickUpTokenClass::hoverAboveTokens(std::string height)
+void PickUpToken::hoverAboveTokens(std::string height)
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -473,7 +465,7 @@ void PickUpTokenClass::hoverAboveTokens(std::string height)
     goToPose(req_pose_stamped);
 }
 
-void PickUpTokenClass::checkForToken(cv::Point2d &offset)
+void PickUpToken::checkForToken(cv::Point2d &offset)
 {
     ros::Time start_time = ros::Time::now();
 
@@ -498,7 +490,7 @@ void PickUpTokenClass::checkForToken(cv::Point2d &offset)
     }
 }
 
-void PickUpTokenClass::processImage(cv::Point2d &offset)
+void PickUpToken::processImage(cv::Point2d &offset)
 {
     Mat black, blue, token_rough, token, board; 
     Contours contours;
@@ -519,7 +511,7 @@ void PickUpTokenClass::processImage(cv::Point2d &offset)
     waitKey(30);
 }
 
-void PickUpTokenClass::isolateBlue(Mat &output)
+void PickUpToken::isolateBlue(Mat &output)
 {
     Mat hsv;
 
@@ -532,7 +524,7 @@ void PickUpTokenClass::isolateBlue(Mat &output)
     inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
 }
 
-void PickUpTokenClass::isolateBlack(Mat &output)
+void PickUpToken::isolateBlack(Mat &output)
 {
     Mat gray;
 
@@ -545,7 +537,7 @@ void PickUpTokenClass::isolateBlack(Mat &output)
     threshold(gray, output, 55, 255, cv::THRESH_BINARY_INV);
 }
 
-void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
+void PickUpToken::isolateBoard(Mat input, Mat &output, int &board_y)
 {
     output = Mat::zeros(_curr_img_size, CV_8UC1);
 
@@ -610,7 +602,7 @@ void PickUpTokenClass::isolateBoard(Mat input, Mat &output, int &board_y)
     line(output, cv::Point(0, board_y), cv::Point(_curr_img_size.width, board_y), cv::Scalar(130,256,256), 5);
 }
 
-void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
+void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
 {
     Contours raw_contours, clean_contours, apx_contours, gripper_contours;
     findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
@@ -696,7 +688,7 @@ void PickUpTokenClass::isolateToken(Mat input, int board_y, Mat &output, Contour
     line(output, cv::Point(0, board_y), cv::Point(_curr_img_size.width, board_y), cv::Scalar(130,256,256));
 }              
 
-void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
+void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 {
     output = Mat::zeros(_curr_img_size, CV_8UC1);
 
@@ -744,27 +736,18 @@ void PickUpTokenClass::setOffset(Contours contours, cv::Point2d &offset, Mat &ou
     }
 }
 
-
-
-
-
-
-
-
-
-
 /**************************************************************************/
-/*                          ScanBoardClass                                */
+/*                          ScanBoard                                */
 /**************************************************************************/
 
 // Public
-ScanBoardClass::ScanBoardClass(string limb): ROSThreadClass(limb) {}
-ScanBoardClass::~ScanBoardClass() {}
+ScanBoard::ScanBoard(string limb): ROSThread(limb) {}
+ScanBoard::~ScanBoard() {}
 
-vector<geometry_msgs::Point> ScanBoardClass::getOffsets() {return _offsets;}
+vector<geometry_msgs::Point> ScanBoard::getOffsets() {return _offsets;}
 
 // Protected
-void ScanBoardClass::InternalThreadEntry()
+void ScanBoard::InternalThreadEntry()
 {
     hoverAboveBoard();
 
@@ -783,7 +766,7 @@ void ScanBoardClass::InternalThreadEntry()
 }
 
 // Private
-void ScanBoardClass::hoverAboveTokens()
+void ScanBoard::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -792,7 +775,7 @@ void ScanBoardClass::hoverAboveTokens()
     goToPose(req_pose_stamped);
 }
 
-void ScanBoardClass::hoverAboveBoard()
+void ScanBoard::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -803,7 +786,7 @@ void ScanBoardClass::hoverAboveBoard()
     // 0.576, 0.102, 0.443
 }
 
-void ScanBoardClass::scan()
+void ScanBoard::scan()
 {
     float dist;
     setDepth(&dist);
@@ -811,7 +794,7 @@ void ScanBoardClass::scan()
     processImage("run", dist);   
 }
 
-void ScanBoardClass::setDepth(float *dist)
+void ScanBoard::setDepth(float *dist)
 {
     geometry_msgs::Point init_pos = _curr_position;
 
@@ -855,7 +838,7 @@ void ScanBoardClass::setDepth(float *dist)
     *dist = init_pos.z - _curr_position.z + 0.04;
 }
 
-void ScanBoardClass::processImage(string mode, float dist)
+void ScanBoard::processImage(string mode, float dist)
 {
     namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
     // namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
@@ -939,7 +922,7 @@ void ScanBoardClass::processImage(string mode, float dist)
     destroyWindow("[ScanBoard] Processed");
 }
 
-void ScanBoardClass::isolateBlack(Mat * output)
+void ScanBoard::isolateBlack(Mat * output)
 {
     Mat gray;
     pause();
@@ -949,7 +932,7 @@ void ScanBoardClass::isolateBlack(Mat * output)
     threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
 }
 
-void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, vector<cv::Point> * board_corners, Mat input, Mat * output)
+void ScanBoard::isolateBoard(Contours * contours, int * board_area, vector<cv::Point> * board_corners, Mat input, Mat * output)
 {
     *output = Mat::zeros(_curr_img_size, CV_8UC1);
 
@@ -1034,7 +1017,7 @@ void ScanBoardClass::isolateBoard(Contours * contours, int * board_area, vector<
     }
 }
 
-bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j) 
+bool ScanBoard::descendingX(vector<cv::Point> i, vector<cv::Point> j) 
 {
     double x_i = moments(i, false).m10 / moments(i, false).m00;
     double x_j = moments(j, false).m10 / moments(j, false).m00;
@@ -1042,7 +1025,7 @@ bool ScanBoardClass::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
+void ScanBoard::setOffsets(int board_area, Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
 {
     cv::Point center(_curr_img_size.width / 2, _curr_img_size.height / 2);
 
@@ -1074,7 +1057,7 @@ void ScanBoardClass::setOffsets(int board_area, Contours contours, float dist, M
     }
 }
 
-void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> board_corners, vector<cv::Point> * centroids, vector<cv::Point> * cell_to_corner)
+void ScanBoard::setZone(Contours contours, float dist, vector<cv::Point> board_corners, vector<cv::Point> * centroids, vector<cv::Point> * cell_to_corner)
 {
     (*cell_to_corner).resize(4);
 
@@ -1100,7 +1083,7 @@ void ScanBoardClass::setZone(Contours contours, float dist, vector<cv::Point> bo
     while(!pointReachable((*centroids)[8], dist)) {(*centroids)[8].x += 5.0;}
 }
 
-bool ScanBoardClass::offsetsReachable()
+bool ScanBoard::offsetsReachable()
 {
     for(int i = 0; i < 9; i++)
     {
@@ -1130,7 +1113,7 @@ bool ScanBoardClass::offsetsReachable()
     return true;
 }
 
-bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
+bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 {
     // convert image location into real world pose coordinates
     cv::Point center(_curr_img_size.width / 2, _curr_img_size.height / 2);
@@ -1163,30 +1146,19 @@ bool ScanBoardClass::pointReachable(cv::Point centroid, float dist)
     return all_zeros ? false : true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 /**************************************************************************/
-/*                         PutDownTokenClass                              */
+/*                         PutDownToken                              */
 /**************************************************************************/
 
 // Public
-PutDownTokenClass::PutDownTokenClass(string limb): ROSThreadClass(limb) {}        
-PutDownTokenClass::~PutDownTokenClass() {}
+PutDownToken::PutDownToken(string limb): ROSThread(limb) {}        
+PutDownToken::~PutDownToken() {}
 
-void PutDownTokenClass::setCell(int cell) {_cell = cell;}
-void PutDownTokenClass::setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
+void PutDownToken::setCell(int cell) {_cell = cell;}
+void PutDownToken::setOffsets(vector<geometry_msgs::Point> offsets) {_offsets = offsets;}
 
 // Protected
-void PutDownTokenClass::InternalThreadEntry()
+void PutDownToken::InternalThreadEntry()
 {
     hoverAboveBoard();
     hoverAboveCell();
@@ -1200,7 +1172,7 @@ void PutDownTokenClass::InternalThreadEntry()
 }  
 
 // Private
-void PutDownTokenClass::hoverAboveCell()
+void PutDownToken::hoverAboveCell()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -1212,7 +1184,7 @@ void PutDownTokenClass::hoverAboveCell()
     goToPose(req_pose_stamped);
 }
 
-void PutDownTokenClass::hoverAboveBoard()
+void PutDownToken::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -1223,7 +1195,7 @@ void PutDownTokenClass::hoverAboveBoard()
     goToPose(req_pose_stamped);
 }
 
-void PutDownTokenClass::hoverAboveTokens()
+void PutDownToken::hoverAboveTokens()
 {
     PoseStamped req_pose_stamped;
     req_pose_stamped.header.frame_id = "base";
@@ -1238,10 +1210,10 @@ void PutDownTokenClass::hoverAboveTokens()
 
 ArmController::ArmController(string limb): _limb(limb) 
 {
-    _rest_class = new MoveToRestClass(_limb);
-    _pick_class = new PickUpTokenClass(_limb);
-    _scan_class = new ScanBoardClass(_limb);
-    _put_class = new PutDownTokenClass(_limb);
+    _rest_class = new MoveToRest(_limb);
+    _pick_class = new PickUpToken(_limb);
+    _scan_class = new ScanBoard(_limb);
+    _put_class = new PutDownToken(_limb);
 }
 
 ArmController::~ArmController()

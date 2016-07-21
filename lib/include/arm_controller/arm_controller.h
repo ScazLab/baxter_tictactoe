@@ -118,11 +118,11 @@ class Utils
 
 // Class initializes overhead functions necessary to start a thread from within a class, 
 // and overhead ROS features: subscriber/publishers, services, callback functions etc.
-class ROSThreadClass
+class ROSThread
 {
     public:
-        ROSThreadClass(std::string limb);
-        virtual ~ROSThreadClass();
+        ROSThread(std::string limb);
+        virtual ~ROSThread();
 
         pthread_mutex_t _mutex_img;
         pthread_mutex_t _mutex_pos;    
@@ -251,11 +251,11 @@ class ROSThreadClass
         pthread_t _thread;      
 };
 
-class MoveToRestClass : public ROSThreadClass
+class MoveToRest : public ROSThread
 {
     public:
-        MoveToRestClass(std::string limb);
-        ~MoveToRestClass();
+        MoveToRest(std::string limb);
+        ~MoveToRest();
 
     protected:
 
@@ -268,11 +268,11 @@ class MoveToRestClass : public ROSThreadClass
         void InternalThreadEntry();
 };
 
-class PickUpTokenClass : public ROSThreadClass
+class PickUpToken : public ROSThread
 {
     public:
-        PickUpTokenClass(std::string limb);
-        ~PickUpTokenClass();
+        PickUpToken(std::string limb);
+        ~PickUpToken();
 
     protected:
 
@@ -367,11 +367,11 @@ class PickUpTokenClass : public ROSThreadClass
         void setOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 };
 
-class ScanBoardClass : public ROSThreadClass 
+class ScanBoard : public ROSThread 
 {
     public:
-        ScanBoardClass(std::string limb);
-        ~ScanBoardClass();
+        ScanBoard(std::string limb);
+        ~ScanBoard();
 
         std::vector<geometry_msgs::Point> getOffsets();
 
@@ -496,11 +496,11 @@ class ScanBoardClass : public ROSThreadClass
         bool pointReachable(cv::Point centroid, float dist);
 };
 
-class PutDownTokenClass : public ROSThreadClass
+class PutDownToken : public ROSThread
 {
     public:
-        PutDownTokenClass(std::string limb);     
-        ~PutDownTokenClass();
+        PutDownToken(std::string limb);     
+        ~PutDownToken();
 
         void setCell(int cell);
         void setOffsets(std::vector<geometry_msgs::Point> offsets);
@@ -548,10 +548,10 @@ class ArmController
 {
     private:
         std::string _limb;
-        MoveToRestClass * _rest_class;
-        PickUpTokenClass * _pick_class;
-        ScanBoardClass * _scan_class;
-        PutDownTokenClass * _put_class; 
+        MoveToRest * _rest_class;
+        PickUpToken * _pick_class;
+        ScanBoard * _scan_class;
+        PutDownToken * _put_class; 
 
     public:
         ArmController(std::string limb);
