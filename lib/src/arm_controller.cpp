@@ -106,15 +106,14 @@ string intToString( const int a )
 ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb), _state(START,0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
-    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ROSThread::endpointCallback, this);
-    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", 1, &ROSThread::imageCallback, this);
-    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", 1, &ROSThread::IRCallback, this);
+    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
+    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", SUBSCRIBER_BUFFER, &ROSThread::imageCallback, this);
+    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
     _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
     _gripper = new ttt::Vacuum_Gripper(ttt::left);
     _init_time = ros::Time::now();
 
     pthread_mutex_init(&_mutex_img, NULL);
-    pthread_mutex_init(&_mutex_pos, NULL);
 }
 
 ROSThread::~ROSThread() {}
@@ -125,15 +124,14 @@ void ROSThread::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL
 
 void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
-    // pause();  
-    // pthread_mutex_lock(&_mutex_pos);
+    ROS_INFO("endpointCallback");
     _curr_pose = msg.pose;
     _curr_position = _curr_pose.position;
-    // pthread_mutex_unlock(&_mutex_pos);
 }
 
 void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
 {
+    ROS_INFO("IRCallback");
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
@@ -141,11 +139,11 @@ void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg)
 
 void ROSThread::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 {
+    ROS_INFO("imageCallback");
     cv_bridge::CvImageConstPtr cv_ptr;
     try {cv_ptr = cv_bridge::toCvShare(msg);}
-    catch(cv_bridge::Exception& e) {ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what());}
+    catch(cv_bridge::Exception& e) { ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what()); }
  
-    pause();  // don't remove these prints or it will crash ahahah
     pthread_mutex_lock(&_mutex_img);
     _curr_img = cv_ptr->image.clone();
     _curr_img_size = _curr_img.size();
@@ -153,42 +151,16 @@ void ROSThread::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     pthread_mutex_unlock(&_mutex_img);   
 }
 
-// Protected
-
-void ROSThread::InternalThreadEntry() {};
-
-void ROSThread::goToPose(PoseStamped req_pose_stamped)
+void ROSThread::hoverAboveTokens(double height)
 {
-    vector<double> joint_angles = getJointAngles(&req_pose_stamped);
-
-    while(ros::ok)
-    {
-        JointCommand joint_cmd;
-        joint_cmd.mode = JointCommand::POSITION_MODE;
-
-        // joint_cmd.names
-        setNames(&joint_cmd, _limb);
-        joint_cmd.command.resize(7);
-        // joint_cmd.angles
-        for(int i = 0; i < joint_angles.size(); i++) {
-            joint_cmd.command[i] = joint_angles[i];
-        }
-
-        _joint_cmd_pub.publish(joint_cmd);
-        // ros::Rate(500).sleep();
-
-        // pause();  // don't remove these prints or it will crash ahahah
-        // pthread_mutex_lock(&_mutex_pos);   
-
-        if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
-        {
-            // pthread_mutex_unlock(&_mutex_pos);
-            break;
-        }
-        // else {pthread_mutex_unlock(&_mutex_pos);}
-    }
+    PoseStamped req_pose_stamped;
+    req_pose_stamped.header.frame_id = "base";
+    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height);
+    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    goToPose(req_pose_stamped);
 }
 
+// Protected
 void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
     vector<double> joint_angles = getJointAngles(&req_pose_stamped);
@@ -207,16 +179,11 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
         }
 
         _joint_cmd_pub.publish(joint_cmd);
-        // ros::Rate(500).sleep();
 
-        // pause();  // don't remove these prints or it will crash ahahah
-        // pthread_mutex_lock(&_mutex_pos);   
         if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
-            // pthread_mutex_unlock(&_mutex_pos);
             break;
         }
-        // else {pthread_mutex_unlock(&_mutex_pos);}
     }
 }
 
@@ -276,7 +243,7 @@ void ROSThread::setState(int state)
 // why crash occurs w/o it and needs to be investigated
 void ROSThread::pause()
 {
-    ros::Rate(1000).sleep();
+    ros::Duration(0.001).sleep();
 }
 
 // Private
@@ -330,16 +297,14 @@ void MoveToRest::InternalThreadEntry()
         joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
         _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
+        ros::Rate(100).sleep();
 
-        pause();  
-        pthread_mutex_lock(&_mutex_pos);   
+        // pause();  
+ 
         if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
-            pthread_mutex_unlock(&_mutex_pos);               
             break;
         }
-        else {pthread_mutex_unlock(&_mutex_pos);}
     }
 
     setState(REST);
@@ -388,9 +353,9 @@ void PickUpToken::InternalThreadEntry()
         if(!_curr_img_empty) break;
     }
 
-    hoverAboveTokens("high");
+    hoverAboveTokens(POS_HIGH);
     gripToken();
-    hoverAboveTokens("low");
+    hoverAboveTokens(POS_LOW);
 
     setState(PICK_UP);
     pthread_exit(NULL);  
@@ -441,7 +406,7 @@ void PickUpToken::gripToken()
         }
 
         _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
+        ros::Rate(100).sleep();
         
         // if(_curr_position.z < -0.05) break;
 
@@ -452,15 +417,6 @@ void PickUpToken::gripToken()
     }
     _gripper->suck();
 }   
-
-void PickUpToken::hoverAboveTokens(std::string height)
-{
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height == "high" ? 0.400 : 0.150);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-    goToPose(req_pose_stamped);
-}
 
 void PickUpToken::checkForToken(cv::Point2d &offset)
 {
@@ -512,7 +468,7 @@ void PickUpToken::isolateBlue(Mat &output)
 {
     Mat hsv;
 
-    pause();  // don't remove these prints or it will crash ahahah
+    pause();  // don't remove these prints or it will crash
     pthread_mutex_lock(&_mutex_img); 
     // convert image color format from BGR to HSV  
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
@@ -525,9 +481,8 @@ void PickUpToken::isolateBlack(Mat &output)
 {
     Mat gray;
 
-    pause();  // don't remove these prints or it will crash ahahah
+    pause();  // don't remove these prints or it will crash
     pthread_mutex_lock(&_mutex_img);   
-    // convert image color format from BGR to grayscale
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
     pthread_mutex_unlock(&_mutex_img);  
 
@@ -738,10 +693,18 @@ void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 /**************************************************************************/
 
 // Public
-ScanBoard::ScanBoard(string limb): ROSThread(limb) {}
-ScanBoard::~ScanBoard() {}
+ScanBoard::ScanBoard(string limb): ROSThread(limb)
+{
+    namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
+    namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
+}
+ScanBoard::~ScanBoard()
+{
+    destroyWindow("[ScanBoard] Rough");
+    destroyWindow("[ScanBoard] Processed");
+}
 
-vector<geometry_msgs::Point> ScanBoard::getOffsets() {return _offsets;}
+vector<geometry_msgs::Point> ScanBoard::getOffsets() { return _offsets; }
 
 // Protected
 void ScanBoard::InternalThreadEntry()
@@ -756,22 +719,13 @@ void ScanBoard::InternalThreadEntry()
     }
 
     scan();
-    hoverAboveTokens();
+    hoverAboveTokens(POS_HIGH);
 
     setState(SCAN);
     pthread_exit(NULL);
 }
 
 // Private
-void ScanBoard::hoverAboveTokens()
-{
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-    goToPose(req_pose_stamped);
-}
-
 void ScanBoard::hoverAboveBoard()
 {
     PoseStamped req_pose_stamped;
@@ -779,8 +733,6 @@ void ScanBoard::hoverAboveBoard()
     setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
     setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
     goToPose(req_pose_stamped);
-
-    // 0.576, 0.102, 0.443
 }
 
 void ScanBoard::scan()
@@ -823,7 +775,7 @@ void ScanBoard::setDepth(float *dist)
         }
 
         _joint_cmd_pub.publish(joint_cmd);
-        ros::Rate(500).sleep();
+        ros::Rate(100).sleep();
      
         if(hasCollided(_curr_range, _curr_max_range, _curr_min_range, "loose")) 
         {
@@ -837,8 +789,6 @@ void ScanBoard::setDepth(float *dist)
 
 void ScanBoard::processImage(string mode, float dist)
 {
-    namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
-    // namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
     ros::Time start_time = ros::Time::now();
 
     while(ros::ok())
@@ -846,10 +796,7 @@ void ScanBoard::processImage(string mode, float dist)
         Contours contours;
         vector<cv::Point> centroids, board_corners, cell_to_corner;
         
-        pause();
-        pthread_mutex_lock(&_mutex_img);   
-        Mat binary, board, zone = _curr_img.clone();
-        pthread_mutex_unlock(&_mutex_img);   
+        Mat binary, board;
 
         int board_area;
 
@@ -878,10 +825,7 @@ void ScanBoard::processImage(string mode, float dist)
                 int interval = 10;
                 while(ros::ok())
                 {
-                    pause();
-                    pthread_mutex_lock(&_mutex_img);   
                     Mat zone = _curr_img.clone();
-                    pthread_mutex_unlock(&_mutex_img);  
 
                     line(zone, centroids[0] + cell_to_corner[0], centroids[2] + cell_to_corner[1], cv::Scalar(0,0,255), 1);
                     line(zone, centroids[2] + cell_to_corner[1], centroids[8] + cell_to_corner[3], cv::Scalar(0,0,255), 1);
@@ -911,12 +855,8 @@ void ScanBoard::processImage(string mode, float dist)
             }
         }
 
-        imshow("[ScanBoard] Rough", zone);
         imshow("[ScanBoard] Processed", board);
     }
-
-    destroyWindow("[ScanBoard] Rough");
-    destroyWindow("[ScanBoard] Processed");
 }
 
 void ScanBoard::isolateBlack(Mat * output)
@@ -1159,10 +1099,10 @@ void PutDownToken::InternalThreadEntry()
 {
     hoverAboveBoard();
     hoverAboveCell();
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.8).sleep();
     _gripper->blow();
     hoverAboveBoard();
-    hoverAboveTokens();
+    hoverAboveTokens(POS_HIGH);
 
     setState(PUT_DOWN);
     pthread_exit(NULL);  
@@ -1188,15 +1128,6 @@ void PutDownToken::hoverAboveBoard()
     setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
                         0.100 + _offsets[4].y, 
                         0.200);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-    goToPose(req_pose_stamped);
-}
-
-void PutDownToken::hoverAboveTokens()
-{
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, 0.400);
     setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
     goToPose(req_pose_stamped);
 }

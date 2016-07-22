@@ -31,6 +31,11 @@
 #define PICK_UP 3
 #define PUT_DOWN 4
 
+#define SUBSCRIBER_BUFFER 10
+
+#define POS_HIGH        0.400
+#define POS_LOW         0.150
+#define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
 /*
@@ -134,11 +139,7 @@ class ROSThread
         virtual ~ROSThread();
 
         pthread_mutex_t _mutex_img;
-        pthread_mutex_t _mutex_pos;    
         // pthread_mutex_t _mutex_rng;
-
-        pthread_mutexattr_t _attr_img;
-        pthread_mutexattr_t _attr_pos;
 
         /*
          * starts thread that executes the internal thread entry function
@@ -195,6 +196,14 @@ class ROSThread
          */
         State getState() {return _state;};
 
+        /*
+         * hover arm above tokens
+         * 
+         * param      double indicating requested height of arm (z-axis)
+         * return     N/A
+         */
+        void hoverAboveTokens(double height);
+
     protected:
         ros::Publisher _joint_cmd_pub;
         cv::Mat _curr_img;
@@ -225,9 +234,7 @@ class ROSThread
          * 
          * return     N/A
          */
-        void goToPose(geometry_msgs::PoseStamped req_pose_stamped);
-
-        void goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode);
+        void goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode="loose");
 
         /*
          * use built in IK solver to find joint angles solution for desired pose
@@ -257,7 +264,7 @@ class ROSThread
         ros::ServiceClient _ik_client;
         image_transport::ImageTransport _img_trp;
         image_transport::Subscriber _img_sub;
-        pthread_t _thread;      
+        pthread_t _thread;
 };
 
 class MoveToRest : public ROSThread
@@ -303,14 +310,6 @@ class PickUpToken : public ROSThread
          * return     N/A
          */
         void gripToken();
-
-        /*
-         * hover arm above tokens
-         * 
-         * param      string (high/low) indicating requested height of arm
-         * return     N/A
-         */
-        void hoverAboveTokens(std::string height);
 
         /*
          * check if hand camera detects token 
@@ -397,14 +396,6 @@ class ScanBoard : public ROSThread
     private:
         typedef std::vector<std::vector<cv::Point> > Contours;
         std::vector<geometry_msgs::Point> _offsets;
-
-        /*
-         * hover arm above tokens
-         * 
-         * param      N/A
-         * return     N/A
-         */
-        void hoverAboveTokens();
 
         /*
          * hover arm above board
@@ -543,14 +534,6 @@ class PutDownToken : public ROSThread
          * return     N/A
          */
         void hoverAboveBoard();
-
-        /*
-         * hover arm above tokens
-         * 
-         * param      N/A
-         * return     N/A
-         */
-        void hoverAboveTokens();
 };
 
 class ArmController
