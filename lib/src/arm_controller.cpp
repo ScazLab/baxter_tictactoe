@@ -103,7 +103,7 @@ string intToString( const int a )
 /**************************************************************************/
 
 // Public
-ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb)
+ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb), _state(START,0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
     _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", 1, &ROSThread::endpointCallback, this);
@@ -112,8 +112,6 @@ ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb)
     _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
     _gripper = new ttt::Vacuum_Gripper(ttt::left);
     _init_time = ros::Time::now();
-    _state.x = START;
-    _state.y = 0;
 
     pthread_mutex_init(&_mutex_img, NULL);
     pthread_mutex_init(&_mutex_pos, NULL);
@@ -154,8 +152,6 @@ void ROSThread::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     _curr_img_empty = _curr_img.empty();
     pthread_mutex_unlock(&_mutex_img);   
 }
-
-geometry_msgs::Point ROSThread::getState() {return _state;}
 
 // Protected
 
@@ -270,9 +266,9 @@ vector<double> ROSThread::getJointAngles(PoseStamped * pose_stamped)
 
 void ROSThread::setState(int state)
 {
-    _state.x = state;
+    _state.state = state;
     // store the time elapsed between object initialization and state change
-    _state.y = (ros::Time::now() - _init_time).toSec();
+    _state.time = (ros::Time::now() - _init_time).toSec();
 }
 
 // for syncing mutex locks (crash/errors occur if not used)
@@ -356,8 +352,21 @@ void MoveToRest::InternalThreadEntry()
 /**************************************************************************/
 
 // Public
-PickUpToken::PickUpToken(string limb): ROSThread(limb) {}
-PickUpToken::~PickUpToken() {}
+PickUpToken::PickUpToken(string limb): ROSThread(limb)
+{
+    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
+    namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+    namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+    resizeWindow("[PickUpToken] Raw",       700, 500);
+    resizeWindow("[PickUpToken] Processed", 700, 500);
+    resizeWindow("[PickUpToken] Rough",     700, 500);
+}
+PickUpToken::~PickUpToken()
+{
+    destroyWindow("[PickUpToken] Raw");
+    destroyWindow("[PickUpToken] Processed"); 
+    destroyWindow("[PickUpToken] Rough");
+}
 
 // Protected
 void PickUpToken::InternalThreadEntry()
@@ -392,13 +401,6 @@ typedef vector<vector<cv::Point> > Contours;
 
 void PickUpToken::gripToken()
 {
-    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
-    namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-    namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-    resizeWindow("[PickUpToken] Raw",       700, 500);
-    resizeWindow("[PickUpToken] Processed", 700, 500);
-    resizeWindow("[PickUpToken] Rough",     700, 500);
-
     cv::Point2d offset;
     // check if token is present before starting movement loop 
     // (prevent gripper from colliding with play surface)
@@ -449,11 +451,6 @@ void PickUpToken::gripToken()
         }
     }
     _gripper->suck();
-
-    destroyWindow("[PickUpToken] Raw");
-    destroyWindow("[PickUpToken] Processed"); 
-    destroyWindow("[PickUpToken] Rough");
-    // destroyWindow("[PickUpToken] Final");
 }   
 
 void PickUpToken::hoverAboveTokens(std::string height)
@@ -755,7 +752,7 @@ void ScanBoard::InternalThreadEntry()
     while(ros::ok())
     {
         if(!_curr_img_empty) break;
-        ros::Rate(1000).sleep();
+        ros::Rate(100).sleep();
     }
 
     scan();
@@ -1162,7 +1159,7 @@ void PutDownToken::InternalThreadEntry()
 {
     hoverAboveBoard();
     hoverAboveCell();
-    ros::Duration(1.5).sleep();
+    ros::Duration(1.0).sleep();
     _gripper->blow();
     hoverAboveBoard();
     hoverAboveTokens();
@@ -1232,28 +1229,28 @@ int ArmController::getState()
     // find class with the most recent state change
     // and set ArmController's new state to that
     // class' state
-    if(_rest_class->getState().y > len_time) 
+    if(_rest_class->getState().time > len_time) 
     {
-        len_time = _rest_class->getState().y; 
-        state = _rest_class->getState().x;            
+        len_time = _rest_class->getState().time; 
+        state = _rest_class->getState().state;
     }
 
-    if(_pick_class->getState().y > len_time) 
+    if(_pick_class->getState().time > len_time) 
     {
-        len_time = _pick_class->getState().y; 
-        state = _pick_class->getState().x;
+        len_time = _pick_class->getState().time; 
+        state = _pick_class->getState().state;
     }
 
-    if(_scan_class->getState().y > len_time) 
+    if(_scan_class->getState().time > len_time) 
     {
-        len_time = _scan_class->getState().y; 
-        state = _scan_class->getState().x;
+        len_time = _scan_class->getState().time; 
+        state = _scan_class->getState().state;
     }
 
-    if(_put_class->getState().y > len_time) 
+    if(_put_class->getState().time > len_time) 
     {
-        len_time = _put_class->getState().y; 
-        state = _put_class->getState().x;            
+        len_time = _put_class->getState().time; 
+        state = _put_class->getState().state;            
     }
 
     return state;

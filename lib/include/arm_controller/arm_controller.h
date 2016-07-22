@@ -113,6 +113,18 @@ void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
  */
 std::string intToString( const int a );
 
+struct State {
+    int state;
+    float time;
+
+    State(int _s, float _t) : state(_s), time(_t) { };
+
+    operator int ()
+    {
+        return state;
+    }
+};
+
 // Class initializes overhead functions necessary to start a thread from within a class, 
 // and overhead ROS features: subscriber/publishers, services, callback functions etc.
 class ROSThread
@@ -181,7 +193,7 @@ class ROSThread
          * param      N/A
          * return     N/A
          */
-        geometry_msgs::Point getState();
+        State getState() {return _state;};
 
     protected:
         ros::Publisher _joint_cmd_pub;
@@ -194,7 +206,7 @@ class ROSThread
         std::string _limb;
         ttt::Vacuum_Gripper * _gripper;
         ros::Time _init_time;
-        geometry_msgs::Point _state; // member 'x' records state change, member 'y' stores time state was changed     
+        State _state; // member 'x' records state change, member 'y' stores time state was changed     
 
         /*
          * function that will be spun out as a thread
