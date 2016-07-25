@@ -170,10 +170,11 @@ protected:
     /*
      * Uses built in IK solver to find joint angles solution for desired pose
      * 
-     * @param      requested PoseStamped
-     * @return     array of joint angles solution
+     * @param     requested PoseStamped
+     * @param     array of joint angles solution
+     * @return    true/false if success/failure
      */
-    std::vector<double> getJointAngles(geometry_msgs::PoseStamped& pose_stamped);
+    bool getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::vector<double>& joint_angles);
 
     /*
      * Moves arm to the requested pose

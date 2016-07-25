@@ -154,7 +154,8 @@ void ROSThread::hoverAboveTokens(double height)
 
 void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
-    vector<double> joint_angles = getJointAngles(req_pose_stamped);
+    vector<double> joint_angles;
+    getJointAngles(req_pose_stamped,joint_angles);
 
     while(ros::ok)
     {
@@ -178,9 +179,9 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
     }
 }
 
-vector<double> ROSThread::getJointAngles(PoseStamped& pose_stamped)
+bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::vector<double>& joint_angles)
 {
-    vector<double> joint_angles;
+    joint_angles.clear();
     bool got_solution = false;
     ros::Time start = ros::Time::now();
     float thresh_z = pose_stamped.pose.position.z + 0.040;
@@ -199,7 +200,7 @@ vector<double> ROSThread::getJointAngles(PoseStamped& pose_stamped)
             if (got_solution)
             {
                 joint_angles = ik_srv.response.joints[0].position;
-                break;
+                return true;
             }
             else
             {
@@ -212,16 +213,18 @@ vector<double> ROSThread::getJointAngles(PoseStamped& pose_stamped)
             } 
         }
 
-        // if no solution is found within 1 seconds or no solution within the acceptable z-coordinate
-        // threshold is found, then no solution exists and exit oufof loop
-        if((ros::Time::now() - start).toSec() > 1 || pose_stamped.pose.position.z > thresh_z) 
+        // if no solution is found within 20 milliseconds or no solution within the acceptable
+        // z-coordinate threshold is found, then no solution exists and exit oufof loop
+        if((ros::Time::now() - start).toSec() > 0.2 || pose_stamped.pose.position.z > thresh_z) 
         {
-            _gripper->blow();
-            break;
+            ROS_ERROR("Did not find a suitable IK solution! %g %g %g", pose_stamped.pose.position.x,
+                                                                       pose_stamped.pose.position.y,
+                                                                       pose_stamped.pose.position.z);
+            return false;
         }
     }
 
-    return joint_angles;
+    return false;
 }
 
 void ROSThread::setState(int state)
@@ -412,7 +415,8 @@ void PickUpToken::gripToken()
 
         setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
-        vector<double> joint_angles = getJointAngles(req_pose_stamped);
+        vector<double> joint_angles;
+        getJointAngles(req_pose_stamped,joint_angles);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -781,7 +785,8 @@ void ScanBoard::setDepth(float *dist)
 
         setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
-        vector<double> joint_angles = getJointAngles(req_pose_stamped);
+        vector<double> joint_angles;
+        getJointAngles(req_pose_stamped,joint_angles);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -1051,7 +1056,8 @@ bool ScanBoard::offsetsReachable()
                             _curr_position.z - _offsets[i].z);
         setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
-        vector<double> joint_angles = getJointAngles(req_pose_stamped);
+        vector<double> joint_angles;
+        getJointAngles(req_pose_stamped,joint_angles);
         
         // if IK solver returns a joint angles solution with all zeros, 
         // then no solution was found
@@ -1086,20 +1092,8 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
                         0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
     setOrientation(&pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
-    // if IK solver gives joint angles solution with all zeros;
-    // no solution was found
-    vector<double> joint_angles = getJointAngles(pose_stamped);
-    bool all_zeros = true;
-    for(int j = 0; j < joint_angles.size(); j++)
-    {
-        if(joint_angles[j] != 0) 
-        {
-            all_zeros = false;
-            break;
-        }
-    }    
-    
-    return all_zeros ? false : true;
+    vector<double> joint_angles;
+    return getJointAngles(pose_stamped,joint_angles) ? false : true;
 }
 
 /**************************************************************************/
