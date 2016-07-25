@@ -181,42 +181,40 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 vector<double> ROSThread::getJointAngles(PoseStamped& pose_stamped)
 {
     vector<double> joint_angles;
-    bool all_zeros = true;
+    bool got_solution = false;
     ros::Time start = ros::Time::now();
     float thresh_z = pose_stamped.pose.position.z + 0.040;
 
-    while(all_zeros)
+    while(!got_solution)
     {
         SolvePositionIK ik_srv;
         ik_srv.request.seed_mode=2;         // i.e. SEED_CURRENT
         pose_stamped.header.stamp=ros::Time::now();
         ik_srv.request.pose_stamp.push_back(pose_stamped);
-
-        cout << ik_srv.request << endl;
         
         if(_ik_client.call(ik_srv))
         {
-            joint_angles = ik_srv.response.joints[0].position;
-            for(int i = 0; i < joint_angles.size(); i++)
-            {
-                if(joint_angles[i] != 0) 
-                {
-                    all_zeros = false; 
-                    break;
-                }
-            }
+            got_solution = ik_srv.response.isValid[0];
 
-            // if position cannot be reached, try a position with the same x-y coordinates
-            // but higher z (useful when placing tokens)
-            if(all_zeros == true) 
+            if (got_solution)
             {
-                pose_stamped.pose.position.z += 0.005;
-            }   
+                joint_angles = ik_srv.response.joints[0].position;
+                break;
+            }
+            else
+            {
+                // if position cannot be reached, try a position with the same x-y coordinates
+                // but higher z (useful when placing tokens)
+                ROS_WARN("IK solution not valid: %g %g %g", pose_stamped.pose.position.x,
+                                                            pose_stamped.pose.position.y,
+                                                            pose_stamped.pose.position.z);
+                pose_stamped.pose.position.z += 0.004;
+            } 
         }
 
-        // if no solution is found within 5 seconds or no solution within the acceptable z-coordinate
+        // if no solution is found within 1 seconds or no solution within the acceptable z-coordinate
         // threshold is found, then no solution exists and exit oufof loop
-        if((ros::Time::now() - start).toSec() > 5 || pose_stamped.pose.position.z > thresh_z) 
+        if((ros::Time::now() - start).toSec() > 1 || pose_stamped.pose.position.z > thresh_z) 
         {
             _gripper->blow();
             break;
