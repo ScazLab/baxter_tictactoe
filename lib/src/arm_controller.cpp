@@ -99,24 +99,25 @@ string intToString( const int a )
 }
 
 /**************************************************************************/
-/*                          ROSThread                                */
+/*                            ROSThread                                   */
 /**************************************************************************/
-
-// Public
-ROSThread::ROSThread(string limb): _img_trp(_n), _limb(limb), _state(START,0)
+ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
     _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
-    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", SUBSCRIBER_BUFFER, &ROSThread::imageCallback, this);
     _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
     _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
-    _gripper = new ttt::Vacuum_Gripper(ttt::left);
+    if (_limb == "left")
+    {
+        _gripper = new ttt::Vacuum_Gripper(ttt::left);
+    }
     _init_time = ros::Time::now();
-
-    pthread_mutex_init(&_mutex_img, NULL);
 }
 
-ROSThread::~ROSThread() {}
+ROSThread::~ROSThread()
+{
+    delete _gripper;
+}
 
 bool ROSThread::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
 
@@ -124,31 +125,17 @@ void ROSThread::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL
 
 void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
-    ROS_INFO("endpointCallback");
+    ROS_DEBUG("endpointCallback");
     _curr_pose = msg.pose;
     _curr_position = _curr_pose.position;
 }
 
 void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
 {
-    ROS_INFO("IRCallback");
+    ROS_DEBUG("IRCallback");
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
-}
-
-void ROSThread::imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{
-    ROS_INFO("imageCallback");
-    cv_bridge::CvImageConstPtr cv_ptr;
-    try {cv_ptr = cv_bridge::toCvShare(msg);}
-    catch(cv_bridge::Exception& e) { ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what()); }
- 
-    pthread_mutex_lock(&_mutex_img);
-    _curr_img = cv_ptr->image.clone();
-    _curr_img_size = _curr_img.size();
-    _curr_img_empty = _curr_img.empty();
-    pthread_mutex_unlock(&_mutex_img);   
 }
 
 void ROSThread::hoverAboveTokens(double height)
@@ -160,7 +147,6 @@ void ROSThread::hoverAboveTokens(double height)
     goToPose(req_pose_stamped);
 }
 
-// Protected
 void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
     vector<double> joint_angles = getJointAngles(&req_pose_stamped);
@@ -171,7 +157,7 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, getLimb());
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         for(int i = 0; i < joint_angles.size(); i++) {
@@ -254,11 +240,37 @@ void * ROSThread::InternalThreadEntryFunc(void * This)
 }
 
 /**************************************************************************/
+/*                          ROSThreadImage                                */
+/**************************************************************************/
+
+ROSThreadImage::ROSThreadImage(string limb): _img_trp(_n), ROSThread(limb)
+{
+    _img_sub = _img_trp.subscribe("/cameras/left_hand_camera/image", SUBSCRIBER_BUFFER, &ROSThreadImage::imageCallback, this);
+    pthread_mutex_init(&_mutex_img, NULL);
+}
+
+ROSThreadImage::~ROSThreadImage() {}
+
+void ROSThreadImage::imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+    ROS_DEBUG("imageCallback");
+    cv_bridge::CvImageConstPtr cv_ptr;
+    try {cv_ptr = cv_bridge::toCvShare(msg);}
+    catch(cv_bridge::Exception& e) { ROS_ERROR("[Arm Controller] cv_bridge exception: %s", e.what()); }
+ 
+    pthread_mutex_lock(&_mutex_img);
+    _curr_img = cv_ptr->image.clone();
+    _curr_img_size = _curr_img.size();
+    _curr_img_empty = _curr_img.empty();
+    pthread_mutex_unlock(&_mutex_img);   
+}
+
+/**************************************************************************/
 /*                         MoveToRest                                */
 /**************************************************************************/
 
 // Public
-MoveToRest::MoveToRest(string limb): ROSThread(limb) {}
+MoveToRest::MoveToRest(string limb): ROSThreadImage(limb) {}
 MoveToRest::~MoveToRest(){}
 
 // Protected
@@ -276,7 +288,7 @@ void MoveToRest::InternalThreadEntry()
     PoseStamped req_pose_stamped;
     
     req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.292391, _limb == "left" ? 0.611039 : -0.611039, 0.181133);
+    setPosition(   &req_pose_stamped.pose, 0.292391, getLimb() == "left" ? 0.611039 : -0.611039, 0.181133);
     setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
     while(ros::ok())
@@ -285,16 +297,16 @@ void MoveToRest::InternalThreadEntry()
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, getLimb());
         joint_cmd.command.resize(7);
         // joint_cmd.angles
-        joint_cmd.command[0] = _limb == "left" ? 1.1508690861110316   : -1.3322623142784817;
-        joint_cmd.command[1] = _limb == "left" ? -0.6001699832601681  : -0.5786942522297723;
-        joint_cmd.command[2] = _limb == "left" ? -0.17449031462196582 : 0.14266021327334347;
-        joint_cmd.command[3] = _limb == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
-        joint_cmd.command[4] = _limb == "left" ? 1.8680051044474626   : -1.9945585194480093;
-        joint_cmd.command[5] = _limb == "left" ? -1.4684031092033123  : -1.469170099597255 ;
-        joint_cmd.command[6] = _limb == "left" ? 0.1257864246066039   : -0.011504855909140603;
+        joint_cmd.command[0] = getLimb() == "left" ? 1.1508690861110316   : -1.3322623142784817;
+        joint_cmd.command[1] = getLimb() == "left" ? -0.6001699832601681  : -0.5786942522297723;
+        joint_cmd.command[2] = getLimb() == "left" ? -0.17449031462196582 : 0.14266021327334347;
+        joint_cmd.command[3] = getLimb() == "left" ? 2.2856313739492666   : 2.2695245756764697 ;
+        joint_cmd.command[4] = getLimb() == "left" ? 1.8680051044474626   : -1.9945585194480093;
+        joint_cmd.command[5] = getLimb() == "left" ? -1.4684031092033123  : -1.469170099597255 ;
+        joint_cmd.command[6] = getLimb() == "left" ? 0.1257864246066039   : -0.011504855909140603;
 
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(100).sleep();
@@ -317,7 +329,7 @@ void MoveToRest::InternalThreadEntry()
 /**************************************************************************/
 
 // Public
-PickUpToken::PickUpToken(string limb): ROSThread(limb)
+PickUpToken::PickUpToken(string limb): ROSThreadImage(limb)
 {
     namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
@@ -398,7 +410,7 @@ void PickUpToken::gripToken()
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, getLimb());
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -693,7 +705,7 @@ void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 /**************************************************************************/
 
 // Public
-ScanBoard::ScanBoard(string limb): ROSThread(limb)
+ScanBoard::ScanBoard(string limb): ROSThreadImage(limb)
 {
     namedWindow("[ScanBoard] Rough", WINDOW_NORMAL);
     namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
@@ -767,7 +779,7 @@ void ScanBoard::setDepth(float *dist)
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, _limb);
+        setNames(&joint_cmd, getLimb());
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -1088,7 +1100,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 /**************************************************************************/
 
 // Public
-PutDownToken::PutDownToken(string limb): ROSThread(limb) {}        
+PutDownToken::PutDownToken(string limb): ROSThreadImage(limb) {}        
 PutDownToken::~PutDownToken() {}
 
 void PutDownToken::setCell(int cell) {_cell = cell;}
