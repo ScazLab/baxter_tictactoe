@@ -24,8 +24,7 @@ private:
 
     ros::Subscriber _sub_state; //! subscriber to receive the messages related to the state of the vacuum gripper
 
-    ros::Publisher _pub_command_grip;   //! publisher for gripping by sucking
-    ros::Publisher _pub_command_release;//! publisher for releasing by blowing
+    ros::Publisher _pub_command;   //! publisher for gripping by sucking
 
     ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; //! it is updated every time a new message with information about the gripper state arrives
     void new_state_msg_handler(const baxter_core_msgs::EndEffectorStateConstPtr& msg); //! function handling gripper state messages. We keep updated our internal variable related to the gripper state
@@ -78,12 +77,6 @@ public:
      * @return True if it is sucking, false otherwise.
      **/
     bool is_sucking();
-
-    /**
-     * Returns a value indicating if the vacuum gripper is blowing.
-     * @return True if it is blowing, false otherwise.
-     **/
-    bool is_blowing();
 
     /**
      * Returns a value indicating if the gripper has something attached.

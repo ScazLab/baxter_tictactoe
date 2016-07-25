@@ -29,26 +29,29 @@ bool hasCollided(float range, float max_range, float min_range, string mode)
 
 bool hasPoseCompleted(Pose a, Pose b, string mode)
 {
-    bool same_pose = true;
+    // cout << "Current pose: " << a << endl;
+    // cout << "Desired pose: " << b << endl;
+
+    bool result = true;
 
     if(mode == "strict")
     {
-        if(!equalXDP(a.position.x, b.position.x, 3)) {same_pose = false;} 
-        if(!equalXDP(a.position.y, b.position.y, 3)) {same_pose = false;} 
+        if(!equalXDP(a.position.x, b.position.x, 3)) {result = false;} 
+        if(!equalXDP(a.position.y, b.position.y, 3)) {result = false;} 
     }
     else if(mode == "loose")
     {
-        if(!equalXDP(a.position.x, b.position.x, 2)) {same_pose = false;} 
-        if(!equalXDP(a.position.y, b.position.y, 2)) {same_pose = false;} 
+        if(!equalXDP(a.position.x, b.position.x, 2)) {result = false;} 
+        if(!equalXDP(a.position.y, b.position.y, 2)) {result = false;} 
     }
 
-    if(!withinXHundredth(a.position.z, b.position.z, 1))       {same_pose = false;}    
-    if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {same_pose = false;}  
-    if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {same_pose = false;}  
-    if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {same_pose = false;}  
-    if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {same_pose = false;}
+    if(!withinXHundredth(a.position.z, b.position.z, 1))       {result = false;}    
+    if(!withinXHundredth(a.orientation.x, b.orientation.x, 2)) {result = false;}  
+    if(!withinXHundredth(a.orientation.y, b.orientation.y, 2)) {result = false;}  
+    if(!withinXHundredth(a.orientation.z, b.orientation.z, 2)) {result = false;}  
+    if(!withinXHundredth(a.orientation.w, b.orientation.w, 2)) {result = false;}
 
-    return same_pose; 
+    return result; 
 }
 
 bool withinXHundredth(float x, float y, float z)
@@ -104,9 +107,10 @@ string intToString( const int a )
 ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
-    _endpt_sub = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
-    _ir_sub = _n.subscribe("/robot/range/left_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
-    _ik_client = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
+    _endpt_sub     = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
+    _ir_sub        = _n.subscribe("/robot/range/left_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
+    _ik_client     = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
+
     if (_limb == "left")
     {
         _gripper = new ttt::Vacuum_Gripper(ttt::left);
@@ -121,10 +125,14 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 
 ROSThread::~ROSThread()
 {
-    delete _gripper;
+    if (_gripper)
+    {
+        delete _gripper;
+        _gripper = 0;
+    }
 }
 
-bool ROSThread::StartInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
+bool ROSThread::startInternalThread() {return (pthread_create(&_thread, NULL, InternalThreadEntryFunc, this) == 0);}
 
 void ROSThread::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL);}
 
@@ -152,10 +160,13 @@ void ROSThread::hoverAboveTokens(double height)
     goToPose(req_pose_stamped);
 }
 
-void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
+bool ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
     vector<double> joint_angles;
-    getJointAngles(req_pose_stamped,joint_angles);
+    if (!getJointAngles(req_pose_stamped,joint_angles))
+    {
+        return false;
+    }
 
     while(ros::ok)
     {
@@ -170,13 +181,17 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
             joint_cmd.command[i] = joint_angles[i];
         }
 
+        ROS_INFO("Publishing joint commands.. %g",ros::Time::now().toSec()-_init_time.toSec());
         _joint_cmd_pub.publish(joint_cmd);
+        ros::Rate(100).sleep();
 
         if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
             break;
         }
     }
+
+    return true;
 }
 
 bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::vector<double>& joint_angles)
@@ -213,7 +228,7 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::ve
             } 
         }
 
-        // if no solution is found within 20 milliseconds or no solution within the acceptable
+        // if no solution is found within 200 milliseconds or no solution within the acceptable
         // z-coordinate threshold is found, then no solution exists and exit oufof loop
         if((ros::Time::now() - start).toSec() > 0.2 || pose_stamped.pose.position.z > thresh_z) 
         {
@@ -224,6 +239,31 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::ve
         }
     }
 
+    return false;
+}
+
+bool ROSThread::suckObject()
+{
+    _gripper->suck();
+
+    if (_gripper->is_sucking())
+    {
+        return true;
+    }
+
+    ROS_ERROR("Requested a suck to the gripper, but the gripper is not sucking.");
+    return false;
+}
+
+bool ROSThread::releaseObject()
+{
+    if (_gripper->is_sucking())
+    {
+        _gripper->blow();
+        return true;
+    }
+
+    ROS_WARN("Requested a release of the gripper, but the gripper is not sucking.");
     return false;
 }
 
@@ -320,8 +360,6 @@ void MoveToRest::InternalThreadEntry()
 
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(100).sleep();
-
-        // pause();  
  
         if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, "loose")) 
         {
@@ -1200,16 +1238,16 @@ int ArmController::getState()
     return state;
 }
 
-void ArmController::moveToRest() {_rest_class->StartInternalThread();}
+void ArmController::moveToRest() {_rest_class->startInternalThread();}
 
-void ArmController::pickUpToken() {_pick_class->StartInternalThread();}
+void ArmController::pickUpToken() {_pick_class->startInternalThread();}
 
-void ArmController::scanBoard() {_scan_class->StartInternalThread();}
+void ArmController::scanBoard() {_scan_class->startInternalThread();}
 
 void ArmController::putDownToken(int cell) 
 {
     _put_class->setOffsets(_scan_class->getOffsets());
     _put_class->setCell(cell);
-    _put_class->StartInternalThread();
+    _put_class->startInternalThread();
 }    
 

@@ -54,7 +54,10 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
         return true;    
     }
-    else {return false;}
+    else
+    {
+        return false;
+    }
 }
 
 int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)

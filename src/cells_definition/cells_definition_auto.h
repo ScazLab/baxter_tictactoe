@@ -36,8 +36,8 @@
 
 enum Index 
 {
-	LARGEST 		= 1,
-	NEXT_LARGEST    = 2
+    LARGEST         = 1,
+    NEXT_LARGEST    = 2
 };
 
 class cellsDefinition
@@ -45,15 +45,15 @@ class cellsDefinition
 
 private:
 
-	ros::NodeHandle node_handle;
-	image_transport::ImageTransport image_transport;
-	image_transport::Subscriber image_subscriber;
+    ros::NodeHandle node_handle;
+    image_transport::ImageTransport image_transport;
+    image_transport::Subscriber image_subscriber;
 
     ros::ServiceServer service;
 
-	std::string window_name;
-	ttt::Cell cell;
-	ttt::Board board;
+    std::string window_name;
+    ttt::Cell cell;
+    ttt::Board board;
 
     bool img_loaded;
 
@@ -62,19 +62,19 @@ private:
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or  
-     * 			   next largest area is to be found where (LARGEST = largest area, 
-     * 			   NEXT_LARGEST = next largest area)
+     *             next largest area is to be found where (LARGEST = largest area, 
+     *             NEXT_LARGEST = next largest area)
      *                
      * @return     index of the contour with the largest area or the next largest area
      */
-	int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith);
+    int getIthIndex(std::vector<std::vector<cv::Point> > contours, Index ith);
     
     /**
      * @param      contour 
      * 
      * @return     centroid of the contour
      */
-	cv::Point findCentroid(std::vector<cv::Point> contour);
+    cv::Point findCentroid(std::vector<cv::Point> contour);
 
     std::string intToString( const int a );
 
@@ -84,8 +84,8 @@ private:
 
 public:
 
-	cellsDefinition();
-	~cellsDefinition();
+    cellsDefinition();
+    ~cellsDefinition();
     
     /* mouse event handler function */
     static void onMouseClick( int event, int x, int y, int, void* param);
@@ -98,7 +98,7 @@ public:
      * 
      * @return     N/A
      */    
-	void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
     /**
      * service that provides data on the defined contours/boundaries of the board's cells

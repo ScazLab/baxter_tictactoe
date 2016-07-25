@@ -33,7 +33,6 @@ int main(int argc, char** argv)
         ROS_INFO("5.Is ready to grip?");
         ROS_INFO("6.Has error?");
         ROS_INFO("7.Is sucking?");
-        ROS_INFO("8.Is blowing?");
         ROS_INFO("9.Is gripping");
         ROS_INFO("0.Get name");
         ROS_INFO("E.Exit");
@@ -64,9 +63,6 @@ int main(int argc, char** argv)
             break;
         case '7':
             ROS_INFO("Is sucking? %s", vg->is_sucking()? "Yes" : "No");
-            break;
-        case '8':
-            ROS_INFO("Is blowing? %s", vg->is_blowing()? "Yes" : "No");
             break;
         case '9':
             ROS_INFO("Is gripping? %s", vg->is_gripping()? "Yes" : "No");

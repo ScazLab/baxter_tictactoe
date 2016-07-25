@@ -25,11 +25,13 @@
 // Threading libraries
 #include <pthread.h>
 
+#define ERROR -1
 #define START 0
 #define REST 1
 #define SCAN 2
 #define PICK_UP 3
 #define PUT_DOWN 4
+#define PASSED 5
 
 #define SUBSCRIBER_BUFFER 4
 
@@ -182,7 +184,7 @@ protected:
      * @param  requested PoseStamped, and string (strict/loose) indicating
      *         desired accuracy of pose checking
      */
-    void goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode="loose");
+    bool goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode="loose");
 
     /*
      * Prevents any following code from being executed before thread is exited
@@ -220,7 +222,7 @@ protected:
 
 public:
     ROSThread(std::string limb);
-    ~ROSThread();
+    virtual ~ROSThread();
 
     /*
      * Starts thread that executes the internal thread entry function
@@ -228,7 +230,11 @@ public:
      * @param      N/A
      * @return     true if thread was successfully launched; false otherwise
      */        
-    bool StartInternalThread();
+    bool startInternalThread();
+
+    bool suckObject();
+
+    bool releaseObject();
 
     /*
      * Self-explaining "setters"

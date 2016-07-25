@@ -5,14 +5,16 @@ namespace ttt
 
 Vacuum_Gripper::Vacuum_Gripper(vacuum_gripper_type gripper)
 {
-    // ROS_INFO("Vacuum_Gripper constructor");
     _gripper=gripper;
 
-    _pub_command_grip = _nh.advertise<baxter_core_msgs::EndEffectorCommand>("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/command", 1);
+    _pub_command = _nh.advertise<baxter_core_msgs::EndEffectorCommand>(
+                   "/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/command", 1);
 
-    _sub_state = _nh.subscribe("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/state", 1, &Vacuum_Gripper::new_state_msg_handler, this);
+    _sub_state = _nh.subscribe("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper)
+                               + "_gripper/state", 1, &Vacuum_Gripper::new_state_msg_handler, this);
 
-    baxter_core_msgs::EndEffectorState initial_gripper_state; //Initially all the interesting properties of the state are unknown
+    //Initially all the interesting properties of the state are unknown
+    baxter_core_msgs::EndEffectorState initial_gripper_state; 
     initial_gripper_state.calibrated=   \
     initial_gripper_state.enabled=      \
     initial_gripper_state.error=        \
@@ -35,7 +37,7 @@ void Vacuum_Gripper::suck()
     sucking_command.id=get_id();
     sucking_command.command=baxter_core_msgs::EndEffectorCommand::CMD_GO;
     sucking_command.args="{\"grip_attempt_seconds\": 5.0}";
-    _pub_command_grip.publish(sucking_command);
+    _pub_command.publish(sucking_command);
 }
 
 void Vacuum_Gripper::blow()
@@ -43,7 +45,7 @@ void Vacuum_Gripper::blow()
     baxter_core_msgs::EndEffectorCommand release_command;
     release_command.id=get_id();
     release_command.command=baxter_core_msgs::EndEffectorCommand::CMD_RELEASE;
-    _pub_command_grip.publish(release_command);
+    _pub_command.publish(release_command);
 }
 
 int Vacuum_Gripper::get_id()
@@ -73,12 +75,7 @@ bool Vacuum_Gripper::has_error()
 
 bool Vacuum_Gripper::is_sucking()
 {
-    return _state.get().position==baxter_core_msgs::EndEffectorState::POSITION_CLOSED;
-}
-
-bool Vacuum_Gripper::is_blowing()
-{
-    return _state.get().position==baxter_core_msgs::EndEffectorState::POSITION_OPEN;
+    return _state.get().force==baxter_core_msgs::EndEffectorState::FORCE_MAX;
 }
 
 bool Vacuum_Gripper::is_gripping()
