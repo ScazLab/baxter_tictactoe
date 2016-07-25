@@ -173,7 +173,7 @@ protected:
      * @param      requested PoseStamped
      * @return     array of joint angles solution
      */
-    std::vector<double> getJointAngles(geometry_msgs::PoseStamped * pose_stamped);
+    std::vector<double> getJointAngles(geometry_msgs::PoseStamped& pose_stamped);
 
     /*
      * Moves arm to the requested pose

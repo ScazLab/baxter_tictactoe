@@ -111,7 +111,12 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
     {
         _gripper = new ttt::Vacuum_Gripper(ttt::left);
     }
+
     _init_time = ros::Time::now();
+
+    _curr_max_range = 0;
+    _curr_min_range = 0;
+    _curr_range     = 0;
 }
 
 ROSThread::~ROSThread()
@@ -149,7 +154,7 @@ void ROSThread::hoverAboveTokens(double height)
 
 void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
 {
-    vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+    vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
     while(ros::ok)
     {
@@ -173,17 +178,21 @@ void ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
     }
 }
 
-vector<double> ROSThread::getJointAngles(PoseStamped * pose_stamped)
+vector<double> ROSThread::getJointAngles(PoseStamped& pose_stamped)
 {
     vector<double> joint_angles;
     bool all_zeros = true;
     ros::Time start = ros::Time::now();
-    float thresh_z = (*pose_stamped).pose.position.z + 0.040;
+    float thresh_z = pose_stamped.pose.position.z + 0.040;
 
     while(all_zeros)
     {
         SolvePositionIK ik_srv;
-        ik_srv.request.pose_stamp.push_back(*pose_stamped);
+        ik_srv.request.seed_mode=2;         // i.e. SEED_CURRENT
+        pose_stamped.header.stamp=ros::Time::now();
+        ik_srv.request.pose_stamp.push_back(pose_stamped);
+
+        cout << ik_srv.request << endl;
         
         if(_ik_client.call(ik_srv))
         {
@@ -201,13 +210,13 @@ vector<double> ROSThread::getJointAngles(PoseStamped * pose_stamped)
             // but higher z (useful when placing tokens)
             if(all_zeros == true) 
             {
-                (*pose_stamped).pose.position.z += 0.005;
+                pose_stamped.pose.position.z += 0.005;
             }   
         }
 
         // if no solution is found within 5 seconds or no solution within the acceptable z-coordinate
         // threshold is found, then no solution exists and exit oufof loop
-        if((ros::Time::now() - start).toSec() > 5 || (*pose_stamped).pose.position.z > thresh_z) 
+        if((ros::Time::now() - start).toSec() > 5 || pose_stamped.pose.position.z > thresh_z) 
         {
             _gripper->blow();
             break;
@@ -405,7 +414,7 @@ void PickUpToken::gripToken()
 
         setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
-        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+        vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -774,7 +783,7 @@ void ScanBoard::setDepth(float *dist)
 
         setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
-        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+        vector<double> joint_angles = getJointAngles(req_pose_stamped);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -1044,7 +1053,7 @@ bool ScanBoard::offsetsReachable()
                             _curr_position.z - _offsets[i].z);
         setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
-        vector<double> joint_angles = getJointAngles(&req_pose_stamped);
+        vector<double> joint_angles = getJointAngles(req_pose_stamped);
         
         // if IK solver returns a joint angles solution with all zeros, 
         // then no solution was found
@@ -1081,7 +1090,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 
     // if IK solver gives joint angles solution with all zeros;
     // no solution was found
-    vector<double> joint_angles = getJointAngles(&pose_stamped);
+    vector<double> joint_angles = getJointAngles(pose_stamped);
     bool all_zeros = true;
     for(int j = 0; j < joint_angles.size(); j++)
     {
