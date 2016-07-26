@@ -181,9 +181,11 @@ bool ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
             joint_cmd.command[i] = joint_angles[i];
         }
 
-        ROS_INFO("Publishing joint commands.. %g",ros::Time::now().toSec()-_init_time.toSec());
+        // ROS_INFO("Publishing joint commands.. %g",
+        //           ros::Time::now().toSec()-_init_time.toSec());
         _joint_cmd_pub.publish(joint_cmd);
         ros::Rate(100).sleep();
+        ros::spinOnce();
 
         if(hasPoseCompleted(_curr_pose, req_pose_stamped.pose, mode)) 
         {
@@ -194,7 +196,8 @@ bool ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
     return true;
 }
 
-bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::vector<double>& joint_angles)
+bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
+                                      std::vector<double>& joint_angles)
 {
     joint_angles.clear();
     bool got_solution = false;
@@ -247,15 +250,20 @@ bool ROSThread::suckObject()
 {
     _gripper->suck();
 
-    ros::Duration(0.100).sleep();
+    // int cnt = 0;
 
-    if (_gripper->is_sucking())
-    {
-        return true;
-    }
+    // while (!_gripper->is_sucking())
+    // {
+    //     ROS_WARN("Requested a suck to the gripper, but the gripper is not sucking.");
+    //     ++cnt;
 
-    ROS_ERROR("Requested a suck to the gripper, but the gripper is not sucking.");
-    return false;
+    //     if (cnt == 10)  return false;
+
+    //     pause();
+    //     ros::spinOnce();
+    // }
+
+    return true;
 }
 
 bool ROSThread::releaseObject()
