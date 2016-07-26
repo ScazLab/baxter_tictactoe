@@ -68,19 +68,19 @@ bool equalXDP(float x, float y, float z)
     return xTwoDP == yTwoDP ? true : false;    
 }
 
-void setPosition(Pose * pose, float x, float y, float z)
+void setPosition(Pose& pose, float x, float y, float z)
 {
-    (*pose).position.x = x;
-    (*pose).position.y = y;
-    (*pose).position.z = z;
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = z;
 }
  
-void setOrientation(Pose * pose, float x, float y, float z, float w)
+void setOrientation(Pose& pose, float x, float y, float z, float w)
 {
-    (*pose).orientation.x = x;
-    (*pose).orientation.y = y;
-    (*pose).orientation.z = z;
-    (*pose).orientation.w = w;
+    pose.orientation.x = x;
+    pose.orientation.y = y;
+    pose.orientation.z = z;
+    pose.orientation.w = w;
 }
 
 void setNames(JointCommand * joint_cmd, string limb)
@@ -139,8 +139,9 @@ void ROSThread::WaitForInternalThreadToExit() {(void) pthread_join(_thread, NULL
 void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg) 
 {
     ROS_DEBUG("endpointCallback");
-    _curr_pose = msg.pose;
+    _curr_pose     = msg.pose;
     _curr_position = _curr_pose.position;
+    _curr_wrench   = msg.wrench;
 }
 
 void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
@@ -153,15 +154,21 @@ void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg)
 
 void ROSThread::hoverAboveTokens(double height)
 {
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.540, 0.570, height);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-    goToPose(req_pose_stamped);
+    goToPose(0.540, 0.570, height, VERTICAL_ORIENTATION_LEFT_ARM);
 }
 
-bool ROSThread::goToPose(PoseStamped req_pose_stamped, string mode)
+bool ROSThread::goToPose(double px, double py, double pz,
+                         double ox, double oy, double oz, double ow,
+                         std::string mode)
 {
+    PoseStamped req_pose_stamped;
+
+    req_pose_stamped.header.frame_id = "base";
+    req_pose_stamped.header.stamp    = ros::Time::now();
+
+    setPosition(   req_pose_stamped.pose, px, py, pz);
+    setOrientation(req_pose_stamped.pose, ox, oy, oz, ow);
+
     vector<double> joint_angles;
     if (!getJointAngles(req_pose_stamped,joint_angles))
     {
@@ -244,6 +251,37 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
     }
 
     return false;
+}
+
+bool ROSThread::detectForceInteraction()
+{
+    if (_curr_wrench.force.x > FORCE_THRESHOLD || 
+        _curr_wrench.force.y > FORCE_THRESHOLD || 
+        _curr_wrench.force.z > FORCE_THRESHOLD   )
+    {
+        return true;
+    }
+    else
+        return false;
+}
+
+bool ROSThread::waitForForceInteraction()
+{
+    ros::Time _init = ros::Time::now();
+
+    while(ros::ok)
+    {
+        if (detectForceInteraction()) return true;
+
+        ros::Rate(100).sleep();
+        ros::spinOnce();
+
+        if ((ros::Time::now()-_init).toSec() > 10)
+        {
+            ROS_ERROR("No force interaction has been detected in 10s!");
+            return false;
+        }
+    }
 }
 
 bool ROSThread::suckObject()
@@ -349,8 +387,8 @@ void MoveToRest::InternalThreadEntry()
     PoseStamped req_pose_stamped;
     
     req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.292391, getLimb() == "left" ? 0.611039 : -0.611039, 0.181133);
-    setOrientation(&req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
+    setPosition(   req_pose_stamped.pose, 0.292391, getLimb() == "left" ? 0.611039 : -0.611039, 0.181133);
+    setOrientation(req_pose_stamped.pose, 0.028927, 0.686745, 0.00352694, 0.726314);
 
     while(ros::ok())
     {
@@ -454,15 +492,15 @@ void PickUpToken::gripToken()
         req_pose_stamped.header.frame_id = "base";
 
         // move incrementally towards token
-        setPosition(&req_pose_stamped.pose, 
-                            prev_offset.x + 0.07 * offset.x,
-                            prev_offset.y + 0.07 * offset.y,
-                            0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec());
+        setPosition(req_pose_stamped.pose, 
+                    prev_offset.x + 0.07 * offset.x,
+                    prev_offset.y + 0.07 * offset.y,
+                    0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec());
 
         prev_offset.x = prev_offset.x + 0.07 * offset.x; 
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-        setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+        setOrientation(req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles;
         getJointAngles(req_pose_stamped,joint_angles);
@@ -800,11 +838,7 @@ void ScanBoard::InternalThreadEntry()
 // Private
 void ScanBoard::hoverAboveBoard()
 {
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition(   &req_pose_stamped.pose, 0.575, 0.100, 0.445);
-    setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
-    goToPose(req_pose_stamped);
+    goToPose(0.575, 0.100, 0.445, 0.99962, -0.02741, 0, 0);
 }
 
 void ScanBoard::scan()
@@ -827,12 +861,12 @@ void ScanBoard::setDepth(float *dist)
         PoseStamped req_pose_stamped;
         req_pose_stamped.header.frame_id = "base";
 
-        setPosition(&req_pose_stamped.pose, 
-                            init_pos.x,
-                            init_pos.y,
-                            init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec());
+        setPosition(req_pose_stamped.pose, 
+                    init_pos.x,
+                    init_pos.y,
+                    init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec());
 
-        setOrientation(&req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
+        setOrientation(req_pose_stamped.pose, 0.99962, -0.02741, 0, 0);
 
         vector<double> joint_angles;
         getJointAngles(req_pose_stamped,joint_angles);
@@ -1099,11 +1133,11 @@ bool ScanBoard::offsetsReachable()
     {
         PoseStamped req_pose_stamped;
         req_pose_stamped.header.frame_id = "base";
-        setPosition( &req_pose_stamped.pose, 
-                            _curr_position.x + _offsets[i].x, 
-                            _curr_position.y + _offsets[i].y, 
-                            _curr_position.z - _offsets[i].z);
-        setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+        setPosition(req_pose_stamped.pose, 
+                    _curr_position.x + _offsets[i].x, 
+                    _curr_position.y + _offsets[i].y, 
+                    _curr_position.z - _offsets[i].z);
+        setOrientation(req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
         vector<double> joint_angles;
         getJointAngles(req_pose_stamped,joint_angles);
@@ -1137,9 +1171,11 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 
     PoseStamped pose_stamped;
     pose_stamped.header.frame_id = "base";
-    setPosition( &pose_stamped.pose, 
-                        0.575 + offset.x, 0.100 + offset.y, 0.445 - offset.z);
-    setOrientation(&pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
+    setPosition(pose_stamped.pose, 
+                0.575 + offset.x,
+                0.100 + offset.y,
+                0.445 - offset.z);
+    setOrientation(pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
 
     vector<double> joint_angles;
     return getJointAngles(pose_stamped,joint_angles) ? false : true;
@@ -1173,25 +1209,18 @@ void PutDownToken::InternalThreadEntry()
 // Private
 void PutDownToken::hoverAboveCell()
 {
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition( &req_pose_stamped.pose, 0.575 + _offsets[_cell - 1].x, 
-                        0.100 + _offsets[_cell - 1].y, 
-                        0.445 - _offsets[_cell - 1].z);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-
-    goToPose(req_pose_stamped);
+    goToPose(0.575 + _offsets[_cell - 1].x,
+             0.100 + _offsets[_cell - 1].y, 
+             0.445 - _offsets[_cell - 1].z,
+             VERTICAL_ORIENTATION_LEFT_ARM);
 }
 
 void PutDownToken::hoverAboveBoard()
 {
-    PoseStamped req_pose_stamped;
-    req_pose_stamped.header.frame_id = "base";
-    setPosition( &req_pose_stamped.pose, 0.575 + _offsets[4].x, 
-                        0.100 + _offsets[4].y, 
-                        0.200);
-    setOrientation(&req_pose_stamped.pose, VERTICAL_ORIENTATION_LEFT_ARM);
-    goToPose(req_pose_stamped);
+    goToPose(0.575 + _offsets[4].x,
+             0.100 + _offsets[4].y, 
+             0.445 - _offsets[4].z,
+             VERTICAL_ORIENTATION_LEFT_ARM);
 }
 
 /**************************************************************************/

@@ -40,6 +40,8 @@
 #define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
+#define FORCE_THRESHOLD 12  // [N]
+
 /*
  * checks if end effector has made contact with a token by checking if 
  * the range of the infrared sensor has fallen below the threshold value
@@ -90,7 +92,7 @@ bool equalXDP(float x, float y, float z);
  *             
  * return     N/A
  */
-void setPosition(geometry_msgs::Pose * pose, float x, float y, float z);
+void setPosition(geometry_msgs::Pose& pose, float x, float y, float z);
 
 /*
  * sets the orientation of a pose
@@ -99,7 +101,7 @@ void setPosition(geometry_msgs::Pose * pose, float x, float y, float z);
  *             
  * return     N/A
  */
-void setOrientation(geometry_msgs::Pose * pose, float x, float y, float z, float w);
+void setOrientation(geometry_msgs::Pose& pose, float x, float y, float z, float w);
 
 /*
  * sets the joint names of a JointCommand
@@ -155,8 +157,10 @@ private:
 protected:
     ros::NodeHandle _n;
 
-    geometry_msgs::Pose _curr_pose;
-    geometry_msgs::Point _curr_position;
+    geometry_msgs::Pose   _curr_pose;
+    geometry_msgs::Point  _curr_position;
+    geometry_msgs::Wrench _curr_wrench;
+
     float _curr_range, _curr_max_range, _curr_min_range;
 
     ttt::Vacuum_Gripper * _gripper;
@@ -181,10 +185,27 @@ protected:
     /*
      * Moves arm to the requested pose
      * 
-     * @param  requested PoseStamped, and string (strict/loose) indicating
-     *         desired accuracy of pose checking
+     * @param  requested pose (3D position + 4D quaternion for the orientation)
+     * @param  mode (either loose or strict, it checks for the final desired position)
+     * @return true/false if success/failure
      */
-    bool goToPose(geometry_msgs::PoseStamped req_pose_stamped, std::string mode="loose");
+    bool goToPose(double px, double py, double pz,
+                  double ox, double oy, double oz, double ow, std::string mode="loose");
+
+    /*
+     * Detects if the force overcame a set threshold in either one of its three axis
+     * 
+     * @return true/false if the force overcame the threshold
+     */
+    bool detectForceInteraction();
+
+    /*
+     * Waits for a force interaction to occur.
+     * 
+     * @return true when the force interaction occurred
+     * @return false if no force interaction occurred after 10s
+     */
+    bool waitForForceInteraction();
 
     /*
      * Prevents any following code from being executed before thread is exited
@@ -461,7 +482,8 @@ class ScanBoard : public ROSThreadImage
          *            and a vector<cv::Point> of the board's four corners
          * return     N/A
          */
-        void isolateBoard(Contours * contours, int * board_area, std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
+        void isolateBoard(Contours * contours, int * board_area,
+                          std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
 
         /*
          * finds cell with the higher centroid
@@ -478,7 +500,8 @@ class ScanBoard : public ROSThreadImage
          *            from arm to board surface
          * return     N/A
          */
-        void setOffsets(int board_area, Contours contours, float dist, cv::Mat *output, std::vector<cv::Point> *centroids);
+        void setOffsets(int board_area, Contours contours, float dist,
+                        cv::Mat *output, std::vector<cv::Point> *centroids);
 
         /*
          * calculates the perimeter of the area representing all points reachable to the Baxter arm
@@ -488,7 +511,8 @@ class ScanBoard : public ROSThreadImage
          *            distance between center of corner cell and corner of corner cell
          * return     N/A
          */
-        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners, std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
+        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners,
+                     std::vector<cv::Point> *centroids, std::vector<cv::Point> * cell_to_corner);
        
         /*
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
