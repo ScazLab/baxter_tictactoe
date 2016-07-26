@@ -108,16 +108,6 @@ void setPosition(geometry_msgs::Pose& pose, float x, float y, float z);
 void setOrientation(geometry_msgs::Pose& pose, float x, float y, float z, float w);
 
 /*
- * sets the joint names of a JointCommand
- * 
- * @param      JointCommand * joint_cmd, and a string (left/right) indicating which arm is
- *            being moved
- *             
- * return     N/A
- */
-void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
-
-/*
  * converts an integer to a string
  * 
  * @param      integer to be converted
@@ -199,6 +189,13 @@ protected:
      */
     bool goToPose(double px, double py, double pz,
                   double ox, double oy, double oz, double ow, std::string mode="loose");
+
+    /*
+     * Sets the joint names of a JointCommand
+     * 
+     * @param    joint_cmd the joint command
+     */
+    void setJointNames(baxter_core_msgs::JointCommand& joint_cmd);
 
     /*
      * Detects if the force overcame a set threshold in either one of its three axis

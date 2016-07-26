@@ -83,17 +83,6 @@ void setOrientation(Pose& pose, float x, float y, float z, float w)
     pose.orientation.w = w;
 }
 
-void setNames(JointCommand * joint_cmd, string limb)
-{
-    (*joint_cmd).names.push_back(limb + "_s0");
-    (*joint_cmd).names.push_back(limb + "_s1");
-    (*joint_cmd).names.push_back(limb + "_e0");
-    (*joint_cmd).names.push_back(limb + "_e1");
-    (*joint_cmd).names.push_back(limb + "_w0");
-    (*joint_cmd).names.push_back(limb + "_w1");
-    (*joint_cmd).names.push_back(limb + "_w2");
-}
-
 string intToString( const int a )
 {
     stringstream ss;
@@ -195,7 +184,7 @@ bool ROSThread::goToPose(double px, double py, double pz,
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         for(int i = 0; i < joint_angles.size(); i++) {
@@ -265,6 +254,17 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
     }
 
     return false;
+}
+
+void ROSThread::setJointNames(JointCommand& joint_cmd)
+{
+    joint_cmd.names.push_back(_limb + "_s0");
+    joint_cmd.names.push_back(_limb + "_s1");
+    joint_cmd.names.push_back(_limb + "_e0");
+    joint_cmd.names.push_back(_limb + "_e1");
+    joint_cmd.names.push_back(_limb + "_w0");
+    joint_cmd.names.push_back(_limb + "_w1");
+    joint_cmd.names.push_back(_limb + "_w2");
 }
 
 bool ROSThread::detectForceInteraction()
@@ -412,7 +412,7 @@ void MoveToRest::InternalThreadEntry()
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         joint_cmd.command[0] = getLimb() == "left" ? 1.1508690861110316   : -1.3322623142784817;
@@ -524,7 +524,7 @@ void PickUpToken::gripToken()
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -890,7 +890,7 @@ void ScanBoard::setDepth(float *dist)
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
