@@ -1,5 +1,5 @@
-#ifndef VACUUM_GRIPPER_H
-#define VACUUM_GRIPPER_H
+#ifndef __GRIPPER_H__
+#define __GRIPPER_H__
 
 #include <string>
 
@@ -15,7 +15,7 @@
 namespace ttt
 {
 
-class Vacuum_Gripper
+class Gripper
 {
 private:
     std::string _type; // It identifies the vacuum gripper we are using: left or right
@@ -37,7 +37,7 @@ public:
      * Constructor of the class
      * \param gripper This indicates if we are using the left or right vacuum gripper. Possible values are just right or left.
      **/
-    Vacuum_Gripper(std::string type);
+    Gripper(std::string type);
 
     /**
      * It makes the vacuum gripper to suck so, in case it is in contact with an object, it will grip it.
@@ -100,4 +100,4 @@ public:
 
 }
 
-#endif // VACUUM_GRIPPER_H
+#endif // __GRIPPER_H__

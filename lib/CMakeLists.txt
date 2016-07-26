@@ -16,15 +16,15 @@ add_library(${PROJECT_NAME}       include/${PROJECT_NAME}/tictactoe_utils.h
                                   src/tictactoe_utils.cpp)
 add_library(trajectory_xml_parser include/trajectory_xml_parser/trajectory_xml_parser.h
                                   src/trajectory_xml_parser.cpp)
-add_library(vacuum_gripper        include/vacuum_gripper/vacuum_gripper.h
-                                  src/vacuum_gripper.cpp)
 add_library(robot_state           include/robot_state/robot_state.h
                                   src/robot_state.cpp)
 add_library(trajectory_player     include/trajectory_player/trajectory_player.h
                                   src/trajectory_player.cpp)
 add_library(move_maker            include/move_maker/move_maker.h
                                   src/move_maker.cpp)
-add_library(arm_controller        include/arm_controller/arm_controller.h
+add_library(arm_controller        include/arm_controller/gripper.h
+                                  include/arm_controller/arm_controller.h
+                                  src/gripper.cpp
                                   src/arm_controller.cpp)
 
 ## Add cmake target dependencies of the library
@@ -42,23 +42,21 @@ target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}
                                              ${catkin_LIBRARIES})
 target_link_libraries(trajectory_xml_parser  ${QT_LIBRARIES}    
                                              ${catkin_LIBRARIES})
-target_link_libraries(trajectory_player      vacuum_gripper
+target_link_libraries(trajectory_player      arm_controller
                                              ${catkin_LIBRARIES})
 target_link_libraries(move_maker             trajectory_player
                                              trajectory_xml_parser)
-target_link_libraries(arm_controller         vacuum_gripper  
-                                             ${catkin_LIBRARIES})
+target_link_libraries(arm_controller         ${catkin_LIBRARIES})
 
 ## Mark libraries for installation
-install (TARGETS ${PROJECT_NAME} arm_controller vacuum_gripper
+install (TARGETS ${PROJECT_NAME} arm_controller
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 ## Mark cpp header files for installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/baxterTictactoe
-        ${PROJECT_SOURCE_DIR}/include/vacuum_gripper
-        ${PROJECT_SOURCE_DIR}/include/arm_controller
+                  ${PROJECT_SOURCE_DIR}/include/arm_controller
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )

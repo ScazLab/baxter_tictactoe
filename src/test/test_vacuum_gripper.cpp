@@ -1,12 +1,12 @@
-#include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/gripper.h"
 
 int main(int argc, char** argv)
 {    
-    ros::init(argc, argv,"test_vacuum_gripper");
+    ros::init(argc, argv,"test_gripper");
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ttt::Vacuum_Gripper *vg=NULL;
+    ttt::Gripper *vg=NULL;
     ROS_INFO("Right or left vacuum gripper?[l,r]");
     char c=std::cin.get();
     std::cin.ignore();
@@ -14,10 +14,10 @@ int main(int argc, char** argv)
     switch(c)
     {
     case 'l':
-        vg=new ttt::Vacuum_Gripper("left");
+        vg=new ttt::Gripper("left");
         break;
     case 'r':
-        vg=new ttt::Vacuum_Gripper("right");
+        vg=new ttt::Gripper("right");
         break;
     default:
         ROS_WARN("Wrong option. Run it again.");

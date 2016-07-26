@@ -24,7 +24,7 @@
 #include <geometry_msgs/Point.h>
 #include <sensor_msgs/Range.h>
 // baxter_tictactoe libraries
-#include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/gripper.h"
 // Threading libraries
 #include <pthread.h>
 
@@ -161,8 +161,9 @@ protected:
 
     float _curr_range, _curr_max_range, _curr_min_range;
 
-    ttt::Vacuum_Gripper * _gripper;
-    ros::Publisher _joint_cmd_pub;
+    ttt::Gripper   *_gripper;
+    
+    ros::Publisher  _joint_cmd_pub;
 
     void pause();
 

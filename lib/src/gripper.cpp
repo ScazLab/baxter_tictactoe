@@ -1,17 +1,17 @@
-#include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/gripper.h"
 
 using namespace baxter_core_msgs;
 
 namespace ttt
 {
 
-Vacuum_Gripper::Vacuum_Gripper(std::string type) : _type(type)
+Gripper::Gripper(std::string type) : _type(type)
 {
     _pub_command = _nh.advertise<EndEffectorCommand>(
                    "/robot/end_effector/" + _type + "_gripper/command", 1);
 
     _sub_state = _nh.subscribe("/robot/end_effector/" + _type + "_gripper/state", 4,
-                                &Vacuum_Gripper::gripperStateCb, this);
+                                &Gripper::gripperStateCb, this);
 
     //Initially all the interesting properties of the state are unknown
     EndEffectorState initial_gripper_state; 
@@ -26,13 +26,13 @@ Vacuum_Gripper::Vacuum_Gripper(std::string type) : _type(type)
     _state.set(initial_gripper_state);
 }
 
-void Vacuum_Gripper::gripperStateCb(const EndEffectorStateConstPtr &msg)
+void Gripper::gripperStateCb(const EndEffectorStateConstPtr &msg)
 {
-    // ROS_INFO("Vacuum_Gripper Callback!");
+    // ROS_INFO("Gripper Callback!");
     _state.set(*msg);
 }
 
-void Vacuum_Gripper::suck()
+void Gripper::suck()
 {
     EndEffectorCommand sucking_command;
     sucking_command.id=get_id();
@@ -41,7 +41,7 @@ void Vacuum_Gripper::suck()
     _pub_command.publish(sucking_command);
 }
 
-void Vacuum_Gripper::blow()
+void Gripper::blow()
 {
     EndEffectorCommand release_command;
     release_command.id=get_id();
@@ -49,38 +49,38 @@ void Vacuum_Gripper::blow()
     _pub_command.publish(release_command);
 }
 
-int Vacuum_Gripper::get_id()
+int Gripper::get_id()
 {
     return _state.get().id;
 }
 
-bool Vacuum_Gripper::is_enabled()
+bool Gripper::is_enabled()
 {
     return _state.get().enabled==EndEffectorState::STATE_TRUE;
 }
 
-bool Vacuum_Gripper::is_calibrated()
+bool Gripper::is_calibrated()
 {
     return _state.get().calibrated==EndEffectorState::STATE_TRUE;
 }
 
-bool Vacuum_Gripper::is_ready_to_grip()
+bool Gripper::is_ready_to_grip()
 {    
     return _state.get().ready==EndEffectorState::STATE_TRUE;
 }
 
-bool Vacuum_Gripper::has_error()
+bool Gripper::has_error()
 {
     return _state.get().error==EndEffectorState::STATE_TRUE;
 }
 
-bool Vacuum_Gripper::is_sucking()
+bool Gripper::is_sucking()
 {
     // ROS_INFO("force is: %g\n",_state.get().force);
     return _state.get().force==EndEffectorState::FORCE_MAX;
 }
 
-bool Vacuum_Gripper::is_gripping()
+bool Gripper::is_gripping()
 {
     return true;
     return _state.get().gripping==EndEffectorState::STATE_TRUE;

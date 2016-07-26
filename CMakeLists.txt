@@ -112,7 +112,7 @@ generate_messages(DEPENDENCIES
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS lib/include
-    LIBRARIES baxterTictactoe vacuum_gripper arm_controller
+    LIBRARIES baxterTictactoe arm_controller
     CATKIN_DEPENDS message_runtime
 )
 
@@ -182,7 +182,7 @@ target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
 target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
 target_link_libraries(move_maker_server                 move_maker)
 target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-target_link_libraries(tictactoe_brain                   baxterTictactoe     vacuum_gripper          arm_controller          ${catkin_LIBRARIES}         ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(tictactoe_brain                   baxterTictactoe     arm_controller          ${catkin_LIBRARIES}         ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(show_board_cells                  baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
@@ -190,9 +190,9 @@ target_link_libraries(hsv_range_finder                  baxterTictactoe     ${Op
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}          ${QT_LIBRARIES}         ${catkin_LIBRARIES})
 
-target_link_libraries(test_vacuum_gripper               vacuum_gripper                                                      ${catkin_LIBRARIES})
+target_link_libraries(test_vacuum_gripper               arm_controller                              ${catkin_LIBRARIES})
 target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser                           ${catkin_LIBRARIES})
-target_link_libraries(test_arm_controller               arm_controller      vacuum_gripper          ${OpenCV_LIBS}          ${catkin_LIBRARIES})
+target_link_libraries(test_arm_controller               arm_controller      ${OpenCV_LIBS}          ${catkin_LIBRARIES})
 target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
 target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
 

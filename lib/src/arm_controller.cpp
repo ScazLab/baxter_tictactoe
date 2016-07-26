@@ -93,16 +93,15 @@ string intToString( const int a )
 /**************************************************************************/
 /*                            ROSThread                                   */
 /**************************************************************************/
-ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
+ROSThread::ROSThread(string limb): _limb(limb), _state(START,0), _gripper(0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
     _endpt_sub     = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
     _ir_sub        = _n.subscribe("/robot/range/" + _limb + "_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
-//    _cuff_OK_sub   = _n.subscribe("/robot/digital_io/" + _limb + "_lower_button/state", SUBSCRIBER_BUFFER, &ROSThread::CuffOKCallback, this);
+    // _cuff_OK_sub   = _n.subscribe("/robot/digital_io/" + _limb + "_lower_button/state", SUBSCRIBER_BUFFER, &ROSThread::CuffOKCallback, this);
     _ik_client     = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
 
-
-    _gripper = new ttt::Vacuum_Gripper(_limb);  // TODO: change this stupid name
+    _gripper = new ttt::Gripper(_limb);
 
     _init_time = ros::Time::now();
 

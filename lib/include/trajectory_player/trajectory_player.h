@@ -18,8 +18,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
-#include "baxterTictactoe/T_ThreadSafe.h"
-#include "vacuum_gripper/vacuum_gripper.h"
+#include "arm_controller/gripper.h"
 
 namespace ttt
 {
@@ -53,7 +52,7 @@ class Trajectory_Player
 
     const static float IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
 
-    Vacuum_Gripper * _gripper; //! This is used in the trajectories that imply grasping or releasing
+    Gripper *_gripper; //! This is used in the trajectories that imply grasping or releasing
 
     /**
      * It performs the necessary operations to ensure a correct grasping of an object.
