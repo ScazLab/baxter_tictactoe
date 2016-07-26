@@ -80,7 +80,7 @@ int main(int argc, char** argv)
     }
 
     delete vg;
-    vg = false;
+    vg = 0;
 
     return 0;
 }
