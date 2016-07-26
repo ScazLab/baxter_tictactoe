@@ -269,12 +269,13 @@ void ROSThread::setJointNames(JointCommand& joint_cmd)
 
 bool ROSThread::detectForceInteraction()
 {
-    if (abs(_curr_wrench.force.x - _filt_force[0]) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.y - _filt_force[1]) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.z - _filt_force[2]) > FORCE_THRESHOLD   )
+    double f_x = abs(_curr_wrench.force.x - _filt_force[0]);
+    double f_y = abs(_curr_wrench.force.y - _filt_force[1]);
+    double f_z = abs(_curr_wrench.force.z - _filt_force[2]);
+    ROS_DEBUG("Interaction: %g %g %g", f_x, f_y, f_z);
+
+    if (f_x > FORCE_THRES || f_y > FORCE_THRES || f_z > FORCE_THRES)
     {
-        ROS_DEBUG("Interaction! %g %g %g",_curr_wrench.force.x,
-                     _curr_wrench.force.y,_curr_wrench.force.z);
         return true;
     }
     else
