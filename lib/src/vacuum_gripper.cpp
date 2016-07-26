@@ -3,15 +3,12 @@
 namespace ttt
 {
 
-Vacuum_Gripper::Vacuum_Gripper(vacuum_gripper_type gripper)
+Vacuum_Gripper::Vacuum_Gripper(std::string type) : _type(type)
 {
-    _gripper=gripper;
-
     _pub_command = _nh.advertise<baxter_core_msgs::EndEffectorCommand>(
-                   "/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper) + "_gripper/command", 1);
+                   "/robot/end_effector/" + _type + "_gripper/command", 1);
 
-    _sub_state = _nh.subscribe("/robot/end_effector/" + Vacuum_Gripper::type_to_str(_gripper)
-                               + "_gripper/state", 1, &Vacuum_Gripper::new_state_msg_handler, this);
+    _sub_state = _nh.subscribe("/robot/end_effector/" + _type + "_gripper/state", 1, &Vacuum_Gripper::gripperStateCb, this);
 
     //Initially all the interesting properties of the state are unknown
     baxter_core_msgs::EndEffectorState initial_gripper_state; 
@@ -26,7 +23,7 @@ Vacuum_Gripper::Vacuum_Gripper(vacuum_gripper_type gripper)
     _state.set(initial_gripper_state);
 }
 
-void Vacuum_Gripper::new_state_msg_handler(const baxter_core_msgs::EndEffectorStateConstPtr &msg)
+void Vacuum_Gripper::gripperStateCb(const baxter_core_msgs::EndEffectorStateConstPtr &msg)
 {
     _state.set(*msg);
 }

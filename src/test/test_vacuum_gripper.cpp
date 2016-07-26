@@ -7,25 +7,26 @@ int main(int argc, char** argv)
     spinner.start();
 
     ttt::Vacuum_Gripper *vg=NULL;
-    ROS_INFO_STREAM("Right or left vacuum gripper?[l,r]");
+    ROS_INFO("Right or left vacuum gripper?[l,r]");
     char c=std::cin.get();
     std::cin.ignore();
+
     switch(c)
     {
     case 'l':
-        vg=new ttt::Vacuum_Gripper(ttt::left);
+        vg=new ttt::Vacuum_Gripper("left");
         break;
     case 'r':
-        vg=new ttt::Vacuum_Gripper(ttt::right);
+        vg=new ttt::Vacuum_Gripper("right");
         break;
     default:
-        ROS_INFO("Wrong option. Run it again.");
+        ROS_WARN("Wrong option. Run it again.");
         return 0;
     }
 
     while(ros::ok())
     {
-        ROS_INFO_STREAM("Choose the command to send to the " << vg->get_name());
+        ROS_INFO("Choose the command to send to the %s", vg->get_type().c_str());
         ROS_INFO("1.Suck");
         ROS_INFO("2.Blow");
         ROS_INFO("3.Is enabled?");
@@ -37,8 +38,9 @@ int main(int argc, char** argv)
         ROS_INFO("0.Get name");
         ROS_INFO("E.Exit");
         c=std::cin.get();
-        ROS_INFO_STREAM("Option selected: " << c);
+        ROS_INFO("Option selected: %c", c);
         std::cin.ignore();
+        
         switch(c)
         {
         case '1':
@@ -68,7 +70,7 @@ int main(int argc, char** argv)
             ROS_INFO("Is gripping? %s", vg->is_gripping()? "Yes" : "No");
             break;
         case '0':
-            ROS_INFO("Gripper: %s", vg->get_name().c_str());
+            ROS_INFO("Gripper: %s", vg->get_type().c_str());
             break;
         case 'e':
         case 'E':
@@ -76,5 +78,10 @@ int main(int argc, char** argv)
         }
         ros::spinOnce();
     }
+
+    delete vg;
+    vg = false;
+
+    return 0;
 }
 

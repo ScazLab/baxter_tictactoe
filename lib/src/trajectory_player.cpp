@@ -13,8 +13,8 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
     ROS_INFO("[Trajectory_Player] Service CONNECTED");
     _tip_collision.set(false);
 
-    if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper(left);
-    else _gripper = new Vacuum_Gripper(right);
+    if (std::string(service_name).find("left")!=std::string::npos) _gripper = new Vacuum_Gripper("left");
+    else _gripper = new Vacuum_Gripper("right");
 
     pthread_mutex_init(&this->mutex, NULL);
     _left_joint_sub=_n.subscribe("/robot/joint_states", 1, &Trajectory_Player::check_joint_states, this);

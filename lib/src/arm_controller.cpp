@@ -113,7 +113,7 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 
     if (_limb == "left")
     {
-        _gripper = new ttt::Vacuum_Gripper(ttt::left);
+        _gripper = new ttt::Vacuum_Gripper("left");
     }
 
     _init_time = ros::Time::now();
@@ -199,12 +199,13 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::ve
     joint_angles.clear();
     bool got_solution = false;
     ros::Time start = ros::Time::now();
-    float thresh_z = pose_stamped.pose.position.z + 0.040;
+    float thresh_z = pose_stamped.pose.position.z + 0.120;
 
     while(!got_solution)
     {
         SolvePositionIK ik_srv;
-        ik_srv.request.seed_mode=2;         // i.e. SEED_CURRENT
+        //ik_srv.request.seed_mode=2;         // i.e. SEED_CURRENT
+        ik_srv.request.seed_mode=0;         // i.e. SEED_AUTO
         pose_stamped.header.stamp=ros::Time::now();
         ik_srv.request.pose_stamp.push_back(pose_stamped);
         
@@ -245,6 +246,8 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped, std::ve
 bool ROSThread::suckObject()
 {
     _gripper->suck();
+
+    ros::Duration(0.100).sleep();
 
     if (_gripper->is_sucking())
     {

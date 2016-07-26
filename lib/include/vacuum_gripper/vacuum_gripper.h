@@ -1,6 +1,8 @@
 #ifndef VACUUM_GRIPPER_H
 #define VACUUM_GRIPPER_H
 
+#include <string>
+
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
@@ -13,28 +15,29 @@
 namespace ttt
 {
 
-typedef enum {left, right} vacuum_gripper_type;
-
 class Vacuum_Gripper
 {
 private:
-    vacuum_gripper_type _gripper; //! It identifies the vacuum gripper we are using: left or right
+    std::string _type; // It identifies the vacuum gripper we are using: left or right
 
-    ros::NodeHandle _nh; //! ROS node handle
+    ros::NodeHandle _nh; // ROS node handle
 
-    ros::Subscriber _sub_state; //! subscriber to receive the messages related to the state of the vacuum gripper
+    ros::Subscriber _sub_state; // subscriber to receive the messages related to the state of the vacuum gripper
 
-    ros::Publisher _pub_command;   //! publisher for gripping by sucking
+    ros::Publisher _pub_command;   // publisher for gripping by sucking
 
-    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; //! it is updated every time a new message with information about the gripper state arrives
-    void new_state_msg_handler(const baxter_core_msgs::EndEffectorStateConstPtr& msg); //! function handling gripper state messages. We keep updated our internal variable related to the gripper state
+    // It is updated every time a new message with information about the gripper state arrives
+    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; 
+
+    // function handling gripper state messages. We keep updated our internal variable related to the gripper state
+    void gripperStateCb(const baxter_core_msgs::EndEffectorStateConstPtr& msg); 
 
 public:
     /**
      * Constructor of the class
      * \param gripper This indicates if we are using the left or right vacuum gripper. Possible values are just right or left.
      **/
-    Vacuum_Gripper(vacuum_gripper_type gripper);
+    Vacuum_Gripper(std::string type);
 
     /**
      * It makes the vacuum gripper to suck so, in case it is in contact with an object, it will grip it.
@@ -85,31 +88,12 @@ public:
     bool is_gripping();
 
     /**
-     * Static function to return a string corresponding to a type of vaccum gripper (left or right)
-     * @param gripper A variable of type vacuum_gripper_type that will be transformed to a string
-     * @return A string corresponding with the value of the parameter gripper. So far, the possible returned values are "left" if gripper==left or "right" if gripper==right
-     **/
-    static std::string type_to_str(vacuum_gripper_type gripper)
-    {
-        return gripper==left?"left":"right";
-    }
-
-    /**
-     * This function returns a descriptive name of the vacuum gripper
-     * @return a string containing a unique description for the gripper, so you can easily identify the gripper you are refering to.
-     **/
-    inline std::string get_name()
-    {
-        return Vacuum_Gripper::type_to_str(_gripper) + " vacuum gripper";
-    }
-
-    /**
      * This function returns the vacuum gripper controlling
      * @return a string containing a unique description for the gripper, so you can easily identify the gripper you are refering to.
      **/
-    inline vacuum_gripper_type get_gripper()
+    std::string get_type()
     {
-        return _gripper;
+        return _type;
     }
 
 };
