@@ -108,7 +108,8 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 {
     _joint_cmd_pub = _n.advertise<baxter_core_msgs::JointCommand>("/robot/limb/" + _limb + "/joint_command", 1);   
     _endpt_sub     = _n.subscribe("/robot/limb/" + _limb + "/endpoint_state", SUBSCRIBER_BUFFER, &ROSThread::endpointCallback, this);
-    _ir_sub        = _n.subscribe("/robot/range/left_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
+    _ir_sub        = _n.subscribe("/robot/range/" + _limb + "_hand_range/state", SUBSCRIBER_BUFFER, &ROSThread::IRCallback, this);
+//    _cuff_OK_sub   = _n.subscribe("/robot/digital_io/" + _limb + "_lower_button/state", SUBSCRIBER_BUFFER, &ROSThread::CuffOKCallback, this);
     _ik_client     = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
 
     if (_limb == "left")
@@ -255,10 +256,12 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
 
 bool ROSThread::detectForceInteraction()
 {
-    if (_curr_wrench.force.x > FORCE_THRESHOLD || 
-        _curr_wrench.force.y > FORCE_THRESHOLD || 
-        _curr_wrench.force.z > FORCE_THRESHOLD   )
+    if (abs(_curr_wrench.force.x) > FORCE_THRESHOLD || 
+        abs(_curr_wrench.force.y) > FORCE_THRESHOLD || 
+        abs(_curr_wrench.force.z) > FORCE_THRESHOLD   )
     {
+        ROS_DEBUG("Interaction! %g %g %g",_curr_wrench.force.x,
+                     _curr_wrench.force.y,_curr_wrench.force.z);
         return true;
     }
     else

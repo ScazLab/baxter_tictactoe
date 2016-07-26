@@ -1,3 +1,6 @@
+#ifndef ARM_CONTROLLER_H
+#define ARM_CONTROLLER_H
+
 #include <ros/ros.h>
 #include <ros/console.h>
 // Standard libraries
@@ -40,7 +43,7 @@
 #define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
-#define FORCE_THRESHOLD 12  // [N]
+#define FORCE_THRESHOLD 18  // [N]
 
 /*
  * checks if end effector has made contact with a token by checking if 
@@ -143,18 +146,20 @@ struct State {
 class ROSThread
 {
 private:
-    std::string _limb;
     ros::Time _init_time;
     State _state;
+    std::string _limb;
 
     pthread_t _thread;
     static void * InternalThreadEntryFunc(void * This);
 
     ros::Subscriber _endpt_sub;
     ros::Subscriber _ir_sub;
+    ros::Subscriber _cuff_OK_sub;  // Cuff OK button
     ros::ServiceClient _ik_client;
 
 protected:
+
     ros::NodeHandle _n;
 
     geometry_msgs::Pose   _curr_pose;
@@ -601,3 +606,5 @@ class ArmController
 
         void putDownToken(int cell);     
 };
+
+#endif
