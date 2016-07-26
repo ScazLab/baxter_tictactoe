@@ -43,7 +43,8 @@
 #define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
-#define FORCE_THRESHOLD 18  // [N]
+#define FORCE_THRESHOLD  18  // [N]
+#define FORCE_ALPHA     0.3
 
 /*
  * checks if end effector has made contact with a token by checking if 
@@ -166,6 +167,8 @@ protected:
     geometry_msgs::Point  _curr_position;
     geometry_msgs::Wrench _curr_wrench;
 
+    std::vector<double> _filt_force;
+
     float _curr_range, _curr_max_range, _curr_min_range;
 
     ttt::Vacuum_Gripper * _gripper;
@@ -237,6 +240,11 @@ protected:
      * @return     N/A
      */
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
+
+    /*
+     * Filters the forces with a very simple low pass filter
+     */
+    void filterForces();
 
     /*
      * hover arm above tokens

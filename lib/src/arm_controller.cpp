@@ -122,6 +122,10 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
     _curr_max_range = 0;
     _curr_min_range = 0;
     _curr_range     = 0;
+
+    _filt_force.push_back(0.0);
+    _filt_force.push_back(0.0);
+    _filt_force.push_back(0.0);
 }
 
 ROSThread::~ROSThread()
@@ -143,6 +147,8 @@ void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg)
     _curr_pose     = msg.pose;
     _curr_position = _curr_pose.position;
     _curr_wrench   = msg.wrench;
+
+    filterForces();
 }
 
 void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
@@ -151,6 +157,13 @@ void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg)
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
+}
+
+void ROSThread::filterForces()
+{
+    _filt_force[0] = (1 - FORCE_ALPHA) * _filt_force[0] + FORCE_ALPHA * _curr_wrench.force.x;
+    _filt_force[1] = (1 - FORCE_ALPHA) * _filt_force[1] + FORCE_ALPHA * _curr_wrench.force.y;
+    _filt_force[2] = (1 - FORCE_ALPHA) * _filt_force[2] + FORCE_ALPHA * _curr_wrench.force.z;
 }
 
 void ROSThread::hoverAboveTokens(double height)
@@ -256,9 +269,9 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
 
 bool ROSThread::detectForceInteraction()
 {
-    if (abs(_curr_wrench.force.x) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.y) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.z) > FORCE_THRESHOLD   )
+    if (abs(_curr_wrench.force.x - _filt_force[0]) > FORCE_THRESHOLD || 
+        abs(_curr_wrench.force.y - _filt_force[1]) > FORCE_THRESHOLD || 
+        abs(_curr_wrench.force.z - _filt_force[2]) > FORCE_THRESHOLD   )
     {
         ROS_DEBUG("Interaction! %g %g %g",_curr_wrench.force.x,
                      _curr_wrench.force.y,_curr_wrench.force.z);
