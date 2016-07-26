@@ -1,21 +1,22 @@
 #ifndef ARM_CONTROLLER_H
 #define ARM_CONTROLLER_H
 
-#include <ros/ros.h>
-#include <ros/console.h>
-// Standard libraries
 #include <string>
 #include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <vector>
-// Image-handling libraries
+#include <pthread.h>
+
+#include <ros/ros.h>
+#include <ros/console.h>
+
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-// ROS message libraries
+
 #include <baxter_core_msgs/EndpointState.h>
 #include <baxter_core_msgs/SolvePositionIK.h>
 #include <baxter_core_msgs/JointCommand.h>
@@ -23,10 +24,8 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
 #include <sensor_msgs/Range.h>
-// baxter_tictactoe libraries
+
 #include "arm_controller/gripper.h"
-// Threading libraries
-#include <pthread.h>
 
 #define ERROR -1
 #define START 0
@@ -162,7 +161,7 @@ protected:
     float _curr_range, _curr_max_range, _curr_min_range;
 
     ttt::Gripper   *_gripper;
-    
+
     ros::Publisher  _joint_cmd_pub;
 
     void pause();

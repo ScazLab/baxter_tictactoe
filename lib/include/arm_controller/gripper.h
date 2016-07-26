@@ -3,14 +3,14 @@
 
 #include <string>
 
+#include <pthread.h>
+
 #include <ros/ros.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
 
 #include <baxter_core_msgs/EndEffectorState.h>
 #include <baxter_core_msgs/EndEffectorCommand.h>
-
-#include "baxterTictactoe/T_ThreadSafe.h"
 
 namespace ttt
 {
@@ -20,14 +20,13 @@ class Gripper
 private:
     std::string _type; // It identifies the vacuum gripper we are using: left or right
 
-    ros::NodeHandle _nh; // ROS node handle
+    ros::NodeHandle _nh;            // ROS node handle
+    ros::Subscriber _sub_state;     // subscriber to receive the messages related to the state of the vacuum gripper
+    ros::Publisher  _pub_command;   // publisher for gripping by sucking
 
-    ros::Subscriber _sub_state; // subscriber to receive the messages related to the state of the vacuum gripper
-
-    ros::Publisher _pub_command;   // publisher for gripping by sucking
-
+    pthread_mutex_t _mutex;
     // It is updated every time a new message with information about the gripper state arrives
-    ThreadSafeVariable<baxter_core_msgs::EndEffectorState> _state; 
+    baxter_core_msgs::EndEffectorState _state; 
 
     // function handling gripper state messages. We keep updated our internal variable related to the gripper state
     void gripperStateCb(const baxter_core_msgs::EndEffectorStateConstPtr& msg); 
@@ -40,12 +39,12 @@ public:
     Gripper(std::string type);
 
     /**
-     * It makes the vacuum gripper to suck so, in case it is in contact with an object, it will grip it.
+     * It makes the vacuum gripper suck so, in case it is in contact with an object, it will grip it.
      **/
     void suck();
 
     /**
-     * It makes the vacuum gripper to blow air so, in case it has an object graspped, it will release it.
+     * It makes the vacuum gripper blow air so, in case it has an object graspped, it will release it.
      **/
     void blow();
 
@@ -88,16 +87,11 @@ public:
     bool is_gripping();
 
     /**
-     * This function returns the vacuum gripper controlling
-     * @return a string containing a unique description for the gripper, so you can easily identify the gripper you are refering to.
+     * This function returns the limb the gripper belongs to
+     * @return the limb, either "left" or "right"
      **/
-    std::string get_type()
-    {
-        return _type;
-    }
-
+    std::string get_type()  { return _type; };
 };
-
 }
 
 #endif // __GRIPPER_H__

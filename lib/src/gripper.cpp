@@ -23,13 +23,17 @@ Gripper::Gripper(std::string type) : _type(type)
     initial_gripper_state.ready=        \
     initial_gripper_state.moving=EndEffectorState::STATE_UNKNOWN;
 
-    _state.set(initial_gripper_state);
+    _state = initial_gripper_state;
+
+    pthread_mutex_init(&_mutex, NULL);
 }
 
 void Gripper::gripperStateCb(const EndEffectorStateConstPtr &msg)
 {
-    // ROS_INFO("Gripper Callback!");
-    _state.set(*msg);
+    // ROS_INFO("Gripper Callback");
+    pthread_mutex_lock(&_mutex);
+    _state = *msg;
+    pthread_mutex_unlock(&_mutex);
 }
 
 void Gripper::suck()
@@ -51,39 +55,39 @@ void Gripper::blow()
 
 int Gripper::get_id()
 {
-    return _state.get().id;
+    return _state.id;
 }
 
 bool Gripper::is_enabled()
 {
-    return _state.get().enabled==EndEffectorState::STATE_TRUE;
+    return _state.enabled==EndEffectorState::STATE_TRUE;
 }
 
 bool Gripper::is_calibrated()
 {
-    return _state.get().calibrated==EndEffectorState::STATE_TRUE;
+    return _state.calibrated==EndEffectorState::STATE_TRUE;
 }
 
 bool Gripper::is_ready_to_grip()
 {    
-    return _state.get().ready==EndEffectorState::STATE_TRUE;
+    return _state.ready==EndEffectorState::STATE_TRUE;
 }
 
 bool Gripper::has_error()
 {
-    return _state.get().error==EndEffectorState::STATE_TRUE;
+    return _state.error==EndEffectorState::STATE_TRUE;
 }
 
 bool Gripper::is_sucking()
 {
-    // ROS_INFO("force is: %g\n",_state.get().force);
-    return _state.get().force==EndEffectorState::FORCE_MAX;
+    // ROS_INFO("force is: %g\n",_state.force);
+    return _state.force==EndEffectorState::FORCE_MAX;
 }
 
 bool Gripper::is_gripping()
 {
     return true;
-    return _state.get().gripping==EndEffectorState::STATE_TRUE;
+    return _state.gripping==EndEffectorState::STATE_TRUE;
 }
 
 }
