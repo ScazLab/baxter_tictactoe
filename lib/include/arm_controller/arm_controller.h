@@ -43,7 +43,8 @@
 #define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
-#define FORCE_THRESHOLD 18  // [N]
+#define FORCE_THRES       3  // [N]
+#define FORCE_ALPHA     0.3
 
 /*
  * checks if end effector has made contact with a token by checking if 
@@ -107,16 +108,6 @@ void setPosition(geometry_msgs::Pose& pose, float x, float y, float z);
 void setOrientation(geometry_msgs::Pose& pose, float x, float y, float z, float w);
 
 /*
- * sets the joint names of a JointCommand
- * 
- * @param      JointCommand * joint_cmd, and a string (left/right) indicating which arm is
- *            being moved
- *             
- * return     N/A
- */
-void setNames(baxter_core_msgs::JointCommand * joint_cmd, std::string limb);
-
-/*
  * converts an integer to a string
  * 
  * @param      integer to be converted
@@ -166,6 +157,8 @@ protected:
     geometry_msgs::Point  _curr_position;
     geometry_msgs::Wrench _curr_wrench;
 
+    std::vector<double> _filt_force;
+
     float _curr_range, _curr_max_range, _curr_min_range;
 
     ttt::Vacuum_Gripper * _gripper;
@@ -196,6 +189,13 @@ protected:
      */
     bool goToPose(double px, double py, double pz,
                   double ox, double oy, double oz, double ow, std::string mode="loose");
+
+    /*
+     * Sets the joint names of a JointCommand
+     * 
+     * @param    joint_cmd the joint command
+     */
+    void setJointNames(baxter_core_msgs::JointCommand& joint_cmd);
 
     /*
      * Detects if the force overcame a set threshold in either one of its three axis
@@ -237,6 +237,11 @@ protected:
      * @return     N/A
      */
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
+
+    /*
+     * Filters the forces with a very simple low pass filter
+     */
+    void filterForces();
 
     /*
      * hover arm above tokens

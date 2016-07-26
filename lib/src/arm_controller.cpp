@@ -83,17 +83,6 @@ void setOrientation(Pose& pose, float x, float y, float z, float w)
     pose.orientation.w = w;
 }
 
-void setNames(JointCommand * joint_cmd, string limb)
-{
-    (*joint_cmd).names.push_back(limb + "_s0");
-    (*joint_cmd).names.push_back(limb + "_s1");
-    (*joint_cmd).names.push_back(limb + "_e0");
-    (*joint_cmd).names.push_back(limb + "_e1");
-    (*joint_cmd).names.push_back(limb + "_w0");
-    (*joint_cmd).names.push_back(limb + "_w1");
-    (*joint_cmd).names.push_back(limb + "_w2");
-}
-
 string intToString( const int a )
 {
     stringstream ss;
@@ -120,6 +109,10 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
     _curr_max_range = 0;
     _curr_min_range = 0;
     _curr_range     = 0;
+
+    _filt_force.push_back(0.0);
+    _filt_force.push_back(0.0);
+    _filt_force.push_back(0.0);
 }
 
 ROSThread::~ROSThread()
@@ -141,6 +134,8 @@ void ROSThread::endpointCallback(const baxter_core_msgs::EndpointState& msg)
     _curr_pose     = msg.pose;
     _curr_position = _curr_pose.position;
     _curr_wrench   = msg.wrench;
+
+    filterForces();
 }
 
 void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg) 
@@ -149,6 +144,13 @@ void ROSThread::IRCallback(const sensor_msgs::RangeConstPtr& msg)
     _curr_range = msg->range; 
     _curr_max_range = msg->max_range; 
     _curr_min_range = msg->min_range;
+}
+
+void ROSThread::filterForces()
+{
+    _filt_force[0] = (1 - FORCE_ALPHA) * _filt_force[0] + FORCE_ALPHA * _curr_wrench.force.x;
+    _filt_force[1] = (1 - FORCE_ALPHA) * _filt_force[1] + FORCE_ALPHA * _curr_wrench.force.y;
+    _filt_force[2] = (1 - FORCE_ALPHA) * _filt_force[2] + FORCE_ALPHA * _curr_wrench.force.z;
 }
 
 void ROSThread::hoverAboveTokens(double height)
@@ -180,7 +182,7 @@ bool ROSThread::goToPose(double px, double py, double pz,
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         for(int i = 0; i < joint_angles.size(); i++) {
@@ -252,14 +254,26 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
     return false;
 }
 
+void ROSThread::setJointNames(JointCommand& joint_cmd)
+{
+    joint_cmd.names.push_back(_limb + "_s0");
+    joint_cmd.names.push_back(_limb + "_s1");
+    joint_cmd.names.push_back(_limb + "_e0");
+    joint_cmd.names.push_back(_limb + "_e1");
+    joint_cmd.names.push_back(_limb + "_w0");
+    joint_cmd.names.push_back(_limb + "_w1");
+    joint_cmd.names.push_back(_limb + "_w2");
+}
+
 bool ROSThread::detectForceInteraction()
 {
-    if (abs(_curr_wrench.force.x) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.y) > FORCE_THRESHOLD || 
-        abs(_curr_wrench.force.z) > FORCE_THRESHOLD   )
+    double f_x = abs(_curr_wrench.force.x - _filt_force[0]);
+    double f_y = abs(_curr_wrench.force.y - _filt_force[1]);
+    double f_z = abs(_curr_wrench.force.z - _filt_force[2]);
+    ROS_DEBUG("Interaction: %g %g %g", f_x, f_y, f_z);
+
+    if (f_x > FORCE_THRES || f_y > FORCE_THRES || f_z > FORCE_THRES)
     {
-        ROS_DEBUG("Interaction! %g %g %g",_curr_wrench.force.x,
-                     _curr_wrench.force.y,_curr_wrench.force.z);
         return true;
     }
     else
@@ -397,7 +411,7 @@ void MoveToRest::InternalThreadEntry()
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
         // joint_cmd.names
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
         // joint_cmd.angles
         joint_cmd.command[0] = getLimb() == "left" ? 1.1508690861110316   : -1.3322623142784817;
@@ -509,7 +523,7 @@ void PickUpToken::gripToken()
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
@@ -875,7 +889,7 @@ void ScanBoard::setDepth(float *dist)
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
 
-        setNames(&joint_cmd, getLimb());
+        setJointNames(joint_cmd);
         joint_cmd.command.resize(7);
 
         for(int i = 0; i < 7; i++) {
