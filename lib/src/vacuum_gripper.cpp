@@ -36,7 +36,7 @@ void Vacuum_Gripper::suck()
 {
     EndEffectorCommand sucking_command;
     sucking_command.id=get_id();
-    sucking_command.command=EndEffectorCommand::CMD_GO;
+    sucking_command.command=EndEffectorCommand::CMD_GRIP;
     sucking_command.args="{\"grip_attempt_seconds\": 5.0}";
     _pub_command.publish(sucking_command);
 }

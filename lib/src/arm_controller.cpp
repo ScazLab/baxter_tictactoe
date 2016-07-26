@@ -112,10 +112,8 @@ ROSThread::ROSThread(string limb): _limb(limb), _state(START,0)
 //    _cuff_OK_sub   = _n.subscribe("/robot/digital_io/" + _limb + "_lower_button/state", SUBSCRIBER_BUFFER, &ROSThread::CuffOKCallback, this);
     _ik_client     = _n.serviceClient<SolvePositionIK>("/ExternalTools/" + _limb + "/PositionKinematicsNode/IKService");
 
-    if (_limb == "left")
-    {
-        _gripper = new ttt::Vacuum_Gripper("left");
-    }
+
+    _gripper = new ttt::Vacuum_Gripper(_limb);  // TODO: change this stupid name
 
     _init_time = ros::Time::now();
 
