@@ -25,7 +25,7 @@
 #include <geometry_msgs/Point.h>
 #include <sensor_msgs/Range.h>
 
-#include "arm_controller/gripper.h"
+#include "arm_control/gripper.h"
 
 #define WORKING -2
 #define ERROR -1
@@ -264,7 +264,7 @@ public:
      */        
     bool startInternalThread();
 
-    bool suckObject();
+    bool gripObject();
 
     bool releaseObject();
 

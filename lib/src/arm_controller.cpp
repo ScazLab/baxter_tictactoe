@@ -1,4 +1,4 @@
-#include "arm_controller/arm_controller.h"
+#include "arm_control/arm_controller.h"
 
 using namespace std;
 using namespace baxter_core_msgs;
@@ -304,36 +304,14 @@ bool ROSThread::waitForForceInteraction(double _wait_time)
     }
 }
 
-bool ROSThread::suckObject()
+bool ROSThread::gripObject()
 {
-    _gripper->suck();
-
-    // int cnt = 0;
-
-    // while (!_gripper->is_sucking())
-    // {
-    //     ROS_WARN("Requested a suck to the gripper, but the gripper is not sucking.");
-    //     ++cnt;
-
-    //     if (cnt == 10)  return false;
-
-    //     pause();
-    //     ros::spinOnce();
-    // }
-
-    return true;
+    return _gripper->gripObject();
 }
 
 bool ROSThread::releaseObject()
 {
-    if (_gripper->is_sucking())
-    {
-        _gripper->blow();
-        return true;
-    }
-
-    ROS_WARN("Requested a release of the gripper, but the gripper is not sucking.");
-    return false;
+    return _gripper->releaseObject();
 }
 
 void ROSThread::setState(int state)
@@ -545,7 +523,7 @@ void PickUpToken::gripToken()
             break;
         }
     }
-    _gripper->suck();
+    _gripper->gripObject();
 }   
 
 void PickUpToken::checkForToken(cv::Point2d &offset)
@@ -1218,7 +1196,7 @@ void PutDownToken::InternalThreadEntry()
     hoverAboveBoard();
     hoverAboveCell();
     ros::Duration(0.8).sleep();
-    _gripper->blow();
+    _gripper->releaseObject();
     hoverAboveBoard();
     hoverAboveTokens(POS_HIGH);
 

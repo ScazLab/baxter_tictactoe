@@ -22,8 +22,8 @@ add_library(trajectory_player     include/trajectory_player/trajectory_player.h
                                   src/trajectory_player.cpp)
 add_library(move_maker            include/move_maker/move_maker.h
                                   src/move_maker.cpp)
-add_library(arm_controller        include/arm_controller/gripper.h
-                                  include/arm_controller/arm_controller.h
+add_library(arm_control           include/arm_control/gripper.h
+                                  include/arm_control/arm_controller.h
                                   src/gripper.cpp
                                   src/arm_controller.cpp)
 
@@ -34,7 +34,7 @@ add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp
                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                    ${catkin_EXPORTED_TARGETS})
 add_dependencies(move_maker        ${catkin_EXPORTED_TARGETS})
-add_dependencies(arm_controller    ${catkin_EXPORTED_TARGETS})
+add_dependencies(arm_control       ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}
@@ -42,21 +42,21 @@ target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}
                                              ${catkin_LIBRARIES})
 target_link_libraries(trajectory_xml_parser  ${QT_LIBRARIES}    
                                              ${catkin_LIBRARIES})
-target_link_libraries(trajectory_player      arm_controller
+target_link_libraries(trajectory_player      arm_control
                                              ${catkin_LIBRARIES})
 target_link_libraries(move_maker             trajectory_player
                                              trajectory_xml_parser)
-target_link_libraries(arm_controller         ${catkin_LIBRARIES})
+target_link_libraries(arm_control         ${catkin_LIBRARIES})
 
 ## Mark libraries for installation
-install (TARGETS ${PROJECT_NAME} arm_controller
+install (TARGETS ${PROJECT_NAME} arm_control
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 ## Mark cpp header files for installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/baxterTictactoe
-                  ${PROJECT_SOURCE_DIR}/include/arm_controller
+                  ${PROJECT_SOURCE_DIR}/include/arm_control
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )

@@ -67,37 +67,12 @@ void Trajectory_Player::check_joint_states(const sensor_msgs::JointState& msg)
 
 bool Trajectory_Player::grasp()
 {
-    // if (_gripper->is_enabled() && _gripper->is_calibrated() && _gripper->is_ready_to_grip()) _gripper->suck();
-    // else {
-    //     ROS_ERROR("Unexpected gripper state does not allow to grasp %i %i %i",_gripper->is_enabled(),
-    //                                         _gripper->is_calibrated(),_gripper->is_ready_to_grip());
-    //     return false;
-    // }
-    _gripper->suck();
-    ros::Duration(1).sleep(); //waiting 1s to achieve the grasping
-    if (!_gripper->is_gripping())
-    {
-        ROS_ERROR("[Trajectory_Player] Attempt to grasp failed");
-        return false;
-    }
-    return true;
+    return _gripper->gripObject();
 }
 
 bool Trajectory_Player::release()
 {
-    // if (_gripper->is_enabled() && _gripper->is_calibrated() && _gripper->is_gripping()) _gripper->blow();
-    // else {
-    //     ROS_ERROR("Unexpected gripper state does not allow to release");
-    //     return false;
-    // }
-    _gripper->blow();
-    ros::Duration(1).sleep(); //waiting 1s to perform the releasing
-    // if (_gripper->is_gripping())
-    // {
-    //     ROS_ERROR("Attempt to release failed");
-    //     return false;
-    // }
-    return true;
+    return _gripper->releaseObject();
 }
 
 control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(trajectory_msgs::JointTrajectory t)

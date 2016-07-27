@@ -19,7 +19,7 @@
 #include <actionlib/client/terminal_state.h>
 
 #include "baxterTictactoe/T_ThreadSafe.h"
-#include "arm_controller/gripper.h"
+#include "arm_control/gripper.h"
 
 namespace ttt
 {

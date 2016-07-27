@@ -11,7 +11,7 @@
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxterTictactoe/T_ThreadSafe.h"
 #include "tictactoe/PlaceTokenAction.h"
-#include "arm_controller/arm_controller.h"
+#include "arm_control/arm_controller.h"
 
 #include <pthread.h>
 

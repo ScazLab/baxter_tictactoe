@@ -46,13 +46,6 @@ private:
      */
     int get_id();
 
-public:
-    /**
-     * Constructor of the class
-     * \param gripper This indicates if we are using the left or right vacuum gripper. Possible values are just right or left.
-     **/
-    Gripper(std::string type);
-
     /**
      * It makes the vacuum gripper suck so, in case it is in contact with an object, it will grip it.
      **/
@@ -62,6 +55,19 @@ public:
      * It makes the vacuum gripper blow air so, in case it has an object graspped, it will release it.
      **/
     void blow();
+
+public:
+    /**
+     * Constructor of the class
+     * \param gripper This indicates if we are using the left or right vacuum gripper. Possible values are just right or left.
+     **/
+    Gripper(std::string type);
+
+    ~Gripper() {};
+
+    bool gripObject();
+
+    bool releaseObject();
 
     /**
      * Returns a value indicating if the vacuum gripper is enable, so it can be operated.

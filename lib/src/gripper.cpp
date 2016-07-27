@@ -1,4 +1,4 @@
-#include "arm_controller/gripper.h"
+#include "arm_control/gripper.h"
 
 #include <iostream>
 
@@ -30,6 +30,39 @@ Gripper::Gripper(std::string type) : _type(type), first_run(false)
 
     pthread_mutex_init(&_mutex, NULL);
 }
+
+bool Gripper::gripObject()
+{
+    suck();
+
+    // int cnt = 0;
+
+    // while (!_gripper->is_sucking())
+    // {
+    //     ROS_WARN("Requested a suck to the gripper, but the gripper is not sucking.");
+    //     ++cnt;
+
+    //     if (cnt == 10)  return false;
+
+    //     pause();
+    //     ros::spinOnce();
+    // }
+
+    return true;
+}
+
+bool Gripper::releaseObject()
+{
+    if (is_sucking())
+    {
+        blow();
+        return true;
+    }
+
+    ROS_WARN("Requested a release of the gripper, but the gripper is not sucking.");
+    return false;
+}
+
 
 void Gripper::gripperStateCb(const EndEffectorStateConstPtr &msg)
 {

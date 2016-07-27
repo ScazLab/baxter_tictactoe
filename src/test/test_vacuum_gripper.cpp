@@ -1,4 +1,4 @@
-#include "arm_controller/gripper.h"
+#include "arm_control/gripper.h"
 
 int main(int argc, char** argv)
 {    
@@ -45,11 +45,11 @@ int main(int argc, char** argv)
         {
         case '1':
             ROS_INFO("Sucking");
-            vg->suck();
+            vg->gripObject();
             break;
         case '2':
             ROS_INFO("Blowing");
-            vg->blow();
+            vg->releaseObject();
             break;
         case '3':
             ROS_INFO("Is enabled? %s", (vg->is_enabled()? "Yes" : "No"));
