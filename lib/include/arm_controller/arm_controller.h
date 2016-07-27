@@ -27,10 +27,11 @@
 
 #include "arm_controller/gripper.h"
 
+#define WORKING -2
 #define ERROR -1
 #define START 0
 #define REST 1
-#define SCAN 2
+#define SCANNED 2
 #define PICK_UP 3
 #define PUT_DOWN 4
 #define PASSED 5

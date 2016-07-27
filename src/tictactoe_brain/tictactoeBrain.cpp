@@ -41,7 +41,7 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
 
         ROS_INFO("Scanning board with left arm..");
         _left_ac->scanBoard();
-        while(_left_ac->getState() != SCAN){ros::spinOnce();}
+        while(_left_ac->getState() != SCANNED){ros::spinOnce();}
     }
 
     _number_of_tokens_on_board.set(0);

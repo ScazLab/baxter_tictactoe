@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
     }
 
     left_ac->scanBoard();
-    while(left_ac->getState() != SCAN){ros::spinOnce();}
+    while(left_ac->getState() != SCANNED){ros::spinOnce();}
 
     for(int i = 0; i < 9; i++)
     {

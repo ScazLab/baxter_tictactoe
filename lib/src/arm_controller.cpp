@@ -851,7 +851,7 @@ void ScanBoard::InternalThreadEntry()
     scan();
     hoverAboveTokens(POS_HIGH);
 
-    setState(SCAN);
+    setState(SCANNED);
     pthread_exit(NULL);
 }
 
