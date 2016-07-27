@@ -285,7 +285,7 @@ bool ROSThread::detectForceInteraction()
     }
 }
 
-bool ROSThread::waitForForceInteraction()
+bool ROSThread::waitForForceInteraction(double _wait_time)
 {
     ros::Time _init = ros::Time::now();
 
@@ -296,9 +296,9 @@ bool ROSThread::waitForForceInteraction()
         ros::Rate(100).sleep();
         ros::spinOnce();
 
-        if ((ros::Time::now()-_init).toSec() > 10)
+        if ((ros::Time::now()-_init).toSec() > _wait_time)
         {
-            ROS_ERROR("No force interaction has been detected in 10s!");
+            ROS_ERROR("No force interaction has been detected in %gs!",_wait_time);
             return false;
         }
     }

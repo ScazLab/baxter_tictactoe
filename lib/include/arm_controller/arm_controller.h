@@ -42,7 +42,7 @@
 #define PICK_UP_SPEED   0.1
 #define VERTICAL_ORIENTATION_LEFT_ARM 0.712801568376, -0.700942136419, -0.0127158080742, -0.0207931175453
 
-#define FORCE_THRES       3  // [N]
+#define FORCE_THRES     2.0  // [N]
 #define FORCE_ALPHA     0.3
 
 /*
@@ -210,7 +210,7 @@ protected:
      * @return true when the force interaction occurred
      * @return false if no force interaction occurred after 10s
      */
-    bool waitForForceInteraction();
+    bool waitForForceInteraction(double _wait_time = 10.0);
 
     /*
      * Prevents any following code from being executed before thread is exited
