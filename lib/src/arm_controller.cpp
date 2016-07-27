@@ -243,9 +243,11 @@ bool ROSThread::getJointAngles(geometry_msgs::PoseStamped& pose_stamped,
         // z-coordinate threshold is found, then no solution exists and exit oufof loop
         if((ros::Time::now() - start).toSec() > 0.2 || pose_stamped.pose.position.z > thresh_z) 
         {
-            ROS_ERROR("Did not find a suitable IK solution! %g %g %g", pose_stamped.pose.position.x,
-                                                                       pose_stamped.pose.position.y,
-                                                                       pose_stamped.pose.position.z);
+            ROS_ERROR("Did not find a suitable IK solution! Part %s Final Position %g %g %g",
+                                                                        getLimb().c_str(),
+                                                             pose_stamped.pose.position.x,
+                                                             pose_stamped.pose.position.y,
+                                                             pose_stamped.pose.position.z);
             return false;
         }
     }
@@ -269,14 +271,18 @@ bool ROSThread::detectForceInteraction()
     double f_x = abs(_curr_wrench.force.x - _filt_force[0]);
     double f_y = abs(_curr_wrench.force.y - _filt_force[1]);
     double f_z = abs(_curr_wrench.force.z - _filt_force[2]);
+
     ROS_DEBUG("Interaction: %g %g %g", f_x, f_y, f_z);
 
     if (f_x > FORCE_THRES || f_y > FORCE_THRES || f_z > FORCE_THRES)
     {
+        ROS_INFO("Interaction: %g %g %g", f_x, f_y, f_z);
         return true;
     }
     else
+    {
         return false;
+    }
 }
 
 bool ROSThread::waitForForceInteraction()

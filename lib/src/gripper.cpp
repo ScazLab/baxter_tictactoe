@@ -1,11 +1,14 @@
 #include "arm_controller/gripper.h"
 
+#include <iostream>
+
 using namespace baxter_core_msgs;
+using namespace std;
 
 namespace ttt
 {
 
-Gripper::Gripper(std::string type) : _type(type)
+Gripper::Gripper(std::string type) : _type(type), first_run(false)
 {
     _pub_command = _nh.advertise<EndEffectorCommand>(
                    "/robot/end_effector/" + _type + "_gripper/command", 1);
@@ -34,6 +37,23 @@ void Gripper::gripperStateCb(const EndEffectorStateConstPtr &msg)
     pthread_mutex_lock(&_mutex);
     _state = *msg;
     pthread_mutex_unlock(&_mutex);
+
+    if (first_run)
+    {
+        if (!is_calibrated())
+        {
+            calibrate();
+        }
+        first_run==false;
+    }
+}
+
+void Gripper::calibrate()
+{
+    EndEffectorCommand sucking_command;
+    sucking_command.id=get_id();
+    sucking_command.command=EndEffectorCommand::CMD_CALIBRATE;
+    _pub_command.publish(sucking_command);
 }
 
 void Gripper::suck()
@@ -41,7 +61,10 @@ void Gripper::suck()
     EndEffectorCommand sucking_command;
     sucking_command.id=get_id();
     sucking_command.command=EndEffectorCommand::CMD_GRIP;
-    sucking_command.args="{\"grip_attempt_seconds\": 5.0}";
+    if (_type == "left")
+    {
+        sucking_command.args="{\"grip_attempt_seconds\": 5.0}";
+    }
     _pub_command.publish(sucking_command);
 }
 
@@ -81,7 +104,7 @@ bool Gripper::has_error()
 bool Gripper::is_sucking()
 {
     // ROS_INFO("force is: %g\n",_state.force);
-    return _state.force==EndEffectorState::FORCE_MAX;
+    return _state.position<80;
 }
 
 bool Gripper::is_gripping()

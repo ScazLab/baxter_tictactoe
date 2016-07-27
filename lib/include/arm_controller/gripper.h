@@ -20,6 +20,8 @@ class Gripper
 private:
     std::string _type; // It identifies the vacuum gripper we are using: left or right
 
+    bool first_run;    // Flag to calibrate grippers at startup if they are not calibrated
+
     ros::NodeHandle _nh;            // ROS node handle
     ros::Subscriber _sub_state;     // subscriber to receive the messages related to the state of the vacuum gripper
     ros::Publisher  _pub_command;   // publisher for gripping by sucking
@@ -28,8 +30,21 @@ private:
     // It is updated every time a new message with information about the gripper state arrives
     baxter_core_msgs::EndEffectorState _state; 
 
-    // function handling gripper state messages. We keep updated our internal variable related to the gripper state
+    // Callback that handles the gripper state messages. 
     void gripperStateCb(const baxter_core_msgs::EndEffectorStateConstPtr& msg); 
+
+    /**
+     * @brief Calibrates the gripper
+     * @details It calibrates the gripper on startup if not already calibrated.
+     */
+    void calibrate();
+
+    /**
+     * @brief Gets the ID of the gripper
+     * @details Gets the ID of the gripper
+     * @return The ID of the gripper
+     */
+    int get_id();
 
 public:
     /**
@@ -47,8 +62,6 @@ public:
      * It makes the vacuum gripper blow air so, in case it has an object graspped, it will release it.
      **/
     void blow();
-
-    int get_id();
 
     /**
      * Returns a value indicating if the vacuum gripper is enable, so it can be operated.
