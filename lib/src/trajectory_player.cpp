@@ -8,7 +8,8 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
     _client = new Client(service_name, true);
     ROS_INFO_STREAM("[Trajectory_Player] Waiting to connect to service " << service_name);
 
-    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),"[Trajectory_Player] Timeout. Service not available. Is the trajectory controller running?");
+    ROS_ASSERT_MSG(_client->waitForServer(ros::Duration(10.0)),
+                   "[Trajectory_Player] Service not available. Is the trajectory controller running?");
     
     ROS_INFO("[Trajectory_Player] Service CONNECTED");
     _tip_collision.set(false);
@@ -22,16 +23,9 @@ Trajectory_Player::Trajectory_Player(const char * service_name)
 
 void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& msg)
 {
-    // ROS_DEBUG_STREAM("Left IR range=" << msg->range << " (" << msg->min_range << ".." << msg->max_range << ")");
-    // if(msg->range<=msg->max_range) ROS_DEBUG("msg->range<=msg->max_range");
-    // else ROS_DEBUG("NO msg->range<=msg->max_range");
-    // if(msg->range>=msg->min_range) ROS_DEBUG("msg->range>=msg->min_range");
-    // else ROS_DEBUG("NO msg->range>=msg->min_range");
-    // if(msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD) ROS_DEBUG("msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD");
-    // else ROS_DEBUG("NO msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD");
-
-    // if the distance is between the min and max values and it is below the threshold
-    if(msg->range<=msg->max_range && msg->range>=msg->min_range && msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD)
+    // If the distance is between the min and max values and it is below the threshold
+    if (msg->range<=msg->max_range && msg->range>=msg->min_range &&
+        msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD)
     {        
         _tip_collision.set(true);
         ROS_WARN("[Trajectory_Player] Obstacle on the field of the left hand gripper");
@@ -92,7 +86,8 @@ control_msgs::FollowJointTrajectoryGoal Trajectory_Player::trajectory_to_goal(tr
     for (int i = 0; i < n_joints; ++i)
     {
         initial_point.positions[i]=left_arm_state[t.joint_names[i]];
-        s << "[ " << t.joint_names[i].c_str() << " " << initial_point.positions[i] << " " << left_arm_state[t.joint_names[i]] << "] ";
+        s << "[ " << t.joint_names[i].c_str() << " " << initial_point.positions[i] << " "
+          << left_arm_state[t.joint_names[i]] << "] ";
     }
 
     pthread_mutex_unlock(&this->mutex);
@@ -146,7 +141,8 @@ bool Trajectory_Player::run_trajectory(trajectory_msgs::JointTrajectory t)
 bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajectory t)
 {
     _tip_collision.set(false);
-    _left_ir_range_sub = _n.subscribe("/robot/range/left_hand_range", 1, &Trajectory_Player::check_left_ir_range, this); //start checking when the tip of the left hand range touches an obstacle
+    _left_ir_range_sub = _n.subscribe("/robot/range/left_hand_range", 1,
+                                      &Trajectory_Player::check_left_ir_range, this);
 
     control_msgs::FollowJointTrajectoryGoal goal=trajectory_to_goal(t);
     _client->sendGoal(goal);
@@ -160,7 +156,7 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
     }
     _left_ir_range_sub.shutdown(); //stop checking the left ir range
 
-    if (goal_state==Goal_State::PENDING || goal_state==Goal_State::ACTIVE) //there is a collision: _tip_collision.get()==true
+    if (goal_state==Goal_State::PENDING || goal_state==Goal_State::ACTIVE) 
     {
         _client->cancelGoal();
         ROS_WARN("The left hand tip has collided with an obstacle");        
@@ -177,7 +173,7 @@ bool Trajectory_Player::run_trajectory_and_grasp(trajectory_msgs::JointTrajector
         ROS_WARN("Item to grasp not found");
         return false; //the trajectory has successfully ended but there is not item to grasp
     }
-    else // if(goal_state==Goal_State::ABORTED || goal_state==Goal_State::LOST || goal_state==Goal_State::PREEMPTED || goal_state==Goal_State::RECALLED || goal_state==Goal_State::REJECTED)
+    else // Goal_State::ABORTED || LOST || PREEMPTED || RECALLED || REJECTED)
     {
         ROS_WARN_STREAM("Goal not reached. State is " << goal_state.toString());
 
