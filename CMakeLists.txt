@@ -203,10 +203,10 @@ target_link_libraries(board_state_sensing       baxterTictactoe
 
 # Compile old sw if required
 IF (COMPILE_OLD_SW STREQUAL true)
-    add_executable(trajectory_from_raw_to_xml       src/trajectory_from_raw_to_xml/trajectory_from_raw_to_xml.cpp)
-    add_executable(concat_trajectory_xml_files      src/concat_trajectory_xml_files/concat_trajectory_xml_files.cpp)
-    add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
-    add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
+    add_executable(trajectory_from_raw_to_xml       src/old/trajectory_from_raw_to_xml.cpp)
+    add_executable(concat_trajectory_xml_files      src/old/concat_trajectory_xml_files.cpp)
+    add_executable(move_maker_server                src/old/move_maker_server.cpp)
+    add_executable(move_maker_simpleclient          src/old/move_maker_simpleclient.cpp)
 
     add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp
                                                     ${${PROJECT_NAME}_EXPORTED_TARGETS}
