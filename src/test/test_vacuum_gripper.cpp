@@ -1,4 +1,4 @@
-#include "arm_control/gripper.h"
+#include "robot_interface/gripper.h"
 
 int main(int argc, char** argv)
 {    

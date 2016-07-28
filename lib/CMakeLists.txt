@@ -11,10 +11,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_library(${PROJECT_NAME}   include/${PROJECT_NAME}/tictactoe_utils.h
                               include/${PROJECT_NAME}/T_ThreadSafe.h
                               src/tictactoe_utils.cpp)
-add_library(arm_control       include/arm_control/gripper.h
-                              include/arm_control/arm_controller.h
-                              src/gripper.cpp
-                              src/arm_controller.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -23,15 +19,12 @@ add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp
                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                    ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(arm_control       ${catkin_EXPORTED_TARGETS})
-
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}        ${QT_LIBRARIES}
                                              ${OpenCV_LIBRARIES}
                                              ${catkin_LIBRARIES})
 
-target_link_libraries(arm_control         ${catkin_LIBRARIES})
-
+#Compile old software if required
 IF(COMPILE_OLD_SW STREQUAL true)
     add_library(move_maker      include/move_maker/trajectory_xml_parser.h
                                 include/move_maker/trajectory_player.h
@@ -43,20 +36,18 @@ IF(COMPILE_OLD_SW STREQUAL true)
                                 src/robot_state.cpp)
 
     add_dependencies(move_maker         ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(move_maker    arm_control 
-                                        ${QT_LIBRARIES}
+    target_link_libraries(move_maker    ${QT_LIBRARIES}
                                         ${catkin_LIBRARIES})
 ENDIF()
 
 ## Mark libraries for installation
-install (TARGETS ${PROJECT_NAME} arm_control
+install (TARGETS ${PROJECT_NAME}
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
 
 ## Mark cpp header files for installation
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/baxterTictactoe
-                  ${PROJECT_SOURCE_DIR}/include/arm_control
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )

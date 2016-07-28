@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <ros/console.h>
-#include "arm_control/arm_controller.h"
+#include "robot_interface/arm_controller.h"
 #include "baxter_tictactoe/ScanState.h"
 #include <iostream>
 
