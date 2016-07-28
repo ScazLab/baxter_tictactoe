@@ -4,6 +4,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(baxter_tictactoe)
 
+set(COMPILE_TESTS  false)
+set(COMPILE_OLD_SW false)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -136,31 +139,20 @@ add_definitions(${QT_DEFINITIONS})
 add_subdirectory(lib)
 
 ## Declare a C++ executables
-add_executable(trajectory_from_raw_to_xml       src/trajectory_from_raw_to_xml/trajectory_from_raw_to_xml.cpp)
-add_executable(concat_trajectory_xml_files      src/concat_trajectory_xml_files/concat_trajectory_xml_files.cpp)
-add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
-add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
-add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h                        src/tictactoe_brain/tictactoeBrain.cpp          src/tictactoe_brain/tictactoe_brain.cpp                                              )
-add_executable(cells_definition                 src/cells_definition/cells_definition.cpp                   src/cells_definition/cells_definition.h)
-add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.cpp              src/cells_definition/cells_definition_auto.h)
+add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h
+                                                src/tictactoe_brain/tictactoeBrain.cpp
+                                                src/tictactoe_brain/tictactoe_brain.cpp)
+add_executable(cells_definition                 src/cells_definition/cells_definition.h
+                                                src/cells_definition/cells_definition.cpp)
+add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.h
+                                                src/cells_definition/cells_definition_auto.cpp)
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
-add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.cpp             src/board_state_sensing/board_state_sensing.h)
-
-add_executable(test_vacuum_gripper              src/test/test_vacuum_gripper.cpp)
-add_executable(test_trajectory_player           src/test/test_trajectory_player.cpp)
-add_executable(test_thread_safe_variable        src/test/test_thread_safe_variable.cpp)
-add_executable(test_trajectory_xml_parser       src/test/test_trajectory_xml_parser.cpp)
-add_executable(test_loading_trajectory_xml      src/test/test_loading_trajectory_xml.cpp)
-add_executable(test_arm_controller              src/test/test_arm_controller.cpp)
+add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.h
+                                                src/board_state_sensing/board_state_sensing.cpp)
 
 ## Add cmake target dependencies of the executable
-
-add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(cells_definition_auto          baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
@@ -169,19 +161,7 @@ add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messag
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(test_vacuum_gripper            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_arm_controller            baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
-
 ## Specify libraries to link a library or executable target against
-
-target_link_libraries(trajectory_from_raw_to_xml        trajectory_xml_parser)
-target_link_libraries(concat_trajectory_xml_files       trajectory_xml_parser)
-target_link_libraries(move_maker_server                 move_maker)
-target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
 target_link_libraries(tictactoe_brain                   baxterTictactoe     arm_control                     ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cells_definition                  baxterTictactoe     ${OpenCV_LIBS}  ${QT_LIBRARIES} ${catkin_LIBRARIES})
 target_link_libraries(cells_definition_auto             baxterTictactoe     ${OpenCV_LIBS}                  ${catkin_LIBRARIES})
@@ -190,11 +170,53 @@ target_link_libraries(hsv_range_finder                  baxterTictactoe     ${Op
 target_link_libraries(board_scheme                                          ${OpenCV_LIBS}                  ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensing               baxterTictactoe     ${OpenCV_LIBS}  ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
-target_link_libraries(test_vacuum_gripper               arm_control                                         ${catkin_LIBRARIES})
-target_link_libraries(test_trajectory_player            trajectory_player   trajectory_xml_parser           ${catkin_LIBRARIES})
-target_link_libraries(test_arm_controller               arm_control         ${OpenCV_LIBS}                  ${catkin_LIBRARIES})
-target_link_libraries(test_trajectory_xml_parser        trajectory_xml_parser)
-target_link_libraries(test_loading_trajectory_xml       trajectory_xml_parser)
+# Compile old sw if required
+IF (COMPILE_OLD_SW STREQUAL true)
+    add_executable(trajectory_from_raw_to_xml       src/trajectory_from_raw_to_xml/trajectory_from_raw_to_xml.cpp)
+    add_executable(concat_trajectory_xml_files      src/concat_trajectory_xml_files/concat_trajectory_xml_files.cpp)
+    add_executable(move_maker_server                src/move_maker_server/move_maker_server.cpp)
+    add_executable(move_maker_simpleclient          src/move_maker_simpleclient/move_maker_simpleclient.cpp)
+
+    add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+    add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+    add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+    add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
+    target_link_libraries(trajectory_from_raw_to_xml        move_maker)
+    target_link_libraries(concat_trajectory_xml_files       move_maker)
+    target_link_libraries(move_maker_server                 move_maker)
+    target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
+ENDIF()
+
+# Compile tests if required
+IF(COMPILE_TESTS STREQUAL true)
+    add_executable(test_vacuum_gripper          src/test/test_vacuum_gripper.cpp)
+    add_executable(test_arm_controller          src/test/test_arm_controller.cpp)
+
+    add_dependencies(test_vacuum_gripper        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+    add_dependencies(test_arm_controller        baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
+    target_link_libraries(test_vacuum_gripper   arm_control                  ${catkin_LIBRARIES})
+    target_link_libraries(test_arm_controller   arm_control  ${OpenCV_LIBS}  ${catkin_LIBRARIES})
+
+    IF(COMPILE_OLD_SW STREQUAL true)
+        add_executable(test_trajectory_player           src/test/test_trajectory_player.cpp)
+        add_executable(test_thread_safe_variable        src/test/test_thread_safe_variable.cpp)
+        add_executable(test_trajectory_xml_parser       src/test/test_trajectory_xml_parser.cpp)
+        add_executable(test_loading_trajectory_xml      src/test/test_loading_trajectory_xml.cpp)
+
+        add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+        add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+        add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+        add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp      ${${PROJECT_NAME}_EXPORTED_TARGETS}     ${catkin_EXPORTED_TARGETS})
+
+        target_link_libraries(test_trajectory_player            move_maker                   ${catkin_LIBRARIES})
+        target_link_libraries(test_trajectory_xml_parser        move_maker)
+        target_link_libraries(test_loading_trajectory_xml       move_maker)
+    ENDIF()
+ELSE()
+    message(${PROJECT_NAME} ": Tests will not be compiled")
+ENDIF()
 
 #############
 ## Install ##

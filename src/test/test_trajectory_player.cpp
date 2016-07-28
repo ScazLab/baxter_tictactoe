@@ -1,6 +1,6 @@
 #include <ros/ros.h>
-#include "trajectory_player/trajectory_player.h"
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_player.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 int main(int argc, char** argv)
 {
@@ -27,7 +27,8 @@ int main(int argc, char** argv)
     while(true)
     {
         ROS_INFO("Choose the trajectory to play:");
-        for (size_t i = 0; i < traj_ids.size(); ++i) {
+        for (size_t i = 0; i < traj_ids.size(); ++i)
+        {
             ROS_INFO_STREAM(i+1 << "." << traj_ids[i]);
         }
         ROS_INFO("Any other number to exit");
@@ -37,7 +38,8 @@ int main(int argc, char** argv)
         ROS_INFO("1. Plain | 2. Grasp | 3. Release");
         size_t type_traj=0;
         std::cin >> type_traj;
-        if (type_traj>=1 && type_traj<=3) {
+        if (type_traj>=1 && type_traj<=3)
+        {
             switch(type_traj)
             {
             case 1:

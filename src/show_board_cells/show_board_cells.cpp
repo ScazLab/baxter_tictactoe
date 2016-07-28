@@ -13,8 +13,6 @@
 #include <QFile>
 #include <QXmlStreamReader>
 
-#include <boost/lexical_cast.hpp>
-
 #include "baxterTictactoe/tictactoe_utils.h"
 
 #include "baxter_tictactoe/DefineCells.h"
@@ -22,6 +20,13 @@
 using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
+
+string int2String( const int a )
+{
+    stringstream ss;
+    ss << a;
+    return ss.str();
+}
 
 class CellDisplay
 {
@@ -142,14 +147,6 @@ public:
             cv::putText(img_aux, int_to_string(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
         }
 
-        // for(size_t i=0;i!=board.cells.size();++i)
-        // {
-        //     cv::Point cell_centroid;
-        //     board.cells[i].get_cell_centroid(cell_centroid);
-        //     //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
-        //     cv::putText(img_aux, boost::lexical_cast<std::string>(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
-        // }
-
         cv::putText(img_aux, "Press 's' key to see the filtered images for each cell",
                     cv::Point(10,400), cv::FONT_HERSHEY_PLAIN,0.9,cv::Scalar(255,255,0));
         cv::imshow(CellDisplay::WINDOW, img_aux);
@@ -183,7 +180,7 @@ public:
             /*cv::imshow("original", img);
             cv::imshow("mask", mask);*/
             std::string win_name="cell";
-            win_name+=boost::lexical_cast<std::string>(++counter);
+            win_name+=int2String(++counter);
             cv::imshow(win_name, im_crop);
         }
     }

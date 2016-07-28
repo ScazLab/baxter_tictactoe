@@ -24,6 +24,8 @@
 namespace ttt
 {
 
+#define IR_RANGE_THRESHOLD   0.085
+
 typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> Client;
 
 typedef actionlib::SimpleClientGoalState Goal_State;
@@ -50,8 +52,6 @@ class Trajectory_Player
     void check_left_ir_range(const sensor_msgs::RangeConstPtr& msg);
 
     void check_joint_states(const sensor_msgs::JointState& msg);
-
-    const static float IR_RANGE_THRESHOLD; //! value to determine an object close enough to the left hand as a collision considering the ir range
 
     Gripper *_gripper; //! This is used in the trajectories that imply grasping or releasing
 
@@ -107,8 +107,6 @@ public:
      **/
     ~Trajectory_Player();
 };
-
-const float Trajectory_Player::IR_RANGE_THRESHOLD = 0.085;
 
 }
 #endif // TRAJECTORY_PLAYER_H

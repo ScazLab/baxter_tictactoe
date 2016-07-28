@@ -9,8 +9,8 @@
 #include <tictactoe/PlaceTokenAction.h>
 #include <actionlib/server/simple_action_server.h>
 
-#include "trajectory_player/trajectory_player.h"
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_player.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 #include <baxter_tictactoe/SetTrajectoryType.h>
 

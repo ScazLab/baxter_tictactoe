@@ -234,7 +234,7 @@ protected:
      * Infrared sensor callback function that sets the current range to the range received
      * from the left hand range state topic
      * 
-     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * @param      The message
      * @return     N/A
      */
     void IRCallback(const sensor_msgs::RangeConstPtr& msg);
@@ -305,7 +305,7 @@ public:
     /*
      * image callback function that displays the image stream from the hand camera 
      * 
-     * @param      ImageConstPtr is equal to 'typedef boost::shared_ptr< ::sensor_msgs::Image const>'
+     * @param      The image
      * @return     N/A
      */
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);

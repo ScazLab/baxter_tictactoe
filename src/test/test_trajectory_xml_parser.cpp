@@ -1,4 +1,4 @@
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 int main(int argc, char ** argv)
 {
@@ -6,8 +6,10 @@ int main(int argc, char ** argv)
 
     ROS_INFO_STREAM("1. Reading points from a file with \"raw\" data extracted with \"rostopic echo\". 7 joints and 2.0s to reach the next point.");
     std::vector<trajectory_msgs::JointTrajectoryPoint> points = ttt::trajectory_xml_parser::read_points_from_raw_file("../resources/test/raw.positions", 7, 2.0);
+    
     ROS_INFO_STREAM("Trajectory with " << points.size() << " points:");
-    foreach (trajectory_msgs::JointTrajectoryPoint p, points) {
+    foreach (trajectory_msgs::JointTrajectoryPoint p, points)
+    {
         ROS_INFO_STREAM(p);
     }
 
@@ -46,8 +48,10 @@ int main(int argc, char ** argv)
         ROS_ERROR("Error reading from file");
         return -1;
     }
+    
     ROS_INFO_STREAM(trajs.size() << " trajectories read");
-    foreach (std::string t_id, traj_ids) {
+    foreach (std::string t_id, traj_ids)
+    {
         ROS_INFO_STREAM("Trajectory " << t_id);
     }
 

@@ -1,8 +1,8 @@
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 int main(int argc, char ** argv)
 {
-    ROS_INFO_STREAM("Concatenating several xml trajectory files into just one");
+    ROS_INFO("Concatenating several xml trajectory files into just one");
     ROS_ASSERT_MSG(argc>3, "concat_trajectory_xml_files [dest_file] [orig_file1] [orig_file2] ... [orig_fileN]");
 
     std::string dest_file = argv[1];

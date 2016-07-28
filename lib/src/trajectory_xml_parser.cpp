@@ -1,7 +1,6 @@
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_xml_parser.h"
 
-namespace ttt
-{
+using namespace ttt;
 
 bool trajectory_xml_parser::write_to_file(const trajectory_msgs::JointTrajectory traj, std::string filename, const std::string trajectory_id)
 {
@@ -238,6 +237,4 @@ bool trajectory_xml_parser::read_joint_names_from_file(std::string filename, std
         return false;
     }
     return false;
-}
-
 }

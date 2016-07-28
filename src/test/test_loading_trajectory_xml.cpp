@@ -1,4 +1,4 @@
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 int main(int argc, char ** argv)
 {

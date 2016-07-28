@@ -1,7 +1,6 @@
-#include "trajectory_player/trajectory_player.h"
+#include "move_maker/trajectory_player.h"
 
-namespace ttt
-{
+using namespace ttt;
 
 Trajectory_Player::Trajectory_Player(const char * service_name)
 {
@@ -25,7 +24,7 @@ void Trajectory_Player::check_left_ir_range(const sensor_msgs::RangeConstPtr& ms
 {
     // If the distance is between the min and max values and it is below the threshold
     if (msg->range<=msg->max_range && msg->range>=msg->min_range &&
-        msg->range<=Trajectory_Player::IR_RANGE_THRESHOLD)
+        msg->range<=IR_RANGE_THRESHOLD)
     {        
         _tip_collision.set(true);
         ROS_WARN("[Trajectory_Player] Obstacle on the field of the left hand gripper");
@@ -208,6 +207,4 @@ Trajectory_Player::~Trajectory_Player()
         delete _gripper;
         _gripper = 0;
     }
-}
-
 }

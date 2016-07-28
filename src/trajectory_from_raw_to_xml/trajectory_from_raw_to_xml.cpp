@@ -1,10 +1,10 @@
 #include <ros/console.h>
 
-#include "trajectory_xml_parser/trajectory_xml_parser.h"
+#include "move_maker/trajectory_xml_parser.h"
 
 int main(int argc, char ** argv)
 {
-    ROS_INFO_STREAM("Adding a raw trajectory file  to an xmltrajectory file.");
+    ROS_INFO("Adding a raw trajectory file  to an xmltrajectory file.");
 
     ROS_ASSERT_MSG(argc>3, "All joint names are required as parameters");
 
