@@ -54,7 +54,7 @@ private:
 
     std::string _voice_type; // It determines the type of voice.
 
-    bool traj;             // traj=false -> arm movement done via inverse kinematics (ArmController)
+    bool traj;             // traj=false -> arm movement done via inverse kinematics (TTTController)
                            // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
                            // traj=false preferred due to simpler and more robust implementation 
     bool _setup;
@@ -70,8 +70,8 @@ private:
                                                             decides the next move. We use a pointer 
                                                             because we could have different strategies. */
 
-    ArmController * _left_ac;
-    ArmController * _right_ac;
+    TTTController * _left_ac;
+    TTTController * _right_ac;
 
     bool has_cheated;
 

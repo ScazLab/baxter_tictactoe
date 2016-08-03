@@ -18,7 +18,7 @@ int main(int argc, char** argv)
     // there is not a straightforward standard ROS way, unfortunately.
     // (by alecive, all the fault goes to him)
 
-    // traj=false -> arm movement done via inverse kinematics (ArmController)
+    // traj=false -> arm movement done via inverse kinematics (TTTController)
     // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
     // traj=false preferred due to simpler and more robust implementation 
     
