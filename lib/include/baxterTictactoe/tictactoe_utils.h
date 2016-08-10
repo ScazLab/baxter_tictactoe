@@ -15,13 +15,14 @@
 
 #include "baxter_tictactoe/MsgCell.h"
 
-
 #include <sstream>
 
 namespace enc = sensor_msgs::image_encodings;
 
 namespace ttt
 {
+
+#define NUMBER_OF_CELLS 9
 
 // Used to determine the three possible states of a cell.
 // Undefined is just used when it is created and non state has been assigned.
@@ -32,9 +33,8 @@ typedef enum {empty=baxter_tictactoe::MsgCell::EMPTY,
 
 std::string cell_state_to_str(cellState c_s);
 
-const std::size_t NUMBER_OF_CELLS=9;
-
-struct colorRange {
+struct colorRange
+{
     int min;
     int max;
 
@@ -48,7 +48,8 @@ struct colorRange {
     colorRange &operator=(const colorRange &);
 };
 
-struct hsvColorRange {
+struct hsvColorRange
+{
     colorRange H;
     colorRange S;
     colorRange V;
@@ -68,6 +69,14 @@ struct hsvColorRange {
     **/
     hsvColorRange &operator=(const hsvColorRange &);
 };
+
+/**
+ * Thresholds the HSV image and create a binary image
+ * @param  _src [description]
+ * @param  _hsv [description]
+ * @return      [description]
+ */
+cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv);
 
 struct Cell
 {
@@ -110,7 +119,7 @@ public:
 struct Board
 {
 public: 
-    std::vector<ttt::Cell> cells;
+    std::vector<Cell> cells;
 
 public:
     Board()  {};
@@ -159,15 +168,6 @@ public:
      */
     cv::Mat mask_image(const cv::Mat &);
 };
-
-/**
- * This function thresholds the HSV image and create a binary image
- * @param  img_hsv [description]
- * @param  lower   [description]
- * @param  upper   [description]
- * @return         [description]
- */
-cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv);
 
 }
 

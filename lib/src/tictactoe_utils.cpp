@@ -3,7 +3,7 @@
 using namespace std;
 using namespace ttt;
 
-std::string ttt::cell_state_to_str(ttt::cellState c_s)
+std::string ttt::cell_state_to_str(cellState c_s)
 {
     switch(c_s)
     {
@@ -13,6 +13,35 @@ std::string ttt::cell_state_to_str(ttt::cellState c_s)
         case undefined: return std::string("undefined");
         default: return std::string("[value unknown]");
     }
+}
+
+cv::Mat ttt::hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
+{
+    cv::Mat res = _src.clone();
+
+    // If H.lower is higher than H.upper it means that we would like to
+    // detect something in the range [0-upper] & [lower-180] (i.e. the red)
+    // So the thresholded image will be made with two opencv calls to inRange
+    // and then the two will be merged into one
+    if (_hsv.H.min > _hsv.H.max)
+    {
+        cv::Mat resA = _src.clone();
+        cv::Mat resB = _src.clone();
+
+        cv::inRange(_src, cv::Scalar(         0, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(_hsv.H.max, _hsv.S.max, _hsv.V.max), resA);
+        cv::inRange(_src, cv::Scalar(_hsv.H.min, _hsv.S.min, _hsv.V.min),
+                          cv::Scalar(       180, _hsv.S.max, _hsv.V.max), resB);
+
+        cv::bitwise_or(resA,resB,res);
+    }
+    else
+    {
+        cv::inRange(_src, cv::Scalar(_hsv.get_hsv_min()),
+                          cv::Scalar(_hsv.get_hsv_max()), res);
+    }
+
+    return res;
 }
 
 /**************************************************************************/
@@ -97,10 +126,12 @@ bool Cell::get_cell_centroid(cv::Point& centroid)
     uint sumX = 0, sumY = 0;
     size_t size = contours.size();
     centroid.x=centroid.y=0;
-    if(size > 0){
-        for (std::vector<cv::Point>::iterator it_point = contours.begin(); it_point != contours.end(); ++it_point) {
-            sumX += it_point->x;
-            sumY += it_point->y;
+    if(size > 0)
+    {
+        for (std::vector<cv::Point>::iterator it = contours.begin(); it != contours.end(); ++it)
+        {
+            sumX += it->x;
+            sumY += it->y;
         }
         // TODO throw exception if size <= 0
         centroid.x = sumX/size;
@@ -190,7 +221,8 @@ bool Board::save()
     if (!cells.empty())
     {
         QApplication app(0,0);
-        QString fileName = QFileDialog::getSaveFileName(0, "Save File", QDir::currentPath(), "XML files (*.xml)", new QString("XML files (*.xml)"));
+        QString fileName = QFileDialog::getSaveFileName(0, "Save File", QDir::currentPath(),
+                                                        "XML files (*.xml)", new QString("XML files (*.xml)"));
         ROS_DEBUG_STREAM("File Name selected= " << fileName.toStdString());
         if(!fileName.isEmpty())
         {
@@ -209,12 +241,14 @@ bool Board::save()
 
             for (size_t i=0; i< cells.size();++i)
             {
+                Cell c = cells[i];
                 stream.writeStartElement("cell");
                 stream.writeAttribute("id", QString::number(i));
-                for (std::vector<cv::Point>::iterator it_vertex = cells[i].contours.begin(); it_vertex != cells[i].contours.end(); ++it_vertex) {
+                for (vector<cv::Point>::iterator it = c.contours.begin(); it != c.contours.end(); ++it)
+                {
                     stream.writeEmptyElement("vertex");
-                    stream.writeAttribute("x", QString::number(it_vertex->x));
-                    stream.writeAttribute("y", QString::number(it_vertex->y));
+                    stream.writeAttribute("x", QString::number(it->x));
+                    stream.writeAttribute("y", QString::number(it->y));
                 }
                 stream.writeEndElement(); // cell
             }
@@ -268,13 +302,15 @@ bool Board::load(std::string cells_param)
                     /* Let's check that vertex has x and y attribute. */
                     if(attributes.hasAttribute("x") && attributes.hasAttribute("y")) {
                         /* We'll add it to the cell */
-                        cells.back().contours.push_back(cv::Point(attributes.value("x").toString().toInt(), attributes.value("y").toString().toInt()));
+                        cells.back().contours.push_back(cv::Point(attributes.value("x").toString().toInt(),
+                                                        attributes.value("y").toString().toInt()));
                     }
                     else xml.raiseError("Vertex corrupted: x and/or y value is missing");
                 }
             }
         }
-        ROS_WARN_COND(xml.hasError(),"Error parsing xml data (l.%d, c.%d):%s", (int)xml.lineNumber(), (int)xml.columnNumber(), xml.errorString().toStdString().c_str());
+        ROS_WARN_COND(xml.hasError(),"Error parsing xml data (l.%d, c.%d):%s",
+                     (int)xml.lineNumber(), (int)xml.columnNumber(), xml.errorString().toStdString().c_str());
 
         ROS_INFO("Xml data successfully loaded. %i cells loaded.", (int)cells.size());
 
@@ -304,34 +340,5 @@ cv::Mat Board::mask_image(const cv::Mat &_src)
     _src.copyTo(im_crop, mask);
 
     return im_crop;
-}
-
-cv::Mat ttt::hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
-{
-    cv::Mat res = _src.clone();
-
-    // If H.lower is higher than H.upper it means that we would like to
-    // detect something in the range [0-upper] & [lower-180] (i.e. the red)
-    // So the thresholded image will be made with two opencv calls to inRange
-    // and then the two will be merged into one
-    if (_hsv.H.min > _hsv.H.max)
-    {
-        cv::Mat resA = _src.clone();
-        cv::Mat resB = _src.clone();
-
-        cv::inRange(_src, cv::Scalar(         0, _hsv.S.min, _hsv.V.min),
-                          cv::Scalar(_hsv.H.max, _hsv.S.max, _hsv.V.max), resA);
-        cv::inRange(_src, cv::Scalar(_hsv.H.min, _hsv.S.min, _hsv.V.min),
-                          cv::Scalar(       180, _hsv.S.max, _hsv.V.max), resB);
-
-        cv::bitwise_or(resA,resB,res);
-    }
-    else
-    {
-        cv::inRange(_src, cv::Scalar(_hsv.get_hsv_min()),
-                          cv::Scalar(_hsv.get_hsv_max()), res);
-    }
-
-    return res;
 }
 
