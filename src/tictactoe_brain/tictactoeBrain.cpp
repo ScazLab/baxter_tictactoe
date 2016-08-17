@@ -57,17 +57,17 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
-   
+
     // if(traj == true)
     // {
     //     _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
-    //     set_movement_type(movement_type);    
+    //     set_movement_type(movement_type);
     // }
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
 
-    TTT_State_type aux; // aux is an array of 9 MsgCells 
+    TTT_State_type aux; // aux is an array of 9 MsgCells
     for(int i = 0; i < aux.size(); i++)
     {
         aux[i].state = baxter_tictactoe::MsgCell::UNDEFINED;
@@ -76,7 +76,7 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     // aux.assign(undefined);
     _ttt_state.set(aux);    // initialy the state for all cells in the TTT board is undefined
 
-    _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::new_ttt_state, this); //receiving data about the TTT board state every time it changes        
+    _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::new_ttt_state, this); //receiving data about the TTT board state every time it changes
     _scan_server = _nh.advertiseService("baxter_tictactoe/ready_scan", &tictactoeBrain::scanState, this);
 
     qsrand(ros::Time::now().nsec);
@@ -88,21 +88,21 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     {
         ROS_INFO("[tictactoeBrain] Waiting for TTT Move Maker action server to start.");
         ROS_ASSERT_MSG(_move_commander.waitForServer(ros::Duration(10.0)),"TTT Move Maker action server doesn't found");
-        ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");       
+        ROS_INFO("[tictactoeBrain] TTT Move Maker action server is started. We are ready for sending goals.");
     }
 
-    _setup = true; // indicates whether board has been scanned by arm camera 
-                   // (signal to boardStateSensing that the board's position 
+    _setup = true; // indicates whether board has been scanned by arm camera
+                   // (signal to boardStateSensing that the board's position
                    // is locked and ready to scanned by head camera)
 
     while(ros::ok())
     {
-        TTT_State_type arr = _ttt_state.get();       
-        if(arr != aux) 
+        TTT_State_type arr = _ttt_state.get();
+        if(arr != aux)
         {
             break;
         }
-        else 
+        else
         {
             ROS_WARN("Board was not detected. Make sure board is within the head camera's view and is not obscured. Press ENTER afterwards.");
             char c = cin.get();
@@ -149,7 +149,7 @@ int tictactoeBrain::random_move(bool& cheating)
     TTT_State_type aux = _ttt_state.get();
     do {
         r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
-        ROS_DEBUG("[tictactoeBrain] Cell %d is in state %d ==? %d || %d", r, aux[r-1].state, 
+        ROS_DEBUG("[tictactoeBrain] Cell %d is in state %d ==? %d || %d", r, aux[r-1].state,
                   baxter_tictactoe::MsgCell::EMPTY, baxter_tictactoe::MsgCell::UNDEFINED);
     }
     while(aux[r-1].state!=empty && aux[r-1].state!=undefined);
@@ -240,7 +240,7 @@ int tictactoeBrain::victory_move()
 {
     TTT_State_type aux = _ttt_state.get();
     uint8_t cell_state = undefined;
-    
+
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
         if (aux[i].state==empty || aux[i].state==undefined)
@@ -292,7 +292,7 @@ bool tictactoeBrain::ismovement_type_movements()
 
 actionlib::SimpleClientGoalState tictactoeBrain::execute_move(int cell_to_move)
 {
-    tictactoe::PlaceTokenGoal goal;
+    baxter_tictactoe::PlaceTokenGoal goal;
     switch(cell_to_move)
     {
         case 1:goal.cell="1x1"; break;
@@ -308,7 +308,7 @@ actionlib::SimpleClientGoalState tictactoeBrain::execute_move(int cell_to_move)
             ROS_ERROR("[tictactoeBrain] Unknown cell to move, %d",cell_to_move);
             return actionlib::SimpleClientGoalState::LOST;
     }
-    
+
     _move_commander.sendGoal(goal);
     _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
     bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
@@ -371,9 +371,9 @@ unsigned short int tictactoeBrain::get_winner()
 }
 
 void tictactoeBrain::wait_for_opponent_turn(const uint8_t& n_opponent_tokens)
-{        
+{
     uint8_t aux_n_opponent_tokens=n_opponent_tokens;
-    while(aux_n_opponent_tokens<=n_opponent_tokens) /* Waiting for my turn: the participant 
+    while(aux_n_opponent_tokens<=n_opponent_tokens) /* Waiting for my turn: the participant
                                                        has to place one token, so we wait until
                                                        the number opponent's tokens increase. */
     {
@@ -388,7 +388,7 @@ bool tictactoeBrain::is_board_full()
 {
     TTT_State_type aux = _ttt_state.get();
     for(int i = 0; i < aux.size(); i++){
-        if(aux[i].state==empty || aux[i].state==undefined) /* we consider the case where cells are 
+        if(aux[i].state==empty || aux[i].state==undefined) /* we consider the case where cells are
                                                               undefined because is needed in the first
                                                               loop when all cells are undefined */
         return false;
@@ -468,7 +468,7 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
                 }
 
                 _left_ac->putDownToken(cell_to_move);
-                while(_left_ac->getState() != PUT_DOWN){ros::spinOnce();}  
+                while(_left_ac->getState() != PUT_DOWN){ros::spinOnce();}
                 cout << "after arm movement" << endl;
             }
 
@@ -483,11 +483,11 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
                 else
                 {
                     ROS_ERROR_STREAM("[tictactoeBrain] Last move has not succeded. Goal state " << goal_state.toString().c_str() << " is not guaranteed.");
-                }            
+                }
             }
 
             //the number of robot tokens haven't increased so we try again.
-            // if(n_robot_tokens==get_number_of_tokens_on_board(_robot_color)) 
+            // if(n_robot_tokens==get_number_of_tokens_on_board(_robot_color))
             // {
             //     ROS_ERROR("[tictactoeBrain] Somehow there is still %ud robot tokens.",n_robot_tokens);
             //     continue;
@@ -499,9 +499,9 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
 
             ROS_INFO("[tictactoeBrain] Waiting for the participant's move.");
             say_sentence("It is your turn",0.1);
-            wait_for_opponent_turn(n_opponent_tokens); /* Waiting for my turn: the participant 
-                                                          has to place one token, so we wait 
-                                                          until the number of the opponent's 
+            wait_for_opponent_turn(n_opponent_tokens); /* Waiting for my turn: the participant
+                                                          has to place one token, so we wait
+                                                          until the number of the opponent's
                                                           tokens increases. */
             cout << "after participant move" << endl;
         }
