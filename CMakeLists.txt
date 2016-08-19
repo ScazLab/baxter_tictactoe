@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
     	     cv_bridge
     	     image_transport
              baxter_collaboration
+             eigen_conversions
 )
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
@@ -61,8 +62,8 @@ find_package(Threads)
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
     Point.msg
-    MsgBoard.msg 
-    MsgCell.msg 
+    MsgBoard.msg
+    MsgCell.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -73,15 +74,15 @@ add_service_files(FILES
 )
 
 #Required for generating the messages related to actionlib
-add_action_files(DIRECTORY action FILES 
+add_action_files(DIRECTORY action FILES
     PlaceToken.action
 )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(DEPENDENCIES 
+generate_messages(DEPENDENCIES
     baxter_core_msgs
     geometry_msgs
-    actionlib_msgs 
+    actionlib_msgs
     std_msgs
 )
 
@@ -129,6 +130,7 @@ catkin_package(
 include_directories(lib/include
                     ${OpenCV_INCLUDE_DIRS}
                     ${Boost_INCLUDE_DIRS}
+                    ${eigen_INCLUDE_DIRS}
                     ${catkin_INCLUDE_DIRS}
                     ${CMAKE_CURRENT_SOURCE_DIR}
 )
@@ -280,7 +282,7 @@ ENDIF()
 #  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #)
 
-# install(DIRECTORY include/ 
+# install(DIRECTORY include/
 #     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 # )
 

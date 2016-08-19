@@ -29,7 +29,7 @@ void MoveToRest::InternalThreadEntry()
     while(ros::ok())
     {
         if(!(getPos().x == 0 && getPos().y == 0 && getPos().z == 0))
-        {       
+        {
             break;
         }
 
@@ -58,7 +58,7 @@ void MoveToRest::InternalThreadEntry()
 
         ros::spinOnce();
         ros::Rate(100).sleep();
- 
+
         if(hasPoseCompleted(0.292391, getLimb()=="left"?0.611039:-0.611039, 0.181133,
                             0.028927, 0.686745, 0.00352694, 0.726314, "loose"))
         {
@@ -67,8 +67,8 @@ void MoveToRest::InternalThreadEntry()
     }
 
     setState(REST);
-    pthread_exit(NULL);  
-}  
+    closeInternalThread();
+}
 
 /**************************************************************************/
 /*                         PickUpToken                               */
@@ -77,7 +77,7 @@ void MoveToRest::InternalThreadEntry()
 // Public
 PickUpToken::PickUpToken(string limb): ROSThreadImage(limb), Gripper(limb)
 {
-    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);    
+    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
     namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
     resizeWindow("[PickUpToken] Raw",       700, 500);
@@ -87,7 +87,7 @@ PickUpToken::PickUpToken(string limb): ROSThreadImage(limb), Gripper(limb)
 PickUpToken::~PickUpToken()
 {
     destroyWindow("[PickUpToken] Raw");
-    destroyWindow("[PickUpToken] Processed"); 
+    destroyWindow("[PickUpToken] Processed");
     destroyWindow("[PickUpToken] Rough");
 }
 
@@ -99,7 +99,7 @@ void PickUpToken::InternalThreadEntry()
     {
         if(!is_ir_ok())
         {
-            break; 
+            break;
         }
 
         ros::spinOnce();
@@ -117,7 +117,7 @@ void PickUpToken::InternalThreadEntry()
     hoverAboveTokens(Z_LOW);
 
     setState(PICK_UP);
-    pthread_exit(NULL);  
+    closeInternalThread();
 }
 
 // Private
@@ -126,11 +126,11 @@ typedef vector<vector<cv::Point> > Contours;
 void PickUpToken::gripToken()
 {
     cv::Point2d offset;
-    // check if token is present before starting movement loop 
+    // check if token is present before starting movement loop
     // (prevent gripper from colliding with play surface)
     checkForToken(offset);
 
-    ros::Time start_time = ros::Time::now();                
+    ros::Time start_time = ros::Time::now();
     cv::Point2d prev_offset(0.540, 0.540);
 
     while(ros::ok())
@@ -143,7 +143,7 @@ void PickUpToken::gripToken()
         double py = prev_offset.y + 0.07 * offset.y;
         double pz = 0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec();
 
-        prev_offset.x = prev_offset.x + 0.07 * offset.x; 
+        prev_offset.x = prev_offset.x + 0.07 * offset.x;
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
         vector<double> joint_angles;
@@ -163,16 +163,16 @@ void PickUpToken::gripToken()
 
         ros::spinOnce();
         ros::Rate(100).sleep();
-        
+
         // if(getPos().z < -0.05) break;
 
-        if(hasCollided("strict")) 
+        if(hasCollided("strict"))
         {
             break;
         }
     }
     gripObject();
-}   
+}
 
 void PickUpToken::checkForToken(cv::Point2d &offset)
 {
@@ -201,7 +201,7 @@ void PickUpToken::checkForToken(cv::Point2d &offset)
 
 void PickUpToken::processImage(cv::Point2d &offset)
 {
-    Mat black, blue, token_rough, token, board; 
+    Mat black, blue, token_rough, token, board;
     Contours contours;
     int board_y;
 
@@ -225,10 +225,10 @@ void PickUpToken::isolateBlue(Mat &output)
     Mat hsv;
 
     pause();  // don't remove these prints or it will crash
-    pthread_mutex_lock(&_mutex_img); 
-    // convert image color format from BGR to HSV  
+    pthread_mutex_lock(&_mutex_img);
+    // convert image color format from BGR to HSV
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
-    pthread_mutex_unlock(&_mutex_img);   
+    pthread_mutex_unlock(&_mutex_img);
 
     inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
 }
@@ -238,9 +238,9 @@ void PickUpToken::isolateBlack(Mat &output)
     Mat gray;
 
     pause();  // don't remove these prints or it will crash
-    pthread_mutex_lock(&_mutex_img);   
+    pthread_mutex_lock(&_mutex_img);
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
-    pthread_mutex_unlock(&_mutex_img);  
+    pthread_mutex_unlock(&_mutex_img);
 
     threshold(gray, output, 55, 255, cv::THRESH_BINARY_INV);
 }
@@ -249,7 +249,7 @@ void PickUpToken::isolateBoard(Mat input, Mat &output, int &board_y)
 {
     output = Mat::zeros(_img_size, CV_8UC1);
 
-    vector<cv::Vec4i> hierarchy; // captures contours within contours 
+    vector<cv::Vec4i> hierarchy; // captures contours within contours
     Contours contours;
 
     // find outer board contours
@@ -287,7 +287,7 @@ void PickUpToken::isolateBoard(Mat input, Mat &output, int &board_y)
     // on the board and should not be picked up)
     int low_y = _img_size.height;
     int x_min = (contours[0])[0].x;
-    int x_max = 0;    
+    int x_max = 0;
 
     for(int i = 0; i < contour.size(); i++)
     {
@@ -302,7 +302,7 @@ void PickUpToken::isolateBoard(Mat input, Mat &output, int &board_y)
     if(x_max - x_min > 275) {
         board_y = low_y;
     }
-    else 
+    else
     {
         board_y = _img_size.height;
     }
@@ -319,7 +319,7 @@ void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &co
     int gripper_index = 0;
 
     // find gripper contours. gripper contours are always attached to bottom part of image
-    // (Note that imshow will show the bottom (x=0) part inverted and 
+    // (Note that imshow will show the bottom (x=0) part inverted and
     // on top of the display window). if there are multiple contours that contain points w/ x=0
     // the gripper contour is the contour with the largest area as a combination of the contours
     // of the gripper AND  a token fragment will always be larger than just a token fragment
@@ -330,7 +330,7 @@ void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &co
         {
             if(contour[j].y == 1)
             {
-                if(gripper_area == -1) 
+                if(gripper_area == -1)
                 {
                     gripper_area = contourArea(contour, false);
                     gripper_index = i;
@@ -367,7 +367,7 @@ void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &co
     }
 
     // remove contours that are inside the board (e.g token placed on a cell)
-    for(int i = 0; i < clean_contours.size(); i++) 
+    for(int i = 0; i < clean_contours.size(); i++)
     {
         bool within_board = false;
         vector<cv::Point> contour = clean_contours[i];
@@ -381,7 +381,7 @@ void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &co
             }
         }
 
-        if(within_board == false) 
+        if(within_board == false)
         {
             (contours).push_back(contour);
         }
@@ -394,7 +394,7 @@ void PickUpToken::isolateToken(Mat input, int board_y, Mat &output, Contours &co
     }
 
     line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256));
-}              
+}
 
 void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 {
@@ -441,7 +441,7 @@ void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 
         (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_img_size.width / 2));
         // distance between gripper center and camera center
-        (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075; 
+        (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075;
     }
 }
 
@@ -481,7 +481,7 @@ void ScanBoard::InternalThreadEntry()
     hoverAboveTokens(Z_HIGH);
 
     setState(SCANNED);
-    pthread_exit(NULL);
+    closeInternalThread();
 }
 
 // Private
@@ -495,14 +495,14 @@ void ScanBoard::scan()
     float dist;
     setDepth(&dist);
     hoverAboveBoard();
-    processImage("run", dist);   
+    processImage("run", dist);
 }
 
 void ScanBoard::setDepth(float *dist)
 {
     geometry_msgs::Point init_pos = getPos();
 
-    ros::Time start_time = ros::Time::now();                
+    ros::Time start_time = ros::Time::now();
 
     // move downwards until collision with surface
     while(ros::ok())
@@ -532,8 +532,8 @@ void ScanBoard::setDepth(float *dist)
         publish_joint_cmd(joint_cmd);
         ros::spinOnce();
         ros::Rate(100).sleep();
-     
-        if(hasCollided("loose")) 
+
+        if(hasCollided("loose"))
         {
             break;
         }
@@ -551,7 +551,7 @@ void ScanBoard::processImage(string mode, float dist)
     {
         Contours contours;
         vector<cv::Point> centroids, board_corners, cell_to_corner;
-        
+
         Mat binary, board;
 
         int board_area;
@@ -565,7 +565,7 @@ void ScanBoard::processImage(string mode, float dist)
         {
             setOffsets(board_area, contours, dist, &board, &centroids);
             // imshow("[ScanBoard] Processed", board);
-        
+
             if(offsetsReachable() && mode == "run"){
                 cout << "[Scan Board] Board is positioned correctly! Proceed with game" << endl;
                 break;
@@ -601,7 +601,7 @@ void ScanBoard::processImage(string mode, float dist)
                         {
                             setOffsets(board_area, contours, dist, &board, &temp_centroids);
                         }
-                        if(offsetsReachable()) 
+                        if(offsetsReachable())
                         {
                             break;
                         }
@@ -609,7 +609,7 @@ void ScanBoard::processImage(string mode, float dist)
                     }
 
                     imshow("[ScanBoard] Rough", zone);
-                    
+
                     waitKey(3);
                 }
             }
@@ -623,9 +623,9 @@ void ScanBoard::isolateBlack(Mat * output)
 {
     Mat gray;
     pause();
-    pthread_mutex_lock(&_mutex_img);   
+    pthread_mutex_lock(&_mutex_img);
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
-    pthread_mutex_unlock(&_mutex_img);   
+    pthread_mutex_unlock(&_mutex_img);
     threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
 }
 
@@ -634,7 +634,7 @@ void ScanBoard::isolateBoard(Contours * contours, int * board_area,
 {
     *output = Mat::zeros(_img_size, CV_8UC1);
 
-    vector<cv::Vec4i> hierarchy; // captures contours within contours 
+    vector<cv::Vec4i> hierarchy; // captures contours within contours
 
     findContours(input, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
@@ -675,7 +675,7 @@ void ScanBoard::isolateBoard(Contours * contours, int * board_area,
             largest = contourArea((*contours)[i], false);
             largest_index = i;
         }
-    } 
+    }
 
     vector<cv::Point> board_outline = (*contours)[largest_index];
 
@@ -692,7 +692,7 @@ void ScanBoard::isolateBoard(Contours * contours, int * board_area,
         if(y_max < board_outline[i].y) y_max = board_outline[i].y;
         if(x_max < board_outline[i].x) x_max = board_outline[i].x;
     }
-    
+
     (*board_corners).push_back(cv::Point(x_max, y_max));
     (*board_corners).push_back(cv::Point(x_min, y_max));
     (*board_corners).push_back(cv::Point(x_max, y_min));
@@ -706,7 +706,7 @@ void ScanBoard::isolateBoard(Contours * contours, int * board_area,
         if(contourArea((*contours)[i], false) < 200)
         {
             (*contours).erase((*contours).begin() + i);
-        } 
+        }
     }
 
     for(int i = 0; i < (*contours).size(); i++)
@@ -715,7 +715,7 @@ void ScanBoard::isolateBoard(Contours * contours, int * board_area,
     }
 }
 
-bool ScanBoard::descendingX(vector<cv::Point> i, vector<cv::Point> j) 
+bool ScanBoard::descendingX(vector<cv::Point> i, vector<cv::Point> j)
 {
     double x_i = moments(i, false).m10 / moments(i, false).m00;
     double x_j = moments(j, false).m10 / moments(j, false).m00;
@@ -732,7 +732,7 @@ void ScanBoard::setOffsets(int board_area, Contours contours, float dist, Mat *o
 
     for(int i = contours.size(); i >= 3; i -= 3)
     {
-        std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);        
+        std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);
     }
 
     _offsets.resize(9);
@@ -741,7 +741,7 @@ void ScanBoard::setOffsets(int board_area, Contours contours, float dist, Mat *o
     {
         double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
-        cv::Point centroid(x,y);  
+        cv::Point centroid(x,y);
 
         (*centroids)[i] = centroid;
 
@@ -749,7 +749,7 @@ void ScanBoard::setOffsets(int board_area, Contours contours, float dist, Mat *o
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
         line(*output, centroid, center, cv::Scalar(180,40,40), 1);
 
-        _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+        _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
         _offsets[i].z = dist - 0.065;
     }
@@ -766,7 +766,7 @@ void ScanBoard::setZone(Contours contours, float dist, vector<cv::Point> board_c
     (*cell_to_corner)[2] = cv::Point(board_corners[2].x - c[6].x, board_corners[2].y - c[6].y);
     (*cell_to_corner)[3] = cv::Point(board_corners[3].x - c[8].x, board_corners[3].y - c[8].y);
 
-    // if the centroid of a corner cell is reachable, 
+    // if the centroid of a corner cell is reachable,
     // iterate and check if a location 10 pixels further from arm is still reachable
     // to establish a boundary of how far Baxter's arm can reach
     while(pointReachable(c[0], dist)) {c[0].x += 10.0;}
@@ -774,7 +774,7 @@ void ScanBoard::setZone(Contours contours, float dist, vector<cv::Point> board_c
     while(pointReachable(c[6], dist)) {c[6].x += 10.0;}
     while(pointReachable(c[8], dist)) {c[8].x -= 10.0;}
 
-    // if the centroid of a corner cell is unreachable, 
+    // if the centroid of a corner cell is unreachable,
     // iterate and check if a location 10 pixels closer is reachable
     while(!pointReachable(c[0], dist)) {c[0].x -= 5.0;}
     while(!pointReachable(c[2], dist)) {c[2].x += 5.0;}
@@ -792,19 +792,19 @@ bool ScanBoard::offsetsReachable()
 
         vector<double> joint_angles;
         callIKService(px,py,pz,VERTICAL_ORI_L,joint_angles);
-        
-        // if IK solver returns a joint angles solution with all zeros, 
+
+        // if IK solver returns a joint angles solution with all zeros,
         // then no solution was found
         bool all_zeros = true;
         for(int j = 0; j < joint_angles.size(); j++)
         {
-            if(joint_angles[j] != 0) 
+            if(joint_angles[j] != 0)
             {
                 all_zeros = false;
                 break;
             }
-        }    
-        if(all_zeros) return false;    
+        }
+        if(all_zeros) return false;
     }
     return true;
 }
@@ -816,7 +816,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 
     geometry_msgs::Point offset;
 
-    offset.x = (centroid.y - center.y) * 0.0025 * dist + 0.04;  
+    offset.x = (centroid.y - center.y) * 0.0025 * dist + 0.04;
     offset.y = (centroid.x - center.x) * 0.0025 * dist;
     offset.z = dist - 0.085;
 
@@ -854,14 +854,14 @@ void PutDownToken::InternalThreadEntry()
     hoverAboveTokens(Z_HIGH);
 
     setState(PUT_DOWN);
-    pthread_exit(NULL);  
-}  
+    closeInternalThread();
+}
 
 // Private
 void PutDownToken::hoverAboveCell()
 {
     goToPose(0.575 + _offsets[_cell - 1].x,
-             0.100 + _offsets[_cell - 1].y, 
+             0.100 + _offsets[_cell - 1].y,
              0.445 - _offsets[_cell - 1].z,
              VERTICAL_ORI_L);
 }
@@ -869,7 +869,7 @@ void PutDownToken::hoverAboveCell()
 void PutDownToken::hoverAboveBoard()
 {
     goToPose(0.575 + _offsets[4].x,
-             0.100 + _offsets[4].y, 
+             0.100 + _offsets[4].y,
              0.445 - _offsets[4].z,
              VERTICAL_ORI_L);
 }
@@ -902,28 +902,28 @@ int TTTController::getState()
     // find class with the most recent state change
     // and set TTTController's new state to that
     // class' state
-    if(_rest_class->getState().time > len_time) 
+    if(_rest_class->getState().time > len_time)
     {
-        len_time = _rest_class->getState().time; 
+        len_time = _rest_class->getState().time;
         state = _rest_class->getState().state;
     }
 
-    if(_pick_class->getState().time > len_time) 
+    if(_pick_class->getState().time > len_time)
     {
-        len_time = _pick_class->getState().time; 
+        len_time = _pick_class->getState().time;
         state = _pick_class->getState().state;
     }
 
-    if(_scan_class->getState().time > len_time) 
+    if(_scan_class->getState().time > len_time)
     {
-        len_time = _scan_class->getState().time; 
+        len_time = _scan_class->getState().time;
         state = _scan_class->getState().state;
     }
 
-    if(_put_class->getState().time > len_time) 
+    if(_put_class->getState().time > len_time)
     {
-        len_time = _put_class->getState().time; 
-        state = _put_class->getState().state;            
+        len_time = _put_class->getState().time;
+        state = _put_class->getState().state;
     }
 
     return state;
@@ -935,10 +935,10 @@ void TTTController::pickUpToken() {_pick_class->startInternalThread();}
 
 void TTTController::scanBoard() {_scan_class->startInternalThread();}
 
-void TTTController::putDownToken(int cell) 
+void TTTController::putDownToken(int cell)
 {
     _put_class->setOffsets(_scan_class->getOffsets());
     _put_class->setCell(cell);
     _put_class->startInternalThread();
-}    
+}
 
