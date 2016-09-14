@@ -59,8 +59,8 @@ void MoveToRest::InternalThreadEntry()
         ros::spinOnce();
         ros::Rate(100).sleep();
 
-        if(hasPoseCompleted(0.292391, getLimb()=="left"?0.611039:-0.611039, 0.181133,
-                            0.028927, 0.686745, 0.00352694, 0.726314, "loose"))
+        if(isPoseReached(0.292391, getLimb()=="left"?0.611039:-0.611039, 0.181133,
+                               0.028927, 0.686745, 0.00352694, 0.726314, "loose"))
         {
             break;
         }
