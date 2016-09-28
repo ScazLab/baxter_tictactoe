@@ -147,7 +147,7 @@ void PickUpToken::gripToken()
         prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
         vector<double> joint_angles;
-        callIKService(px,py,pz,VERTICAL_ORI_L,joint_angles);
+        computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -517,7 +517,7 @@ void ScanBoard::setDepth(float *dist)
         double ow =      0.0;
 
         vector<double> joint_angles;
-        callIKService(px,py,pz,ox,oy,oz,ow,joint_angles);
+        computeIK(px,py,pz,ox,oy,oz,ow,joint_angles);
 
         JointCommand joint_cmd;
         joint_cmd.mode = JointCommand::POSITION_MODE;
@@ -791,7 +791,7 @@ bool ScanBoard::offsetsReachable()
         double pz = getPos().z - _offsets[i].z;
 
         vector<double> joint_angles;
-        callIKService(px,py,pz,VERTICAL_ORI_L,joint_angles);
+        computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 
         // if IK solver returns a joint angles solution with all zeros,
         // then no solution was found
@@ -825,7 +825,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
     double pz = 0.445 - offset.z;
 
     vector<double> joint_angles;
-    return callIKService(px,py,pz,VERTICAL_ORI_L,joint_angles);
+    return computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 }
 
 /**************************************************************************/
