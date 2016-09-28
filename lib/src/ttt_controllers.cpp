@@ -19,7 +19,7 @@ using namespace cv;
 /**************************************************************************/
 
 // Public
-MoveToRest::MoveToRest(string limb): ROSThreadImage(limb) {}
+MoveToRest::MoveToRest(string name, string limb) : ROSThreadImage(name, limb) {}
 MoveToRest::~MoveToRest(){}
 
 // Protected
@@ -75,7 +75,7 @@ void MoveToRest::InternalThreadEntry()
 /**************************************************************************/
 
 // Public
-PickUpToken::PickUpToken(string limb): ROSThreadImage(limb), Gripper(limb)
+PickUpToken::PickUpToken(string name, string limb) : ROSThreadImage(name, limb), Gripper(limb)
 {
     namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
@@ -450,7 +450,7 @@ void PickUpToken::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
 /**************************************************************************/
 
 // Public
-ScanBoard::ScanBoard(string limb): ROSThreadImage(limb)
+ScanBoard::ScanBoard(string name, string limb) : ROSThreadImage(name, limb)
 {
     namedWindow("[ScanBoard] Rough",     WINDOW_NORMAL);
     namedWindow("[ScanBoard] Processed", WINDOW_NORMAL);
@@ -833,7 +833,7 @@ bool ScanBoard::pointReachable(cv::Point centroid, float dist)
 /**************************************************************************/
 
 // Public
-PutDownToken::PutDownToken(string limb): ROSThreadImage(limb), Gripper(limb)
+PutDownToken::PutDownToken(string name, string limb) : ROSThreadImage(name, limb), Gripper(limb)
 {
 
 }
@@ -878,12 +878,12 @@ void PutDownToken::hoverAboveBoard()
 /*                            TTTController                               */
 /**************************************************************************/
 
-TTTController::TTTController(string limb)
+TTTController::TTTController(string name, string limb)
 {
-    _rest_class =   new MoveToRest(limb);
-    _pick_class =  new PickUpToken(limb);
-    _scan_class =    new ScanBoard(limb);
-    _put_class  = new PutDownToken(limb);
+    _rest_class =   new MoveToRest(name, limb);
+    _pick_class =  new PickUpToken(name, limb);
+    _scan_class =    new ScanBoard(name, limb);
+    _put_class  = new PutDownToken(name, limb);
 }
 
 TTTController::~TTTController()

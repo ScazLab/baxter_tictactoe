@@ -26,8 +26,8 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     ROS_DEBUG("[tictactoeBrain] traj = %d", traj);
     if(traj == false)
     {
-        _left_ac = new TTTController("left");
-        _right_ac = new TTTController("right");
+        _left_ac = new TTTController("tictactoe","left");
+        _right_ac = new TTTController("tictactoe","right");
 
         std::string left = "left";
         std::string right = "right";
