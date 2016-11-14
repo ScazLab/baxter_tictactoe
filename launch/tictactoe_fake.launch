@@ -1,8 +1,6 @@
 <!-- Launching all required nodes for playing Tic Tac Toe with Baxter -->
 <launch>
 
-    <include file="$(find baxter_tictactoe)/launch/screen.launch" />
-
     <include file="$(find baxter_tictactoe)/launch/ttt_board_sensor_fake.launch" />
 
 
