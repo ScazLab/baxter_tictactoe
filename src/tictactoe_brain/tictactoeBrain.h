@@ -150,7 +150,7 @@ private:
 
 public:
 
-    tictactoeBrain(bool traj, cellState robot_color=blue, std::string strategy="random");
+    tictactoeBrain(bool traj=false, cellState robot_color=blue, std::string strategy="random");
 
     ~tictactoeBrain();
 

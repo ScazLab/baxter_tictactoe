@@ -8,33 +8,14 @@ using namespace ttt;
 using namespace std;
 
 int main(int argc, char** argv)
-{    
+{
     ROS_INFO("[tictactoeBrain] Playing TIC TAC TOE");
     ros::init(argc, argv, "tictactoe_brain");
-    ros::AsyncSpinner spinner(1);
-    spinner.start();
 
-    // Very dirty way to process command line arguments. It seems that
-    // there is not a straightforward standard ROS way, unfortunately.
-    // (by alecive, all the fault goes to him)
-
-    // traj=false -> arm movement done via inverse kinematics (TTTController)
-    // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-    // traj=false preferred due to simpler and more robust implementation 
-    
-    bool traj=false;
-    if (argc>1)
-    {
-        if (string(argv[1])=="--traj")
-        {
-            traj=string(argv[2])=="true"?true:false;
-        }
-    }
-
-    ttt::tictactoeBrain brain(traj); //random strategy by default
+    ttt::tictactoeBrain brain;
 
     brain.set_strategy("smart");
-    ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
+    ros::Duration(1).sleep(); // needed in order to use the voice at the beginning
 
     ROS_INFO_STREAM("[tictactoeBrain] Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 

@@ -21,7 +21,8 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 
 // traj=false -> arm movement done via inverse kinematics (TTTController)
 // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) : _robot_color(robot_color), traj(traj), _setup(false), _move_commander("place_token", true) // true causes the client to spin its own thread
+tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) :
+                               _robot_color(robot_color), traj(traj), _setup(false), _move_commander("place_token", true)
 {
     ROS_DEBUG("[tictactoeBrain] traj = %d", traj);
     if(traj == false)
@@ -29,19 +30,14 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
         _left_ac = new TTTController("tictactoe","left");
         _right_ac = new TTTController("tictactoe","right");
 
-        std::string left = "left";
-        std::string right = "right";
-        int failure;
-        void *status;
+        ros::Rate r(100);
 
-        ROS_INFO("Moving arms to rest..");
-        _left_ac->moveToRest();
-        _right_ac->moveToRest();
-        while(!(_left_ac->getState() == REST && _right_ac->getState() == REST)) {ros::spinOnce();}
+        // _left_ac->scanBoard();
 
-        ROS_INFO("Scanning board with left arm..");
-        _left_ac->scanBoard();
-        while(_left_ac->getState() != SCANNED){ros::spinOnce();}
+        // while(ros::ok() && _left_ac->getState() != SCANNED)
+        // {
+        //     r.sleep();
+        // }
     }
 
     _number_of_tokens_on_board.set(0);
@@ -57,12 +53,6 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     ROS_ASSERT_MSG(_nh.hasParam("smooth"),"No sort of movements found in the parameter server!");
     ROS_ASSERT_MSG(_nh.getParam("smooth",movement_type), "The sort of movements has not been retrieved from the parameter server");
     ROS_INFO_STREAM("[tictactoeBrain] Using " << movement_type << " movements");
-
-    // if(traj == true)
-    // {
-    //     _clnt_movement_type = _nh.serviceClient<baxter_tictactoe::SetTrajectoryType>("set_movement_type");
-    //     set_movement_type(movement_type);
-    // }
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
@@ -343,17 +333,16 @@ unsigned short int tictactoeBrain::get_number_of_tokens_on_board(cellState token
 
 bool tictactoeBrain::three_in_a_row(const cellState& cell_color, const TTT_State_type& tttboard)
 {
-    ROS_DEBUG("[tictactoeBrain] @three in a row");
     if(cell_color!=blue && cell_color!=red) return false; // There are only red and blue tokens
 
-    if(tttboard[0].state==cell_color && tttboard[1].state==cell_color && tttboard[2].state==cell_color) return true; // 3 in a row in the first row
-    if(tttboard[3].state==cell_color && tttboard[4].state==cell_color && tttboard[5].state==cell_color) return true; // 3 in a row in the second row
-    if(tttboard[6].state==cell_color && tttboard[7].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the third row
-    if(tttboard[0].state==cell_color && tttboard[3].state==cell_color && tttboard[6].state==cell_color) return true; // 3 in a row in the first column
-    if(tttboard[1].state==cell_color && tttboard[4].state==cell_color && tttboard[7].state==cell_color) return true; // 3 in a row in the second column
-    if(tttboard[2].state==cell_color && tttboard[5].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the third column
-    if(tttboard[0].state==cell_color && tttboard[4].state==cell_color && tttboard[8].state==cell_color) return true; // 3 in a row in the first diagonal
-    if(tttboard[2].state==cell_color && tttboard[4].state==cell_color && tttboard[6].state==cell_color) return true; // 3 in a row in the second diagonal
+    if(tttboard[0].state==cell_color && tttboard[1].state==cell_color && tttboard[2].state==cell_color) return true; // first row
+    if(tttboard[3].state==cell_color && tttboard[4].state==cell_color && tttboard[5].state==cell_color) return true; // second row
+    if(tttboard[6].state==cell_color && tttboard[7].state==cell_color && tttboard[8].state==cell_color) return true; // third row
+    if(tttboard[0].state==cell_color && tttboard[3].state==cell_color && tttboard[6].state==cell_color) return true; // first column
+    if(tttboard[1].state==cell_color && tttboard[4].state==cell_color && tttboard[7].state==cell_color) return true; // second column
+    if(tttboard[2].state==cell_color && tttboard[5].state==cell_color && tttboard[8].state==cell_color) return true; // third column
+    if(tttboard[0].state==cell_color && tttboard[4].state==cell_color && tttboard[8].state==cell_color) return true; // first diagonal
+    if(tttboard[2].state==cell_color && tttboard[4].state==cell_color && tttboard[6].state==cell_color) return true; // second diagonal
 
     return false;
 }

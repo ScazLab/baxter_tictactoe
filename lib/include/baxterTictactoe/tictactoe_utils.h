@@ -22,6 +22,10 @@ namespace enc = sensor_msgs::image_encodings;
 namespace ttt
 {
 
+#define ACTION_SCAN         "scan"
+#define ACTION_PICKUP       "pick_up"
+#define ACTION_PUTDOWN      "put_down"
+
 #define NUMBER_OF_CELLS 9
 
 // Used to determine the three possible states of a cell.
@@ -93,7 +97,7 @@ public:
     ~Cell() {};
 
     std::vector<cv::Point> get_contours() { return contours; };
-    
+
     /**
      * Returns a mask for a cell, i.e. a new image that keeps only the portion
      * delimited by the cell (the rest is set to black)
@@ -118,7 +122,7 @@ public:
 
 struct Board
 {
-public: 
+public:
     std::vector<Cell> cells;
 
 public:
@@ -155,7 +159,7 @@ public:
      *     </cell>
      *     [...]
      *  </board>
-     * @param  cells_param the name of the parameter where the raw data is stored. 
+     * @param  cells_param the name of the parameter where the raw data is stored.
      * @return true/false if success/failure.
      */
     bool load(std::string cells_param);
