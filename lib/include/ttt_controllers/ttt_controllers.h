@@ -150,6 +150,8 @@ private:
     image_transport::ImageTransport _img_trp;
     image_transport::Subscriber     _img_sub;
 
+    ros::Rate r;
+
     /**
      * Sets the joint-level configuration for the home position
      */
@@ -168,15 +170,7 @@ private:
     bool hoverAboveBoard();
 
     /*
-     * scan the board and calculate cell offsets
-     *
-     * @param      N/A
-     * return     N/A
-     */
-    void scan();
-
-    /*
-     * move arm downwards until collision w/ a surface; calculate
+     * moves arm downwards until collision w/ a surface; calculates
      * distance between surface and arm starting point
      *
      * @param     dist indicates the distance between the surface

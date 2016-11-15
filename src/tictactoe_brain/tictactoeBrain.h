@@ -73,6 +73,8 @@ private:
     TTTController * _left_ac;
     TTTController * _right_ac;
 
+    ros::Rate r;
+
     bool has_cheated;
 
     bool scanState(baxter_tictactoe::ScanState::Request &req,
