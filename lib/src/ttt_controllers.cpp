@@ -19,372 +19,335 @@ using namespace cv;
 /*                         PickUpToken                               */
 /**************************************************************************/
 
-// Public
-// TTTController::PickUpToken(string name, string limb) : ROSThreadImage(name, limb, false, false), Gripper(limb)
-// {
-//     namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
-//     namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-//     namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-//     resizeWindow("[PickUpToken] Raw",       700, 500);
-//     resizeWindow("[PickUpToken] Processed", 700, 500);
-//     resizeWindow("[PickUpToken] Rough",     700, 500);
-// }
-// TTTController::~PickUpToken()
-// {
-//     destroyWindow("[PickUpToken] Raw");
-//     destroyWindow("[PickUpToken] Processed");
-//     destroyWindow("[PickUpToken] Rough");
-// }
-
-// Protected
 bool TTTController::pickUpTokenImpl()
 {
-    // // wait for IR sensor callback
-    // while(RobotInterface::ok())
-    // {
-    //     if(!is_ir_ok())
-    //     {
-    //         break;
-    //     }
+    // wait for IR sensor callback
+    while(RobotInterface::ok())
+    {
+        if(is_ir_ok()) break;
+        r.sleep();
+    }
 
-    //     r.sleep();
-    // }
+    // wait for image callback
+    while(RobotInterface::ok())
+    {
+        if(!_is_img_empty) break;
+        r.sleep();
+    }
 
-    // // wait for image callback
-    // while(RobotInterface::ok())
-    // {
-    //     if(!_is_img_empty) break;
-    // }
+    hoverAboveTokens(Z_HIGH);
+    gripToken();
+    hoverAboveTokens(Z_LOW);
 
-    // hoverAboveTokens(Z_HIGH);
-    // gripToken();
-    // hoverAboveTokens(Z_LOW);
-
-    // setState(PICK_UP);
-    // closeInternalThread();
+    setState(PICK_UP);
+    return true;
 }
 
-// // Private
-// typedef vector<vector<cv::Point> > Contours;
+void TTTController::gripToken()
+{
+    cv::Point2d offset;
+    // check if token is present before starting movement loop
+    // (prevent gripper from colliding with play surface)
+    checkForToken(offset);
 
-// void TTTController::gripToken()
-// {
-//     cv::Point2d offset;
-//     // check if token is present before starting movement loop
-//     // (prevent gripper from colliding with play surface)
-//     checkForToken(offset);
+    ros::Time start_time = ros::Time::now();
+    cv::Point2d prev_offset(0.540, 0.540);
 
-//     ros::Time start_time = ros::Time::now();
-//     cv::Point2d prev_offset(0.540, 0.540);
+    while(RobotInterface::ok())
+    {
+        processTokenImage(offset);
+        ros::Time now_time = ros::Time::now();
 
-//     while(RobotInterface::ok())
-//     {
-//         processImage(offset);
-//         ros::Time now_time = ros::Time::now();
+        // move incrementally towards token
+        double px = prev_offset.x + 0.07 * offset.x;
+        double py = prev_offset.y + 0.07 * offset.y;
+        double pz = 0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec();
 
-//         // move incrementally towards token
-//         double px = prev_offset.x + 0.07 * offset.x;
-//         double py = prev_offset.y + 0.07 * offset.y;
-//         double pz = 0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec();
+        prev_offset.x = prev_offset.x + 0.07 * offset.x;
+        prev_offset.y = prev_offset.y + 0.07 * offset.y;
 
-//         prev_offset.x = prev_offset.x + 0.07 * offset.x;
-//         prev_offset.y = prev_offset.y + 0.07 * offset.y;
+        vector<double> joint_angles;
+        computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 
-//         vector<double> joint_angles;
-//         computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
+        JointCommand joint_cmd;
+        joint_cmd.mode = JointCommand::POSITION_MODE;
 
-//         JointCommand joint_cmd;
-//         joint_cmd.mode = JointCommand::POSITION_MODE;
+        setJointNames(joint_cmd);
+        joint_cmd.command.resize(7);
 
-//         setJointNames(joint_cmd);
-//         joint_cmd.command.resize(7);
+        for(int i = 0; i < 7; i++) {
+            joint_cmd.command[i] = joint_angles[i];
+        }
 
-//         for(int i = 0; i < 7; i++) {
-//             joint_cmd.command[i] = joint_angles[i];
-//         }
+        publish_joint_cmd(joint_cmd);
 
-//         publish_joint_cmd(joint_cmd);
+        r.sleep();
 
-//         r.sleep();
+        // if(getPos().z < -0.05) break;
 
-//         // if(getPos().z < -0.05) break;
+        if(hasCollided("strict"))
+        {
+            break;
+        }
+    }
+    gripObject();
+}
 
-//         if(hasCollided("strict"))
-//         {
-//             break;
-//         }
-//     }
-//     gripObject();
-// }
+void TTTController::checkForToken(cv::Point2d &offset)
+{
+    ros::Time start_time = ros::Time::now();
 
-// void TTTController::checkForToken(cv::Point2d &offset)
-// {
-//     ros::Time start_time = ros::Time::now();
+    while(RobotInterface::ok())
+    {
+        processTokenImage(offset);
 
-//     while(RobotInterface::ok())
-//     {
-//         processImage(offset);
+        if(!(offset.x == 0 && offset.y == 0) || (ros::Time::now() - start_time).toSec() > 1)
+        {
+            break;
+        }
+    }
 
-//         if(!(offset.x == 0 && offset.y == 0) || (ros::Time::now() - start_time).toSec() > 1)
-//         {
-//             break;
-//         }
-//     }
+    while(RobotInterface::ok())
+    {
+        if(!(offset.x == 0 && offset.y == 0)) {break;}
 
-//     while(RobotInterface::ok())
-//     {
-//         if(!(offset.x == 0 && offset.y == 0)) {break;}
+        // loop halts until a key is pressed
+        ROS_WARN("No token detected by hand camera. Place token and press ENTER");
+        char c = cin.get();
+        processTokenImage(offset);
+    }
+}
 
-//         // loop halts until a key is pressed
-//         ROS_WARN("No token detected by hand camera. Place token and press ENTER");
-//         char c = cin.get();
-//         processImage(offset);
-//     }
-// }
+void TTTController::processTokenImage(cv::Point2d &offset)
+{
+    Mat black, blue, token_rough, token, board;
+    Contours contours;
+    int board_y;
 
-// void TTTController::processImage(cv::Point2d &offset)
-// {
-//     Mat black, blue, token_rough, token, board;
-//     Contours contours;
-//     int board_y;
+    isolateBlack(black);
+    isolateTokenBoard(black.clone(), board, board_y);
 
-//     isolateBlack(black);
-//     isolateBoard(black.clone(), board, board_y);
+    isolateBlue(blue);
+    isolateToken(blue.clone(), board_y, token_rough, contours);
+    setTokenOffset(contours, offset, token);
 
-//     isolateBlue(blue);
-//     isolateToken(blue.clone(), board_y, token_rough, contours);
-//     setOffset(contours, offset, token);
+    imshow("[PickUpToken] Raw", _curr_img.clone());
+    imshow("[PickUpToken] Processed", token_rough);
+    imshow("[PickUpToken] Rough", blue);
 
-//     imshow("[PickUpToken] Raw", _curr_img.clone());
-//     imshow("[PickUpToken] Processed", token_rough);
-//     imshow("[PickUpToken] Rough", blue);
-//     // imshow("[PickUpToken] Final", token);
+    waitKey(30);
+}
 
-//     waitKey(30);
-// }
+void TTTController::isolateBlue(Mat &output)
+{
+    Mat hsv;
 
-// void TTTController::isolateBlue(Mat &output)
-// {
-//     Mat hsv;
+    pthread_mutex_lock(&_mutex_img);
+    cvtColor(_curr_img, hsv, CV_BGR2HSV);
+    pthread_mutex_unlock(&_mutex_img);
 
-//     pthread_mutex_lock(&_mutex_img);
-//     // convert image color format from BGR to HSV
-//     cvtColor(_curr_img, hsv, CV_BGR2HSV);
-//     pthread_mutex_unlock(&_mutex_img);
+    inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
+}
 
-//     inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
-// }
+void TTTController::isolateTokenBoard(Mat input, Mat &output, int &board_y)
+{
+    output = Mat::zeros(_img_size, CV_8UC1);
 
-// void TTTController::isolateBlack(Mat &output)
-// {
-//     Mat gray;
+    vector<cv::Vec4i> hierarchy; // captures contours within contours
+    Contours contours;
 
-//     pthread_mutex_lock(&_mutex_img);
-//     cvtColor(_curr_img, gray, CV_BGR2GRAY);
-//     pthread_mutex_unlock(&_mutex_img);
+    // find outer board contours
+    findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-//     threshold(gray, output, 55, 255, cv::THRESH_BINARY_INV);
-// }
+    double largest = 0, next_largest = 0;
+    int largest_index = 0, next_largest_index = 0;
 
-// void TTTController::isolateBoard(Mat input, Mat &output, int &board_y)
-// {
-//     output = Mat::zeros(_img_size, CV_8UC1);
+    // iterate through contours and keeps track of contour w/ 2nd-largest area
+    for(int i = 0; i < contours.size(); i++)
+    {
+        if(contourArea(contours[i], false) > largest)
+        {
+            next_largest = largest;
+            next_largest_index = largest_index;
+            largest = contourArea(contours[i], false);
+            largest_index = i;
+        }
+        else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
+        {
+            next_largest = contourArea(contours[i], false);
+            next_largest_index = i;
+        }
+    }
 
-//     vector<cv::Vec4i> hierarchy; // captures contours within contours
-//     Contours contours;
+    output = Mat::zeros(_img_size, CV_8UC1);
 
-//     // find outer board contours
-//     findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    // contour w/ 2nd largest area is most likely the inner board
+    vector<cv::Point> contour = contours[next_largest_index];
 
-//     double largest = 0, next_largest = 0;
-//     int largest_index = 0, next_largest_index = 0;
+    drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED);
 
-//     // iterate through contours and keeps track of contour w/ 2nd-largest area
-//     for(int i = 0; i < contours.size(); i++)
-//     {
-//         if(contourArea(contours[i], false) > largest)
-//         {
-//             next_largest = largest;
-//             next_largest_index = largest_index;
-//             largest = contourArea(contours[i], false);
-//             largest_index = i;
-//         }
-//         else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
-//         {
-//             next_largest = contourArea(contours[i], false);
-//             next_largest_index = i;
-//         }
-//     }
+    // find the lowest y-coordinate of the board; to be used as a cutoff point above which
+    // all contours are ignored (e.g token contours that are above low_y are already placed
+    // on the board and should not be picked up)
+    int low_y = _img_size.height;
+    int x_min = (contours[0])[0].x;
+    int x_max = 0;
 
-//     output = Mat::zeros(_img_size, CV_8UC1);
+    for(int i = 0; i < contour.size(); i++)
+    {
+        if(contour[i].y < low_y) low_y = contour[i].y;
+        if(contour[i].x < x_min) x_min = contour[i].x;
+        if(contour[i].x > x_max) x_max = contour[i].x;
+    }
 
-//     // contour w/ 2nd largest area is most likely the inner board
-//     vector<cv::Point> contour = contours[next_largest_index];
+    // if width of the contour is narrower than 275, 2nd largest contour
+    // is NOT the board (and board is out of the image's view). Hence,
+    // no cutoff point needs to be specified
+    if(x_max - x_min > 275) {
+        board_y = low_y;
+    }
+    else
+    {
+        board_y = _img_size.height;
+    }
 
-//     drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED);
+    line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256), 5);
+}
 
-//     // find the lowest y-coordinate of the board; to be used as a cutoff point above which
-//     // all contours are ignored (e.g token contours that are above low_y are already placed
-//     // on the board and should not be picked up)
-//     int low_y = _img_size.height;
-//     int x_min = (contours[0])[0].x;
-//     int x_max = 0;
+void TTTController::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
+{
+    Contours raw_contours, clean_contours, apx_contours, gripper_contours;
+    findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
-//     for(int i = 0; i < contour.size(); i++)
-//     {
-//         if(contour[i].y < low_y) low_y = contour[i].y;
-//         if(contour[i].x < x_min) x_min = contour[i].x;
-//         if(contour[i].x > x_max) x_max = contour[i].x;
-//     }
+    int gripper_area = -1;
+    int gripper_index = 0;
 
-//     // if width of the contour is narrower than 275, 2nd largest contour
-//     // is NOT the board (and board is out of the image's view). Hence,
-//     // no cutoff point needs to be specified
-//     if(x_max - x_min > 275) {
-//         board_y = low_y;
-//     }
-//     else
-//     {
-//         board_y = _img_size.height;
-//     }
+    // find gripper contours. gripper contours are always attached to bottom part of image
+    // (Note that imshow will show the bottom (x=0) part inverted and
+    // on top of the display window). if there are multiple contours that contain points w/ x=0
+    // the gripper contour is the contour with the largest area as a combination of the contours
+    // of the gripper AND  a token fragment will always be larger than just a token fragment
+    for(int i = 0; i < raw_contours.size(); i++)
+    {
+        vector<cv::Point> contour = raw_contours[i];
+        for(int j = 0; j < contour.size(); j++)
+        {
+            if(contour[j].y == 1)
+            {
+                if(gripper_area == -1)
+                {
+                    gripper_area = contourArea(contour, false);
+                    gripper_index = i;
+                }
+                else if(contourArea(contour, false) > gripper_area)
+                {
+                    gripper_area = contourArea(contour, false);
+                    gripper_index = i;
+                }
+                break;
+            }
+        }
+    }
 
-//     line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256), 5);
-// }
+    // remove gripper contour
+    raw_contours.erase(raw_contours.begin() + gripper_index);
 
-// void TTTController::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
-// {
-//     Contours raw_contours, clean_contours, apx_contours, gripper_contours;
-//     findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    // remove contours that have areas that are too small (noise) and
+    // contours that do not have an approx. triangular shape (not token fragment)
+    int largest_index = 0, largest_area = 0;
+    for(int i = 0; i < raw_contours.size(); i++)
+    {
+        bool is_triangle = true;
+        vector<cv::Point> contour;
+        approxPolyDP(raw_contours[i], contour, 0.11 * arcLength(raw_contours[i], true), true);
 
-//     int gripper_area = -1;
-//     int gripper_index = 0;
+        if(contour.size() != 3) is_triangle = false;
 
-//     // find gripper contours. gripper contours are always attached to bottom part of image
-//     // (Note that imshow will show the bottom (x=0) part inverted and
-//     // on top of the display window). if there are multiple contours that contain points w/ x=0
-//     // the gripper contour is the contour with the largest area as a combination of the contours
-//     // of the gripper AND  a token fragment will always be larger than just a token fragment
-//     for(int i = 0; i < raw_contours.size(); i++)
-//     {
-//         vector<cv::Point> contour = raw_contours[i];
-//         for(int j = 0; j < contour.size(); j++)
-//         {
-//             if(contour[j].y == 1)
-//             {
-//                 if(gripper_area == -1)
-//                 {
-//                     gripper_area = contourArea(contour, false);
-//                     gripper_index = i;
-//                 }
-//                 else if(contourArea(contour, false) > gripper_area)
-//                 {
-//                     gripper_area = contourArea(contour, false);
-//                     gripper_index = i;
-//                 }
-//                 break;
-//             }
-//         }
-//     }
+        if(contourArea(raw_contours[i]) > 200 && is_triangle == true)
+        {
+            apx_contours.push_back(contour);
+            clean_contours.push_back(raw_contours[i]);
+        }
+    }
 
-//     // remove gripper contour
-//     raw_contours.erase(raw_contours.begin() + gripper_index);
+    // remove contours that are inside the board (e.g token placed on a cell)
+    for(int i = 0; i < clean_contours.size(); i++)
+    {
+        bool within_board = false;
+        vector<cv::Point> contour = clean_contours[i];
+        for(int j = 0; j < contour.size(); j++)
+        {
+            cv::Point pt = contour[j];
+            if(pt.y > board_y)
+            {
+                within_board = true;
+                break;
+            }
+        }
 
-//     // remove contours that have areas that are too small (noise) and
-//     // contours that do not have an approx. triangular shape (not token fragment)
-//     int largest_index = 0, largest_area = 0;
-//     for(int i = 0; i < raw_contours.size(); i++)
-//     {
-//         bool is_triangle = true;
-//         vector<cv::Point> contour;
-//         approxPolyDP(raw_contours[i], contour, 0.11 * arcLength(raw_contours[i], true), true);
+        if(within_board == false)
+        {
+            (contours).push_back(contour);
+        }
+    }
 
-//         if(contour.size() != 3) is_triangle = false;
+    output = Mat::zeros(_img_size, CV_8UC1);
+    for(int i = 0; i < (contours).size(); i++)
+    {
+        drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
+    }
 
-//         if(contourArea(raw_contours[i]) > 200 && is_triangle == true)
-//         {
-//             apx_contours.push_back(contour);
-//             clean_contours.push_back(raw_contours[i]);
-//         }
-//     }
+    line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256));
+}
 
-//     // remove contours that are inside the board (e.g token placed on a cell)
-//     for(int i = 0; i < clean_contours.size(); i++)
-//     {
-//         bool within_board = false;
-//         vector<cv::Point> contour = clean_contours[i];
-//         for(int j = 0; j < contour.size(); j++)
-//         {
-//             cv::Point pt = contour[j];
-//             if(pt.y > board_y)
-//             {
-//                 within_board = true;
-//                 break;
-//             }
-//         }
+void TTTController::setTokenOffset(Contours contours, cv::Point2d &offset, Mat &output)
+{
+    output = Mat::zeros(_img_size, CV_8UC1);
 
-//         if(within_board == false)
-//         {
-//             (contours).push_back(contour);
-//         }
-//     }
+    // when hand camera is blind due to being too close to token, go straight down;
+    if(contours.size() < 2)
+    {
+        offset = cv::Point2d(0,0);
+    }
+    else if(contours.size() <= 4)
+    {
+        // find highest and lowest x and y values from token triangles contours
+        // to find x-y coordinate of top left token edge and token side length
+        double y_min = (contours[0])[0].y;
+        double x_min = (contours[0])[0].x;
+        double y_max = 0;
+        double x_max = 0;
 
-//     output = Mat::zeros(_img_size, CV_8UC1);
-//     for(int i = 0; i < (contours).size(); i++)
-//     {
-//         drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
-//     }
+        for(int i = 0; i < contours.size(); i++)
+        {
+            vector<cv::Point> contour = contours[i];
+            for(int j = 0; j < contour.size(); j++)
+            {
+                if(y_min > contour[j].y) y_min = contour[j].y;
+                if(x_min > contour[j].x) x_min = contour[j].x;
+                if(y_max < contour[j].y) y_max = contour[j].y;
+                if(x_max < contour[j].x) x_max = contour[j].x;
+            }
+        }
 
-//     line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256));
-// }
+        // reconstruct token's square shape
+        Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
+        rectangle(output, token, Scalar(255,255,255), CV_FILLED);
 
-// void TTTController::setOffset(Contours contours, cv::Point2d &offset, Mat &output)
-// {
-//     output = Mat::zeros(_img_size, CV_8UC1);
+        // find and draw the center of the token and the image
+        double x_mid = x_min + ((x_max - x_min) / 2);
+        double y_mid = y_min + ((y_max - y_min) / 2);
+        circle(output, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
 
-//     // when hand camera is blind due to being too close to token, go straight down;
-//     if(contours.size() < 2)
-//     {
-//         offset = cv::Point2d(0,0);
-//     }
-//     else if(contours.size() <= 4)
-//     {
-//         // find highest and lowest x and y values from token triangles contours
-//         // to find x-y coordinate of top left token edge and token side length
-//         double y_min = (contours[0])[0].y;
-//         double x_min = (contours[0])[0].x;
-//         double y_max = 0;
-//         double x_max = 0;
+        circle(output, cv::Point(_img_size.width / 2, _img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
-//         for(int i = 0; i < contours.size(); i++)
-//         {
-//             vector<cv::Point> contour = contours[i];
-//             for(int j = 0; j < contour.size(); j++)
-//             {
-//                 if(y_min > contour[j].y) y_min = contour[j].y;
-//                 if(x_min > contour[j].x) x_min = contour[j].x;
-//                 if(y_max < contour[j].y) y_max = contour[j].y;
-//                 if(x_max < contour[j].x) x_max = contour[j].x;
-//             }
-//         }
+        double token_area = (x_max - x_min) * (y_max - y_min);
 
-//         // reconstruct token's square shape
-//         Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-//         rectangle(output, token, Scalar(255,255,255), CV_FILLED);
-
-//         // find and draw the center of the token and the image
-//         double x_mid = x_min + ((x_max - x_min) / 2);
-//         double y_mid = y_min + ((y_max - y_min) / 2);
-//         circle(output, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-
-//         circle(output, cv::Point(_img_size.width / 2, _img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
-
-//         double token_area = (x_max - x_min) * (y_max - y_min);
-
-//         (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_img_size.width / 2));
-//         // distance between gripper center and camera center
-//         (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075;
-//     }
-// }
+        (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_img_size.width / 2));
+        // distance between gripper center and camera center
+        (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075;
+    }
+}
 
 /**************************************************************************/
 /*                          ScanBoard                                */
@@ -392,10 +355,9 @@ bool TTTController::pickUpTokenImpl()
 
 bool TTTController::scanBoardImpl()
 {
-    hoverAboveBoard();
+    if (!hoverAboveBoard()) return false;
 
     // wait for image callback
-    ros::Rate r(100);
     while(RobotInterface::ok())
     {
         if(!_is_img_empty) break;
@@ -406,25 +368,32 @@ bool TTTController::scanBoardImpl()
     ROS_INFO("Scanning depth..");
     float dist;
     setDepth(dist);
-    hoverAboveBoard();
+    if (!hoverAboveBoard()) return false;
     processImage("run", dist);
 
     ROS_INFO("Hovering above tokens..");
     hoverAboveTokens(Z_HIGH);
 
     setState(SCANNED);
+    return true;
 }
 
 // Private
 bool TTTController::hoverAboveBoard()
 {
     ROS_INFO("Hovering above board..");
-    return goToPose(0.700, 0.100, 0.45, 0.0,  1.0,  0.0,  0.0);
+    // return goToPose(0.575, 0.220, 0.445, 0.0,  1.0,  0.0,  0.0);
+    return goToPose(0.575, 0.100, 0.445, 1.0, -0.03, 0, 0);
+
+    // return callAction(ACTION_HOME);
 }
 
 void TTTController::setDepth(float &dist)
 {
     ROS_INFO("Computing depth..");
+    // dist = 0.658022;
+    // ROS_INFO("Dist is %g", dist);
+    // return;
     geometry_msgs::Point init_pos = getPos();
 
     ros::Time start_time = ros::Time::now();
@@ -436,10 +405,10 @@ void TTTController::setDepth(float &dist)
         double py = init_pos.y;
         double pz = init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec();
 
-        double ox =  0.0;
-        double oy =  1.0;
-        double oz =  0.0;
-        double ow =  0.0;
+        double ox =   1.0;
+        double oy = -0.03;
+        double oz =   0.0;
+        double ow =   0.0;
 
         vector<double> joint_angles;
         computeIK(px,py,pz,ox,oy,oz,ow,joint_angles);
@@ -481,8 +450,8 @@ void TTTController::processImage(string mode, float dist)
 
         int board_area;
 
-        isolateBlack(&binary);
-        isolateBoard(&contours, &board_area, &board_corners, binary.clone(), &board);
+        isolateBlack(binary);
+        isolateBoard(contours, board_area, board_corners, binary, board);
 
         waitKey(3);
 
@@ -492,11 +461,11 @@ void TTTController::processImage(string mode, float dist)
             // imshow("[ScanBoard] Processed", board);
 
             if(offsetsReachable() && mode == "run"){
-                cout << "[Scan Board] Board is positioned correctly! Proceed with game" << endl;
+                ROS_INFO("[Scan Board] Board is positioned correctly! Proceed with game\n");
                 break;
             }
             else if(!offsetsReachable()) {
-                cout << "[Scan Board] Please move board within reachable zone" << endl;
+                ROS_WARN("[Scan Board] Please move board within reachable zone\n");
                 setZone(contours, dist, board_corners, centroids, &cell_to_corner);
 
                 // calls to IK solver in setZone takes too long; makes the image update
@@ -520,8 +489,8 @@ void TTTController::processImage(string mode, float dist)
                     if((ros::Time::now() - start).toSec() > interval)
                     {
                         vector<cv::Point> temp_centroids, temp_board_corners;
-                        isolateBlack(&binary);
-                        isolateBoard(&contours, &board_area, &temp_board_corners, binary.clone(), &board);
+                        isolateBlack(binary);
+                        isolateBoard(contours, board_area, temp_board_corners, binary.clone(), board);
                         if(contours.size() == 9)
                         {
                             setOffsets(board_area, contours, dist, &board, &temp_centroids);
@@ -540,68 +509,68 @@ void TTTController::processImage(string mode, float dist)
             }
         }
 
-        imshow("[ScanBoard] Processed", board);
+        imshow("[ScanBoard] Processed", binary);
     }
 }
 
-void TTTController::isolateBlack(Mat * output)
+void TTTController::isolateBlack(Mat &output)
 {
     Mat gray;
     pthread_mutex_lock(&_mutex_img);
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
     pthread_mutex_unlock(&_mutex_img);
-    threshold(gray, *output, 55, 255, cv::THRESH_BINARY);
+    threshold(gray, output, 55, 255, cv::THRESH_BINARY);
 }
 
-void TTTController::isolateBoard(Contours * contours, int * board_area,
-                             vector<cv::Point> * board_corners, Mat input, Mat * output)
+void TTTController::isolateBoard(Contours &contours, int &board_area,
+                                 vector<cv::Point> &board_corners, Mat input, Mat &output)
 {
-    *output = Mat::zeros(_img_size, CV_8UC1);
+    output = Mat::zeros(_img_size, CV_8UC1);
 
     vector<cv::Vec4i> hierarchy; // captures contours within contours
 
-    findContours(input, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     double largest = 0, next_largest = 0;
     int largest_index = 0, next_largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ 2nd-largest area
-    for(int i = 0; i < (*contours).size(); i++)
+    for(int i = 0; i < contours.size(); i++)
     {
-        if(contourArea((*contours)[i], false) > largest)
+        if(contourArea(contours[i], false) > largest)
         {
             next_largest = largest;
             next_largest_index = largest_index;
-            largest = contourArea((*contours)[i], false);
+            largest = contourArea(contours[i], false);
             largest_index = i;
         }
-        else if(next_largest < contourArea((*contours)[i], false) && contourArea((*contours)[i], false) < largest)
+        else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
         {
-            next_largest = contourArea((*contours)[i], false);
+            next_largest = contourArea(contours[i], false);
             next_largest_index = i;
         }
     }
 
-    *board_area = contourArea((*contours)[next_largest_index], false);
+    board_area = contourArea(contours[next_largest_index], false);
 
-    drawContours(*output, *contours, next_largest_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+    drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
-    findContours(*output, *contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    findContours(output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     largest = 0;
     largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < (*contours).size(); i++)
+    for(int i = 0; i < contours.size(); i++)
     {
-        if(contourArea((*contours)[i], false) > largest)
+        if(contourArea(contours[i], false) > largest)
         {
-            largest = contourArea((*contours)[i], false);
+            largest = contourArea(contours[i], false);
             largest_index = i;
         }
     }
 
-    vector<cv::Point> board_outline = (*contours)[largest_index];
+    vector<cv::Point> board_outline = contours[largest_index];
 
     /* Set board corners and board area*/
     double y_min = board_outline[0].y;
@@ -617,25 +586,25 @@ void TTTController::isolateBoard(Contours * contours, int * board_area,
         if(x_max < board_outline[i].x) x_max = board_outline[i].x;
     }
 
-    (*board_corners).push_back(cv::Point(x_max, y_max));
-    (*board_corners).push_back(cv::Point(x_min, y_max));
-    (*board_corners).push_back(cv::Point(x_max, y_min));
-    (*board_corners).push_back(cv::Point(x_min, y_min));
+    board_corners.push_back(cv::Point(x_max, y_max));
+    board_corners.push_back(cv::Point(x_min, y_max));
+    board_corners.push_back(cv::Point(x_max, y_min));
+    board_corners.push_back(cv::Point(x_min, y_min));
 
     // remove outer board contours
-    (*contours).erase((*contours).begin() + largest_index);
+    contours.erase(contours.begin() + largest_index);
 
-    for(int i = 0; i < (*contours).size(); i++)
+    for(int i = 0; i < contours.size(); i++)
     {
-        if(contourArea((*contours)[i], false) < 200)
+        if(contourArea(contours[i], false) < 200)
         {
-            (*contours).erase((*contours).begin() + i);
+            contours.erase(contours.begin() + i);
         }
     }
 
-    for(int i = 0; i < (*contours).size(); i++)
+    for(int i = 0; i < contours.size(); i++)
     {
-        drawContours(*output, *contours, i, Scalar(255,255,255), CV_FILLED);
+        drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
     }
 }
 
@@ -755,56 +724,51 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 /**************************************************************************/
 /*                         PutDownToken                              */
 /**************************************************************************/
-
-// // Public
-// PutDownToken::PutDownToken(string name, string limb) : ROSThreadImage(name, limb, false, false), Gripper(limb)
-// {
-
-// }
-
-// PutDownToken::~PutDownToken()
-// {
-
-// }
-
-// Protected
 bool TTTController::putDownTokenImpl()
 {
-    // hoverAboveBoard();
-    // hoverAboveCell();
-    // ros::Duration(0.8).sleep();
-    // releaseObject();
-    // hoverAboveBoard();
-    // hoverAboveTokens(Z_HIGH);
+    hoverAbovePickUpBoard();
+    hoverAboveCell();
+    ros::Duration(0.5).sleep();
+    releaseObject();
+    hoverAbovePickUpBoard();
+    hoverAboveTokens(Z_HIGH);
 
-    // setState(PUT_DOWN);
-    // closeInternalThread();
+    setState(PUT_DOWN);
+    return true;
 }
 
-// // Private
-// void PutDownToken::hoverAboveCell()
-// {
-//     goToPose(0.575 + _offsets[_cell - 1].x,
-//              0.100 + _offsets[_cell - 1].y,
-//              0.445 - _offsets[_cell - 1].z,
-//              VERTICAL_ORI_L);
-// }
+// Private
+void TTTController::hoverAboveCell()
+{
+    goToPose(0.575 + _offsets[_cell - 1].x,
+             0.100 + _offsets[_cell - 1].y,
+             0.495 - _offsets[_cell - 1].z,
+             VERTICAL_ORI_L);
+}
 
-// void PutDownToken::hoverAboveBoard()
-// {
-//     goToPose(0.575 + _offsets[4].x,
-//              0.100 + _offsets[4].y,
-//              0.445 - _offsets[4].z,
-//              VERTICAL_ORI_L);
-// }
+void TTTController::hoverAbovePickUpBoard()
+{
+    goToPose(0.575 + _offsets[4].x,
+             0.100 + _offsets[4].y,
+             0.545 - _offsets[4].z,
+             VERTICAL_ORI_L);
+}
 
 /**************************************************************************/
 /*                            TTTController                               */
 /**************************************************************************/
 
 TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
-                             r(100), _img_trp(_n), ArmCtrl(name, limb, no_robot)
+                             ArmCtrl(name, limb, no_robot, use_forces, false),
+                             r(100), _img_trp(_n), _is_img_empty(true)
 {
+    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
+    namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
+    namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
+    resizeWindow("[PickUpToken] Raw",       700, 500);
+    resizeWindow("[PickUpToken] Processed", 700, 500);
+    resizeWindow("[PickUpToken] Rough",     700, 500);
+
     setHomeConfiguration();
 
     insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
@@ -816,20 +780,29 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
     pthread_mutex_init(&_mutex_img, NULL);
 
     KDL::JntArray ll, ul; //lower joint limits, upper joint limits
+    getIKLimits(ll,ul);
 
-    if(!(getIKLimits(ll,ul)))
-    {
-        ROS_ERROR("There were no valid KDL joint limits found");
-        exit(EXIT_FAILURE);
-    }
+    // double s1l = -1.1;
+    // double s1u =  1.0;
+    // ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
+    // ll.data[1] =  s1l;
+    // ul.data[1] =  s1u;
+    // setIKLimits(ll,ul);
+    // getIKLimits(ll,ul);
 
-    double s1l = -1.0;
-    double s1u =  1.0;
-    ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
-    ll.data[1] =  s1l;
-    ul.data[1] =  s1u;
+    // printf("ll.rows cols %i %i\t", ll.rows(), ll.columns());
+    // for (int i = 0; i < ll.rows(); ++i)
+    // {
+    //     printf("%g\t", ll.data[i]);
+    // }
+    // printf("\n");
 
-    setIKLimits(ll,ul);
+    // printf("ul.rows cols %i %i\t", ul.rows(), ul.columns());
+    // for (int i = 0; i < ul.rows(); ++i)
+    // {
+    //     printf("%g\t", ul.data[i]);
+    // }
+    // printf("\n");
 
     if (!callAction(ACTION_HOME)) setState(ERROR);
 }
@@ -843,7 +816,8 @@ void TTTController::setHomeConfiguration()
 {
     if (getLimb() == "left")
     {
-        setHomeConf( 1.151, -0.600, -0.175, 2.286, 1.868, -1.468, 0.126);
+        setHomeConf( 0.688, -0.858, -1.607, 1.371, 0.742, 1.733, 0.007);
+        // setHomeConf( 0.022, -0.503, -2.071, 1.466,` 1.075, 2.065, -0.915);
     }
     else if (getLimb() == "right")
     {
@@ -873,9 +847,9 @@ bool TTTController::pickUpToken()
     return true;
 }
 
-
-bool TTTController::putDownToken()
+bool TTTController::putDownToken(int cell)
 {
+    setCell(cell);
     if (!callAction(ACTION_PUTDOWN))
     {
         setState(ERROR);
@@ -900,7 +874,6 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
     }
 
     pthread_mutex_lock(&_mutex_img);
-
     _curr_img     = cv_ptr->image.clone();
     _img_size     =      _curr_img.size();
     _is_img_empty =     _curr_img.empty();
@@ -911,12 +884,8 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
 TTTController::~TTTController()
 {
     pthread_mutex_destroy(&_mutex_img);
+
+    destroyWindow("[PickUpToken] Raw");
+    destroyWindow("[PickUpToken] Processed");
+    destroyWindow("[PickUpToken] Rough");
 }
-
-// void TTTController::putDownToken(int cell)
-// {
-//     _put_class->setOffsets(_scan_class->getOffsets());
-//     _put_class->setCell(cell);
-//     _put_class->startInternalThread();
-// }
-
