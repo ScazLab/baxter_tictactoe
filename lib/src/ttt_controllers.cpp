@@ -47,8 +47,7 @@ bool TTTController::pickUpTokenImpl()
     //         break;
     //     }
 
-    //     ros::spinOnce();
-    //     ros::Rate(100).sleep();
+    //     r.sleep();
     // }
 
     // // wait for image callback
@@ -106,8 +105,7 @@ bool TTTController::pickUpTokenImpl()
 
 //         publish_joint_cmd(joint_cmd);
 
-//         ros::spinOnce();
-//         ros::Rate(100).sleep();
+//         r.sleep();
 
 //         // if(getPos().z < -0.05) break;
 
@@ -405,7 +403,12 @@ bool TTTController::scanBoardImpl()
         r.sleep();
     }
 
-    scan();
+    ROS_INFO("Scanning depth..");
+    float dist;
+    setDepth(dist);
+    hoverAboveBoard();
+    processImage("run", dist);
+
     ROS_INFO("Hovering above tokens..");
     hoverAboveTokens(Z_HIGH);
 
@@ -417,15 +420,6 @@ bool TTTController::hoverAboveBoard()
 {
     ROS_INFO("Hovering above board..");
     return goToPose(0.700, 0.100, 0.45, 0.0,  1.0,  0.0,  0.0);
-}
-
-void TTTController::scan()
-{
-    ROS_INFO("Scanning depth..");
-    float dist;
-    setDepth(dist);
-    hoverAboveBoard();
-    processImage("run", dist);
 }
 
 void TTTController::setDepth(float &dist)
@@ -461,8 +455,7 @@ void TTTController::setDepth(float &dist)
         }
 
         publish_joint_cmd(joint_cmd);
-        ros::spinOnce();
-        ros::Rate(100).sleep();
+        r.sleep();
 
         if(hasCollided("loose"))
         {
@@ -810,7 +803,7 @@ bool TTTController::putDownTokenImpl()
 /**************************************************************************/
 
 TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
-                             _img_trp(_n), ArmCtrl(name, limb, no_robot)
+                             r(100), _img_trp(_n), ArmCtrl(name, limb, no_robot)
 {
     setHomeConfiguration();
 

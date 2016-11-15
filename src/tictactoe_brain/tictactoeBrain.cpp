@@ -21,7 +21,7 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 
 // traj=false -> arm movement done via inverse kinematics (TTTController)
 // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) :
+tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string strategy) : r(100),
                                _robot_color(robot_color), traj(traj), _setup(false), _move_commander("place_token", true)
 {
     ROS_DEBUG("[tictactoeBrain] traj = %d", traj);
@@ -29,8 +29,6 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
     {
         _left_ac = new TTTController("tictactoe","left");
         _right_ac = new TTTController("tictactoe","right");
-
-        ros::Rate r(100);
 
         _left_ac->scanBoard();
 
@@ -453,7 +451,7 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
                 _left_ac->pickUpToken();
                 while(_left_ac->getState() != PICK_UP)
                 {
-                    ros::spinOnce();
+                    r.sleep();
                 }
 
                 _left_ac->putDownToken(cell_to_move);
