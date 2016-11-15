@@ -32,12 +32,12 @@ tictactoeBrain::tictactoeBrain(bool traj, cellState robot_color, std::string str
 
         ros::Rate r(100);
 
-        // _left_ac->scanBoard();
+        _left_ac->scanBoard();
 
-        // while(ros::ok() && _left_ac->getState() != SCANNED)
-        // {
-        //     r.sleep();
-        // }
+        while(ros::ok() && _left_ac->getState() != SCANNED)
+        {
+            r.sleep();
+        }
     }
 
     _number_of_tokens_on_board.set(0);

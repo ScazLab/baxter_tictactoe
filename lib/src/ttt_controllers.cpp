@@ -1,4 +1,5 @@
 #include "ttt_controllers/ttt_controllers.h"
+#include <kdl/chainiksolverpos_nr_jl.hpp>
 
 using namespace std;
 using namespace baxter_core_msgs;
@@ -820,6 +821,22 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
     _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                            SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     pthread_mutex_init(&_mutex_img, NULL);
+
+    KDL::JntArray ll, ul; //lower joint limits, upper joint limits
+
+    if(!(getIKLimits(ll,ul)))
+    {
+        ROS_ERROR("There were no valid KDL joint limits found");
+        exit(EXIT_FAILURE);
+    }
+
+    double s1l = -1.0;
+    double s1u =  1.0;
+    ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
+    ll.data[1] =  s1l;
+    ul.data[1] =  s1u;
+
+    setIKLimits(ll,ul);
 
     if (!callAction(ACTION_HOME)) setState(ERROR);
 }
