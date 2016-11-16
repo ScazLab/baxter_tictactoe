@@ -21,6 +21,7 @@ using namespace cv;
 
 bool TTTController::pickUpTokenImpl()
 {
+    ROS_INFO("Picking up token..");
     // wait for IR sensor callback
     while(RobotInterface::ok())
     {
@@ -384,8 +385,6 @@ bool TTTController::hoverAboveBoard()
     ROS_INFO("Hovering above board..");
     // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
     return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
-
-    // return callAction(ACTION_HOME);
 }
 
 void TTTController::setDepth(float &dist)
@@ -439,8 +438,6 @@ void TTTController::setDepth(float &dist)
 
 void TTTController::processImage(string mode, float dist)
 {
-    ros::Time start_time = ros::Time::now();
-
     while(RobotInterface::ok())
     {
         Contours contours;
@@ -726,6 +723,7 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 /**************************************************************************/
 bool TTTController::putDownTokenImpl()
 {
+    ROS_INFO("Putting down token..");
     hoverAbovePickUpBoard();
     hoverAboveCell();
     ros::Duration(0.5).sleep();

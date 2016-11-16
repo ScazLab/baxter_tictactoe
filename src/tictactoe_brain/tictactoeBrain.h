@@ -18,9 +18,11 @@
 namespace ttt
 {
 
-bool operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
+bool operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
+                boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
 
-bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1, boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
+bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
+                boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
 
 class tictactoeBrain
 {
@@ -33,37 +35,25 @@ private:
     ros::Subscriber _ttt_state_sub; // subscriber to receive the messages
                                     // coming from the board state sensor
 
-    ThreadSafeVariable<TTT_State_type> _ttt_state; // it stores the state of the board. It is
-                                                   // the same type than the data received when a
-                                                   // new TTT board state is detected
-                                                   // (baxter_tictactoe::MsgBoard::cells)
+    ThreadSafeVariable<TTT_State_type> _ttt_state; // it stores the state of the board.
 
     ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; // It stores the total number
-                                                                       // of cells on the board. This
-                                                                       // is used to detect the end of
-                                                                       // the opponent's turn
+                                                                       // of cells on the board.
 
     cellState _robot_color;   // It represents the color of the tokens the robot is playing with.
     cellState _opponent_color; // It represents the color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
 
-    ros::ServiceClient _clnt_movement_type;
     ros::ServiceClient _scan_client;
     ros::ServiceServer _scan_server;
 
     std::string _voice_type; // It determines the type of voice.
 
-    bool traj;             // traj=false -> arm movement done via inverse kinematics (TTTController)
-                           // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-                           // traj=false preferred due to simpler and more robust implementation
     bool _setup;
-
-    bool movement_type;    // It determines the type of movements: smooth and natural or more mechanistic and robotic.
     bool cheating;         // It determines if the robot can cheat or not.
 
-
-    Place_Token_Client_type _move_commander; /* This is the incharge of sending the command to
+    Place_Token_Client_type _move_commander; /* This is in charge of sending the command to
                                                 place a new token in a cell of the TTT board */
 
     int (tictactoeBrain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that
@@ -85,7 +75,7 @@ private:
      * is stored in the thread-safe private attribute called _ttt_state.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
      **/
-    void new_ttt_state(const baxter_tictactoe::MsgBoardConstPtr & msg);
+    void tttStateCb(const baxter_tictactoe::MsgBoardConstPtr & msg);
 
     /**
      * It determines randomly the next empty cell to place a token.
@@ -152,7 +142,7 @@ private:
 
 public:
 
-    tictactoeBrain(bool traj=false, cellState robot_color=blue, std::string strategy="random");
+    tictactoeBrain(cellState robot_color=blue, std::string strategy="random");
 
     ~tictactoeBrain();
 
@@ -163,12 +153,6 @@ public:
      * and NUMBER_OF_CELLS (last raw, last column).
      **/
     int get_next_move(bool& cheating);
-
-    /**
-     * It indicates if the robot moves smoothly. If not, it moves mechanisticaly.
-     * \return true if robot uses smooth movements, or false if it uses mechanistic movements.
-     **/
-    bool ismovement_type_movements();
 
     /**
      * This function sends the command to place a token in a particular cell.
@@ -259,12 +243,6 @@ public:
 
     /* SETTERS */
     void set_cheating(bool _c) { cheating=_c; };
-
-    /**
-     * It sets the kind of movements: smooth or mechanistic.
-     * \return true if there is no error, or false otherwise.
-     **/
-    bool set_movement_type(bool b);
 };
 
 }
