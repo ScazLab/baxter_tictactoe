@@ -40,7 +40,6 @@ bool TTTController::pickUpTokenImpl()
     gripToken();
     hoverAboveTokens(Z_LOW);
 
-    setState(PICK_UP);
     return true;
 }
 
@@ -99,7 +98,7 @@ void TTTController::checkForToken(cv::Point2d &offset)
 
     while(RobotInterface::ok())
     {
-        if(!(offset.x == 0 && offset.y == 0)) {break;}
+        if(!(offset.x == 0 && offset.y == 0)) break;
 
         // loop halts until a key is pressed
         ROS_WARN("No token detected by hand camera. Place token and press ENTER");
@@ -340,7 +339,7 @@ void TTTController::setTokenOffset(Contours contours, cv::Point2d &offset, Mat &
 }
 
 /**************************************************************************/
-/*                          ScanBoard                                */
+/*                               ScanBoard                                */
 /**************************************************************************/
 
 bool TTTController::scanBoardImpl()
@@ -364,16 +363,27 @@ bool TTTController::scanBoardImpl()
     ROS_INFO("Hovering above tokens..");
     hoverAboveTokens(Z_HIGH);
 
-    setState(SCANNED);
     return true;
 }
 
-// Private
 bool TTTController::hoverAboveBoard()
 {
     ROS_INFO("Hovering above board..");
     // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
     return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
+}
+
+bool TTTController::hoverAboveCenterOfBoard()
+{
+    return goToPose(HOVER_BOARD_X + _offsets[4].x,
+                    HOVER_BOARD_Y + _offsets[4].y,
+                    HOVER_BOARD_Z - _offsets[4].z + 0.1,
+                    VERTICAL_ORI_L);
+}
+
+bool TTTController::hoverAboveTokens(double height)
+{
+    return goToPose(0.540, 0.570, height, VERTICAL_ORI_L);
 }
 
 void TTTController::setDepth(float &dist)
@@ -397,7 +407,7 @@ void TTTController::setDepth(float &dist)
         double ow =   0.0;
 
         vector<double> joint_angles;
-        goToPose(px,py,pz,ox,oy,oz,ow);
+        computeIK(px,py,pz,ox,oy,oz,ow, joint_angles);
         goToPoseNoCheck(joint_angles);
         r.sleep();
 
@@ -700,32 +710,23 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 bool TTTController::putDownTokenImpl()
 {
     ROS_INFO("Putting down token..");
-    hoverAbovePickUpBoard();
-    hoverAboveCell();
+    if (!hoverAboveCenterOfBoard()) return false;
+    if (!hoverAboveCell()) return false;
     ros::Duration(0.5).sleep();
-    releaseObject();
-    hoverAbovePickUpBoard();
-    hoverAboveTokens(Z_HIGH);
+    if (!releaseObject()) return false;
+    if (!hoverAboveCenterOfBoard()) return false;
+    if (!hoverAboveTokens(Z_HIGH)) return false;
 
-    setState(PUT_DOWN);
     return true;
 }
 
 // Private
-void TTTController::hoverAboveCell()
+bool TTTController::hoverAboveCell()
 {
-    goToPose(HOVER_BOARD_X + _offsets[_cell - 1].x,
-             HOVER_BOARD_Y + _offsets[_cell - 1].y,
-             HOVER_BOARD_Z + _offsets[_cell - 1].z + 0.05,
-             VERTICAL_ORI_L);
-}
-
-void TTTController::hoverAbovePickUpBoard()
-{
-    goToPose(HOVER_BOARD_X + _offsets[4].x,
-             HOVER_BOARD_Y + _offsets[4].y,
-             HOVER_BOARD_Z - _offsets[4].z + 0.1,
-             VERTICAL_ORI_L);
+    return goToPose(HOVER_BOARD_X + _offsets[_cell - 1].x,
+                    HOVER_BOARD_Y + _offsets[_cell - 1].y,
+                    HOVER_BOARD_Z + _offsets[_cell - 1].z + 0.05,
+                    VERTICAL_ORI_L);
 }
 
 /**************************************************************************/
@@ -799,37 +800,56 @@ void TTTController::setHomeConfiguration()
     }
 }
 
+bool TTTController::startAction(string a)
+{
+    baxter_collaboration::DoAction::Request  req;
+    baxter_collaboration::DoAction::Response res;
+    req.action = a;
+
+    serviceCb(req,res);
+    return res.success;
+}
+
 bool TTTController::scanBoard()
 {
+    setState(WORKING);
+
     if (!callAction(ACTION_SCAN))
     {
         setState(ERROR);
         return false;
     }
 
+    setState(DONE);
     return true;
 }
 
 bool TTTController::pickUpToken()
 {
+    setState(WORKING);
+
     if (!callAction(ACTION_PICKUP))
     {
         setState(ERROR);
         return false;
     }
 
+    setState(DONE);
     return true;
 }
 
 bool TTTController::putDownToken(int cell)
 {
+    setState(WORKING);
     setCell(cell);
+
     if (!callAction(ACTION_PUTDOWN))
     {
         setState(ERROR);
         return false;
     }
 
+    setState(DONE);
     return true;
 }
 

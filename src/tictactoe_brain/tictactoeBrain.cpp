@@ -24,7 +24,7 @@ bool ttt::operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> ce
 }
 
 tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(100),
-                               _robot_color(robot_color), _setup(false), _move_commander("place_token", true),
+                               _robot_color(robot_color), _setup(false),
                                leftArmCtrl("tictactoe", "left"), rightArmCtrl("tictactoe", "right")
 {
     _ttt_state_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::tttStateCb, this);
@@ -43,8 +43,8 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
 
-    leftArmCtrl.scanBoard();
-    while(ros::ok() && leftArmCtrl.getState() != SCANNED)
+    leftArmCtrl.startAction(ACTION_SCAN);
+    while(ros::ok() && leftArmCtrl.getState() != DONE)
     {
         r.sleep();
     }
@@ -222,35 +222,6 @@ int tictactoeBrain::get_next_move(bool& cheating)
     return (this->*_choose_next_move)(cheating);
 }
 
-actionlib::SimpleClientGoalState tictactoeBrain::execute_move(int cell_to_move)
-{
-    baxter_tictactoe::PlaceTokenGoal goal;
-    switch(cell_to_move)
-    {
-        case 1:goal.cell="1x1"; break;
-        case 2:goal.cell="1x2"; break;
-        case 3:goal.cell="1x3"; break;
-        case 4:goal.cell="2x1"; break;
-        case 5:goal.cell="2x2"; break;
-        case 6:goal.cell="2x3"; break;
-        case 7:goal.cell="3x1"; break;
-        case 8:goal.cell="3x2"; break;
-        case 9:goal.cell="3x3"; break;
-        default:
-            ROS_ERROR("Unknown cell %d to move to",cell_to_move);
-            return actionlib::SimpleClientGoalState::LOST;
-    }
-
-    _move_commander.sendGoal(goal);
-    _move_commander.waitForResult(ros::Duration(40.0)); //wait 40s for the action to return
-    bool _success = (_move_commander.getState() == actionlib::SimpleClientGoalState::SUCCEEDED);
-
-    if (_success) ROS_INFO("Action moving to %s finished successfully", goal.cell.c_str());
-    else ROS_WARN("Action moving to %s did not finish before the time out.", goal.cell.c_str());
-
-    return _move_commander.getState();
-}
-
 unsigned short int tictactoeBrain::get_number_of_tokens_on_board()
 {
     unsigned short int counter=0;
@@ -357,10 +328,10 @@ void tictactoeBrain::set_strategy(std::string strategy)
     }
 }
 
-unsigned short int tictactoeBrain::play_one_game(bool& cheating)
+int tictactoeBrain::play_one_game(bool &cheating)
 {
     bool robot_turn=true;
-    unsigned short int winner=0; // no winner
+    int winner=0; // no winner
     has_cheated=false;
 
     say_sentence("I start the game.",2);
@@ -373,31 +344,19 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     {
         if (robot_turn) // Robot's turn
         {
-            ROS_INFO("robot turn");
-
-            // n_robot_tokens=get_number_of_tokens_on_board(_robot_color); //number of robot's tokens befor the robot's turn
-            n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens befor the robot's turn
+            // n_robot_tokens=get_number_of_tokens_on_board(_robot_color); //number of robot's tokens before the robot's turn
+            n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color); //number of opponent's tokens before the robot's turn
             say_sentence("It is my turn", 0.3);
             int cell_to_move = get_next_move(cheating);
-            ROS_DEBUG("Robot's token to %i", cell_to_move);
-            ROS_INFO("get next move");
+            ROS_INFO("Moving to cell %i", cell_to_move);
 
-            leftArmCtrl.pickUpToken();
-            while(ros::ok() && leftArmCtrl.getState() != PICK_UP)
-            {
-                r.sleep();
-            }
-
-            leftArmCtrl.putDownToken(cell_to_move);
-            while(ros::ok() && leftArmCtrl.getState() != PUT_DOWN)
-            {
-                r.sleep();
-            }
+            leftArmCtrl.startAction(ACTION_PICKUP);
+            leftArmCtrl.startAction(ACTION_PUTDOWN);
         }
         else // Participant's turn
         {
             ROS_INFO("Waiting for the participant's move.");
-            say_sentence("It is your turn",0.1);
+            say_sentence("It is your turn", 0.1);
             wait_for_opponent_turn(n_opponent_tokens); // Waiting for my turn: the participant has to place one token,
                                                        // so we wait until the number of the opponent's tokens increases.
             ROS_INFO("after participant move");
@@ -408,20 +367,20 @@ unsigned short int tictactoeBrain::play_one_game(bool& cheating)
     switch(winner)
     {
     case 1:
-        ROS_INFO("ROBOT's VICTORY!");
+        ROS_INFO("ROBOT's VICTORY");
         if (has_cheated)
         {
-            say_sentence("You humans are so easy to beat!",5);
+            say_sentence("You humans are so easy to beat!", 5);
         }
         say_sentence("I won", 3);
         break;
     case 2:
-        ROS_INFO("OPPONENT's VICTORY!");
-        say_sentence("You won this time",4);
+        ROS_INFO("OPPONENT's VICTORY");
+        say_sentence("You won this time", 4);
         break;
     default:
-        ROS_INFO("TIE!");
-        say_sentence("That's a tie. I will win next time.",8);
+        ROS_INFO("TIE");
+        say_sentence("That's a tie. I will win next time.", 8);
         winner=3;
     }
     return winner;

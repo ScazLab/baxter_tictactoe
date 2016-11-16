@@ -38,9 +38,31 @@ private:
          * hover arm above board
          *
          * @param      N/A
-         * return     N/A
+         * @return     true/false if success/failure
          */
         bool hoverAboveBoard();
+
+        /**
+         * Hovers arm above the board
+         *
+         * @return true/false if success/failure
+         */
+        bool hoverAboveCenterOfBoard();
+
+        /**
+         * Hovers arm above specified cell
+         *
+         * @return true/false if success/failure
+         */
+        bool hoverAboveCell();
+
+        /*
+         * hovers arm above tokens
+         *
+         * @param      double indicating requested height of arm (z-axis)
+         * @return     true/false if success/failure
+         */
+        bool hoverAboveTokens(double height);
 
         /*
          * moves arm downwards until collision w/ a surface; calculates
@@ -48,7 +70,7 @@ private:
          *
          * @param     dist indicates the distance between the surface
          *                 and the arm's starting point
-         * return     N/A
+         * @return     N/A
          */
         void setDepth(float &dist);
 
@@ -58,7 +80,7 @@ private:
          *
          * @param      string mode (test/run) indicating a test (does not exit out of scanning loop)
          *            or an actual run (quits once scanning finished)
-         * return     N/A
+         * @return     N/A
          */
         void processImage(std::string mode, float dist);
 
@@ -66,7 +88,7 @@ private:
          * isolates black colored object in raw image
          *
          * @param      Mat displaying black colored objects in raw image
-         * return     N/A
+         * @return     N/A
          */
         void isolateBlack(cv::Mat &output);
 
@@ -76,7 +98,7 @@ private:
          * @param     input Mat, output Mat displaying board boundaries, output Contours
          *            storing board contours, integer indicating the area of the board,
          *            and a vector<cv::Point> of the board's four corners
-         * return     N/A
+         * @return     N/A
          */
         void isolateBoard(Contours &contours, int &board_area,
                           std::vector<cv::Point> &board_corners, cv::Mat input, cv::Mat &output);
@@ -85,7 +107,7 @@ private:
          * finds cell with the higher centroid
          *
          * @param      returns true if cell i has a higher centroid than cell j; false otherwise
-         * return     N/A
+         * @return     N/A
          */
         static bool descendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
@@ -94,7 +116,7 @@ private:
          *
          * @param      board area, cell contours, output Mat displaying cells, and height
          *            from arm to board surface
-         * return     N/A
+         * @return     N/A
          */
         void setOffsets(int board_area, Contours contours, float dist,
                         cv::Mat *output, std::vector<cv::Point> *centroids);
@@ -118,7 +140,7 @@ private:
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
          *
          * @param      N/A
-         * return     true if offsets are all reachable; false otherwise
+         * @return     true if offsets are all reachable; false otherwise
          */
         bool offsetsReachable();
 
@@ -127,7 +149,7 @@ private:
          * scanning image
          *
          * @param      N/A
-         * return     true if point is reachable; false otherwise
+         * @return     true if point is reachable; false otherwise
          */
         bool pointReachable(cv::Point centroid, float dist);
 
@@ -136,7 +158,7 @@ private:
          * move arm downwards and suck token upon collision
          *
          * @param      N/A
-         * return     N/A
+         * @return     N/A
          */
         void gripToken();
 
@@ -145,7 +167,7 @@ private:
          *
          * @param      Point representing offset between the arm's x-y coordinates
          *            and the token
-         * return     N/A
+         * @return     N/A
          */
         void checkForToken(cv::Point2d &offset);
 
@@ -155,7 +177,7 @@ private:
          *
          * @param      Point representing offset between the arm's x-y coordinates
          *            and the token
-         * return     N/A
+         * @return     N/A
          */
         void processTokenImage(cv::Point2d &offset);
 
@@ -163,7 +185,7 @@ private:
          * isolates blue colored object in raw image
          *
          * @param      Mat displaying blue colored objects in raw image
-         * return     N/A
+         * @return     N/A
          */
         void isolateBlue(cv::Mat &output);
 
@@ -172,7 +194,7 @@ private:
          *
          * @param      input Mat, output Mat displaying board boundaries,
          *            and integer indicating lowest y coordinate of board boundaries
-         * return     N/A
+         * @return     N/A
          */
         void isolateTokenBoard(cv::Mat input, cv::Mat &output, int &board_y);
 
@@ -182,7 +204,7 @@ private:
          * @param      input Mat, output Mat displaying token,
          *            and integer indicating lowest y coordinate of board boundaries,
          *            and contours of blue-colored objects in image
-         * return     N/A
+         * @return     N/A
          */
         void isolateToken(cv::Mat input, int board_y, cv::Mat &output, Contours &contours);
 
@@ -191,7 +213,7 @@ private:
          *
          * @param      token contours, an integer indicating lowest y coordinate of board boundaries,
          *            and contours of blue-colored objects in image, and an output Mat displaying token
-         * return     N/A
+         * @return     N/A
          */
         void setTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 
@@ -199,22 +221,6 @@ private:
         void setCell(int cell) {_cell = cell;};
 
         int _cell;
-
-        /*
-         * hover arm above specified cell
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void hoverAboveCell();
-
-        /*
-         * hover arm above the board
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void hoverAbovePickUpBoard();
 
 protected:
     cv::Mat  _curr_img;
@@ -243,6 +249,8 @@ public:
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
     bool goHome();
+
+    bool startAction(std::string a);
 
     bool pickUpToken();
 

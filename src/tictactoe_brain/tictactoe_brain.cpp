@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     uint i=1;
     bool cheating=false;
     ROS_INFO_STREAM("[tictactoeBrain] Let's play " << NUM_GAMES << " times Tic Tac Toe");
-    unsigned short game_result=0;
+    int game_result=0;
 
     while(i<=NUM_GAMES)
     {

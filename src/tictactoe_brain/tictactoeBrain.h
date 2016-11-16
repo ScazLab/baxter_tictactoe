@@ -1,6 +1,4 @@
 #include <ros/ros.h>
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
 #include <sound_play/sound_play.h>
 
 #include <baxter_tictactoe/MsgCell.h>
@@ -10,7 +8,6 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxterTictactoe/T_ThreadSafe.h"
-#include "baxter_tictactoe/PlaceTokenAction.h"
 #include "ttt_controllers/ttt_controllers.h"
 
 #include <pthread.h>
@@ -27,7 +24,6 @@ bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
 class tictactoeBrain
 {
 private:
-    typedef actionlib::SimpleActionClient<baxter_tictactoe::PlaceTokenAction> Place_Token_Client_type;
     typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_State_type;
     // typedef std::vector<baxter_tictactoe::MsgCell> TTT_State_type;
 
@@ -52,9 +48,6 @@ private:
 
     bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
-
-    Place_Token_Client_type _move_commander; /* This is in charge of sending the command to
-                                                place a new token in a cell of the TTT board */
 
     int (tictactoeBrain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that
                                                             decides the next move. We use a pointer
@@ -155,16 +148,6 @@ public:
     int get_next_move(bool& cheating);
 
     /**
-     * This function sends the command to place a token in a particular cell.
-     * @param cell_to_move value between 1 (first row, first column) and
-     * 9 (last raw, last column) that points where the next token will be placed
-     * @return The state information for the goal selected.
-     * Possible States Are: PENDING, ACTIVE, RECALLED, REJECTED, PREEMPTED, ABORTED,
-     * SUCCEEDED, LOST. In case that the cell to move does not exist, the returned value will be LOST.
-     **/
-    actionlib::SimpleClientGoalState execute_move(int cell_to_move);
-
-    /**
      * This function counts the total number of tokens on the board.
      * That is, the number of cells that are not empty or undefined.
      * @return The number of cells where there is a red or blue token.
@@ -173,7 +156,7 @@ public:
 
     /**
      * This function counts the number of a particular type of tokens
-     * on the board. That is, the number of cells that occupied by these kind of tikens.
+     * on the board. That is, the number of cells that occupied by these kind of tokens.
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
@@ -181,7 +164,7 @@ public:
 
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
-     * In a 3x3 board there are 8 possible convinations to get 3 tokens in a row. We explore all of them.
+     * In a 3x3 board there are 8 possible combinations to get 3 tokens in a row. We explore all of them.
      *
      * @param color It represents the color of the tokens in the row we are searching for.
      * @param b   TTT board where searching for three tokens of the same color in a row.
@@ -212,8 +195,8 @@ public:
     bool is_board_full();
 
     /**
-     * This function synthetizes sentence and waits t seconds.
-     * @param sentence string corresponding with the sentence to synthetize.
+     * This function synthesizes sentence and waits t seconds.
+     * @param sentence string corresponding with the sentence to synthesize.
      * @param t number of seconds to block.
      **/
     void say_sentence(std::string sentence, double t);
@@ -224,7 +207,12 @@ public:
      **/
     void set_strategy(std::string strategy);
 
-    unsigned short int play_one_game(bool& cheating);
+    /**
+     * Plays one game
+     * @param  cheating if to cheat or not.
+     * @return          The game results (i.e. the winner, if any)
+     */
+    int play_one_game(bool &cheating);
 
     /* GETTERS */
     cellState   get_robot_color()        { return _robot_color; };
