@@ -344,7 +344,7 @@ int tictactoeBrain::play_one_game(bool &cheating)
             ROS_INFO("Moving to cell %i", cell_to_move);
 
             leftArmCtrl.startAction(ACTION_PICKUP);
-            leftArmCtrl.startAction(ACTION_PUTDOWN);
+            leftArmCtrl.startAction(ACTION_PUTDOWN, cell_to_move);
         }
         else // Participant's turn
         {

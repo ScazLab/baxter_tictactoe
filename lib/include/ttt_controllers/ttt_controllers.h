@@ -217,11 +217,6 @@ private:
          */
         void setTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 
-    /* PUT DOWN TOKEN */
-        void setCell(int cell) {_cell = cell;};
-
-        int _cell;
-
 protected:
     cv::Mat  _curr_img;
     cv::Size _img_size;
@@ -250,13 +245,7 @@ public:
 
     bool goHome();
 
-    bool startAction(std::string a);
-
-    bool pickUpToken();
-
-    bool scanBoard();
-
-    bool putDownToken(int cell);
+    bool startAction(std::string a, int o = -1);
 };
 
 #endif

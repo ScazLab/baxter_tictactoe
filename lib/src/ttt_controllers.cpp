@@ -16,33 +16,8 @@ using namespace cv;
 */
 
 /**************************************************************************/
-/*                         PickUpToken                               */
+/*                         PickUpToken                                    */
 /**************************************************************************/
-
-bool TTTController::pickUpTokenImpl()
-{
-    ROS_INFO("Picking up token..");
-    // wait for IR sensor callback
-    while(RobotInterface::ok())
-    {
-        if(is_ir_ok()) break;
-        r.sleep();
-    }
-
-    // wait for image callback
-    while(RobotInterface::ok())
-    {
-        if(!_is_img_empty) break;
-        r.sleep();
-    }
-
-    hoverAboveTokens(Z_HIGH);
-    gripToken();
-    hoverAboveTokens(Z_LOW);
-
-    return true;
-}
-
 void TTTController::gripToken()
 {
     cv::Point2d offset;
@@ -100,9 +75,8 @@ void TTTController::checkForToken(cv::Point2d &offset)
     {
         if(!(offset.x == 0 && offset.y == 0)) break;
 
-        // loop halts until a key is pressed
-        ROS_WARN("No token detected by hand camera. Place token and press ENTER");
-        char c = cin.get();
+        ROS_WARN("No token detected by hand camera.");
+        r.sleep();
         processTokenImage(offset);
     }
 }
@@ -114,17 +88,15 @@ void TTTController::processTokenImage(cv::Point2d &offset)
     int board_y;
 
     isolateBlack(black);
-    isolateTokenBoard(black.clone(), board, board_y);
+    isolateTokenBoard(black, board, board_y);
+    imshow("black", black);
 
     isolateBlue(blue);
-    isolateToken(blue.clone(), board_y, token_rough, contours);
+    imshow("Rough", blue);
+    isolateToken(blue, board_y, token_rough, contours);
     setTokenOffset(contours, offset, token);
 
-    imshow("[PickUpToken] Raw", _curr_img.clone());
-    imshow("[PickUpToken] Processed", token_rough);
-    imshow("[PickUpToken] Rough", blue);
-
-    waitKey(30);
+    imshow("Processed", token_rough);
 }
 
 void TTTController::isolateBlue(Mat &output)
@@ -342,50 +314,6 @@ void TTTController::setTokenOffset(Contours contours, cv::Point2d &offset, Mat &
 /*                               ScanBoard                                */
 /**************************************************************************/
 
-bool TTTController::scanBoardImpl()
-{
-    if (!hoverAboveBoard()) return false;
-
-    // wait for image callback
-    while(RobotInterface::ok())
-    {
-        if(!_is_img_empty) break;
-
-        r.sleep();
-    }
-
-    ROS_INFO("Scanning depth..");
-    float dist;
-    setDepth(dist);
-    if (!hoverAboveBoard()) return false;
-    processImage("run", dist);
-
-    ROS_INFO("Hovering above tokens..");
-    hoverAboveTokens(Z_HIGH);
-
-    return true;
-}
-
-bool TTTController::hoverAboveBoard()
-{
-    ROS_INFO("Hovering above board..");
-    // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
-    return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
-}
-
-bool TTTController::hoverAboveCenterOfBoard()
-{
-    return goToPose(HOVER_BOARD_X + _offsets[4].x,
-                    HOVER_BOARD_Y + _offsets[4].y,
-                    HOVER_BOARD_Z - _offsets[4].z + 0.1,
-                    VERTICAL_ORI_L);
-}
-
-bool TTTController::hoverAboveTokens(double height)
-{
-    return goToPose(0.540, 0.570, height, VERTICAL_ORI_L);
-}
-
 void TTTController::setDepth(float &dist)
 {
     ROS_INFO("Computing depth..");
@@ -485,14 +413,14 @@ void TTTController::processImage(string mode, float dist)
                         interval += 5;
                     }
 
-                    imshow("[ScanBoard] Rough", zone);
+                    imshow("Rough", zone);
 
                     waitKey(3);
                 }
             }
         }
 
-        imshow("[ScanBoard] Processed", binary);
+        imshow("Processed", binary);
     }
 }
 
@@ -705,31 +633,6 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 }
 
 /**************************************************************************/
-/*                         PutDownToken                              */
-/**************************************************************************/
-bool TTTController::putDownTokenImpl()
-{
-    ROS_INFO("Putting down token..");
-    if (!hoverAboveCenterOfBoard()) return false;
-    if (!hoverAboveCell()) return false;
-    ros::Duration(0.5).sleep();
-    if (!releaseObject()) return false;
-    if (!hoverAboveCenterOfBoard()) return false;
-    if (!hoverAboveTokens(Z_HIGH)) return false;
-
-    return true;
-}
-
-// Private
-bool TTTController::hoverAboveCell()
-{
-    return goToPose(HOVER_BOARD_X + _offsets[_cell - 1].x,
-                    HOVER_BOARD_Y + _offsets[_cell - 1].y,
-                    HOVER_BOARD_Z + _offsets[_cell - 1].z + 0.05,
-                    VERTICAL_ORI_L);
-}
-
-/**************************************************************************/
 /*                            TTTController                               */
 /**************************************************************************/
 
@@ -737,12 +640,13 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                              ArmCtrl(name, limb, no_robot, use_forces, false),
                              r(100), _img_trp(_n), _is_img_empty(true)
 {
-    namedWindow("[PickUpToken] Raw", WINDOW_NORMAL);
-    namedWindow("[PickUpToken] Processed", WINDOW_NORMAL);
-    namedWindow("[PickUpToken] Rough", WINDOW_NORMAL);
-    resizeWindow("[PickUpToken] Raw",       700, 500);
-    resizeWindow("[PickUpToken] Processed", 700, 500);
-    resizeWindow("[PickUpToken] Rough",     700, 500);
+    namedWindow("Hand Camera", WINDOW_NORMAL);
+    namedWindow("Processed", WINDOW_NORMAL);
+    namedWindow("Rough", WINDOW_NORMAL);
+    resizeWindow("Hand Camera", 700, 500);
+    resizeWindow("Processed",   700, 500);
+    resizeWindow("Rough",       700, 500);
+    waitKey(10);
 
     setHomeConfiguration();
 
@@ -750,8 +654,11 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
     insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
     insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
 
-    _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
-                           SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
+    if (getLimb() == "left")
+    {
+        _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
+                               SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
+    }
     pthread_mutex_init(&_mutex_img, NULL);
 
     KDL::JntArray ll, ul; //lower joint limits, upper joint limits
@@ -800,56 +707,105 @@ void TTTController::setHomeConfiguration()
     }
 }
 
-bool TTTController::startAction(string a)
+bool TTTController::startAction(string a, int o)
 {
     baxter_collaboration::DoAction::Request  req;
     baxter_collaboration::DoAction::Response res;
     req.action = a;
+    req.object = o;
 
     serviceCb(req,res);
     return res.success;
 }
 
-bool TTTController::scanBoard()
+bool TTTController::hoverAboveBoard()
 {
-    setState(WORKING);
+    ROS_INFO("Hovering above board..");
+    // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
+    return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
+}
 
-    if (!callAction(ACTION_SCAN))
+bool TTTController::hoverAboveCenterOfBoard()
+{
+    ROS_INFO("Hovering above center of board..");
+    return goToPose(HOVER_BOARD_X + _offsets[4].x,
+                    HOVER_BOARD_Y + _offsets[4].y,
+                    HOVER_BOARD_Z - _offsets[4].z + 0.1,    // TODO this minus sign is a bug
+                    VERTICAL_ORI_L);
+}
+
+bool TTTController::hoverAboveCell()
+{
+    ROS_INFO("Hovering above cell..");
+    return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
+                    HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
+                    HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
+                    VERTICAL_ORI_L);
+}
+
+bool TTTController::hoverAboveTokens(double height)
+{
+    return goToPose(0.540, 0.570, height, VERTICAL_ORI_L);
+}
+
+bool TTTController::scanBoardImpl()
+{
+    ROS_INFO("Scanning depth..");
+    if (!hoverAboveBoard()) return false;
+
+    // wait for image callback
+    while(RobotInterface::ok())
     {
-        setState(ERROR);
-        return false;
+        if(!_is_img_empty) break;
+
+        r.sleep();
     }
 
-    setState(DONE);
+    float dist;
+    setDepth(dist);
+    if (!hoverAboveBoard()) return false;
+    processImage("run", dist);
+
+    ROS_INFO("Hovering above tokens..");
+    hoverAboveTokens(Z_HIGH);
+
     return true;
 }
 
-bool TTTController::pickUpToken()
+bool TTTController::pickUpTokenImpl()
 {
-    setState(WORKING);
-
-    if (!callAction(ACTION_PICKUP))
+    ROS_INFO("Picking up token..");
+    // wait for IR sensor callback
+    while(RobotInterface::ok())
     {
-        setState(ERROR);
-        return false;
+        if(is_ir_ok()) break;
+        r.sleep();
     }
 
-    setState(DONE);
+    // wait for image callback
+    while(RobotInterface::ok())
+    {
+        if(!_is_img_empty) break;
+        r.sleep();
+    }
+
+    hoverAboveTokens(Z_HIGH);
+    gripToken();
+    hoverAboveTokens(Z_LOW);
+
     return true;
 }
 
-bool TTTController::putDownToken(int cell)
+bool TTTController::putDownTokenImpl()
 {
-    setState(WORKING);
-    setCell(cell);
+    ROS_INFO("Putting down token..");
+    if (!hoverAboveCenterOfBoard()) return false;
+    if (!hoverAboveCell()) return false;
+    ros::Duration(0.5).sleep();
+    if (!releaseObject()) return false;
+    if (!hoverAboveCenterOfBoard()) return false;
+    if (!hoverAboveTokens(Z_HIGH)) return false;
 
-    if (!callAction(ACTION_PUTDOWN))
-    {
-        setState(ERROR);
-        return false;
-    }
-
-    setState(DONE);
     return true;
 }
 
@@ -871,6 +827,7 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
     _curr_img     = cv_ptr->image.clone();
     _img_size     =      _curr_img.size();
     _is_img_empty =     _curr_img.empty();
+    imshow("Hand Camera", _curr_img.clone());
     pthread_mutex_unlock(&_mutex_img);
 }
 
@@ -879,7 +836,7 @@ TTTController::~TTTController()
 {
     pthread_mutex_destroy(&_mutex_img);
 
-    destroyWindow("[PickUpToken] Raw");
-    destroyWindow("[PickUpToken] Processed");
-    destroyWindow("[PickUpToken] Rough");
+    destroyWindow("Hand Camera");
+    destroyWindow("Processed");
+    destroyWindow("Rough");
 }
