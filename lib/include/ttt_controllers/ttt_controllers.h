@@ -13,6 +13,9 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 
+#define HOVER_BOARD_X   0.575  // [m]
+#define HOVER_BOARD_Y   0.100  // [m]
+#define HOVER_BOARD_Z   0.445  // [m]
 
 class TTTController : public ArmCtrl
 {

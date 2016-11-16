@@ -382,8 +382,8 @@ bool TTTController::scanBoardImpl()
 bool TTTController::hoverAboveBoard()
 {
     ROS_INFO("Hovering above board..");
-    // return goToPose(0.575, 0.220, 0.445, 0.0,  1.0,  0.0,  0.0);
-    return goToPose(0.575, 0.100, 0.445, 1.0, -0.03, 0, 0);
+    // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
+    return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
 
     // return callAction(ACTION_HOME);
 }
@@ -713,9 +713,9 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
     offset.y = (centroid.x - center.x) * 0.0025 * dist;
     offset.z = dist - 0.085;
 
-    double px = 0.575 + offset.x;
-    double py = 0.100 + offset.y;
-    double pz = 0.445 - offset.z;
+    double px = HOVER_BOARD_X + offset.x;
+    double py = HOVER_BOARD_Y + offset.y;
+    double pz = HOVER_BOARD_Z - offset.z;
 
     vector<double> joint_angles;
     return computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
@@ -740,17 +740,17 @@ bool TTTController::putDownTokenImpl()
 // Private
 void TTTController::hoverAboveCell()
 {
-    goToPose(0.575 + _offsets[_cell - 1].x,
-             0.100 + _offsets[_cell - 1].y,
-             0.495 - _offsets[_cell - 1].z,
+    goToPose(HOVER_BOARD_X + _offsets[_cell - 1].x,
+             HOVER_BOARD_Y + _offsets[_cell - 1].y,
+             HOVER_BOARD_Z + _offsets[_cell - 1].z + 0.05,
              VERTICAL_ORI_L);
 }
 
 void TTTController::hoverAbovePickUpBoard()
 {
-    goToPose(0.575 + _offsets[4].x,
-             0.100 + _offsets[4].y,
-             0.545 - _offsets[4].z,
+    goToPose(HOVER_BOARD_X + _offsets[4].x,
+             HOVER_BOARD_Y + _offsets[4].y,
+             HOVER_BOARD_Z - _offsets[4].z + 0.1,
              VERTICAL_ORI_L);
 }
 
