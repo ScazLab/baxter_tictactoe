@@ -24,17 +24,14 @@ bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
 class tictactoeBrain
 {
 private:
-    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_State_type;
-    // typedef std::vector<baxter_tictactoe::MsgCell> TTT_State_type;
+    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
+    // typedef std::vector<baxter_tictactoe::MsgCell> TTT_Board_State;
 
     ros::NodeHandle _nh; // ROS node handle
-    ros::Subscriber _ttt_state_sub; // subscriber to receive the messages
+    ros::Subscriber boardState_sub; // subscriber to receive the messages
                                     // coming from the board state sensor
 
-    ThreadSafeVariable<TTT_State_type> _ttt_state; // it stores the state of the board.
-
-    ThreadSafeVariable<unsigned short int> _number_of_tokens_on_board; // It stores the total number
-                                                                       // of cells on the board.
+    ThreadSafeVariable <TTT_Board_State> boardState; // it stores the state of the board.
 
     cellState _robot_color;   // It represents the color of the tokens the robot is playing with.
     cellState _opponent_color; // It represents the color of the tokens the opponent is playing with.
@@ -65,7 +62,7 @@ private:
 
     /**
      * It handles the message published when the state of a cell has changed. The new TTT board state
-     * is stored in the thread-safe private attribute called _ttt_state.
+     * is stored in the thread-safe private attribute called boardState.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
      **/
     void tttStateCb(const baxter_tictactoe::MsgBoardConstPtr & msg);
@@ -171,7 +168,7 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const cellState& color, const TTT_State_type &b);
+    bool three_in_a_row(const cellState& color, const TTT_Board_State &b);
 
     /**
      * This function returns the winner of the game.
