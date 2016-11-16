@@ -69,18 +69,7 @@ void TTTController::gripToken()
 
         vector<double> joint_angles;
         computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
-
-        JointCommand joint_cmd;
-        joint_cmd.mode = JointCommand::POSITION_MODE;
-
-        setJointNames(joint_cmd);
-        joint_cmd.command.resize(7);
-
-        for(int i = 0; i < 7; i++) {
-            joint_cmd.command[i] = joint_angles[i];
-        }
-
-        publish_joint_cmd(joint_cmd);
+        goToPoseNoCheck(joint_angles);
 
         r.sleep();
 
@@ -390,9 +379,7 @@ bool TTTController::hoverAboveBoard()
 void TTTController::setDepth(float &dist)
 {
     ROS_INFO("Computing depth..");
-    // dist = 0.658022;
-    // ROS_INFO("Dist is %g", dist);
-    // return;
+
     geometry_msgs::Point init_pos = getPos();
 
     ros::Time start_time = ros::Time::now();
@@ -410,19 +397,8 @@ void TTTController::setDepth(float &dist)
         double ow =   0.0;
 
         vector<double> joint_angles;
-        computeIK(px,py,pz,ox,oy,oz,ow,joint_angles);
-
-        JointCommand joint_cmd;
-        joint_cmd.mode = JointCommand::POSITION_MODE;
-
-        setJointNames(joint_cmd);
-        joint_cmd.command.resize(7);
-
-        for(int i = 0; i < 7; i++) {
-            joint_cmd.command[i] = joint_angles[i];
-        }
-
-        publish_joint_cmd(joint_cmd);
+        goToPose(px,py,pz,ox,oy,oz,ow);
+        goToPoseNoCheck(joint_angles);
         r.sleep();
 
         if(hasCollided("loose"))

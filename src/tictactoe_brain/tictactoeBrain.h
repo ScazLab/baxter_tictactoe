@@ -60,14 +60,14 @@ private:
                                                             decides the next move. We use a pointer
                                                             because we could have different strategies. */
 
-    TTTController * _left_ac;
-    TTTController * _right_ac;
+    TTTController leftArmCtrl;
+    TTTController rightArmCtrl;
 
     ros::Rate r;
 
     bool has_cheated;
 
-    bool scanState(baxter_tictactoe::ScanState::Request &req,
+    bool scanState(baxter_tictactoe::ScanState::Request  &req,
                    baxter_tictactoe::ScanState::Response &res);
 
     /**
@@ -182,20 +182,13 @@ public:
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
      * In a 3x3 board there are 8 possible convinations to get 3 tokens in a row. We explore all of them.
-     * @param cell_color It represents the color of the tokens in the row we are searching for.
-     * @param tttboard TTT board where searching for three tokens of the same color in a row.
+     *
+     * @param color It represents the color of the tokens in the row we are searching for.
+     * @param b   TTT board where searching for three tokens of the same color in a row.
+     *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const cellState& cell_color, const TTT_State_type& tttboard);
-
-    /**
-     * This function checks if there are 3 cell_color tokens in a row in the current TTT board,
-     * which means that the game is over. In a 3x3 board there are 8 possible convinations to
-     * get 3 tokens in a row. We explore all of them.
-     * @param cell_color It represents the color of the tokens in the row we are searching for.
-     * @return True in case of a 3 token row is found, false otherwise.
-     **/
-    bool three_in_a_row(const cellState& cell_color);
+    bool three_in_a_row(const cellState& color, const TTT_State_type &b);
 
     /**
      * This function returns the winner of the game.
