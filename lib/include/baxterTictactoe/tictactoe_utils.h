@@ -1,5 +1,5 @@
-#ifndef TTT_DEFINITIONS_H
-#define TTT_DEFINITIONS_H
+#ifndef __TICTACTOE_UTILS_H__
+#define __TICTACTOE_UTILS_H__
 
 #include <ros/ros.h>
 #include <sensor_msgs/image_encodings.h>
@@ -175,4 +175,4 @@ public:
 
 }
 
-#endif // TTT_DEFINITIONS_H
+#endif // __TICTACTOE_UTILS_H__
