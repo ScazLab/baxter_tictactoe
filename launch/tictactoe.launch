@@ -3,6 +3,20 @@
 
     <include file="$(find baxter_tictactoe)/launch/ttt_board_sensor.launch" />
 
+    <!-- Range thresholds for the red tokens -->
+    <rosparam param = "ttt_controller/hsv_red">
+        H: [160,  20]
+        S: [ 40, 196]
+        V: [ 50, 196]
+    </rosparam>
+
+    <!-- Range thresholds for the blue tokens -->
+    <rosparam param = "ttt_controller/hsv_blue">
+        H: [ 60, 130]
+        S: [ 90, 256]
+        V: [ 10, 256]
+    </rosparam>
+
     <!-- If traj is set to true, arm movements will be controlled via a joint trajectory action server (not recommended).-->
     <arg name="traj" default="false" />
 
