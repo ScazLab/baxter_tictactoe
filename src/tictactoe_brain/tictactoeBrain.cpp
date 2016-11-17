@@ -26,7 +26,7 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
 }
 
 tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(100),
-                               _robot_color(robot_color), _setup(false),
+                               _robot_color(robot_color), _setup(false), got_cin(false),
                                leftArmCtrl("ttt_controller", "left"), rightArmCtrl("ttt_controller", "right")
 {
     boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::tttStateCb, this);
@@ -42,6 +42,8 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(
 
     ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
     _opponent_color=_robot_color==blue?red:blue;
+
+    cin_timer = _nh.createTimer(ros::Duration(0.001), &tictactoeBrain::cinTimerCb, this, false, false);
 
     leftArmCtrl.startAction(ACTION_SCAN);
     while(ros::ok() && leftArmCtrl.getState() != DONE)
@@ -217,7 +219,7 @@ int tictactoeBrain::get_next_move(bool& cheating)
     return (this->*_choose_next_move)(cheating);
 }
 
-unsigned short int tictactoeBrain::get_number_of_tokens_on_board()
+unsigned short int tictactoeBrain::get_num_tokens()
 {
     unsigned short int counter=0;
     TTT_Board_State aux = boardState.get();
@@ -228,7 +230,7 @@ unsigned short int tictactoeBrain::get_number_of_tokens_on_board()
     return counter;
 }
 
-unsigned short int tictactoeBrain::get_number_of_tokens_on_board(cellState token_type)
+unsigned short int tictactoeBrain::get_num_tokens(cellState token_type)
 {
     unsigned short int counter=0;
     TTT_Board_State aux = boardState.get();
@@ -262,17 +264,43 @@ unsigned short int tictactoeBrain::get_winner()
     return 0;
 }
 
-void tictactoeBrain::wait_for_opponent_turn(const uint8_t& n_opponent_tokens)
+void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
 {
-    uint8_t aux_n_opponent_tokens=n_opponent_tokens;
-    while(aux_n_opponent_tokens<=n_opponent_tokens) /* Waiting for my turn: the participant
-                                                       has to place one token, so we wait until
-                                                       the number opponent's tokens increase. */
+    uint8_t cur_tok_opp = num_tok_opp;
+
+    // We wait until the number of opponent's tokens increases
+    while(true)
     {
         ROS_WARN("Press ENTER when the opponent's turn is done");
-        std::cin.get();
-        aux_n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color);
+        getCin();
+
+        {
+            cur_tok_opp = get_num_tokens(_opponent_color);
+
+            if (cur_tok_opp > num_tok_opp) return;
+        }
+
+        r.sleep();
     }
+}
+
+bool tictactoeBrain::getCin()
+{
+    got_cin = false;
+    cin_timer.start();
+
+    while(ros::ok() && got_cin == false)
+    {
+        r.sleep();
+    }
+    return true;
+}
+
+void tictactoeBrain::cinTimerCb(const ros::TimerEvent&)
+{
+    ROS_INFO("cinTimerCb");
+    std::cin.get();
+    got_cin = true;
 }
 
 bool tictactoeBrain::is_board_full()
@@ -333,14 +361,14 @@ int tictactoeBrain::play_one_game(bool &cheating)
 
     ROS_WARN("PRESS ENTER TO START THE GAME");
     std::cin.get();
-    uint8_t n_opponent_tokens=0;
+    uint8_t num_tok_opp=0;
     // uint8_t n_robot_tokens=0;
     while ((winner=get_winner())==0 && !is_board_full())
     {
         if (robot_turn) // Robot's turn
         {
-            // n_robot_tokens=get_number_of_tokens_on_board(_robot_color);
-            n_opponent_tokens=get_number_of_tokens_on_board(_opponent_color);
+            // n_robot_tokens=get_num_tokens(_robot_color);
+            num_tok_opp=get_num_tokens(_opponent_color);
             say_sentence("It is my turn", 0.3);
             int cell_to_move = get_next_move(cheating);
             ROS_INFO("Moving to cell %i", cell_to_move);
@@ -352,7 +380,7 @@ int tictactoeBrain::play_one_game(bool &cheating)
         {
             ROS_INFO("Waiting for the participant's move.");
             say_sentence("It is your turn", 0.1);
-            wait_for_opponent_turn(n_opponent_tokens);
+            wait_for_opponent_turn(num_tok_opp);
         }
         robot_turn=!robot_turn;
     }

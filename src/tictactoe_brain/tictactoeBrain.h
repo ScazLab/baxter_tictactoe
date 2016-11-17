@@ -42,6 +42,13 @@ private:
     ros::ServiceClient _scan_client;
     ros::ServiceServer _scan_server;
 
+    ros::Timer  cin_timer;       // Timer to create non-blocking IO (std::cin)
+    bool          got_cin;
+
+    void cinTimerCb(const ros::TimerEvent&);
+
+    bool getCin();
+
     bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
 
@@ -148,7 +155,7 @@ public:
      * That is, the number of cells that are not empty or undefined.
      * @return The number of cells where there is a red or blue token.
      **/
-    unsigned short int get_number_of_tokens_on_board();
+    unsigned short int get_num_tokens();
 
     /**
      * This function counts the number of a particular type of tokens
@@ -156,7 +163,7 @@ public:
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
-    unsigned short int get_number_of_tokens_on_board(cellState token_type);
+    unsigned short int get_num_tokens(cellState token_type);
 
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
@@ -182,7 +189,7 @@ public:
      * of opponent's tokens in the board increases.
      * @param number of opponent's token at the beginning
      **/
-    void wait_for_opponent_turn(const uint8_t& n_opponent_tokens);
+    void wait_for_opponent_turn(const uint8_t &num_tok_opp);
 
     /**
      * This function indicates if all cells are occupied by tokens.
