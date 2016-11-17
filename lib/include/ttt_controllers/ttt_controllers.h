@@ -216,7 +216,7 @@ protected:
 
 public:
     TTTController(std::string name, std::string limb,
-                  bool no_robot = false, bool use_forces = true);
+                  bool no_robot = false, bool use_forces = false);
     ~TTTController();
 
     /*

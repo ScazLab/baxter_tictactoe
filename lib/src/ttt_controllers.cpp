@@ -28,14 +28,16 @@ bool TTTController::gripToken()
     ros::Time start_time = ros::Time::now();
     cv::Point2d prev_offset(0.540, 0.540);
 
+    double start_z = getPos().z;
+
     while(RobotInterface::ok())
     {
         processTokenImage(offset);
 
         // move incrementally towards token
-        double px = prev_offset.x + 0.07 * offset.x;
-        double py = prev_offset.y + 0.07 * offset.y;
-        double pz =        Z_HIGH - 0.08 * (ros::Time::now() - start_time).toSec();
+        double px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
+        double py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
+        double pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
 
         prev_offset.x = px;
         prev_offset.y = py;
@@ -44,9 +46,13 @@ bool TTTController::gripToken()
         computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
         goToPoseNoCheck(joint_angles);
 
-        if(getPos().z < -0.1) return false;
+        if(getPos().z < -0.2)
+        {
+            ROS_WARN("I went too low! Exiting.");
+            return false;
+        }
 
-        if(hasCollided("strict")) break;
+        if(hasCollided("loose")) break;
         r.sleep();
     }
 
@@ -80,7 +86,7 @@ bool TTTController::processTokenImage(cv::Point &offset)
     imshow("Processed", token);
 
     waitKey(1);
-    return false;
+    return true;
 }
 
 cv::Mat TTTController::isolateTokenPool()
@@ -183,11 +189,14 @@ bool TTTController::computeTokenOffset(Mat in, cv::Point &offset, Mat &out)
         int x_mid = int((x_max + x_min) / 2);
         int y_mid = int((y_max + y_min) / 2);
 
-        circle(out, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-        circle(out, cv::Point(_img_size.width/2, _img_size.height/2), 3, Scalar(180, 40, 40), CV_FILLED);
+        int x_trg = int(_img_size.width/2);
+        int y_trg = int(_img_size.height/2-20);
 
-        offset.x = x_mid - int(_img_size.width/2 );
-        offset.y = y_mid - int(_img_size.height/2);
+        circle(out, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(out, cv::Point(x_trg, y_trg), 3, Scalar(180, 40, 40), CV_FILLED);
+
+        offset.x = x_mid - x_trg;
+        offset.y = y_mid - y_trg;
 
         ROS_INFO_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
 
@@ -680,6 +689,7 @@ bool TTTController::pickUpTokenImpl()
     hoverAboveTokens(Z_HIGH);
     gripToken();
     hoverAboveTokens(Z_LOW);
+    releaseObject();
 
     return true;
 }
