@@ -74,34 +74,35 @@ void TTTController::checkForToken(cv::Point2d &offset)
 
     while(RobotInterface::ok())
     {
-        if(!(offset.x == 0 && offset.y == 0)) break;
+        if(processTokenImage(offset)) break;
 
         ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
         r.sleep();
-        processTokenImage(offset);
     }
 }
 
-void TTTController::processTokenImage(cv::Point2d &offset)
+bool TTTController::processTokenImage(cv::Point2d &offset)
 {
     Mat token;
-    Mat pool(_img_size, CV_8U);
+    Mat pool(_img_size, CV_8UC1);
     Contours contours;
 
     pool = isolateTokenPool();
-    imshow("Pool", pool);
 
-    isolateToken(pool, token, contours);
-    computeTokenOffset(contours, offset, token);
+    token = isolateToken(pool);
+    bool res = computeTokenOffset(token, offset, token);
+
     waitKey(1);
-    return;
+    return res;
 }
 
 cv::Mat TTTController::isolateTokenPool()
 {
-    Mat black(_img_size, CV_8U);
+    Mat black = Mat::zeros(_img_size, CV_8UC1);
+    Mat   out = Mat::zeros(_img_size, CV_8UC1);
+
     isolateBlack(black);
-    imshow("black", black);
+    // imshow("black", black);
 
     vector<cv::Vec4i> hierarchy;
     Contours contours;
@@ -122,35 +123,46 @@ cv::Mat TTTController::isolateTokenPool()
         }
     }
 
-    Mat out(_img_size, CV_8U);
-
     // contour w/ largest area is most likely the inner board
     vector<cv::Point> contour = contours[largest_index];
 
     drawContours(out, contours, largest_index, Scalar(255,255,255), CV_FILLED);
+    return out;
+}
+
+Mat TTTController::isolateToken(Mat pool)
+{
+    Mat blue = Mat::zeros(_img_size, CV_8UC1);
+    Mat out  = Mat::zeros(_img_size, CV_8UC1);
+
+    isolateBlue(blue);
+    // imshow("blue", blue);
+
+    bitwise_and(blue, pool, out);
+
+    erode(out, out, Mat());
+    erode(out, out, Mat());
+    dilate(out, out, Mat());
+    dilate(out, out, Mat());
+    dilate(out, out, Mat());
+    dilate(out, out, Mat());
+    erode(out, out, Mat());
+    erode(out, out, Mat());
+
+    imshow("Rough", out);
 
     return out;
 }
 
-bool TTTController::isolateToken(Mat pool, Mat &out, Contours &contours)
+bool TTTController::computeTokenOffset(Mat in, cv::Point2d &offset, Mat &out)
 {
-    Mat blue(_img_size, CV_8U);
-    isolateBlue(blue);
-    imshow("blue", blue);
-
-    Mat intersection;
-    bitwise_and(blue, pool, intersection);
-    imshow("intersection", intersection);
+    Contours contours;
     vector<cv::Vec4i> hierarchy;
-    findContours(intersection, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-    imshow("Processed", intersection);
-
-    return true;
-}
-
-void TTTController::computeTokenOffset(Contours contours, cv::Point2d &offset, Mat &output)
-{
-    output = Mat::zeros(_img_size, CV_8UC1);
+    findContours(in, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    imshow("Processed", in);
+    out = in;
+    return false;
+    out = Mat::zeros(_img_size, CV_8UC1);
 
     // when hand camera is blind due to being too close to token, go straight down;
     if(contours.size() < 2)
@@ -180,21 +192,25 @@ void TTTController::computeTokenOffset(Contours contours, cv::Point2d &offset, M
 
         // reconstruct token's square shape
         Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-        rectangle(output, token, Scalar(255,255,255), CV_FILLED);
+        rectangle(out, token, Scalar(255,255,255), CV_FILLED);
 
         // find and draw the center of the token and the image
         double x_mid = x_min + ((x_max - x_min) / 2);
         double y_mid = y_min + ((y_max - y_min) / 2);
-        circle(output, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(out, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
 
-        circle(output, cv::Point(_img_size.width / 2, _img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+        circle(out, cv::Point(_img_size.width / 2, _img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
 
         double token_area = (x_max - x_min) * (y_max - y_min);
 
         (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_img_size.width / 2));
         // distance between gripper center and camera center
         (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075;
+
+        return true;
     }
+
+    return false;
 }
 
 /**************************************************************************/
@@ -322,7 +338,7 @@ void TTTController::isolateBlack(Mat &output)
 
 void TTTController::isolateBlue(Mat &output)
 {
-    Mat hsv(_img_size, CV_8U);
+    Mat hsv(_img_size, CV_8UC1);
 
     pthread_mutex_lock(&_mutex_img);
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
@@ -494,19 +510,6 @@ bool TTTController::offsetsReachable()
 
         vector<double> joint_angles;
         if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles)) return false;
-
-        // // if IK solver returns a joint angles solution with all zeros,
-        // // then no solution was found
-        // bool all_zeros = true;
-        // for(int j = 0; j < joint_angles.size(); j++)
-        // {
-        //     if(joint_angles[j] != 0)
-        //     {
-        //         all_zeros = false;
-        //         break;
-        //     }
-        // }
-        // if(all_zeros) return false;
     }
     return true;
 }
@@ -539,11 +542,14 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                              r(100), _img_trp(_n), _is_img_empty(true)
 {
     namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
     namedWindow("Rough", WINDOW_NORMAL);
-    resizeWindow("Hand Camera", 640, 400);
-    resizeWindow("Processed",   640, 400);
-    resizeWindow("Rough",       640, 400);
+    namedWindow("Processed", WINDOW_NORMAL);
+    resizeWindow("Hand Camera", 480, 300);
+    resizeWindow("Rough",   480, 300);
+    resizeWindow("Processed",   480, 300);
+    moveWindow("Hand Camera", 10, 10);
+    moveWindow("Rough", 10, 370);
+    moveWindow("Processed", 10, 720);
     waitKey(10);
 
     setHomeConfiguration();
@@ -736,5 +742,4 @@ TTTController::~TTTController()
 
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
-    destroyWindow("Rough");
 }

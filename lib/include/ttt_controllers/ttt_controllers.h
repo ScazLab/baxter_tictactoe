@@ -164,8 +164,10 @@ private:
          * to token
          *
          * @param     offset offset between the arm's x-y coordinates and the token
+         *
+         * @return     true/false if success/failure
          */
-        void processTokenImage(cv::Point2d &offset);
+        bool processTokenImage(cv::Point2d &offset);
 
         /*
          * isolates blue colored object in raw image
@@ -185,20 +187,20 @@ private:
          * Isolates token from the pool
          *
          * @param       pool input matrix displaying the pool of objects
-         * @param        out output Mat displaying token,
-         * @param   contours contours of blue-colored objects in image
-         * @return       true/false if success/failure
+         * @return      output Mat displaying token,
          */
-        bool isolateToken(cv::Mat pool, cv::Mat &out, Contours &contours);
+        cv::Mat isolateToken(cv::Mat pool);
 
         /*
          * calculates offset distance from arm to token
          *
-         * @param     contours  token contours
+         * @param     in        input matrix
          * @oaram     offset    token offset
-         * @param     output Mat displaying token
+         * @param     out Mat displaying token
+         *
+         * @return     true/false if success/failure
          */
-        void computeTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
+        bool computeTokenOffset(cv::Mat in, cv::Point2d &offset, cv::Mat &out);
 
 protected:
     cv::Mat  _curr_img;
