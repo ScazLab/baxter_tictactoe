@@ -1,5 +1,7 @@
 #include "tictactoeBrain.h"
 
+#include <QFile> // this is for qrand (but we should use something else)
+
 using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;

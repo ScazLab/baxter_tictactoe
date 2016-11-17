@@ -1,3 +1,6 @@
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -32,7 +35,7 @@ private:
     ttt::hsvColorRange hsv_blue;
 
     bool doShow;
-    
+
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
     // It publishes the board only if its state changes.
     baxter_tictactoe::MsgBoard last_msg_board;

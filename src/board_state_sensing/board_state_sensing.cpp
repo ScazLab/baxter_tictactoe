@@ -80,7 +80,7 @@ std::string BoardState::intToString( const int a )
 }
 
 void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
-{    
+{
     board.resetState();
 
     //converting ROS image format to opencv image format
@@ -119,7 +119,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
             int edges_num = cells_srv.response.board.cells[i].contours.size();
             for(int j = 0; j < edges_num; j++)
             {
-                
+
                 cv::Point point(cells_srv.response.board.cells[i].contours[j].x, cells_srv.response.board.cells[i].contours[j].y);
                 cell.contours.push_back(point);
             }
@@ -144,13 +144,13 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
     else
     {
-        // if board has not been loaded, return (if board was already previously loaded, 
+        // if board has not been loaded, return (if board was already previously loaded,
         // the old board is displayed)
         if(board.cells.size() != 9 && arm_scan)
-        {        
-            return;            
+        {
+            return;
         }
-    }     
+    }
 
     MsgBoard msg_board;
     for(int i = 0; i < msg_board.cells.size(); i++){
@@ -197,7 +197,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     for(int i = 0; i < board.cells.size(); i++){
         vector<vector<cv::Point> > contours;
         contours.push_back(board.cells[i].contours);
-        drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);    
+        drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);
     }
 
     for (int j = 0; j < board.cells.size(); ++j)
@@ -253,7 +253,7 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(show);    
+    BoardState cd(show);
     ros::spin();
 
     return 0;

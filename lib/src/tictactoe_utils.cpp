@@ -1,5 +1,14 @@
 #include "baxterTictactoe/tictactoe_utils.h"
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#include <QFile>
+#include <QXmlStreamWriter>
+#include <QXmlStreamReader>
+#include <QFileDialog>
+#include <QApplication>
+
 using namespace std;
 using namespace ttt;
 
@@ -104,11 +113,11 @@ cv::Mat Cell::mask_image(const cv::Mat &_src)
 
     // CV_FILLED fills the connected components found with white
     cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,contours),
-                                            -1, cv::Scalar(255), CV_FILLED);  
+                                            -1, cv::Scalar(255), CV_FILLED);
 
-    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);                           
+    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);
     im_crop.setTo(cv::Scalar(0));
-    _src.copyTo(im_crop, mask);                  
+    _src.copyTo(im_crop, mask);
 
     // normalize so imwrite(...)/imshow(...) shows the mask correctly
     //cv::normalize(mask.clone(), mask, 0.0, 255.0, CV_MINMAX, CV_8UC1);
@@ -207,7 +216,7 @@ string Board::stateToString()
 std::vector<std::vector<cv::Point> > Board::as_vector_of_vectors()
 {
     std::vector<std::vector<cv::Point> > result;
-    
+
     for (int i = 0; i < cells.size(); ++i)
     {
         result.push_back(cells[i].contours);
@@ -216,7 +225,7 @@ std::vector<std::vector<cv::Point> > Board::as_vector_of_vectors()
     return result;
 };
 
-bool Board::save() 
+bool Board::save()
 {
     if (!cells.empty())
     {
@@ -333,9 +342,9 @@ cv::Mat Board::mask_image(const cv::Mat &_src)
 
     // CV_FILLED fills the connected components found with white
     cv::drawContours(mask, as_vector_of_vectors(),
-                     -1, cv::Scalar(255), CV_FILLED);  
+                     -1, cv::Scalar(255), CV_FILLED);
 
-    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);                           
+    cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);
     im_crop.setTo(cv::Scalar(0));
     _src.copyTo(im_crop, mask);
 
