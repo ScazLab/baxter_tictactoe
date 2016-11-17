@@ -18,12 +18,12 @@ using namespace cv;
 /**************************************************************************/
 /*                         PickUpToken                                    */
 /**************************************************************************/
-void TTTController::gripToken()
+bool TTTController::gripToken()
 {
-    cv::Point2d offset;
+    cv::Point offset;
     // check if token is present before starting movement loop
     // (prevent gripper from colliding with play surface)
-    checkForToken(offset);
+    checkForToken();
 
     ros::Time start_time = ros::Time::now();
     cv::Point2d prev_offset(0.540, 0.540);
@@ -31,57 +31,43 @@ void TTTController::gripToken()
     while(RobotInterface::ok())
     {
         processTokenImage(offset);
-        ros::Time now_time = ros::Time::now();
 
         // move incrementally towards token
         double px = prev_offset.x + 0.07 * offset.x;
         double py = prev_offset.y + 0.07 * offset.y;
-        double pz = 0.375 + /*(-0.05)*/ -0.08 * (now_time - start_time).toSec();
+        double pz =        Z_HIGH - 0.08 * (ros::Time::now() - start_time).toSec();
 
-        prev_offset.x = prev_offset.x + 0.07 * offset.x;
-        prev_offset.y = prev_offset.y + 0.07 * offset.y;
+        prev_offset.x = px;
+        prev_offset.y = py;
 
         vector<double> joint_angles;
         computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
         goToPoseNoCheck(joint_angles);
 
+        if(getPos().z < -0.1) return false;
+
+        if(hasCollided("strict")) break;
         r.sleep();
-
-        // if(getPos().z < -0.05) break;
-
-        if(hasCollided("strict"))
-        {
-            break;
-        }
     }
+
     gripObject();
+    return true;
 }
 
-void TTTController::checkForToken(cv::Point2d &offset)
+void TTTController::checkForToken()
 {
-    ros::Time start_time = ros::Time::now();
+    cv::Point offset;
 
     while(RobotInterface::ok())
     {
-        processTokenImage(offset);
-
-        if(!(offset.x == 0 && offset.y == 0) || (ros::Time::now() - start_time).toSec() > 1)
-        {
-            break;
-        }
-        r.sleep();
-    }
-
-    while(RobotInterface::ok())
-    {
-        if(processTokenImage(offset)) break;
+        if(processTokenImage(offset)) return;
 
         ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
         r.sleep();
     }
 }
 
-bool TTTController::processTokenImage(cv::Point2d &offset)
+bool TTTController::processTokenImage(cv::Point &offset)
 {
     Mat token;
     Mat pool(_img_size, CV_8UC1);
@@ -91,9 +77,10 @@ bool TTTController::processTokenImage(cv::Point2d &offset)
 
     token = isolateToken(pool);
     bool res = computeTokenOffset(token, offset, token);
+    imshow("Processed", token);
 
     waitKey(1);
-    return res;
+    return false;
 }
 
 cv::Mat TTTController::isolateTokenPool()
@@ -154,29 +141,27 @@ Mat TTTController::isolateToken(Mat pool)
     return out;
 }
 
-bool TTTController::computeTokenOffset(Mat in, cv::Point2d &offset, Mat &out)
+bool TTTController::computeTokenOffset(Mat in, cv::Point &offset, Mat &out)
 {
     Contours contours;
     vector<cv::Vec4i> hierarchy;
     findContours(in, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-    imshow("Processed", in);
-    out = in;
-    return false;
+
     out = Mat::zeros(_img_size, CV_8UC1);
 
     // when hand camera is blind due to being too close to token, go straight down;
     if(contours.size() < 2)
     {
-        offset = cv::Point2d(0,0);
+        offset = cv::Point(0,0);
     }
     else if(contours.size() <= 4)
     {
         // find highest and lowest x and y values from token triangles contours
         // to find x-y coordinate of top left token edge and token side length
-        double y_min = (contours[0])[0].y;
-        double x_min = (contours[0])[0].x;
-        double y_max = 0;
-        double x_max = 0;
+        int y_min = (contours[0])[0].y;
+        int x_min = (contours[0])[0].x;
+        int y_max = 0;
+        int x_max = 0;
 
         for(int i = 0; i < contours.size(); i++)
         {
@@ -195,17 +180,16 @@ bool TTTController::computeTokenOffset(Mat in, cv::Point2d &offset, Mat &out)
         rectangle(out, token, Scalar(255,255,255), CV_FILLED);
 
         // find and draw the center of the token and the image
-        double x_mid = x_min + ((x_max - x_min) / 2);
-        double y_mid = y_min + ((y_max - y_min) / 2);
+        int x_mid = int((x_max + x_min) / 2);
+        int y_mid = int((y_max + y_min) / 2);
+
         circle(out, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(out, cv::Point(_img_size.width/2, _img_size.height/2), 3, Scalar(180, 40, 40), CV_FILLED);
 
-        circle(out, cv::Point(_img_size.width / 2, _img_size.height / 2), 3, Scalar(180, 40, 40), CV_FILLED);
+        offset.x = x_mid - int(_img_size.width/2 );
+        offset.y = y_mid - int(_img_size.height/2);
 
-        double token_area = (x_max - x_min) * (y_max - y_min);
-
-        (offset).x = (/*4.7807*/ 5 / token_area) * (x_mid - (_img_size.width / 2));
-        // distance between gripper center and camera center
-        (offset).y = (/*4.7807*/ 5 / token_area) * ((_img_size.height / 2) - y_mid) - 0.0075;
+        ROS_INFO_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
 
         return true;
     }

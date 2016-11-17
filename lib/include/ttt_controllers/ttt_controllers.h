@@ -148,16 +148,15 @@ private:
         /*
          * move arm downwards and suck token upon collision
          *
+         * @return     true/false if success/failure
          */
-        void gripToken();
+        bool gripToken();
 
         /*
-         * check if hand camera detects token
+         * Checks if hand camera detects token
          *
-         * @param      Point representing offset between the arm's x-y coordinates
-         *            and the token
          */
-        void checkForToken(cv::Point2d &offset);
+        void checkForToken();
 
         /*
          * identifies token and calculates offset distance required to move hand camera
@@ -167,7 +166,7 @@ private:
          *
          * @return     true/false if success/failure
          */
-        bool processTokenImage(cv::Point2d &offset);
+        bool processTokenImage(cv::Point &offset);
 
         /*
          * isolates blue colored object in raw image
@@ -200,7 +199,7 @@ private:
          *
          * @return     true/false if success/failure
          */
-        bool computeTokenOffset(cv::Mat in, cv::Point2d &offset, cv::Mat &out);
+        bool computeTokenOffset(cv::Mat in, cv::Point &offset, cv::Mat &out);
 
 protected:
     cv::Mat  _curr_img;
