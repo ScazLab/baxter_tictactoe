@@ -334,7 +334,7 @@ void TTTController::isolateBlue(Mat &output)
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
     pthread_mutex_unlock(&_mutex_img);
 
-    inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
+    output = hsv_threshold(hsv, hsv_blue);
 }
 
 void TTTController::isolateBoard(Contours &contours, int &board_area,
@@ -531,16 +531,13 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                              ArmCtrl(name, limb, no_robot, use_forces, false),
                              r(100), _img_trp(_n), _is_img_empty(true)
 {
-    namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
-    resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
-    resizeWindow("Processed",   480, 300);
-    moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
-    moveWindow("Processed", 10, 720);
-    waitKey(10);
+    XmlRpc::XmlRpcValue hsv_red_symbols;
+    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+    hsv_red=ttt::hsvColorRange(hsv_red_symbols);
+
+    XmlRpc::XmlRpcValue hsv_blue_symbols;
+    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+    hsv_blue=ttt::hsvColorRange(hsv_blue_symbols);
 
     setHomeConfiguration();
 
@@ -553,10 +550,22 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
         _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
+
     pthread_mutex_init(&_mutex_img, NULL);
 
-    KDL::JntArray ll, ul; //lower joint limits, upper joint limits
-    getIKLimits(ll,ul);
+    namedWindow("Hand Camera", WINDOW_NORMAL);
+    namedWindow("Rough", WINDOW_NORMAL);
+    namedWindow("Processed", WINDOW_NORMAL);
+    resizeWindow("Hand Camera", 480, 300);
+    resizeWindow("Rough",   480, 300);
+    resizeWindow("Processed",   480, 300);
+    moveWindow("Hand Camera", 10, 10);
+    moveWindow("Rough", 10, 370);
+    moveWindow("Processed", 10, 720);
+    waitKey(10);
+
+    // KDL::JntArray ll, ul; //lower joint limits, upper joint limits
+    // getIKLimits(ll,ul);
 
     // double s1l = -1.1;
     // double s1u =  1.0;

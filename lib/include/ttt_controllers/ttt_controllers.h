@@ -25,6 +25,9 @@ private:
 
     ros::Rate r;
 
+    ttt::hsvColorRange  hsv_red;
+    ttt::hsvColorRange hsv_blue;
+
     /**
      * Sets the joint-level configuration for the home position
      */

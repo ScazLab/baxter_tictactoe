@@ -27,7 +27,7 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
 
 tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(100),
                                _robot_color(robot_color), _setup(false),
-                               leftArmCtrl("tictactoe", "left"), rightArmCtrl("tictactoe", "right")
+                               leftArmCtrl("baxter_tictactoe", "left"), rightArmCtrl("baxter_tictactoe", "right")
 {
     boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::tttStateCb, this);
     _scan_server   = _nh.advertiseService("baxter_tictactoe/ready_scan", &tictactoeBrain::scanState, this);
