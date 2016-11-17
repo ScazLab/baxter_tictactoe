@@ -26,6 +26,9 @@ namespace ttt
 #define ACTION_PICKUP       "pick_up"
 #define ACTION_PUTDOWN      "put_down"
 
+#undef  PICK_UP_SPEED
+#define PICK_UP_SPEED  0.070    // [m/s]
+
 #define NUMBER_OF_CELLS 9
 
 // Used to determine the three possible states of a cell.

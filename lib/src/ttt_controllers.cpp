@@ -223,7 +223,7 @@ void TTTController::setDepth(float &dist)
     {
         double px = init_pos.x;
         double py = init_pos.y;
-        double pz = init_pos.z + (-0.07) * (ros::Time::now() - start_time).toSec();
+        double pz = init_pos.z - PICK_UP_SPEED * (ros::Time::now() - start_time).toSec();
 
         double ox =   1.0;
         double oy = -0.03;
@@ -233,12 +233,9 @@ void TTTController::setDepth(float &dist)
         vector<double> joint_angles;
         computeIK(px,py,pz,ox,oy,oz,ow, joint_angles);
         goToPoseNoCheck(joint_angles);
-        r.sleep();
 
-        if(hasCollided("loose"))
-        {
-            break;
-        }
+        if(hasCollided("loose")) break;
+        r.sleep();
     }
 
     // offset to account for height difference between IR camera and tip of vacuum gripper
@@ -268,7 +265,7 @@ void TTTController::processImage(string mode, float dist)
             // imshow("[ScanBoard] Processed", board);
 
             if(offsetsReachable() && mode == "run"){
-                ROS_INFO("[Scan Board] Board is positioned correctly! Proceed with game\n");
+                ROS_INFO_THROTTLE(2, "[Scan Board] Board is positioned correctly! Proceed with game\n");
                 break;
             }
             else if(!offsetsReachable()) {
@@ -310,8 +307,8 @@ void TTTController::processImage(string mode, float dist)
                     }
 
                     imshow("Rough", zone);
-
                     waitKey(3);
+                    r.sleep();
                 }
             }
         }
@@ -627,7 +624,7 @@ bool TTTController::hoverAboveCenterOfBoard()
     ROS_INFO("Hovering above center of board..");
     return goToPose(HOVER_BOARD_X + _offsets[4].x,
                     HOVER_BOARD_Y + _offsets[4].y,
-                    HOVER_BOARD_Z - _offsets[4].z + 0.1,    // TODO this minus sign is a bug
+                    HOVER_BOARD_Z - _offsets[4].z + 0.3,    // TODO this minus sign is a bug
                     VERTICAL_ORI_L);
 }
 
@@ -689,7 +686,6 @@ bool TTTController::pickUpTokenImpl()
     hoverAboveTokens(Z_HIGH);
     gripToken();
     hoverAboveTokens(Z_LOW);
-    releaseObject();
 
     return true;
 }
@@ -699,7 +695,7 @@ bool TTTController::putDownTokenImpl()
     ROS_INFO("Putting down token..");
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveCell()) return false;
-    ros::Duration(0.5).sleep();
+    ros::Duration(0.2).sleep();
     if (!releaseObject()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveTokens(Z_HIGH)) return false;

@@ -72,7 +72,7 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(
             break;
         }
 
-        ROS_WARN("Board was not detected. Make sure it is within the camera's view and is not obscured.");
+        ROS_WARN_THROTTLE(1,"Board was not detected. Make sure it is within the camera's view and is not obscured.");
         r.sleep();
     }
 }
@@ -351,7 +351,6 @@ int tictactoeBrain::play_one_game(bool &cheating)
             ROS_INFO("Waiting for the participant's move.");
             say_sentence("It is your turn", 0.1);
             wait_for_opponent_turn(n_opponent_tokens);
-            ROS_INFO("after participant move");
         }
         robot_turn=!robot_turn;
     }
