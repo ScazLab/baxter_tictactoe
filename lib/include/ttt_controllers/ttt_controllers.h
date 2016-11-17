@@ -192,11 +192,11 @@ private:
         /*
          * isolates board boundaries from image
          *
-         * @param      input Mat, output Mat displaying board boundaries,
-         *            and integer indicating lowest y coordinate of board boundaries
+         * @param     output Mat displaying board boundaries,
+         * @param     board_y integer indicating lowest y coordinate of board boundaries
          * @return     N/A
          */
-        void isolateTokenBoard(cv::Mat input, cv::Mat &output, int &board_y);
+        void isolateTokenPool(cv::Mat &output, int &board_y);
 
         /*
          * isolates token from image
@@ -211,11 +211,12 @@ private:
         /*
          * calculates offset distance from arm to token
          *
-         * @param      token contours, an integer indicating lowest y coordinate of board boundaries,
-         *            and contours of blue-colored objects in image, and an output Mat displaying token
+         * @param     contours  token contours
+         * @oaram     offset    token offset
+         * @param     output Mat displaying token
          * @return     N/A
          */
-        void setTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
+        void computeTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 
 protected:
     cv::Mat  _curr_img;

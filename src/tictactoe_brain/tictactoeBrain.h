@@ -33,15 +33,14 @@ private:
 
     ThreadSafeVariable <TTT_Board_State> boardState; // it stores the state of the board.
 
-    cellState _robot_color;   // It represents the color of the tokens the robot is playing with.
-    cellState _opponent_color; // It represents the color of the tokens the opponent is playing with.
+    cellState _robot_color;     // It represents the color of the tokens the robot    is playing with.
+    cellState _opponent_color;  // It represents the color of the tokens the opponent is playing with.
 
-    sound_play::SoundClient _voice_synthesizer; //! This is used for generating voice utterances.
+    sound_play::SoundClient _voice_synthesizer;
+    std::string _voice_type; // Type of voice.
 
     ros::ServiceClient _scan_client;
     ros::ServiceServer _scan_server;
-
-    std::string _voice_type; // It determines the type of voice.
 
     bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
@@ -70,7 +69,7 @@ private:
     /**
      * It determines randomly the next empty cell to place a token.
      * \param cheating It indicates if cheating has happened.
-     * \return an integer representing the cell where to place the next token
+     * @return an integer representing the cell where to place the next token
      **/
     int random_move(bool& cheating);
 
@@ -80,7 +79,7 @@ private:
      * do it. Otherwise, if it can win cheating, it will do it. It will block opponent's victory. If it cannot
      * win anyway, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
-     * \return an integer representing the cell where to place the next token
+     * @return an integer representing the cell where to place the next token
      **/
     int cheating_to_win_random_move(bool& cheating);
 
@@ -89,7 +88,7 @@ private:
      * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will
      * try to block the opponent's victory. If this is not needed, it will randomly choose a cell.
      * \param cheating It indicates if cheating has happened.
-     * \return an integer representing the cell where to place the next token
+     * @return an integer representing the cell where to place the next token
      **/
     int winning_defensive_random_move(bool& cheating);
 
@@ -110,23 +109,23 @@ private:
      * @return -1 if the robot cannot win in the next move,
      * or an integer corresponding to the cell where to place the next token to win, even if there
      * is an opponent's token in that cell. The cell ids are between 1 (first row, first column)
-     * and NUMBER_OF_CELLS (last raw, last column).
+     * and NUMBER_OF_CELLS (last row, last column).
      */
     int cheating_move();
 
     /**
      * It determines if the opponent can win in the next move.
-     * \return -1 if the opponent cannot win in the next move, or an integer corresponding
+     * @return -1 if the opponent cannot win in the next move, or an integer corresponding
      * to the first found cell where an opponent's token can be placed to win the game.
-     * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
      **/
     int defensive_move();
 
     /**
      * It determines if the robot can win in the next move.
-     * \return -1 if the robot cannot win in the next move, or an integer corresponding
+     * @return -1 if the robot cannot win in the next move, or an integer corresponding
      * to the first found cell where a robot's token can be placed to win the game. The
-     * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last raw, last column).
+     * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
      **/
     int victory_move();
 
@@ -140,7 +139,7 @@ public:
      * Returns the cell where the next token is gonna be placed.
      * @param cheating It indicates if cheating happens
      * @return The return value is between 1 (first row, first column)
-     * and NUMBER_OF_CELLS (last raw, last column).
+     * and NUMBER_OF_CELLS (last row, last column).
      **/
     int get_next_move(bool& cheating);
 

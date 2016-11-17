@@ -69,13 +69,14 @@ void TTTController::checkForToken(cv::Point2d &offset)
         {
             break;
         }
+        r.sleep();
     }
 
     while(RobotInterface::ok())
     {
         if(!(offset.x == 0 && offset.y == 0)) break;
 
-        ROS_WARN("No token detected by hand camera.");
+        ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
         r.sleep();
         processTokenImage(offset);
     }
@@ -83,25 +84,33 @@ void TTTController::checkForToken(cv::Point2d &offset)
 
 void TTTController::processTokenImage(cv::Point2d &offset)
 {
-    Mat black, blue, token_rough, token, board;
+    Mat blue(_img_size, CV_8U);
+    Mat token_rough, token;
+    Mat rough(_img_size, CV_8U);
     Contours contours;
     int board_y;
 
-    isolateBlack(black);
-    isolateTokenBoard(black, board, board_y);
-    imshow("black", black);
+    isolateTokenPool(rough, board_y);
+    imshow("Rough", rough);
 
     isolateBlue(blue);
-    imshow("Rough", blue);
-    isolateToken(blue, board_y, token_rough, contours);
-    setTokenOffset(contours, offset, token);
+    imshow("blue", blue);
 
-    imshow("Processed", token_rough);
+    // isolateToken(blue, board_y, token_rough, contours);
+    Mat intersection;
+    bitwise_and(blue, rough, intersection);
+    imshow("intersection", intersection);
+    vector<cv::Vec4i> hierarchy;
+    findContours(intersection, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    computeTokenOffset(contours, offset, token);
+    imshow("Processed", intersection);
+    waitKey(1);
+    return;
 }
 
 void TTTController::isolateBlue(Mat &output)
 {
-    Mat hsv;
+    Mat hsv(_img_size, CV_8U);
 
     pthread_mutex_lock(&_mutex_img);
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
@@ -110,42 +119,37 @@ void TTTController::isolateBlue(Mat &output)
     inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
 }
 
-void TTTController::isolateTokenBoard(Mat input, Mat &output, int &board_y)
+void TTTController::isolateTokenPool(Mat &output, int &board_y)
 {
-    output = Mat::zeros(_img_size, CV_8UC1);
+    Mat black(_img_size, CV_8U);
+    isolateBlack(black);
+    imshow("black", black);
 
     vector<cv::Vec4i> hierarchy; // captures contours within contours
     Contours contours;
 
     // find outer board contours
-    findContours(input, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    findContours(black, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     double largest = 0, next_largest = 0;
     int largest_index = 0, next_largest_index = 0;
 
-    // iterate through contours and keeps track of contour w/ 2nd-largest area
+    // iterate through contours and keeps track of contour w/ largest area
     for(int i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
-            next_largest = largest;
-            next_largest_index = largest_index;
             largest = contourArea(contours[i], false);
             largest_index = i;
-        }
-        else if(next_largest < contourArea(contours[i], false) && contourArea(contours[i], false) < largest)
-        {
-            next_largest = contourArea(contours[i], false);
-            next_largest_index = i;
         }
     }
 
     output = Mat::zeros(_img_size, CV_8UC1);
 
-    // contour w/ 2nd largest area is most likely the inner board
-    vector<cv::Point> contour = contours[next_largest_index];
+    // contour w/ largest area is most likely the inner board
+    vector<cv::Point> contour = contours[largest_index];
 
-    drawContours(output, contours, next_largest_index, Scalar(255,255,255), CV_FILLED);
+    drawContours(output, contours, largest_index, Scalar(255,255,255), CV_FILLED);
 
     // find the lowest y-coordinate of the board; to be used as a cutoff point above which
     // all contours are ignored (e.g token contours that are above low_y are already placed
@@ -172,7 +176,7 @@ void TTTController::isolateTokenBoard(Mat input, Mat &output, int &board_y)
         board_y = _img_size.height;
     }
 
-    line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256), 5);
+    // line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256), 5);
 }
 
 void TTTController::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
@@ -261,7 +265,7 @@ void TTTController::isolateToken(Mat input, int board_y, Mat &output, Contours &
     line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256));
 }
 
-void TTTController::setTokenOffset(Contours contours, cv::Point2d &offset, Mat &output)
+void TTTController::computeTokenOffset(Contours contours, cv::Point2d &offset, Mat &output)
 {
     output = Mat::zeros(_img_size, CV_8UC1);
 
@@ -643,9 +647,9 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
     namedWindow("Hand Camera", WINDOW_NORMAL);
     namedWindow("Processed", WINDOW_NORMAL);
     namedWindow("Rough", WINDOW_NORMAL);
-    resizeWindow("Hand Camera", 700, 500);
-    resizeWindow("Processed",   700, 500);
-    resizeWindow("Rough",       700, 500);
+    resizeWindow("Hand Camera", 640, 400);
+    resizeWindow("Processed",   640, 400);
+    resizeWindow("Rough",       640, 400);
     waitKey(10);
 
     setHomeConfiguration();
