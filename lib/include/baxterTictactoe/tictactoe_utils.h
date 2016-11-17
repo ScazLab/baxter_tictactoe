@@ -1,5 +1,5 @@
-#ifndef TTT_DEFINITIONS_H
-#define TTT_DEFINITIONS_H
+#ifndef __TICTACTOE_UTILS_H__
+#define __TICTACTOE_UTILS_H__
 
 #include <ros/ros.h>
 #include <sensor_msgs/image_encodings.h>
@@ -21,6 +21,13 @@ namespace enc = sensor_msgs::image_encodings;
 
 namespace ttt
 {
+
+#define ACTION_SCAN         "scan"
+#define ACTION_PICKUP       "pick_up"
+#define ACTION_PUTDOWN      "put_down"
+
+#undef  PICK_UP_SPEED
+#define PICK_UP_SPEED  0.070    // [m/s]
 
 #define NUMBER_OF_CELLS 9
 
@@ -93,7 +100,7 @@ public:
     ~Cell() {};
 
     std::vector<cv::Point> get_contours() { return contours; };
-    
+
     /**
      * Returns a mask for a cell, i.e. a new image that keeps only the portion
      * delimited by the cell (the rest is set to black)
@@ -118,7 +125,7 @@ public:
 
 struct Board
 {
-public: 
+public:
     std::vector<Cell> cells;
 
 public:
@@ -155,7 +162,7 @@ public:
      *     </cell>
      *     [...]
      *  </board>
-     * @param  cells_param the name of the parameter where the raw data is stored. 
+     * @param  cells_param the name of the parameter where the raw data is stored.
      * @return true/false if success/failure.
      */
     bool load(std::string cells_param);
@@ -171,4 +178,4 @@ public:
 
 }
 
-#endif // TTT_DEFINITIONS_H
+#endif // __TICTACTOE_UTILS_H__

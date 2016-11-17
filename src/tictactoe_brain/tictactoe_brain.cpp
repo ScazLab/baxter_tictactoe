@@ -8,37 +8,17 @@ using namespace ttt;
 using namespace std;
 
 int main(int argc, char** argv)
-{    
-    ROS_INFO("[tictactoeBrain] Playing TIC TAC TOE");
+{
     ros::init(argc, argv, "tictactoe_brain");
-    ros::AsyncSpinner spinner(1);
-    spinner.start();
 
-    // Very dirty way to process command line arguments. It seems that
-    // there is not a straightforward standard ROS way, unfortunately.
-    // (by alecive, all the fault goes to him)
-
-    // traj=false -> arm movement done via inverse kinematics (TTTController)
-    // traj=true -> arm movement done via a joint trajectory action server (MoveMaker, MoveMakerServer, TrajectoryPlayer)
-    // traj=false preferred due to simpler and more robust implementation 
-    
-    bool traj=false;
-    if (argc>1)
-    {
-        if (string(argv[1])=="--traj")
-        {
-            traj=string(argv[2])=="true"?true:false;
-        }
-    }
-
-    ttt::tictactoeBrain brain(traj); //random strategy by default
+    ttt::tictactoeBrain brain;
 
     brain.set_strategy("smart");
-    ros::Duration(1).sleep(); //this second is needed in order to use the voice at the beginning
+    ros::Duration(1).sleep(); // needed in order to use the voice at the beginning
 
-    ROS_INFO_STREAM("[tictactoeBrain] Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
+    ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
 
-    ROS_WARN("[tictactoeBrain] PRESS ENTER TO START WITH A NEW PARTICIPANT");
+    ROS_WARN("PRESS ENTER TO START WITH A NEW PARTICIPANT");
     std::cin.get();
     brain.say_sentence("  Welcome!  Let's play Tic Tac Toe.",4);
     brain.say_sentence("Do not grasp your token before I say that it is your turn",5);
@@ -46,12 +26,12 @@ int main(int argc, char** argv)
     uint robot_victories=0, participant_victories=0, ties=0;
     uint i=1;
     bool cheating=false;
-    ROS_INFO_STREAM("[tictactoeBrain] Let's play " << NUM_GAMES << " times Tic Tac Toe");
-    unsigned short game_result=0;
+    ROS_INFO_STREAM("Let's play " << NUM_GAMES << " times Tic Tac Toe");
+    int game_result=0;
 
     while(i<=NUM_GAMES)
     {
-        ROS_INFO_STREAM("[tictactoeBrain] Game " << i);
+        ROS_INFO_STREAM("Game " << i);
 
         if ((i==CHEATING_GAME_A || i==CHEATING_GAME_B) && brain.get_cheating()) //In the fourth game, Baxter cheats
         {
@@ -68,19 +48,19 @@ int main(int argc, char** argv)
             break;
         case 3: ties++;
             break;
-        default: ROS_ERROR_STREAM("[tictactoeBrain] Unexpected return value for the game: " << game_result << " ???");
+        default: ROS_ERROR_STREAM("Unexpected return value for the game: " << game_result << " ???");
         }
 
         if ((i==CHEATING_GAME_A || i==CHEATING_GAME_B) && brain.get_cheating())
         {
             if (!cheating)
             {
-                ROS_INFO("[tictactoeBrain] Game ended but no cheating. Game counter does not increase.");
+                ROS_INFO("Game ended but no cheating. Game counter does not increase.");
                 continue;
             }
             else
             {
-                ROS_INFO("[tictactoeBrain] Game ended cheating. Back to random strategy");
+                ROS_INFO("Game ended cheating. Back to random strategy");
                 brain.set_strategy("smart");
             }
         }
@@ -89,7 +69,7 @@ int main(int argc, char** argv)
 
     brain.say_sentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
 
-    ROS_INFO_STREAM("[tictactoeBrain] Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);
+    ROS_INFO_STREAM("Baxter " << robot_victories << " - Human " << participant_victories << " - Ties " << ties);
 
     return 0;
 }

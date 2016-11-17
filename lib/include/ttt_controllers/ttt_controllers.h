@@ -1,172 +1,83 @@
 #ifndef __TTT_CONTROLLERS_H__
 #define __TTT_CONTROLLERS_H__
 
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include "robot_interface/robot_interface.h"
+#include "robot_interface/arm_ctrl.h"
 #include "robot_interface/gripper.h"
 
-class MoveToRest : public ROSThreadImage
+#include "baxterTictactoe/tictactoe_utils.h"
+
+#define HOVER_BOARD_X   0.575  // [m]
+#define HOVER_BOARD_Y   0.100  // [m]
+#define HOVER_BOARD_Z   0.445  // [m]
+
+class TTTController : public ArmCtrl
 {
-    public:
-        MoveToRest(std::string name, std::string limb);
-        ~MoveToRest();
+private:
+    image_transport::ImageTransport _img_trp;
+    image_transport::Subscriber     _img_sub;
 
-    protected:
+    ros::Rate r;
 
-        /*
-         * moves arm to rest position
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void InternalThreadEntry();
-};
+    /**
+     * Sets the joint-level configuration for the home position
+     */
+    void setHomeConfiguration();
 
-class PickUpToken : public ROSThreadImage, public Gripper
-{
-    public:
-        PickUpToken(std::string name, std::string limb);
-        ~PickUpToken();
-
-    protected:
-
-        /*
-         * picks up token
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void InternalThreadEntry();
-
-    private:
-        typedef std::vector<std::vector<cv::Point> > Contours;
-
-        /*
-         * move arm downwards and suck token upon collision
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void gripToken();
-
-        /*
-         * check if hand camera detects token
-         *
-         * @param      Point representing offset between the arm's x-y coordinates
-         *            and the token
-         * return     N/A
-         */
-        void checkForToken(cv::Point2d &offset);
-
-        /*
-         * identifies token and calculates offset distance required to move hand camera
-         * to token
-         *
-         * @param      Point representing offset between the arm's x-y coordinates
-         *            and the token
-         * return     N/A
-         */
-        void processImage(cv::Point2d &offset);
-
-        /*
-         * isolates blue colored object in raw image
-         *
-         * @param      Mat displaying blue colored objects in raw image
-         * return     N/A
-         */
-        void isolateBlue(cv::Mat &output);
-
-        /*
-         * isolates black colored object in raw image
-         *
-         * @param      Mat displaying black colored objects in raw image
-         * return     N/A
-         */
-        void isolateBlack(cv::Mat &output);
-
-        /*
-         * isolates board boundaries from image
-         *
-         * @param      input Mat, output Mat displaying board boundaries,
-         *            and integer indicating lowest y coordinate of board boundaries
-         * return     N/A
-         */
-        void isolateBoard(cv::Mat input, cv::Mat &output, int &board_y);
-
-        /*
-         * isolates token from image
-         *
-         * @param      input Mat, output Mat displaying token,
-         *            and integer indicating lowest y coordinate of board boundaries,
-         *            and contours of blue-colored objects in image
-         * return     N/A
-         */
-        void isolateToken(cv::Mat input, int board_y, cv::Mat &output, Contours &contours);
-
-        /*
-         * calculates offset distance from arm to token
-         *
-         * @param      token contours, an integer indicating lowest y coordinate of board boundaries,
-         *            and contours of blue-colored objects in image, and an output Mat displaying token
-         * return     N/A
-         */
-        void setOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
-};
-
-class ScanBoard : public ROSThreadImage
-{
-    public:
-        ScanBoard(std::string name, std::string limb);
-        ~ScanBoard();
-
-        std::vector<geometry_msgs::Point> getOffsets();
-
-    protected:
-
-        /*
-         * scan the board
-         *
-         * @param      N/A
-         * return     N/A
-         */
-        void InternalThreadEntry();
-
-    private:
+    /* SCAN BOARD */
         typedef std::vector<std::vector<cv::Point> > Contours;
         std::vector<geometry_msgs::Point> _offsets;
 
         /*
-         * hover arm above board
+         * Hovers arm above board
          *
-         * @param      N/A
-         * return     N/A
+         * @return     true/false if success/failure
          */
-        void hoverAboveBoard();
+        bool hoverAboveBoard();
+
+        /**
+         * Hovers arm above the board
+         *
+         * @return true/false if success/failure
+         */
+        bool hoverAboveCenterOfBoard();
+
+        /**
+         * Hovers arm above specified cell
+         *
+         * @return true/false if success/failure
+         */
+        bool hoverAboveCell();
 
         /*
-         * scan the board and calculate cell offsets
+         * Hovers arm above tokens
          *
-         * @param      N/A
-         * return     N/A
+         * @param      double indicating requested height of arm (z-axis)
+         * @return     true/false if success/failure
          */
-        void scan();
+        bool hoverAboveTokens(double height);
 
         /*
-         * move arm downwards until collision w/ a surface; calculate
+         * moves arm downwards until collision w/ a surface; calculates
          * distance between surface and arm starting point
          *
-         * @param      float * dist indicating the distance btw. the surface
-         *            and the arm's starting point
-         * return     N/A
+         * @param     dist indicates the distance between the surface
+         *                 and the arm's starting point
          */
-        void setDepth(float *dist);
+        void setDepth(float &dist);
 
         /*
-         * calculate cell offsets; also prompts user to move board withing 'reachable zone'
+         * Calculates cell offsets; also prompts user to move board withing 'reachable zone'
          * (displayed on screen) if board is out of reach of Baxter's arm
          *
-         * @param      string mode (test/run) indicating a test (does not exit out of scanning loop)
-         *            or an actual run (quits once scanning finished)
-         * return     N/A
+         * @param     mode (test/run) indicating a test (does not exit out of scanning loop)
+         *                            or an actual run (quits once scanning finished)
          */
         void processImage(std::string mode, float dist);
 
@@ -174,26 +85,23 @@ class ScanBoard : public ROSThreadImage
          * isolates black colored object in raw image
          *
          * @param      Mat displaying black colored objects in raw image
-         * return     N/A
          */
-        void isolateBlack(cv::Mat * output);
+        void isolateBlack(cv::Mat &output);
 
         /*
          * isolates board boundaries from image
          *
-         * @param      input Mat, output Mat displaying board boundaries, output Contours
+         * @param     input Mat, output Mat displaying board boundaries, output Contours
          *            storing board contours, integer indicating the area of the board,
          *            and a vector<cv::Point> of the board's four corners
-         * return     N/A
          */
-        void isolateBoard(Contours * contours, int * board_area,
-                          std::vector<cv::Point> * board_corners, cv::Mat input, cv::Mat * output);
+        void isolateBoard(Contours &contours, int &board_area,
+                          std::vector<cv::Point> &board_corners, cv::Mat input, cv::Mat &output);
 
         /*
          * finds cell with the higher centroid
          *
          * @param      returns true if cell i has a higher centroid than cell j; false otherwise
-         * return     N/A
          */
         static bool descendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
@@ -202,10 +110,11 @@ class ScanBoard : public ROSThreadImage
          *
          * @param      board area, cell contours, output Mat displaying cells, and height
          *            from arm to board surface
-         * return     N/A
          */
         void setOffsets(int board_area, Contours contours, float dist,
                         cv::Mat *output, std::vector<cv::Point> *centroids);
+
+        std::vector<geometry_msgs::Point> getOffsets() { return _offsets; };
 
         /**
          * calculates the perimeter of the area representing all points reachable to the Baxter arm
@@ -223,8 +132,7 @@ class ScanBoard : public ROSThreadImage
         /*
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
          *
-         * @param      N/A
-         * return     true if offsets are all reachable; false otherwise
+         * @return     true if offsets are all reachable; false otherwise
          */
         bool offsetsReachable();
 
@@ -232,79 +140,96 @@ class ScanBoard : public ROSThreadImage
          * checks if Baxter's arm has a joint angles solution for a certain point on the board
          * scanning image
          *
-         * @param      N/A
-         * return     true if point is reachable; false otherwise
+         * @return     true if point is reachable; false otherwise
          */
         bool pointReachable(cv::Point centroid, float dist);
-};
 
-class PutDownToken : public ROSThreadImage, public Gripper
-{
-    public:
-        PutDownToken(std::string name, std::string limb);
-        ~PutDownToken();
-
-        void setCell(int cell) {_cell = cell;};
-        void setOffsets(std::vector<geometry_msgs::Point> offsets) {_offsets = offsets;};
-
-    protected:
+    /* PICKUP TOKEN */
+        /*
+         * move arm downwards and suck token upon collision
+         *
+         * @return     true/false if success/failure
+         */
+        bool gripToken();
 
         /*
-         * puts down token in specified cell
+         * Checks if hand camera detects token
          *
-         * @param      N/A
-         * return     N/A
          */
-        void InternalThreadEntry();
-
-    private:
-        int _cell;
-        std::vector<geometry_msgs::Point> _offsets;
+        void checkForToken();
 
         /*
-         * hover arm above specified cell
+         * identifies token and calculates offset distance required to move hand camera
+         * to token
          *
-         * @param      N/A
-         * return     N/A
+         * @param     offset offset between the arm's x-y coordinates and the token
+         *
+         * @return     true/false if success/failure
          */
-        void hoverAboveCell();
+        bool processTokenImage(cv::Point &offset);
 
         /*
-         * hover arm above the board
+         * isolates blue colored object in raw image
          *
-         * @param      N/A
-         * return     N/A
+         * @param      Mat displaying blue colored objects in raw image
          */
-        void hoverAboveBoard();
-};
-
-class TTTController
-{
-    private:
-        MoveToRest   *_rest_class;
-        PickUpToken  *_pick_class;
-        ScanBoard    *_scan_class;
-        PutDownToken  *_put_class;
-
-    public:
-        TTTController(std::string name, std::string limb);
-        ~TTTController();
+        void isolateBlue(cv::Mat &output);
 
         /*
-         * get most recent state change
+         * Detects the pool of tokens in the image
          *
-         * @param      N/A
-         * return     integer indicating arm's latest state
+         * @return  Binary matrix displaying the pool of objects
          */
-        int getState();
+        cv::Mat isolateTokenPool();
 
-        void moveToRest();
+        /*
+         * Isolates token from the pool
+         *
+         * @param       pool input matrix displaying the pool of objects
+         * @return      output Mat displaying token,
+         */
+        cv::Mat isolateToken(cv::Mat pool);
 
-        void pickUpToken();
+        /*
+         * calculates offset distance from arm to token
+         *
+         * @param     in        input matrix
+         * @oaram     offset    token offset
+         * @param     out Mat displaying token
+         *
+         * @return     true/false if success/failure
+         */
+        bool computeTokenOffset(cv::Mat in, cv::Point &offset, cv::Mat &out);
 
-        void scanBoard();
+protected:
+    cv::Mat  _curr_img;
+    cv::Size _img_size;
+    bool _is_img_empty;
 
-        void putDownToken(int cell);
+    pthread_mutex_t _mutex_img;
+
+    bool pickUpTokenImpl();
+
+    bool scanBoardImpl();
+
+    bool putDownTokenImpl();
+
+public:
+    TTTController(std::string name, std::string limb,
+                  bool no_robot = false, bool use_forces = false);
+    ~TTTController();
+
+    /*
+     * image callback function that displays the image stream from the hand camera
+     *
+     * @param      The image
+     * @return     N/A
+     */
+    void imageCb(const sensor_msgs::ImageConstPtr& msg);
+
+    bool goHome();
+
+    bool startAction(std::string a, int o = -1);
 };
 
 #endif

@@ -13,8 +13,6 @@ set(COMPILE_OLD_SW false)
 find_package(catkin REQUIRED COMPONENTS
              message_generation
              genmsg
-             actionlib_msgs
-             actionlib
              rosconsole
              sound_play
              baxter_core_msgs
@@ -73,16 +71,10 @@ add_service_files(FILES
     ScanState.srv
 )
 
-#Required for generating the messages related to actionlib
-add_action_files(DIRECTORY action FILES
-    PlaceToken.action
-)
-
 ## Generate added messages and services with any dependencies listed here
 generate_messages(DEPENDENCIES
     baxter_core_msgs
     geometry_msgs
-    actionlib_msgs
     std_msgs
 )
 
