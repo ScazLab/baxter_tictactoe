@@ -35,9 +35,8 @@ private:
         std::vector<geometry_msgs::Point> _offsets;
 
         /*
-         * hover arm above board
+         * Hovers arm above board
          *
-         * @param      N/A
          * @return     true/false if success/failure
          */
         bool hoverAboveBoard();
@@ -57,7 +56,7 @@ private:
         bool hoverAboveCell();
 
         /*
-         * hovers arm above tokens
+         * Hovers arm above tokens
          *
          * @param      double indicating requested height of arm (z-axis)
          * @return     true/false if success/failure
@@ -70,17 +69,15 @@ private:
          *
          * @param     dist indicates the distance between the surface
          *                 and the arm's starting point
-         * @return     N/A
          */
         void setDepth(float &dist);
 
         /*
-         * calculate cell offsets; also prompts user to move board withing 'reachable zone'
+         * Calculates cell offsets; also prompts user to move board withing 'reachable zone'
          * (displayed on screen) if board is out of reach of Baxter's arm
          *
-         * @param      string mode (test/run) indicating a test (does not exit out of scanning loop)
-         *            or an actual run (quits once scanning finished)
-         * @return     N/A
+         * @param     mode (test/run) indicating a test (does not exit out of scanning loop)
+         *                            or an actual run (quits once scanning finished)
          */
         void processImage(std::string mode, float dist);
 
@@ -88,7 +85,6 @@ private:
          * isolates black colored object in raw image
          *
          * @param      Mat displaying black colored objects in raw image
-         * @return     N/A
          */
         void isolateBlack(cv::Mat &output);
 
@@ -98,7 +94,6 @@ private:
          * @param     input Mat, output Mat displaying board boundaries, output Contours
          *            storing board contours, integer indicating the area of the board,
          *            and a vector<cv::Point> of the board's four corners
-         * @return     N/A
          */
         void isolateBoard(Contours &contours, int &board_area,
                           std::vector<cv::Point> &board_corners, cv::Mat input, cv::Mat &output);
@@ -107,7 +102,6 @@ private:
          * finds cell with the higher centroid
          *
          * @param      returns true if cell i has a higher centroid than cell j; false otherwise
-         * @return     N/A
          */
         static bool descendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
@@ -116,7 +110,6 @@ private:
          *
          * @param      board area, cell contours, output Mat displaying cells, and height
          *            from arm to board surface
-         * @return     N/A
          */
         void setOffsets(int board_area, Contours contours, float dist,
                         cv::Mat *output, std::vector<cv::Point> *centroids);
@@ -139,7 +132,6 @@ private:
         /*
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
          *
-         * @param      N/A
          * @return     true if offsets are all reachable; false otherwise
          */
         bool offsetsReachable();
@@ -148,7 +140,6 @@ private:
          * checks if Baxter's arm has a joint angles solution for a certain point on the board
          * scanning image
          *
-         * @param      N/A
          * @return     true if point is reachable; false otherwise
          */
         bool pointReachable(cv::Point centroid, float dist);
@@ -157,8 +148,6 @@ private:
         /*
          * move arm downwards and suck token upon collision
          *
-         * @param      N/A
-         * @return     N/A
          */
         void gripToken();
 
@@ -167,7 +156,6 @@ private:
          *
          * @param      Point representing offset between the arm's x-y coordinates
          *            and the token
-         * @return     N/A
          */
         void checkForToken(cv::Point2d &offset);
 
@@ -175,9 +163,7 @@ private:
          * identifies token and calculates offset distance required to move hand camera
          * to token
          *
-         * @param      Point representing offset between the arm's x-y coordinates
-         *            and the token
-         * @return     N/A
+         * @param     offset offset between the arm's x-y coordinates and the token
          */
         void processTokenImage(cv::Point2d &offset);
 
@@ -185,28 +171,25 @@ private:
          * isolates blue colored object in raw image
          *
          * @param      Mat displaying blue colored objects in raw image
-         * @return     N/A
          */
         void isolateBlue(cv::Mat &output);
 
         /*
-         * isolates board boundaries from image
+         * Detects the pool of tokens in the image
          *
-         * @param     output Mat displaying board boundaries,
-         * @param     board_y integer indicating lowest y coordinate of board boundaries
-         * @return     N/A
+         * @return  Binary matrix displaying the pool of objects
          */
-        void isolateTokenPool(cv::Mat &output, int &board_y);
+        cv::Mat isolateTokenPool();
 
         /*
-         * isolates token from image
+         * Isolates token from the pool
          *
-         * @param      input Mat, output Mat displaying token,
-         *            and integer indicating lowest y coordinate of board boundaries,
-         *            and contours of blue-colored objects in image
-         * @return     N/A
+         * @param       pool input matrix displaying the pool of objects
+         * @param        out output Mat displaying token,
+         * @param   contours contours of blue-colored objects in image
+         * @return       true/false if success/failure
          */
-        void isolateToken(cv::Mat input, int board_y, cv::Mat &output, Contours &contours);
+        bool isolateToken(cv::Mat pool, cv::Mat &out, Contours &contours);
 
         /*
          * calculates offset distance from arm to token
@@ -214,7 +197,6 @@ private:
          * @param     contours  token contours
          * @oaram     offset    token offset
          * @param     output Mat displaying token
-         * @return     N/A
          */
         void computeTokenOffset(Contours contours, cv::Point2d &offset, cv::Mat &output);
 

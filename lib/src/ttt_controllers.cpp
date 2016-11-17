@@ -84,55 +84,33 @@ void TTTController::checkForToken(cv::Point2d &offset)
 
 void TTTController::processTokenImage(cv::Point2d &offset)
 {
-    Mat blue(_img_size, CV_8U);
-    Mat token_rough, token;
-    Mat rough(_img_size, CV_8U);
+    Mat token;
+    Mat pool(_img_size, CV_8U);
     Contours contours;
-    int board_y;
 
-    isolateTokenPool(rough, board_y);
-    imshow("Rough", rough);
+    pool = isolateTokenPool();
+    imshow("Pool", pool);
 
-    isolateBlue(blue);
-    imshow("blue", blue);
-
-    // isolateToken(blue, board_y, token_rough, contours);
-    Mat intersection;
-    bitwise_and(blue, rough, intersection);
-    imshow("intersection", intersection);
-    vector<cv::Vec4i> hierarchy;
-    findContours(intersection, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    isolateToken(pool, token, contours);
     computeTokenOffset(contours, offset, token);
-    imshow("Processed", intersection);
     waitKey(1);
     return;
 }
 
-void TTTController::isolateBlue(Mat &output)
-{
-    Mat hsv(_img_size, CV_8U);
-
-    pthread_mutex_lock(&_mutex_img);
-    cvtColor(_curr_img, hsv, CV_BGR2HSV);
-    pthread_mutex_unlock(&_mutex_img);
-
-    inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
-}
-
-void TTTController::isolateTokenPool(Mat &output, int &board_y)
+cv::Mat TTTController::isolateTokenPool()
 {
     Mat black(_img_size, CV_8U);
     isolateBlack(black);
     imshow("black", black);
 
-    vector<cv::Vec4i> hierarchy; // captures contours within contours
+    vector<cv::Vec4i> hierarchy;
     Contours contours;
 
     // find outer board contours
     findContours(black, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-    double largest = 0, next_largest = 0;
-    int largest_index = 0, next_largest_index = 0;
+    double largest = 0;
+    int largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
     for(int i = 0; i < contours.size(); i++)
@@ -144,125 +122,30 @@ void TTTController::isolateTokenPool(Mat &output, int &board_y)
         }
     }
 
-    output = Mat::zeros(_img_size, CV_8UC1);
+    Mat out(_img_size, CV_8U);
 
     // contour w/ largest area is most likely the inner board
     vector<cv::Point> contour = contours[largest_index];
 
-    drawContours(output, contours, largest_index, Scalar(255,255,255), CV_FILLED);
+    drawContours(out, contours, largest_index, Scalar(255,255,255), CV_FILLED);
 
-    // find the lowest y-coordinate of the board; to be used as a cutoff point above which
-    // all contours are ignored (e.g token contours that are above low_y are already placed
-    // on the board and should not be picked up)
-    int low_y = _img_size.height;
-    int x_min = (contours[0])[0].x;
-    int x_max = 0;
-
-    for(int i = 0; i < contour.size(); i++)
-    {
-        if(contour[i].y < low_y) low_y = contour[i].y;
-        if(contour[i].x < x_min) x_min = contour[i].x;
-        if(contour[i].x > x_max) x_max = contour[i].x;
-    }
-
-    // if width of the contour is narrower than 275, 2nd largest contour
-    // is NOT the board (and board is out of the image's view). Hence,
-    // no cutoff point needs to be specified
-    if(x_max - x_min > 275) {
-        board_y = low_y;
-    }
-    else
-    {
-        board_y = _img_size.height;
-    }
-
-    // line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256), 5);
+    return out;
 }
 
-void TTTController::isolateToken(Mat input, int board_y, Mat &output, Contours &contours)
+bool TTTController::isolateToken(Mat pool, Mat &out, Contours &contours)
 {
-    Contours raw_contours, clean_contours, apx_contours, gripper_contours;
-    findContours(input, raw_contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    Mat blue(_img_size, CV_8U);
+    isolateBlue(blue);
+    imshow("blue", blue);
 
-    int gripper_area = -1;
-    int gripper_index = 0;
+    Mat intersection;
+    bitwise_and(blue, pool, intersection);
+    imshow("intersection", intersection);
+    vector<cv::Vec4i> hierarchy;
+    findContours(intersection, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+    imshow("Processed", intersection);
 
-    // find gripper contours. gripper contours are always attached to bottom part of image
-    // (Note that imshow will show the bottom (x=0) part inverted and
-    // on top of the display window). if there are multiple contours that contain points w/ x=0
-    // the gripper contour is the contour with the largest area as a combination of the contours
-    // of the gripper AND  a token fragment will always be larger than just a token fragment
-    for(int i = 0; i < raw_contours.size(); i++)
-    {
-        vector<cv::Point> contour = raw_contours[i];
-        for(int j = 0; j < contour.size(); j++)
-        {
-            if(contour[j].y == 1)
-            {
-                if(gripper_area == -1)
-                {
-                    gripper_area = contourArea(contour, false);
-                    gripper_index = i;
-                }
-                else if(contourArea(contour, false) > gripper_area)
-                {
-                    gripper_area = contourArea(contour, false);
-                    gripper_index = i;
-                }
-                break;
-            }
-        }
-    }
-
-    // remove gripper contour
-    raw_contours.erase(raw_contours.begin() + gripper_index);
-
-    // remove contours that have areas that are too small (noise) and
-    // contours that do not have an approx. triangular shape (not token fragment)
-    int largest_index = 0, largest_area = 0;
-    for(int i = 0; i < raw_contours.size(); i++)
-    {
-        bool is_triangle = true;
-        vector<cv::Point> contour;
-        approxPolyDP(raw_contours[i], contour, 0.11 * arcLength(raw_contours[i], true), true);
-
-        if(contour.size() != 3) is_triangle = false;
-
-        if(contourArea(raw_contours[i]) > 200 && is_triangle == true)
-        {
-            apx_contours.push_back(contour);
-            clean_contours.push_back(raw_contours[i]);
-        }
-    }
-
-    // remove contours that are inside the board (e.g token placed on a cell)
-    for(int i = 0; i < clean_contours.size(); i++)
-    {
-        bool within_board = false;
-        vector<cv::Point> contour = clean_contours[i];
-        for(int j = 0; j < contour.size(); j++)
-        {
-            cv::Point pt = contour[j];
-            if(pt.y > board_y)
-            {
-                within_board = true;
-                break;
-            }
-        }
-
-        if(within_board == false)
-        {
-            (contours).push_back(contour);
-        }
-    }
-
-    output = Mat::zeros(_img_size, CV_8UC1);
-    for(int i = 0; i < (contours).size(); i++)
-    {
-        drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
-    }
-
-    line(output, cv::Point(0, board_y), cv::Point(_img_size.width, board_y), cv::Scalar(130,256,256));
+    return true;
 }
 
 void TTTController::computeTokenOffset(Contours contours, cv::Point2d &offset, Mat &output)
@@ -435,6 +318,17 @@ void TTTController::isolateBlack(Mat &output)
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
     pthread_mutex_unlock(&_mutex_img);
     threshold(gray, output, 55, 255, cv::THRESH_BINARY);
+}
+
+void TTTController::isolateBlue(Mat &output)
+{
+    Mat hsv(_img_size, CV_8U);
+
+    pthread_mutex_lock(&_mutex_img);
+    cvtColor(_curr_img, hsv, CV_BGR2HSV);
+    pthread_mutex_unlock(&_mutex_img);
+
+    inRange(hsv, Scalar(60,90,10), Scalar(130,256,256), output);
 }
 
 void TTTController::isolateBoard(Contours &contours, int &board_area,
