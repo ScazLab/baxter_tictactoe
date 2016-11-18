@@ -20,11 +20,18 @@ using namespace cv;
 /**************************************************************************/
 bool TTTController::gripToken()
 {
-    cv::Point offset;
+    cv::Point offset(0,0);
     // check if token is present before starting movement loop
     // (prevent gripper from colliding with play surface)
-    checkForToken();
+    while(RobotInterface::ok())
+    {
+        if(processTokenImage(offset)) break;
 
+        ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
+        r.sleep();
+    }
+
+    offset = cv::Point(0,0);
     ros::Time start_time = ros::Time::now();
     cv::Point2d prev_offset(0.540, 0.540);
 
@@ -60,36 +67,23 @@ bool TTTController::gripToken()
     return true;
 }
 
-void TTTController::checkForToken()
-{
-    cv::Point offset;
-
-    while(RobotInterface::ok())
-    {
-        if(processTokenImage(offset)) return;
-
-        ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
-        r.sleep();
-    }
-}
-
 bool TTTController::processTokenImage(cv::Point &offset)
 {
     Mat token;
     Mat pool(_img_size, CV_8UC1);
     Contours contours;
 
-    pool = isolateTokenPool();
+    pool = detectPool();
 
     token = isolateToken(pool);
     bool res = computeTokenOffset(token, offset, token);
     imshow("Processed", token);
 
     waitKey(1);
-    return true;
+    return res;
 }
 
-cv::Mat TTTController::isolateTokenPool()
+cv::Mat TTTController::detectPool()
 {
     Mat black = Mat::zeros(_img_size, CV_8UC1);
     Mat   out = Mat::zeros(_img_size, CV_8UC1);
@@ -128,19 +122,14 @@ Mat TTTController::isolateToken(Mat pool)
     Mat blue = Mat::zeros(_img_size, CV_8UC1);
     Mat out  = Mat::zeros(_img_size, CV_8UC1);
 
-    isolateBlue(blue);
-    // imshow("blue", blue);
+    isolateBlue(blue);    // imshow("blue", blue);
 
     bitwise_and(blue, pool, out);
 
-    erode(out, out, Mat());
-    erode(out, out, Mat());
-    dilate(out, out, Mat());
-    dilate(out, out, Mat());
-    dilate(out, out, Mat());
-    dilate(out, out, Mat());
-    erode(out, out, Mat());
-    erode(out, out, Mat());
+    // Some morphological operations to remove noise and clean up the image
+    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
+    for (int i = 0; i < 4; ++i) dilate(out, out, Mat());
+    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
 
     imshow("Rough", out);
 
@@ -182,8 +171,8 @@ bool TTTController::computeTokenOffset(Mat in, cv::Point &offset, Mat &out)
         }
 
         // reconstruct token's square shape
-        Rect token(x_min, y_min, y_max - y_min, y_max - y_min);
-        rectangle(out, token, Scalar(255,255,255), CV_FILLED);
+        rectangle(out, Rect(x_min, y_min, y_max - y_min, y_max - y_min),
+                       Scalar(255,255,255), CV_FILLED);
 
         // find and draw the center of the token and the image
         int x_mid = int((x_max + x_min) / 2);

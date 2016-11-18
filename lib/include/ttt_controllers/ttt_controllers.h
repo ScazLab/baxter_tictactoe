@@ -156,12 +156,6 @@ private:
         bool gripToken();
 
         /*
-         * Checks if hand camera detects token
-         *
-         */
-        void checkForToken();
-
-        /*
          * identifies token and calculates offset distance required to move hand camera
          * to token
          *
@@ -183,7 +177,7 @@ private:
          *
          * @return  Binary matrix displaying the pool of objects
          */
-        cv::Mat isolateTokenPool();
+        cv::Mat detectPool();
 
         /*
          * Isolates token from the pool
