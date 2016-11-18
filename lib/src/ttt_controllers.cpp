@@ -726,8 +726,9 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
 
 TTTController::~TTTController()
 {
-    pthread_mutex_destroy(&_mutex_img);
-
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
+    destroyWindow("Rough");
+
+    pthread_mutex_destroy(&_mutex_img);
 }
