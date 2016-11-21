@@ -540,7 +540,10 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
 
-    pthread_mutex_init(&_mutex_img, NULL);
+    pthread_mutexattr_t _mutex_attr;
+    pthread_mutexattr_init(&_mutex_attr);
+    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&_mutex_img, &_mutex_attr);
 
     namedWindow("Hand Camera", WINDOW_NORMAL);
     namedWindow("Rough", WINDOW_NORMAL);

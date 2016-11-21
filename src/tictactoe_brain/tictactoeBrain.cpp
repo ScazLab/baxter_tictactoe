@@ -27,11 +27,14 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
                                r(100), _setup(false), _nh(name),
-                               leftArmCtrl("ttt_controller", "left"), rightArmCtrl("ttt_controller", "right")
+                               leftArmCtrl("ttt_controller", "left"),
+                               rightArmCtrl("ttt_controller", "right")
 {
     printf("\n");
-    boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::tttStateCb, this);
-    _scan_server   = _nh.advertiseService("baxter_tictactoe/ready_scan", &tictactoeBrain::scanState, this);
+    boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1,
+                                    &tictactoeBrain::tttStateCb, this);
+    _scan_server   = _nh.advertiseService("baxter_tictactoe/ready_scan",
+                                           &tictactoeBrain::scanState, this);
 
     _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
     ROS_INFO("Using voice %s", _voice_type.c_str());
@@ -41,8 +44,8 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
 
     // string robot_color;
     // _nh.param<string>("ttt_brain/robot_color",  robot_color, "blue");
-    // ROS_ASSERT_MSG(robot_color!="blue", "Parameter robot_color should be set to blue in the parameter server. "
-    //                            "If you want to use red, be willing to spend some time in coding this feature!");
+    // ROS_ASSERT_MSG(robot_color!="blue", "robot_color should be set to blue in the parameter server. "
+    //                            "If you want to use red, be willing to spend some time in coding it!");
     _robot_color=blue;
     _opponent_color=_robot_color==blue?red:blue;
 
@@ -77,7 +80,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
             break;
         }
 
-        ROS_WARN_THROTTLE(1,"Board was not detected. Make sure it is within the camera's view and is not obscured.");
+        ROS_WARN_THROTTLE(1, "Board was not detected. Make sure it is within view and not obscured.");
         r.sleep();
     }
 }
@@ -279,9 +282,8 @@ bool tictactoeBrain::is_board_full()
     TTT_Board_State aux = boardState.get();
     for(int i = 0; i < aux.size(); i++)
     {
-        if(aux[i].state==empty || aux[i].state==undefined) /* we consider the case where cells are
-                                                              undefined because is needed in the first
-                                                              loop when all cells are undefined */
+        if(aux[i].state==empty || aux[i].state==undefined)
+
         return false;
     }
     return true;
@@ -303,12 +305,12 @@ void tictactoeBrain::set_strategy(std::string strategy)
     else if (strategy=="smart")
     {
         _choose_next_move=&tictactoeBrain::winning_defensive_random_move;
-        ROS_INFO("[strategy] Randomly place tokens but win if there is a chance, or block opponent's victory");
+        ROS_INFO("[strategy] Randomly place tokens but win if possible, or block opponent's victory");
     }
     else if (strategy=="cheating")
     {
         _choose_next_move=&tictactoeBrain::cheating_to_win_random_move;
-        ROS_INFO("[strategy] Randomly place tokens but win if there is a chance "
+        ROS_INFO("[strategy] Randomly place tokens but win if possible "
                             "even if cheating is required, or block opponent's victory");
     }
     else
