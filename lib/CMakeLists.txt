@@ -30,7 +30,7 @@ target_link_libraries(${PROJECT_NAME}   ${OpenCV_LIBRARIES}
                                         ${QT_LIBRARIES}
                                         ${catkin_LIBRARIES})
 
-target_link_libraries(ttt_controllers   ${catkin_LIBRARIES})
+target_link_libraries(ttt_controllers   baxterTictactoe ${catkin_LIBRARIES})
 
 #Compile old software if required
 IF(COMPILE_OLD_SW STREQUAL true)

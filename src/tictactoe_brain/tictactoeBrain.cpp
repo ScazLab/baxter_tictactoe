@@ -269,7 +269,7 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
     uint8_t cur_tok_opp = num_tok_opp;
 
     // We wait until the number of opponent's tokens increases
-    while(true)
+    while(ros::ok())
     {
         ROS_WARN("Press ENTER when the opponent's turn is done");
         getCin();
