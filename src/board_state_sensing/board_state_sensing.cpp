@@ -50,12 +50,11 @@ void BoardState::init()
     ROS_INFO("Area threshold: %g", area_threshold);
     ROS_INFO("Show param set to %i", doShow);
 
-    cv::namedWindow("[Board_State_Sensor] cell outlines", cv::WINDOW_NORMAL);
-
     if (doShow)
     {
-        cv::namedWindow("[Board_State_Sensor] red  masked image of the board");
-        cv::namedWindow("[Board_State_Sensor] blue masked image of the board");
+        cv::namedWindow("[Board_State_Sensor] cell outlines");
+        cv::namedWindow("[Board_State_Sensor] red  mask of the board");
+        cv::namedWindow("[Board_State_Sensor] blue mask of the board");
     }
 }
 
@@ -64,11 +63,11 @@ BoardState::BoardState(bool _show): image_transport(node_handle), doShow(_show) 
 
 BoardState::~BoardState()
 {
-    cv::destroyWindow("[Board_State_Sensor] cell outlines");
     if (doShow)
     {
-        cv::destroyWindow("[Board_State_Sensor] red  masked image of the board");
-        cv::destroyWindow("[Board_State_Sensor] blue masked image of the board");
+        cv::destroyWindow("[Board_State_Sensor] cell outlines");
+        cv::destroyWindow("[Board_State_Sensor] red  mask of the board");
+        cv::destroyWindow("[Board_State_Sensor] blue mask of the board");
     }
 }
 
@@ -172,8 +171,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
         if (doShow)
         {
-            if (i==0) cv::imshow("[Board_State_Sensor] red  masked image of the board", hsv_filt_mask);
-            if (i==1) cv::imshow("[Board_State_Sensor] blue masked image of the board", hsv_filt_mask);
+            if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
+            if (i==1) cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask);
         }
         for (int j = 0; j < board.cells.size(); ++j)
         {
@@ -229,10 +228,9 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         cv::putText(img_aux, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
     }
 
-    cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
+    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
 
-    /*if (doShow) */
-    cv::waitKey(50);
+    cv::waitKey(10);
 }
 
 int main(int argc, char** argv)
