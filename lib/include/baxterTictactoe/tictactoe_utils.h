@@ -17,9 +17,15 @@ namespace ttt
 #define ACTION_PUTDOWN      "put_down"
 
 #undef  PICK_UP_SPEED
-#define PICK_UP_SPEED  0.070    // [m/s]
+#define PICK_UP_SPEED  0.080    // [m/s]
 
 #define NUMBER_OF_CELLS 9
+
+#define NUM_GAMES           3
+#define CHEATING_GAME_A     2
+#define CHEATING_GAME_B     3
+
+#define VOICE       "voice_kal_diphone"
 
 // Used to determine the three possible states of a cell.
 // Undefined is just used when it is created and non state has been assigned.

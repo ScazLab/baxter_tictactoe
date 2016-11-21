@@ -25,22 +25,25 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
     return !(cells1==cells2);
 }
 
-tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(100),
-                               _robot_color(robot_color), _setup(false), got_cin(false),
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
+                               r(100), _setup(false), got_cin(false), _nh(name),
                                leftArmCtrl("ttt_controller", "left"), rightArmCtrl("ttt_controller", "right")
 {
+    printf("\n");
     boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1, &tictactoeBrain::tttStateCb, this);
     _scan_server   = _nh.advertiseService("baxter_tictactoe/ready_scan", &tictactoeBrain::scanState, this);
 
-    ROS_ASSERT_MSG(_nh.hasParam("voice"),"No voice found in the parameter server!");
-    ROS_ASSERT_MSG(_nh.getParam("voice",_voice_type), "The voice parameter not retrieved from the parameter server");
+    _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
     ROS_INFO("Using voice %s", _voice_type.c_str());
 
-    ROS_ASSERT_MSG(_nh.hasParam("cheating"),"No cheating parameter found in the parameter server!");
-    ROS_ASSERT_MSG(_nh.getParam("cheating",cheating), "The cheating flag not retrieved from the parameter server");
+    _nh.param<bool>("ttt_brain/cheating", cheating, true);
     ROS_INFO("Robot %s cheat", cheating?"does":"does not");
 
-    ROS_ASSERT_MSG(_robot_color==blue || _robot_color==red, "Wrong color for robot's tokens");
+    // string robot_color;
+    // _nh.param<string>("ttt_brain/robot_color",  robot_color, "blue");
+    // ROS_ASSERT_MSG(robot_color!="blue", "Parameter robot_color should be set to blue in the parameter server. "
+    //                            "If you want to use red, be willing to spend some time in coding this feature!");
+    _robot_color=blue;
     _opponent_color=_robot_color==blue?red:blue;
 
     cin_timer = _nh.createTimer(ros::Duration(0.001), &tictactoeBrain::cinTimerCb, this, false, false);
@@ -60,7 +63,7 @@ tictactoeBrain::tictactoeBrain(cellState robot_color, std::string strategy) : r(
     boardState.set(aux);    // initially the state for all cells in the TTT board is undefined
 
     qsrand(ros::Time::now().nsec);
-    set_strategy(strategy);
+    set_strategy(_strategy);
 
     has_cheated=false;
 
@@ -134,24 +137,12 @@ int tictactoeBrain::winning_defensive_random_move(bool& cheating)
     return random_move(cheating);
 }
 
-int tictactoeBrain::smart_cheating_random_move(bool& cheating)
-{
-    int next_cell_id=-1;
-    if ((next_cell_id = victory_move()) != -1) return next_cell_id;
-    if ((next_cell_id = cheating_move()) != -1)
-    {
-        cheating=true;
-        return next_cell_id;
-    }
-    if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
-    return random_move(cheating);
-}
-
 int tictactoeBrain::cheating_move()
 {
     TTT_Board_State aux = boardState.get();
     uint8_t cell_state = undefined;
-    for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
+    for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
+    {
         if (aux[i].state==_opponent_color)
         {
             cell_state=aux[i].state;
@@ -173,7 +164,8 @@ int tictactoeBrain::defensive_move()
 {
     TTT_Board_State aux = boardState.get();
     uint8_t cell_state = undefined;
-    for (size_t i = 0; i < NUMBER_OF_CELLS; ++i) {
+    for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
+    {
         if (aux[i].state==empty || aux[i].state==undefined)
         {
             cell_state = aux[i].state;
@@ -337,11 +329,6 @@ void tictactoeBrain::set_strategy(std::string strategy)
     else if (strategy=="cheating")
     {
         _choose_next_move=&tictactoeBrain::cheating_to_win_random_move;
-        ROS_INFO("[strategy] Randomly place tokens but win if there is a chance even if cheating is required");
-    }
-    else if (strategy=="smart-cheating")
-    {
-        _choose_next_move=&tictactoeBrain::smart_cheating_random_move;
         ROS_INFO("[strategy] Randomly place tokens but win if there is a chance "
                             "even if cheating is required, or block opponent's victory");
     }

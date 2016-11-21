@@ -1,73 +1,91 @@
 #include "tictactoeBrain.h"
 
-#define NUM_GAMES           3
-#define CHEATING_GAME_A     2
-#define CHEATING_GAME_B     3
-
 using namespace ttt;
 using namespace std;
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "tictactoe_brain");
+    ros::init(argc, argv, "ttt_brain");
+    ros::NodeHandle _nh("ttt_brain");
 
-    ttt::tictactoeBrain brain;
+    int num_games;
+    _nh.param<int>("num_games", num_games, NUM_GAMES);
 
-    brain.set_strategy("smart");
-    ros::Duration(1).sleep(); // needed in order to use the voice at the beginning
+    std::vector<int> cheating_games;
+    if (_nh.hasParam("cheating_games"))
+    {
+        _nh.getParam("cheating_games", cheating_games);
+    }
+    else
+    {
+        cheating_games.push_back(CHEATING_GAME_A);
+        cheating_games.push_back(CHEATING_GAME_B);
+    }
 
-    ROS_INFO_STREAM("Robot plays with " << brain.get_robot_color_str() << " and the opponent with " << brain.get_opponent_color_str());
+    std::stringstream cheating_games_str;
+    std::copy(cheating_games.begin(), cheating_games.end(),
+              std::ostream_iterator<int>(cheating_games_str, " "));
 
-    brain.say_sentence("  Welcome!  Let's play Tic Tac Toe.",4);
+    ROS_INFO("Number of games: %i; Cheating games: %s",
+              num_games, cheating_games_str.str().c_str());
+
+    ttt::tictactoeBrain brain("ttt_brain", "smart");
+
+    ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
+              brain.get_robot_color_str().c_str(), brain.get_opponent_color_str().c_str());
+
+    brain.say_sentence("Welcome!  Let's play Tic Tac Toe.",4);
     brain.say_sentence("Do not grasp your token before I say that it is your turn",5);
 
-    int robot_victories=0, participant_victories=0, ties=0;
-    int i=1;
-    bool cheating=false;
-    ROS_INFO_STREAM("Let's play " << NUM_GAMES << " times Tic Tac Toe");
+    int n_robot_win=0;
+    int n_opponent_win=0;
+    int n_ties=0;
+
     int game_result=0;
 
-    while(i<=NUM_GAMES)
+    for (int i = 0; i < num_games; ++i)
     {
-        ROS_INFO_STREAM("Game " << i);
+        printf("\n");
+        ROS_INFO("GAME #%i", i);
+        brain.set_strategy("smart");
+        bool cheated=false;
+        bool has_to_cheat=false;
 
-        if ((i==CHEATING_GAME_A || i==CHEATING_GAME_B) && brain.get_cheating()) //In the fourth game, Baxter cheats
+        if (brain.get_cheating())
         {
-            brain.set_strategy("smart-cheating");
+            for (int j = 0; j < cheating_games.size(); ++j)
+            {
+                if (j == i)
+                {
+                    brain.set_strategy("cheating");
+                    has_to_cheat=true;
+                }
+            }
         }
 
-        game_result=brain.play_one_game(cheating);
+        game_result=brain.play_one_game(cheated);
 
         switch(game_result)
         {
-            case 1: robot_victories++;
+            case 1: n_robot_win++;
                 break;
-            case 2: participant_victories++;
+            case 2: n_opponent_win++;
                 break;
-            case 3: ties++;
+            case 3: n_ties++;
                 break;
             default: ROS_ERROR("Unexpected return value for the game: %i ???", game_result);
         }
 
-        if ((i==CHEATING_GAME_A || i==CHEATING_GAME_B) && brain.get_cheating())
+        if (has_to_cheat && !cheated)
         {
-            if (!cheating)
-            {
-                ROS_INFO("Game ended but no cheating. Game counter does not increase.");
-                continue;
-            }
-            else
-            {
-                ROS_INFO("Game ended cheating. Back to random strategy");
-                brain.set_strategy("smart");
-            }
+            ROS_WARN("Game ended but no cheating. Game counter does not increase.");
+            i--;
         }
-        i++;
     }
 
     brain.say_sentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
 
-    ROS_INFO("Baxter %i - Human %i - Ties ", robot_victories, participant_victories, ties);
+    ROS_INFO("Baxter %i - Human %i - n_ties %i", n_robot_win, n_opponent_win, n_ties);
 
     return 0;
 }

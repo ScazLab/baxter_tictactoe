@@ -212,7 +212,7 @@ void TTTController::setDepth(float &dist)
     {
         double px = init_pos.x;
         double py = init_pos.y;
-        double pz = init_pos.z - PICK_UP_SPEED * (ros::Time::now() - start_time).toSec();
+        double pz = init_pos.z - (PICK_UP_SPEED+0.2) * (ros::Time::now() - start_time).toSec();
 
         double ox =   1.0;
         double oy = -0.03;

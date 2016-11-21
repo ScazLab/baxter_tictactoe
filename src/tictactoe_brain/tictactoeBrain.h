@@ -24,6 +24,8 @@ bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
 class tictactoeBrain
 {
 private:
+    std::string name;
+
     typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
     // typedef std::vector<baxter_tictactoe::MsgCell> TTT_Board_State;
 
@@ -138,7 +140,7 @@ private:
 
 public:
 
-    tictactoeBrain(cellState robot_color=blue, std::string strategy="random");
+    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random");
 
     ~tictactoeBrain();
 
@@ -205,12 +207,6 @@ public:
     void say_sentence(std::string sentence, double t);
 
     /**
-     * This function sets a strategy.
-     * @param strategy string corresponding with a particular strategy.
-     **/
-    void set_strategy(std::string strategy);
-
-    /**
      * Plays one game
      * @param  cheating if to cheat or not.
      * @return          The game results (i.e. the winner, if any)
@@ -227,6 +223,7 @@ public:
 
     /* SETTERS */
     void set_cheating(bool _c) { cheating=_c; };
+    void set_strategy(std::string strategy);
 };
 
 }
