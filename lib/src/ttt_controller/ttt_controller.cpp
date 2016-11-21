@@ -1,4 +1,4 @@
-#include "ttt_controllers/ttt_controllers.h"
+#include "ttt_controller/ttt_controller.h"
 #include <kdl/chainiksolverpos_nr_jl.hpp>
 
 using namespace std;

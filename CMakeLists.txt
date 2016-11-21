@@ -172,7 +172,7 @@ add_dependencies(board_state_sensing            baxter_tictactoe_generate_messag
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(tictactoe_brain           baxterTictactoe
-                                                ttt_controllers
+                                                ttt_controller
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cells_definition          baxterTictactoe

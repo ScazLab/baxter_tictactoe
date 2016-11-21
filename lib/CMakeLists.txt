@@ -12,8 +12,8 @@ add_library(${PROJECT_NAME}   include/${PROJECT_NAME}/tictactoe_utils.h
                               include/${PROJECT_NAME}/T_ThreadSafe.h
                               src/tictactoe_utils.cpp)
 
-add_library(ttt_controllers   include/ttt_controllers/ttt_controllers.h
-                              src/ttt_controllers.cpp)
+add_library(ttt_controller    include/ttt_controller/ttt_controller.h
+                              src/ttt_controller/ttt_controller.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -22,7 +22,7 @@ add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp
                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                    ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(ttt_controllers   ${${PROJECT_NAME}_EXPORTED_TARGETS}
+add_dependencies(ttt_controller    ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                    ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -30,7 +30,7 @@ target_link_libraries(${PROJECT_NAME}   ${OpenCV_LIBRARIES}
                                         ${QT_LIBRARIES}
                                         ${catkin_LIBRARIES})
 
-target_link_libraries(ttt_controllers   baxterTictactoe ${catkin_LIBRARIES})
+target_link_libraries(ttt_controller   baxterTictactoe ${catkin_LIBRARIES})
 
 #Compile old software if required
 IF(COMPILE_OLD_SW STREQUAL true)

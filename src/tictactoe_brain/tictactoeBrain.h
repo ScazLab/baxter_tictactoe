@@ -8,7 +8,7 @@
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxterTictactoe/T_ThreadSafe.h"
-#include "ttt_controllers/ttt_controllers.h"
+#include "ttt_controller/ttt_controller.h"
 
 #include <pthread.h>
 
