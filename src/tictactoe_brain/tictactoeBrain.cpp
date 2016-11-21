@@ -26,7 +26,7 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
 }
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _setup(false), got_cin(false), _nh(name),
+                               r(100), _setup(false), _nh(name),
                                leftArmCtrl("ttt_controller", "left"), rightArmCtrl("ttt_controller", "right")
 {
     printf("\n");
@@ -45,8 +45,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     //                            "If you want to use red, be willing to spend some time in coding this feature!");
     _robot_color=blue;
     _opponent_color=_robot_color==blue?red:blue;
-
-    cin_timer = _nh.createTimer(ros::Duration(0.001), &tictactoeBrain::cinTimerCb, this, false, false);
 
     leftArmCtrl.startAction(ACTION_SCAN);
     while(ros::ok() && leftArmCtrl.getState() != DONE)
@@ -264,7 +262,7 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
     while(ros::ok())
     {
         ROS_WARN("Press ENTER when the opponent's turn is done");
-        getCin();
+        std::cin.get();
 
         {
             cur_tok_opp = get_num_tokens(_opponent_color);
@@ -274,25 +272,6 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
 
         r.sleep();
     }
-}
-
-bool tictactoeBrain::getCin()
-{
-    got_cin = false;
-    cin_timer.start();
-
-    while(ros::ok() && got_cin == false)
-    {
-        r.sleep();
-    }
-    return true;
-}
-
-void tictactoeBrain::cinTimerCb(const ros::TimerEvent&)
-{
-    ROS_INFO("cinTimerCb");
-    std::cin.get();
-    got_cin = true;
 }
 
 bool tictactoeBrain::is_board_full()

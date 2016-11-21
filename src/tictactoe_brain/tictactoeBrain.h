@@ -44,13 +44,6 @@ private:
     ros::ServiceClient _scan_client;
     ros::ServiceServer _scan_server;
 
-    ros::Timer  cin_timer;       // Timer to create non-blocking IO (std::cin)
-    bool          got_cin;
-
-    void cinTimerCb(const ros::TimerEvent&);
-
-    bool getCin();
-
     bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
 
