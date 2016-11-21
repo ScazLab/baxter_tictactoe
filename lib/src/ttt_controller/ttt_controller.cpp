@@ -520,6 +520,11 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                              ArmCtrl(name, limb, no_robot, use_forces, false),
                              r(100), _img_trp(_n), _is_img_empty(true)
 {
+    pthread_mutexattr_t _mutex_attr;
+    pthread_mutexattr_init(&_mutex_attr);
+    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&_mutex_img, &_mutex_attr);
+
     XmlRpc::XmlRpcValue hsv_red_symbols;
     ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
     hsv_red=ttt::hsvColorRange(hsv_red_symbols);
@@ -539,11 +544,6 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
         _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
-
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_img, &_mutex_attr);
 
     namedWindow("Hand Camera", WINDOW_NORMAL);
     namedWindow("Rough", WINDOW_NORMAL);
