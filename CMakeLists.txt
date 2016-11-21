@@ -139,8 +139,6 @@ add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBra
                                                 src/tictactoe_brain/tictactoe_brain.cpp)
 add_executable(cells_definition                 src/cells_definition/cells_definition.h
                                                 src/cells_definition/cells_definition.cpp)
-add_executable(cells_definition_auto            src/cells_definition/cells_definition_auto.h
-                                                src/cells_definition/cells_definition_auto.cpp)
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
@@ -152,9 +150,6 @@ add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messag
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp
-                                                ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                ${catkin_EXPORTED_TARGETS})
-add_dependencies(cells_definition_auto          baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp
@@ -176,10 +171,6 @@ target_link_libraries(tictactoe_brain           baxterTictactoe
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(cells_definition          baxterTictactoe
-                                                ${OpenCV_LIBS}
-                                                ${QT_LIBRARIES}
-                                                ${catkin_LIBRARIES})
-target_link_libraries(cells_definition_auto     baxterTictactoe
                                                 ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
 target_link_libraries(show_board_cells          baxterTictactoe
