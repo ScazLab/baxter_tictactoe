@@ -9,7 +9,7 @@ cellsDefinition::cellsDefinition() : image_transport(node_handle)
     img_loaded = false;
     pthread_mutex_init(&mutex_b, NULL);
 
-    image_subscriber = image_transport.subscribe("image_in", 1,
+    image_subscriber = image_transport.subscribe("image_in_cd", 1,
                                                   &cellsDefinition::imageCb, this);
 
     service = node_handle.advertiseService("baxter_tictactoe/define_cells",
@@ -213,12 +213,3 @@ cellsDefinition::~cellsDefinition()
     // cv::destroyWindow("[Cells_Definition] cell boundaries");
 }
 
-int main(int argc, char ** argv)
-{
-    ros::init(argc, argv, "cells_definition");
-    // ros::NodeHandle n;
-    cellsDefinition cd;
-
-    ros::spin();
-    return 0;
-}

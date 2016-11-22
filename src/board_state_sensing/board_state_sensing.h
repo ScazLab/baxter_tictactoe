@@ -1,3 +1,6 @@
+#ifndef __BOARD_STATE_SENSING__
+#define __BOARD_STATE_SENSING__
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -50,3 +53,5 @@ public:
 
     std::string intToString( const int a );
 };
+
+#endif //__BOARD_STATE_SENSING__

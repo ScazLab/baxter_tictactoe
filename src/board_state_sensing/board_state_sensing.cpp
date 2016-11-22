@@ -23,7 +23,7 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 
 void BoardState::init()
 {
-    image_subscriber = image_transport.subscribe("image_in", 1, &BoardState::imageCallback, this);
+    image_subscriber = image_transport.subscribe("image_in_bs", 1, &BoardState::imageCallback, this);
 
     board_publisher  = node_handle.advertise<MsgBoard>("baxter_tictactoe/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");

@@ -1,8 +1,10 @@
 #include "board_state_sensing.h"
+#include "cells_definition.h"
 
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "show_cells");
+    ros::AsyncSpinner spinner(4);  // AsyncSpinner to handle callbacks
 
     // Very dirty way to process command line arguments. It seems that
     // there is not a straightforward standard ROS way, unfortunately.
@@ -17,7 +19,9 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState cd(show);
+    BoardState bs(show);
+    cellsDefinition cd;
+    spinner.start();
     ros::spin();
 
     return 0;

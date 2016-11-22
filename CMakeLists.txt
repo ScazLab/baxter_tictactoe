@@ -140,17 +140,14 @@ add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBra
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
-add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.h
+add_executable(board_state_sensor               src/board_state_sensing/board_state_sensing.h
                                                 src/board_state_sensing/board_state_sensing.cpp
+                                                src/board_state_sensing/cells_definition.h
+                                                src/board_state_sensing/cells_definition.cpp
                                                 src/board_state_sensing/board_state_sensor.cpp)
-add_executable(cells_definition                 src/board_state_sensing/cells_definition.h
-                                                src/board_state_sensing/cells_definition.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp
-                                                ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                ${catkin_EXPORTED_TARGETS})
-add_dependencies(cells_definition               baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp
@@ -162,7 +159,7 @@ add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messag
 add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
-add_dependencies(board_state_sensing            baxter_tictactoe_generate_messages_cpp
+add_dependencies(board_state_sensor             baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 
@@ -171,9 +168,6 @@ target_link_libraries(tictactoe_brain           baxterTictactoe
                                                 ttt_controller
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(cells_definition          baxterTictactoe
-                                                ${OpenCV_LIBS}
-                                                ${catkin_LIBRARIES})
 target_link_libraries(show_board_cells          baxterTictactoe
                                                 ${OpenCV_LIBS}
                                                 ${QT_LIBRARIES}
@@ -183,7 +177,7 @@ target_link_libraries(hsv_range_finder          baxterTictactoe
                                                 ${catkin_LIBRARIES})
 target_link_libraries(board_scheme              ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
-target_link_libraries(board_state_sensing       baxterTictactoe
+target_link_libraries(board_state_sensor        baxterTictactoe
                                                 ${OpenCV_LIBS}
                                                 ${QT_LIBRARIES}
                                                 ${catkin_LIBRARIES})
