@@ -4,12 +4,12 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition(string name) : ROSThreadImage(name), r(100)
+cellsDefinition::cellsDefinition(string name) : ROSThreadImage(name), r(40) // 40Hz
 {
     img_loaded = false;
     pthread_mutex_init(&mutex_b, NULL);
 
-    service = _n.advertiseService("baxter_tictactoe/define_cells",
+    service = _n.advertiseService("/define_cells",
                                    &cellsDefinition::serviceCb, this);
 
     // cv::namedWindow("[Cells_Definition] cell boundaries", cv::WINDOW_NORMAL);
@@ -18,6 +18,7 @@ cellsDefinition::cellsDefinition(string name) : ROSThreadImage(name), r(100)
 
 bool cellsDefinition::serviceCb(DefineCells::Request &req, DefineCells::Response &res)
 {
+    // ROS_INFO("serviceCb");
     if(img_loaded == true)
     {
         MsgCell cell;
@@ -96,13 +97,16 @@ void cellsDefinition::InternalThreadEntry()
 {
     while(ros::ok())
     {
+        ROS_INFO("InternalThreadEntry CD");
         if (!_img_empty)
         {
             cv::Mat img_gray;
             cv::Mat img_binary;
 
             // convert image color model from BGR to grayscale
+            pthread_mutex_lock(&_mutex_img);
             cv::cvtColor(_curr_img, img_gray, CV_BGR2GRAY);
+            pthread_mutex_unlock(&_mutex_img);
             // convert grayscale image to binary image, using 155 threshold value to
             // isolate white-colored board
             cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
@@ -145,10 +149,9 @@ void cellsDefinition::InternalThreadEntry()
             cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
 
             // find and display cell centroids
-            contours.erase(contours.begin() + largest_idx);
-
-            if(contours.size() == 9)
+            if(contours.size() == 10)
             {
+                contours.erase(contours.begin() + largest_idx);
                 pthread_mutex_lock(&mutex_b);
                 board.cells.clear();
                 pthread_mutex_unlock(&mutex_b);

@@ -3,8 +3,7 @@
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "show_cells");
-    ros::AsyncSpinner spinner(4);  // AsyncSpinner to handle callbacks
+    ros::init(argc, argv, "board_state_sensor");
 
     // Very dirty way to process command line arguments. It seems that
     // there is not a straightforward standard ROS way, unfortunately.
@@ -19,9 +18,8 @@ int main(int argc, char** argv)
         }
     }
 
-    BoardState bs(show);
-    cellsDefinition cd("cells_definition");
-    spinner.start();
+    BoardState bs("/baxter_tictactoe", show);
+    cellsDefinition cd("/baxter_tictactoe");
     ros::spin();
 
     return 0;
