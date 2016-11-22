@@ -94,21 +94,12 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    bool arm_scan = false;
-    scan_client = node_handle.serviceClient<ScanState>("/baxter_tictactoe/ready_scan");
-    ScanState scan_srv;
-
-    if(scan_client.call(scan_srv))
-    {
-        arm_scan = scan_srv.response.state;
-    }
-
     cells_client = node_handle.serviceClient<DefineCells>("/baxter_tictactoe/define_cells");
     ROS_ASSERT_MSG(cells_client, "Empty client");
 
     DefineCells cells_srv;
 
-    if(cells_client.call(cells_srv) && arm_scan && board.cells.size() != 9)
+    if(cells_client.call(cells_srv) && board.cells.size() != 9)
     {
         board.cells.clear();
         int cells_num = cells_srv.response.board.cells.size();
@@ -145,7 +136,7 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         // if board has not been loaded, return (if board was already previously loaded,
         // the old board is displayed)
-        if(board.cells.size() != 9 && arm_scan)
+        if(board.cells.size() != 9)
         {
             return;
         }
@@ -193,7 +184,8 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
         }
     }
     cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
-    for(int i = 0; i < board.cells.size(); i++){
+    for(int i = 0; i < board.cells.size(); i++)
+    {
         vector<vector<cv::Point> > contours;
         contours.push_back(board.cells[i].contours);
         drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);
@@ -211,24 +203,23 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
     }
 
     board_publisher.publish(msg_board);
-    ROS_DEBUG("[Board_State_Sensor] Publishing new state");
     last_msg_board=msg_board;
-    ROS_DEBUG("[Board_State_Sensor] NEW TTT BOARD STATE PUBLISHED");
+    ROS_DEBUG("New board state published");
 
-    cv::Mat img_aux = cv_ptr->image.clone();
+    cv::Mat img = cv_ptr->image.clone();
 
     // drawing all cells of the board game
-    cv::drawContours(img_aux,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
+    cv::drawContours(img,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
     for(int i = 0; i < board.cells.size(); i++)
     {
         cv::Point cell_centroid;
         board.cells[i].get_cell_centroid(cell_centroid);
-        //cv::circle(img_aux, p,5,cv::Scalar(0,0, 255),-1);
-        // cv::line(img_aux, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
-        cv::putText(img_aux, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
+        //cv::circle(img, p,5,cv::Scalar(0,0, 255),-1);
+        // cv::line(img, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
+        cv::putText(img, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
     }
 
-    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_aux);
+    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img);
 
     cv::waitKey(10);
 }

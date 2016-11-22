@@ -13,14 +13,13 @@
 
 class BoardState
 {
-
 private:
-
     ros::NodeHandle node_handle;
     ros::Publisher  board_publisher;
+
     ros::ServiceClient cells_client;
     ros::ServiceClient scan_client;
-    ros::ServiceServer scan_server;
+
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber     image_subscriber;
 
@@ -43,7 +42,6 @@ private:
     void init();
 
 public:
-
     BoardState();
     BoardState(bool _show);
     ~BoardState();

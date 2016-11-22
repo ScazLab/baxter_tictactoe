@@ -8,32 +8,20 @@ cellsDefinition::cellsDefinition() : image_transport(node_handle)
 {
     img_loaded = false;
     pthread_mutex_init(&mutex_b, NULL);
-    pthread_mutex_init(&mutex_i, NULL);
 
-    image_subscriber = image_transport.subscribe("image_in", 1, &cellsDefinition::imageCallback, this);
+    image_subscriber = image_transport.subscribe("image_in", 1,
+                                                  &cellsDefinition::imageCb, this);
 
-    service = node_handle.advertiseService("baxter_tictactoe/define_cells", &cellsDefinition::defineCells, this);
+    service = node_handle.advertiseService("baxter_tictactoe/define_cells",
+                                            &cellsDefinition::serviceCb, this);
 
-    // cv::namedWindow("[Cells_Definition_Auto] cell boundaries", cv::WINDOW_NORMAL);
-    // cv::resizeWindow("[Cells_Definition_Auto] cell boundaries", 1000, 1000);
-
-    // cv::namedWindow("[Cells_Definition_Auto] raw", cv::WINDOW_NORMAL);
-    // cv::resizeWindow("[Cells_Definition_Auto] raw", 1000, 1000);
+    // cv::namedWindow("[Cells_Definition] cell boundaries", cv::WINDOW_NORMAL);
+    // cv::resizeWindow("[Cells_Definition] cell boundaries", 960, 600);
 }
 
-cellsDefinition::~cellsDefinition()
+bool cellsDefinition::serviceCb(DefineCells::Request &req, DefineCells::Response &res)
 {
-    // cv::destroyWindow("[Cells_Definition_Auto] cell boundaries");
-    // cv::destroyWindow("[Cells_Definition_Auto] raw");
-}
-
-bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Response &res)
-{
-    pthread_mutex_lock(&mutex_i);
-    bool img_loaded_copy = img_loaded;
-    pthread_mutex_unlock(&mutex_i);
-
-    if(img_loaded_copy == true)
+    if(img_loaded == true)
     {
         MsgCell cell;
 
@@ -43,10 +31,8 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
             cell.state = MsgCell::EMPTY;
             for(int j = 0; j < board.cells[i].contours.size(); j++)
             {
-                // ROS_INFO("[BOARD] x: %d y: %d", board.cells[i].contours[j].x, board.cells[i].contours[j].y);
                 cell.contours[j].x = board.cells[i].contours[j].x;
                 cell.contours[j].y = board.cells[i].contours[j].y;
-                // ROS_INFO("[CELL] x: %d y: %d", cell.contours[j].x, cell.contours[j].y);
             }
             res.board.cells[i] = cell;
         }
@@ -54,23 +40,16 @@ bool cellsDefinition::defineCells(DefineCells::Request &req, DefineCells::Respon
 
         return true;
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
 {
-    if(ith != LARGEST && ith != NEXT_LARGEST)
-    {
-        ROS_ERROR("[Cells_Definition_Auto] Index value is invalid. Valid inputs are limited to LARGEST = 1, NEXT_LARGEST = 2");
-    };
-
     double largest_area = 0;
-    int largest_area_index = 0;
+    int largest_idx = 0;
     double next_largest_area = 0;
-    int next_largest_area_index = 0;
+    int next_largest_idx = 0;
 
     // iterate through contours and keeps track of contour w/ largest and 2nd-largest area
     for(int i = 0; i < contours.size(); i++)
@@ -78,26 +57,19 @@ int cellsDefinition::getIthIndex(vector<vector<cv::Point> > contours, Index ith)
         if(contourArea(contours[i], false) > largest_area)
         {
             next_largest_area = largest_area;
-            next_largest_area_index = largest_area_index;
+            next_largest_idx = largest_idx;
             largest_area = contourArea(contours[i], false);
-            largest_area_index = i;
+            largest_idx = i;
         }
-        else if(next_largest_area < contourArea(contours[i], false) && contourArea(contours[i], false) < largest_area)
+        else if(next_largest_area < contourArea(contours[i], false) &&
+                contourArea(contours[i], false) < largest_area)
         {
             next_largest_area = contourArea(contours[i], false);
-            next_largest_area_index = i;
+            next_largest_idx = i;
         }
     }
 
-    return ith==LARGEST?largest_area_index:next_largest_area_index;
-}
-
-cv::Point cellsDefinition::findCentroid(vector<cv::Point> contour)
-{
-    double x = cv::moments(contour, false).m10 / cv::moments(contour, false).m00;
-    double y = cv::moments(contour, false).m01 / cv::moments(contour, false).m00;
-    cv::Point point(x,y);
-    return point;
+    return ith==LARGEST?largest_idx:next_largest_idx;
 }
 
 std::string cellsDefinition::intToString( const int a )
@@ -123,21 +95,8 @@ bool cellsDefinition::ascendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i < x_j;
 }
 
-void cellsDefinition::onMouseClick( int event, int x, int y, int, void* param)
+void cellsDefinition::imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
-    if( event != cv::EVENT_LBUTTONDOWN )
-        return;
-
-    cv::Point p = cv::Point(x,y);
-
-    ROS_INFO_STREAM("Point: " << p.x << " , " << p.y << "." );
-
-
-    return;
-}
-
-void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
-
     // convert ROS image to Cv::Mat
     cv_bridge::CvImageConstPtr cv_ptr;
     try
@@ -157,7 +116,7 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
     cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
     // convert grayscale image to binary image, using 155 threshold value to
     // isolate white-colored board
-    cv::threshold(img_gray, img_binary, 140, 255, cv::THRESH_BINARY);
+    cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
 
     // a contour is an array of x-y coordinates describing the boundaries of an object
     vector<vector<cv::Point> > contours;
@@ -169,35 +128,35 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
 
     // isolate contour w/ the largest area to separate outer board from other objects in
     // image (assuming outer board is largest object in image)
-    int largest_area_index = getIthIndex(contours, LARGEST);
+    int largest_idx = getIthIndex(contours, LARGEST);
 
     // draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
     cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
-    drawContours(outer_board, contours, largest_area_index,
-                cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+    drawContours(outer_board, contours, largest_idx,
+                 cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
     // find black edges of inner board by finding contours
     cv::findContours(outer_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
     // isolate inner board contour by finding contour w/ second largest area (given that
     // outer board contour has the largest area)
-    int next_largest_area_index = getIthIndex(contours, NEXT_LARGEST);
+    int next_largest_idx = getIthIndex(contours, NEXT_LARGEST);
 
     // draw inner board contour onto zero matrix
     cv::Mat inner_board = cv::Mat::zeros(outer_board.size(), CV_8UC1);
-    drawContours(inner_board, contours, next_largest_area_index,
-                cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+    drawContours(inner_board, contours, next_largest_idx,
+                 cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
 
     cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
-    largest_area_index = getIthIndex(contours, LARGEST);
+    largest_idx = getIthIndex(contours, LARGEST);
 
     // drawn board cells onto zero matrix by drawing all contour except the
     // the largest-area contour (which is the inner board contour)
     cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
 
     // find and display cell centroids
-    contours.erase(contours.begin() + largest_area_index);
+    contours.erase(contours.begin() + largest_idx);
 
     if(contours.size() == 9)
     {
@@ -210,7 +169,6 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
         for(int i = 0; i < contours.size(); i++)
         {
             double epsilon = arcLength(contours[i], true);
-            // printf("epsilon: %0.3f\n", epsilon);
             vector<cv::Point> apx_cell;
             approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
             apx_contours.push_back(apx_cell);
@@ -221,16 +179,8 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
         }
 
-        vector<cv::Point> cell_centroids;
-
-        for(int i = 0; i < apx_contours.size(); i++)
-        {
-            cell_centroids.push_back(findCentroid(apx_contours[i]));
-        }
-
-        // sort cell_contours and cell_centroids in descending order of y-coordinate (not needed as empirical
-        // test shows that findContours apparently finds contours in ascending order of y-coordinate already)
-
+        // sort cell_contours in descending order of y-coordinate (not needed as test shows
+        // that findContours apparently finds contours in ascending order of y-coordinate already)
         std::sort(apx_contours.begin(), apx_contours.end(), ascendingY);
 
         for(int i = 0; i <=6; i += 3)
@@ -246,30 +196,26 @@ void cellsDefinition::imageCallback(const sensor_msgs::ImageConstPtr& msg){
             pthread_mutex_unlock(&mutex_b);
         }
 
-        pthread_mutex_lock(&mutex_i);
         img_loaded = true;
-        pthread_mutex_unlock(&mutex_i);
     }
     else
     {
-        pthread_mutex_lock(&mutex_i);
         img_loaded = false;
-        pthread_mutex_unlock(&mutex_i);
-        // ROS_ERROR("[imageCallback(server node)] Image callback was not executed");
     }
 
-
-    cv::setMouseCallback("[Cells_Definition_Auto] cell boundaries", onMouseClick, this);
-    // cv::imshow("[Cells_Definition_Auto] cell boundaries", board_cells);
-    // cv::imshow("[Cells_Definition_Auto] raw", cv_ptr->image.clone());
+    cv::imshow("[Cells_Definition] cell boundaries", board_cells);
 
     cv::waitKey(3);
 }
 
+cellsDefinition::~cellsDefinition()
+{
+    // cv::destroyWindow("[Cells_Definition] cell boundaries");
+}
 
 int main(int argc, char ** argv)
 {
-    ros::init(argc, argv, "cells_definition_auto");
+    ros::init(argc, argv, "cells_definition");
     // ros::NodeHandle n;
     cellsDefinition cd;
 
