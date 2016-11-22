@@ -137,13 +137,14 @@ add_subdirectory(lib)
 add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h
                                                 src/tictactoe_brain/tictactoeBrain.cpp
                                                 src/tictactoe_brain/tictactoe_brain.cpp)
-add_executable(cells_definition                 src/cells_definition/cells_definition.h
-                                                src/cells_definition/cells_definition.cpp)
 add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
 add_executable(board_state_sensing              src/board_state_sensing/board_state_sensing.h
-                                                src/board_state_sensing/board_state_sensing.cpp)
+                                                src/board_state_sensing/board_state_sensing.cpp
+                                                src/board_state_sensing/board_state_sensor.cpp)
+add_executable(cells_definition                 src/board_state_sensing/cells_definition.h
+                                                src/board_state_sensing/cells_definition.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp

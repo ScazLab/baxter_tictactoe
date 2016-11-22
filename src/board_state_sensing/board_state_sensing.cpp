@@ -223,27 +223,3 @@ void BoardState::imageCallback(const sensor_msgs::ImageConstPtr& msg)
 
     cv::waitKey(10);
 }
-
-int main(int argc, char** argv)
-{
-    ros::init(argc, argv, "show_cells");
-    ros::NodeHandle n;
-
-    // Very dirty way to process command line arguments. It seems that
-    // there is not a straightforward standard ROS way, unfortunately.
-    // (by alecive, all the fault goes to him)
-
-    bool show=false;
-    if (argc>1)
-    {
-        if (string(argv[1])=="--show")
-        {
-            show=string(argv[2])=="true"?true:false;
-        }
-    }
-
-    BoardState cd(show);
-    ros::spin();
-
-    return 0;
-}
