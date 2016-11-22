@@ -21,7 +21,7 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
     return !(board1==board2);
 }
 
-void BoardState::init()
+BoardState::BoardState(bool _show): image_transport(node_handle), doShow(_show)
 {
     image_subscriber = image_transport.subscribe("image_in_bs", 1, &BoardState::imageCallback, this);
 
@@ -57,9 +57,6 @@ void BoardState::init()
         cv::namedWindow("[Board_State_Sensor] blue mask of the board");
     }
 }
-
-BoardState::BoardState()          : image_transport(node_handle), doShow(false) { init(); };
-BoardState::BoardState(bool _show): image_transport(node_handle), doShow(_show) { init(); };
 
 BoardState::~BoardState()
 {

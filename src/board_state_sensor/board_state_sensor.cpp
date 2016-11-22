@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     }
 
     BoardState bs(show);
-    cellsDefinition cd;
+    cellsDefinition cd("cells_definition");
     spinner.start();
     ros::spin();
 

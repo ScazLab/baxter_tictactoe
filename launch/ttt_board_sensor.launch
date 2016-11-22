@@ -24,9 +24,9 @@
     <!-- Minimum area size for which a cell is considered colored. It depends on the distance between camera and board. -->
     <param name="baxter_tictactoe/area_threshold" type="int" value="150" />
 
-    <node name="board_state_sensor" pkg="baxter_tictactoe" type="board_state_sensor" args="--show $(arg show)" respawn="false" output="screen" required="true">
+    <node name="board_state_sensor" pkg="baxter_tictactoe" type="board_state_sensor" args="--show $(arg show)" respawn="false" output="screen" required="false">
         <remap from="/image_in_bs" to="/usb_cam/image_raw"/>
-        <remap from="/image_in_cd" to="/usb_cam/image_raw"/>
+        <remap from="/cells_definition/image" to="/usb_cam/image_raw"/>
     </node>
 
     <node name="board_scheme" pkg="baxter_tictactoe" type="board_scheme" respawn="false" output="screen" args="/robot/xdisplay"/>

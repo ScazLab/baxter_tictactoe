@@ -21,7 +21,6 @@ private:
     ros::Publisher  board_publisher;
 
     ros::ServiceClient cells_client;
-    ros::ServiceClient scan_client;
 
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber     image_subscriber;
@@ -42,11 +41,8 @@ private:
     // It publishes the board only if its state changes.
     baxter_tictactoe::MsgBoard last_msg_board;
 
-    void init();
-
 public:
-    BoardState();
-    BoardState(bool _show);
+    BoardState(bool _show = "false");
     ~BoardState();
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);

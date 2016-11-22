@@ -27,6 +27,7 @@
 #include <QFileDialog>
 #include <QApplication>
 
+#include "robot_interface/ros_thread_image.h"
 #include "baxterTictactoe/tictactoe_utils.h"
 
 #include "baxter_tictactoe/DefineCells.h"
@@ -40,24 +41,21 @@ enum Index
     NEXT_LARGEST    = 2
 };
 
-class cellsDefinition
+class cellsDefinition : public ROSThreadImage
 {
 
 private:
 
-    ros::NodeHandle node_handle;
-    image_transport::ImageTransport image_transport;
-    image_transport::Subscriber image_subscriber;
-
     ros::ServiceServer service;
 
-    std::string window_name;
     ttt::Cell cell;
     ttt::Board board;
 
     bool img_loaded;
 
     pthread_mutex_t mutex_b;
+
+    ros::Rate r;
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or
@@ -74,9 +72,12 @@ private:
 
     static bool ascendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
+protected:
+    void InternalThreadEntry();
+
 public:
 
-    cellsDefinition();
+    cellsDefinition(std::string name);
     ~cellsDefinition();
 
     /**

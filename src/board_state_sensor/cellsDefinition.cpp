@@ -4,16 +4,13 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-cellsDefinition::cellsDefinition() : image_transport(node_handle)
+cellsDefinition::cellsDefinition(string name) : ROSThreadImage(name), r(100)
 {
     img_loaded = false;
     pthread_mutex_init(&mutex_b, NULL);
 
-    image_subscriber = image_transport.subscribe("image_in_cd", 1,
-                                                  &cellsDefinition::imageCb, this);
-
-    service = node_handle.advertiseService("baxter_tictactoe/define_cells",
-                                            &cellsDefinition::serviceCb, this);
+    service = _n.advertiseService("baxter_tictactoe/define_cells",
+                                   &cellsDefinition::serviceCb, this);
 
     // cv::namedWindow("[Cells_Definition] cell boundaries", cv::WINDOW_NORMAL);
     // cv::resizeWindow("[Cells_Definition] cell boundaries", 960, 600);
@@ -95,117 +92,112 @@ bool cellsDefinition::ascendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i < x_j;
 }
 
-void cellsDefinition::imageCb(const sensor_msgs::ImageConstPtr& msg)
+void cellsDefinition::InternalThreadEntry()
 {
-    // convert ROS image to Cv::Mat
-    cv_bridge::CvImageConstPtr cv_ptr;
-    try
+    while(ros::ok())
     {
-        cv_ptr = cv_bridge::toCvShare(msg);
-    }
-    catch (cv_bridge::Exception& e)
-    {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-    }
-
-    cv::Mat img_gray;
-    cv::Mat img_binary;
-
-    // convert image color model from BGR to grayscale
-    cv::cvtColor(cv_ptr->image.clone(), img_gray, CV_BGR2GRAY);
-    // convert grayscale image to binary image, using 155 threshold value to
-    // isolate white-colored board
-    cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
-
-    // a contour is an array of x-y coordinates describing the boundaries of an object
-    vector<vector<cv::Point> > contours;
-    // Vec4i = vectors w/ 4 ints
-    vector<cv::Vec4i> hierarchy;
-
-    // find white edges of outer board by finding contours (i.e boundaries)
-    cv::findContours(img_binary, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    // isolate contour w/ the largest area to separate outer board from other objects in
-    // image (assuming outer board is largest object in image)
-    int largest_idx = getIthIndex(contours, LARGEST);
-
-    // draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
-    cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
-    drawContours(outer_board, contours, largest_idx,
-                 cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
-
-    // find black edges of inner board by finding contours
-    cv::findContours(outer_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    // isolate inner board contour by finding contour w/ second largest area (given that
-    // outer board contour has the largest area)
-    int next_largest_idx = getIthIndex(contours, NEXT_LARGEST);
-
-    // draw inner board contour onto zero matrix
-    cv::Mat inner_board = cv::Mat::zeros(outer_board.size(), CV_8UC1);
-    drawContours(inner_board, contours, next_largest_idx,
-                 cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
-
-    cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    largest_idx = getIthIndex(contours, LARGEST);
-
-    // drawn board cells onto zero matrix by drawing all contour except the
-    // the largest-area contour (which is the inner board contour)
-    cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
-
-    // find and display cell centroids
-    contours.erase(contours.begin() + largest_idx);
-
-    if(contours.size() == 9)
-    {
-        pthread_mutex_lock(&mutex_b);
-        board.cells.clear();
-        pthread_mutex_unlock(&mutex_b);
-
-        // aproximate cell contours to quadrilaterals
-        vector<vector<cv::Point> > apx_contours;
-        for(int i = 0; i < contours.size(); i++)
+        if (!_img_empty)
         {
-            double epsilon = arcLength(contours[i], true);
-            vector<cv::Point> apx_cell;
-            approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
-            apx_contours.push_back(apx_cell);
+            cv::Mat img_gray;
+            cv::Mat img_binary;
+
+            // convert image color model from BGR to grayscale
+            cv::cvtColor(_curr_img, img_gray, CV_BGR2GRAY);
+            // convert grayscale image to binary image, using 155 threshold value to
+            // isolate white-colored board
+            cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
+
+            // a contour is an array of x-y coordinates describing the boundaries of an object
+            vector<vector<cv::Point> > contours;
+            // Vec4i = vectors w/ 4 ints
+            vector<cv::Vec4i> hierarchy;
+
+            // find white edges of outer board by finding contours (i.e boundaries)
+            cv::findContours(img_binary, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+            // isolate contour w/ the largest area to separate outer board from other objects in
+            // image (assuming outer board is largest object in image)
+            int largest_idx = getIthIndex(contours, LARGEST);
+
+            // draw outer board contour (i.e boundaries) onto zero matrix (i.e black image)
+            cv::Mat outer_board = cv::Mat::zeros(img_binary.size(), CV_8UC1);
+            drawContours(outer_board, contours, largest_idx,
+                         cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
+            // find black edges of inner board by finding contours
+            cv::findContours(outer_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+            // isolate inner board contour by finding contour w/ second largest area (given that
+            // outer board contour has the largest area)
+            int next_largest_idx = getIthIndex(contours, NEXT_LARGEST);
+
+            // draw inner board contour onto zero matrix
+            cv::Mat inner_board = cv::Mat::zeros(outer_board.size(), CV_8UC1);
+            drawContours(inner_board, contours, next_largest_idx,
+                         cv::Scalar(255,255,255), CV_FILLED, 8, hierarchy);
+
+            cv::findContours(inner_board, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+            largest_idx = getIthIndex(contours, LARGEST);
+
+            // drawn board cells onto zero matrix by drawing all contour except the
+            // the largest-area contour (which is the inner board contour)
+            cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
+
+            // find and display cell centroids
+            contours.erase(contours.begin() + largest_idx);
+
+            if(contours.size() == 9)
+            {
+                pthread_mutex_lock(&mutex_b);
+                board.cells.clear();
+                pthread_mutex_unlock(&mutex_b);
+
+                // aproximate cell contours to quadrilaterals
+                vector<vector<cv::Point> > apx_contours;
+                for(int i = 0; i < contours.size(); i++)
+                {
+                    double epsilon = arcLength(contours[i], true);
+                    vector<cv::Point> apx_cell;
+                    approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
+                    apx_contours.push_back(apx_cell);
+                }
+
+                for(int i = 0; i < apx_contours.size(); i++)
+                {
+                    drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
+                }
+
+                // sort cell_contours in descending order of y-coordinate (not needed as test shows
+                // that findContours apparently finds contours in ascending order of y-coordinate already)
+                std::sort(apx_contours.begin(), apx_contours.end(), ascendingY);
+
+                for(int i = 0; i <=6; i += 3)
+                {
+                    std::sort(apx_contours.begin() + i, apx_contours.begin() + i + 3, ascendingX);
+                }
+
+                for(int i = 0; i < apx_contours.size(); i++)
+                {
+                    Cell cell(apx_contours[i]);
+                    pthread_mutex_lock(&mutex_b);
+                    board.cells.push_back(cell);
+                    pthread_mutex_unlock(&mutex_b);
+                }
+
+                img_loaded = true;
+            }
+            else
+            {
+                img_loaded = false;
+            }
+
+            cv::imshow("[Cells_Definition] cell boundaries", board_cells);
+            cv::waitKey(3);
         }
 
-        for(int i = 0; i < apx_contours.size(); i++)
-        {
-            drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
-        }
-
-        // sort cell_contours in descending order of y-coordinate (not needed as test shows
-        // that findContours apparently finds contours in ascending order of y-coordinate already)
-        std::sort(apx_contours.begin(), apx_contours.end(), ascendingY);
-
-        for(int i = 0; i <=6; i += 3)
-        {
-            std::sort(apx_contours.begin() + i, apx_contours.begin() + i + 3, ascendingX);
-        }
-
-        for(int i = 0; i < apx_contours.size(); i++)
-        {
-            Cell cell(apx_contours[i]);
-            pthread_mutex_lock(&mutex_b);
-            board.cells.push_back(cell);
-            pthread_mutex_unlock(&mutex_b);
-        }
-
-        img_loaded = true;
+        r.sleep();
     }
-    else
-    {
-        img_loaded = false;
-    }
-
-    cv::imshow("[Cells_Definition] cell boundaries", board_cells);
-
-    cv::waitKey(3);
 }
 
 cellsDefinition::~cellsDefinition()

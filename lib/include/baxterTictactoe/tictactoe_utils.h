@@ -90,7 +90,7 @@ public:
     double cell_area_blue;
 
 public:
-    Cell() { state=empty; cell_area_red=0; cell_area_blue=0; };
+    Cell() { state=empty; cell_area_red=0; cell_area_blue=0; contours.clear(); };
     Cell(std::vector<cv::Point> _vec) : contours(_vec) {};
     ~Cell() {};
 
