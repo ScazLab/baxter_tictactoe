@@ -1,4 +1,4 @@
-#include "cells_definition.h"
+#include "cellsDefinition.h"
 
 using namespace ttt;
 using namespace baxter_tictactoe;

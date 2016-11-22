@@ -1,4 +1,4 @@
-#include "board_state_sensing.h"
+#include "boardState.h"
 
 using namespace ttt;
 using namespace baxter_tictactoe;

@@ -1,5 +1,5 @@
-#include "board_state_sensing.h"
-#include "cells_definition.h"
+#include "boardState.h"
+#include "cellsDefinition.h"
 
 int main(int argc, char** argv)
 {
