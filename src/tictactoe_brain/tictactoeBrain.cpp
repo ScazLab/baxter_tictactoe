@@ -34,6 +34,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     pthread_mutexattr_init(&_mutex_attr);
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&_mutex_brainstate, &_mutex_attr);
+    pthread_mutex_init(&_mutex_boardstate, &_mutex_attr);
 
     printf("\n");
     boardState_sub = _nh.subscribe("baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
@@ -70,7 +71,9 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
         aux[i].state = MsgCell::UNDEFINED;
     }
 
-    boardState.set(aux);    // initially the state for all cells in the TTT board is undefined
+    pthread_mutex_lock(&_mutex_boardstate);
+    boardState = aux;
+    pthread_mutex_unlock(&_mutex_boardstate);
 
     qsrand(ros::Time::now().nsec);
     set_strategy(_strategy);
@@ -83,7 +86,9 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
 
     while(ros::ok())
     {
-        TTT_Board_State arr = boardState.get();
+        pthread_mutex_lock(&_mutex_boardstate);
+        TTT_Board_State arr = boardState;
+        pthread_mutex_unlock(&_mutex_boardstate);
         if(arr != aux)
         {
             break;
@@ -110,10 +115,15 @@ void tictactoeBrain::set_brain_state(int state)
 
 void tictactoeBrain::boardStateCb(const MsgBoardConstPtr &msg)
 {
-    if (msg->cells != boardState.get())
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
+    if (msg->cells != aux)
     {
         ROS_DEBUG("New TTT board state received");
-        boardState.set(msg->cells);
+        pthread_mutex_lock(&_mutex_boardstate);
+        boardState = msg->cells;
+        pthread_mutex_unlock(&_mutex_boardstate);
     }
 }
 
@@ -121,7 +131,9 @@ int tictactoeBrain::random_move(bool& cheating)
 {
     cheating=false;
     int r;
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     do {
         r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
         ROS_DEBUG("Cell %d is in state %d ==? %d || %d", r, aux[r-1].state,
@@ -157,7 +169,9 @@ int tictactoeBrain::winning_defensive_random_move(bool& cheating)
 
 int tictactoeBrain::cheating_move()
 {
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     uint8_t cell_state = undefined;
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
@@ -180,7 +194,9 @@ int tictactoeBrain::cheating_move()
 
 int tictactoeBrain::defensive_move()
 {
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     uint8_t cell_state = undefined;
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
@@ -202,7 +218,9 @@ int tictactoeBrain::defensive_move()
 
 int tictactoeBrain::victory_move()
 {
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     uint8_t cell_state = undefined;
 
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
@@ -232,7 +250,9 @@ int tictactoeBrain::get_next_move(bool& cheating)
 unsigned short int tictactoeBrain::get_num_tokens()
 {
     unsigned short int counter=0;
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     for(int i = 0; i < aux.size(); i++)
     {
         if(aux[i].state!=empty && aux[i].state!=undefined) counter++;
@@ -243,7 +263,9 @@ unsigned short int tictactoeBrain::get_num_tokens()
 unsigned short int tictactoeBrain::get_num_tokens(cellState token_type)
 {
     unsigned short int counter=0;
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     for(int i = 0; i < aux.size(); i++)
     {
        if(aux[i].state==token_type) counter++;
@@ -269,8 +291,11 @@ bool tictactoeBrain::three_in_a_row(const cellState& color, const TTT_Board_Stat
 
 unsigned short int tictactoeBrain::get_winner()
 {
-    if (three_in_a_row(_robot_color,boardState.get()))      return 1;
-    if (three_in_a_row(_opponent_color, boardState.get()))  return 2;
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
+    if (three_in_a_row(_robot_color, aux))      return 1;
+    if (three_in_a_row(_opponent_color, aux))   return 2;
     return 0;
 }
 
@@ -296,7 +321,9 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
 
 bool tictactoeBrain::is_board_empty()
 {
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     for(int i = 0; i < aux.size(); i++)
     {
         if(aux[i].state==red || aux[i].state==blue) return false;
@@ -306,7 +333,9 @@ bool tictactoeBrain::is_board_empty()
 
 bool tictactoeBrain::is_board_full()
 {
-    TTT_Board_State aux = boardState.get();
+    pthread_mutex_lock(&_mutex_boardstate);
+    TTT_Board_State aux = boardState;
+    pthread_mutex_unlock(&_mutex_boardstate);
     for(int i = 0; i < aux.size(); i++)
     {
         if(aux[i].state==empty || aux[i].state==undefined) return false;
@@ -416,5 +445,6 @@ int tictactoeBrain::play_one_game(bool &cheating)
 tictactoeBrain::~tictactoeBrain()
 {
     pthread_mutex_destroy(&_mutex_brainstate);
+    pthread_mutex_destroy(&_mutex_boardstate);
     brainstate_timer.stop();
 }

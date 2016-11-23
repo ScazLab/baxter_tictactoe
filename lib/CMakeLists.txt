@@ -9,7 +9,6 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}   include/${PROJECT_NAME}/tictactoe_utils.h
-                              include/${PROJECT_NAME}/T_ThreadSafe.h
                               src/tictactoe_utils.cpp)
 
 add_library(ttt_controller    include/ttt_controller/ttt_controller.h

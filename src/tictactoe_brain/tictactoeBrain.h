@@ -5,7 +5,6 @@
 #include <baxter_tictactoe/TTTBrainState.h>
 
 #include "baxterTictactoe/tictactoe_utils.h"
-#include "baxterTictactoe/T_ThreadSafe.h"
 #include "ttt_controller/ttt_controller.h"
 
 #include <pthread.h>
@@ -29,10 +28,11 @@ private:
 
     /* STATE OF THE BOARD */
     typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
-    ThreadSafeVariable <TTT_Board_State> boardState;
+    TTT_Board_State boardState;
 
-    ros::Subscriber boardState_sub; // subscriber to receive the messages
-                                    // coming from the board state sensor
+    ros::Subscriber boardState_sub; // subscriber to receive the state of the board
+
+    pthread_mutex_t _mutex_boardstate;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system

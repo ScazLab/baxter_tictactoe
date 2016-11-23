@@ -167,11 +167,9 @@ target_link_libraries(board_state_sensor        baxterTictactoe
 # Compile tests if required
 IF(COMPILE_TESTS STREQUAL true)
     add_executable(test_vacuum_gripper          src/test/test_vacuum_gripper.cpp)
-    add_executable(test_thread_safe_variable    src/test/test_thread_safe_variable.cpp)
     add_executable(test_arm_controller          src/test/test_arm_controller.cpp)
 
     add_dependencies(test_vacuum_gripper        baxter_tictactoe_generate_messages_cpp)
-    add_dependencies(test_thread_safe_variable  baxter_tictactoe_generate_messages_cpp)
     add_dependencies(test_arm_controller        baxter_tictactoe_generate_messages_cpp)
 
     target_link_libraries(test_vacuum_gripper                   ${catkin_LIBRARIES})
