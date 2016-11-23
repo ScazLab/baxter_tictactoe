@@ -266,6 +266,11 @@ void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
 {
     // ROS_INFO("[%i] brainStateCb %i", board_state, msg.state);
     brain_state = msg.state;
+
+    if (msg.state == TTTBrainState::MATCH_STARTED)
+    {
+        board_state = STATE_CALIB;
+    }
 }
 
 int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)
