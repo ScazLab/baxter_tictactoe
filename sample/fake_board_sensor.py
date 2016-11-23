@@ -17,13 +17,13 @@ SYMBOLS = {BLUE: 'X', RED: 'O', EMPTY: ' '}
 X = BLUE
 O = RED
 
-pub = rospy.Publisher("baxter_tictactoe/new_board", BoardMsg)
+pub = rospy.Publisher("baxter_tictactoe/board_state", BoardMsg)
 
 
 class Board:
 
     hdr = std_msgs.msg.Header()
-    
+
     def __init__(self):
         self.clear()
 

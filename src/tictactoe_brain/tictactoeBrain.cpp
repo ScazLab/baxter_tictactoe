@@ -26,15 +26,22 @@ bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
 }
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _setup(false), _nh(name),
+                               r(100), _setup(false), _nh(name), spinner(4),
                                leftArmCtrl("ttt_controller", "left"),
                                rightArmCtrl("ttt_controller", "right")
 {
+    pthread_mutexattr_t _mutex_attr;
+    pthread_mutexattr_init(&_mutex_attr);
+    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&_mutex_brainstate, &_mutex_attr);
+
     printf("\n");
-    boardState_sub = _nh.subscribe("baxter_tictactoe/new_board", 1,
-                                    &tictactoeBrain::tttStateCb, this);
-    _scan_server   = _nh.advertiseService("baxter_tictactoe/ready_scan",
-                                           &tictactoeBrain::scanState, this);
+    boardState_sub = _nh.subscribe("baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
+                                    &tictactoeBrain::boardStateCb, this);
+    tttBrain_pub   = _nh.advertise<TTTBrainState>("baxter_tictactoe/ttt_brain_state", 1);
+
+    set_brain_state(TTTBrainState::INIT);
+    brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainStateCb, this, false);
 
     _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
     ROS_INFO("Using voice %s", _voice_type.c_str());
@@ -49,11 +56,13 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     _robot_color=blue;
     _opponent_color=_robot_color==blue?red:blue;
 
+    set_brain_state(TTTBrainState::CALIB);
     leftArmCtrl.startAction(ACTION_SCAN);
     while(ros::ok() && leftArmCtrl.getState() != DONE)
     {
         r.sleep();
     }
+    set_brain_state(TTTBrainState::READY);
 
     TTT_Board_State aux; // aux is an array of 9 MsgCells
     for(int i = 0; i < aux.size(); i++)
@@ -91,7 +100,21 @@ bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res
     return true;
 }
 
-void tictactoeBrain::tttStateCb(const MsgBoardConstPtr &msg)
+void tictactoeBrain::publishTTTBrainStateCb(const ros::TimerEvent&)
+{
+    pthread_mutex_lock(&_mutex_brainstate);
+    tttBrain_pub.publish(s);
+    pthread_mutex_unlock(&_mutex_brainstate);
+}
+
+void tictactoeBrain::set_brain_state(int state)
+{
+    pthread_mutex_lock(&_mutex_brainstate);
+    s.state = state;
+    pthread_mutex_unlock(&_mutex_brainstate);
+}
+
+void tictactoeBrain::boardStateCb(const MsgBoardConstPtr &msg)
 {
     if (msg->cells != boardState.get())
     {
@@ -321,6 +344,7 @@ void tictactoeBrain::set_strategy(std::string strategy)
 
 int tictactoeBrain::play_one_game(bool &cheating)
 {
+    set_brain_state(TTTBrainState::GAME_STARTED);
     bool robot_turn=true;
     int winner=0; // no winner
     has_cheated=false;
@@ -372,10 +396,13 @@ int tictactoeBrain::play_one_game(bool &cheating)
         say_sentence("That's a tie. I will win next time.", 8);
         winner=3;
     }
+
+    set_brain_state(TTTBrainState::GAME_FINISHED);
     return winner;
 }
 
 tictactoeBrain::~tictactoeBrain()
 {
-
+    pthread_mutex_destroy(&_mutex_brainstate);
+    brainstate_timer.stop();
 }

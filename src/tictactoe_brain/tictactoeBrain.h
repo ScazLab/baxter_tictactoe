@@ -1,8 +1,8 @@
 #include <ros/ros.h>
 #include <sound_play/sound_play.h>
 
-#include <baxter_tictactoe/MsgCell.h>
 #include <baxter_tictactoe/MsgBoard.h>
+#include <baxter_tictactoe/TTTBrainState.h>
 #include <baxter_tictactoe/SetTrajectoryType.h>
 #include "baxter_tictactoe/ScanState.h"
 
@@ -26,32 +26,40 @@ class tictactoeBrain
 private:
     std::string name;
 
-    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
-    // typedef std::vector<baxter_tictactoe::MsgCell> TTT_Board_State;
+    ros::NodeHandle _nh;        // ROS node handle
+    ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
-    ros::NodeHandle _nh; // ROS node handle
+    /* STATE OF THE BOARD */
+    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
+    ThreadSafeVariable <TTT_Board_State> boardState;
+
     ros::Subscriber boardState_sub; // subscriber to receive the messages
                                     // coming from the board state sensor
 
-    ThreadSafeVariable <TTT_Board_State> boardState; // it stores the state of the board.
+    /* STATE OF THE TTT DEMO */
+    baxter_tictactoe::TTTBrainState    s; // state of the system
+    ros::Timer          brainstate_timer; // timer to publish the state of the system at a specific rate
 
-    cellState _robot_color;     // It represents the color of the tokens the robot    is playing with.
+    ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
+
+    pthread_mutex_t _mutex_brainstate;
+
+    void publishTTTBrainStateCb(const ros::TimerEvent&);  // callback to publish the state of the demo
+
+    /* MISC */
+    cellState    _robot_color;  // It represents the color of the tokens the robot    is playing with.
     cellState _opponent_color;  // It represents the color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer;
-    std::string _voice_type; // Type of voice.
-
-    ros::ServiceClient _scan_client;
-    ros::ServiceServer _scan_server;
+    std::string                    _voice_type; // Type of voice.
 
     bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
 
-    int (tictactoeBrain::*_choose_next_move)(bool& cheating); /* This a pointer to the function that
-                                                            decides the next move. We use a pointer
-                                                            because we could have different strategies. */
+    // Pointer to the function that chooses the next move
+    int (tictactoeBrain::*_choose_next_move)(bool& cheating);
 
-    TTTController leftArmCtrl;
+    TTTController  leftArmCtrl;
     TTTController rightArmCtrl;
 
     ros::Rate r;
@@ -66,7 +74,7 @@ private:
      * is stored in the thread-safe private attribute called boardState.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
      **/
-    void tttStateCb(const baxter_tictactoe::MsgBoardConstPtr & msg);
+    void boardStateCb(const baxter_tictactoe::MsgBoardConstPtr & msg);
 
     /**
      * It determines randomly the next empty cell to place a token.
@@ -217,6 +225,7 @@ public:
     /* SETTERS */
     void set_cheating(bool _c) { cheating=_c; };
     void set_strategy(std::string strategy);
+    void set_brain_state(int state);
 };
 
 }

@@ -488,7 +488,11 @@ bool TTTController::offsetsReachable()
         double pz = getPos().z - _offsets[i].z;
 
         vector<double> joint_angles;
-        if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles)) return false;
+        if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
+        {
+            ROS_INFO("Offset number %i not reachable", i);
+            return false;
+        }
     }
     return true;
 }

@@ -62,12 +62,12 @@ add_message_files(FILES
     Point.msg
     MsgBoard.msg
     MsgCell.msg
+    TTTBrainState.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(FILES
     SetTrajectoryType.srv
-    ScanState.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

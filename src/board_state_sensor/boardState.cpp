@@ -22,10 +22,11 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 }
 
 BoardState::BoardState(string name, bool _show) :
-                       ROSThreadImage(name), doShow(_show), state(STATE_INIT), r(40) // 40Hz
+                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(40) // 40Hz
 {
-    board_publisher  = _n.advertise<MsgBoard>("/baxter_tictactoe/new_board", 1);
-    ROS_ASSERT_MSG(board_publisher,"Empty publisher");
+    board_state_pub  = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
+    brain_state_sub  = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
+                                    &BoardState::brainStateCb, this);
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
     ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
@@ -58,9 +59,14 @@ void BoardState::InternalThreadEntry()
 {
     while(ros::ok())
     {
-        if (state == STATE_INIT)
+        if (board_state == STATE_INIT)
         {
-            ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", state);
+            ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
+            if (brain_state == TTTBrainState::READY) ++board_state;
+        }
+        if (board_state == STATE_CALIB)
+        {
+            ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
             {
                 cv::Mat img_gray;
@@ -149,13 +155,13 @@ void BoardState::InternalThreadEntry()
 
                     if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
                     cv::waitKey(3);
-                    ++state;
+                    ++board_state;
                 }
             }
         }
-        else if (state == STATE_CALIB)
+        else if (board_state == STATE_READY)
         {
-            ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", state);
+            ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", board_state);
             if (!_img_empty)
             {
                 board.resetState();
@@ -228,7 +234,7 @@ void BoardState::InternalThreadEntry()
                         msg_board.cells[j].state=cell->state;
                     }
 
-                    board_publisher.publish(msg_board);
+                    board_state_pub.publish(msg_board);
                     last_msg_board=msg_board;
                     // ROS_INFO("New board state published");
 
@@ -253,7 +259,13 @@ void BoardState::InternalThreadEntry()
 
         r.sleep();
     }
-    ROS_INFO("[%i] Finishing", state);
+    ROS_INFO("[%i] Finishing", board_state);
+}
+
+void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
+{
+    // ROS_INFO("[%i] brainStateCb %i", board_state, msg.state);
+    brain_state = msg.state;
 }
 
 int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)

@@ -14,10 +14,11 @@
 #include "robot_interface/ros_thread_image.h"
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/MsgBoard.h"
-#include "baxter_tictactoe/ScanState.h"
+#include "baxter_tictactoe/TTTBrainState.h"
 
 #define STATE_INIT      0
 #define STATE_CALIB     1
+#define STATE_READY     2
 
 #define LARGEST_IDX         1
 #define NEXT_LARGEST_IDX    2
@@ -25,7 +26,8 @@
 class BoardState : public ROSThreadImage
 {
 private:
-    ros::Publisher  board_publisher;
+    ros::Publisher   board_state_pub;
+    ros::Subscriber  brain_state_sub;
 
     ttt::Board board;
     ttt::Cell cell;
@@ -43,7 +45,8 @@ private:
     // It publishes the board only if its state changes.
     baxter_tictactoe::MsgBoard last_msg_board;
 
-    int state;
+    int board_state; // State of the board
+    int brain_state; // state of the demo
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or
@@ -59,6 +62,11 @@ private:
     static bool ascendingY(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
     static bool ascendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
+
+    /**
+     * Callback to get the state of the demo.
+     **/
+    void brainStateCb(const baxter_tictactoe::TTTBrainState & msg);
 
 protected:
     void InternalThreadEntry();
