@@ -39,8 +39,6 @@ private:
 
     ros::Rate r;
 
-    pthread_mutex_t mutex_b;
-
     // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
     // It publishes the board only if its state changes.
     baxter_tictactoe::MsgBoard last_msg_board;

@@ -24,11 +24,6 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 BoardState::BoardState(string name, bool _show) :
                        ROSThreadImage(name), doShow(_show), state(STATE_INIT), r(40) // 40Hz
 {
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&mutex_b, &_mutex_attr);
-
     board_publisher  = _n.advertise<MsgBoard>("/baxter_tictactoe/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");
 
@@ -120,9 +115,7 @@ void BoardState::InternalThreadEntry()
                 if(contours.size() == 10)
                 {
                     contours.erase(contours.begin() + largest_idx);
-                    pthread_mutex_lock(&mutex_b);
                     board.resetState();
-                    pthread_mutex_unlock(&mutex_b);
 
                     // aproximate cell contours to quadrilaterals
                     vector<vector<cv::Point> > apx_contours;
@@ -151,9 +144,7 @@ void BoardState::InternalThreadEntry()
                     for(int i = 0; i < apx_contours.size(); i++)
                     {
                         Cell cell(apx_contours[i]);
-                        pthread_mutex_lock(&mutex_b);
                         board.cells.push_back(cell);
-                        pthread_mutex_unlock(&mutex_b);
                     }
 
                     if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
