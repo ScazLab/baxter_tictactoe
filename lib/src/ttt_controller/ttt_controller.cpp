@@ -7,13 +7,77 @@ using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace cv;
 
-/*
-    BoardStateSensing error at start
-    Drop token faster
-    Flag option for turning off display windows when run as part of baxterTictactoe
-    Get rid of imageScreen node error and show something else via boardScheme
-    Error-checking when cellsDefinitionAuto does not see board
-*/
+/**************************************************************************/
+/*                            TTTController                               */
+/**************************************************************************/
+
+TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
+                             ArmCtrl(name, limb, no_robot, use_forces, false),
+                             r(100), _img_trp(_n), _is_img_empty(true)
+{
+    pthread_mutexattr_t _mutex_attr;
+    pthread_mutexattr_init(&_mutex_attr);
+    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&_mutex_img, &_mutex_attr);
+
+    XmlRpc::XmlRpcValue hsv_red_symbols;
+    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+    hsv_red=ttt::hsvColorRange(hsv_red_symbols);
+
+    XmlRpc::XmlRpcValue hsv_blue_symbols;
+    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+    hsv_blue=ttt::hsvColorRange(hsv_blue_symbols);
+
+    setHomeConfiguration();
+
+    insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
+    insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
+    insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
+
+    if (getLimb() == "left")
+    {
+        _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
+                               SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
+    }
+
+    namedWindow("Hand Camera", WINDOW_NORMAL);
+    namedWindow("Rough", WINDOW_NORMAL);
+    namedWindow("Processed", WINDOW_NORMAL);
+    resizeWindow("Hand Camera", 480, 300);
+    resizeWindow("Rough",   480, 300);
+    resizeWindow("Processed",   480, 300);
+    moveWindow("Hand Camera", 10, 10);
+    moveWindow("Rough", 10, 370);
+    moveWindow("Processed", 10, 720);
+    waitKey(10);
+
+    // KDL::JntArray ll, ul; //lower joint limits, upper joint limits
+    // getIKLimits(ll,ul);
+
+    // double s1l = -1.1;
+    // double s1u =  1.0;
+    // ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
+    // ll.data[1] =  s1l;
+    // ul.data[1] =  s1u;
+    // setIKLimits(ll,ul);
+    // getIKLimits(ll,ul);
+
+    // printf("ll.rows cols %i %i\t", ll.rows(), ll.columns());
+    // for (int i = 0; i < ll.rows(); ++i)
+    // {
+    //     printf("%g\t", ll.data[i]);
+    // }
+    // printf("\n");
+
+    // printf("ul.rows cols %i %i\t", ul.rows(), ul.columns());
+    // for (int i = 0; i < ul.rows(); ++i)
+    // {
+    //     printf("%g\t", ul.data[i]);
+    // }
+    // printf("\n");
+
+    if (!callAction(ACTION_HOME)) setState(ERROR);
+}
 
 /**************************************************************************/
 /*                         PickUpToken                                    */
@@ -514,78 +578,6 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 
     vector<double> joint_angles;
     return computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
-}
-
-/**************************************************************************/
-/*                            TTTController                               */
-/**************************************************************************/
-
-TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
-                             ArmCtrl(name, limb, no_robot, use_forces, false),
-                             r(100), _img_trp(_n), _is_img_empty(true)
-{
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_img, &_mutex_attr);
-
-    XmlRpc::XmlRpcValue hsv_red_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
-    hsv_red=ttt::hsvColorRange(hsv_red_symbols);
-
-    XmlRpc::XmlRpcValue hsv_blue_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
-    hsv_blue=ttt::hsvColorRange(hsv_blue_symbols);
-
-    setHomeConfiguration();
-
-    insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
-    insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
-    insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
-
-    if (getLimb() == "left")
-    {
-        _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
-                               SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
-    }
-
-    namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
-    resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
-    resizeWindow("Processed",   480, 300);
-    moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
-    moveWindow("Processed", 10, 720);
-    waitKey(10);
-
-    // KDL::JntArray ll, ul; //lower joint limits, upper joint limits
-    // getIKLimits(ll,ul);
-
-    // double s1l = -1.1;
-    // double s1u =  1.0;
-    // ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
-    // ll.data[1] =  s1l;
-    // ul.data[1] =  s1u;
-    // setIKLimits(ll,ul);
-    // getIKLimits(ll,ul);
-
-    // printf("ll.rows cols %i %i\t", ll.rows(), ll.columns());
-    // for (int i = 0; i < ll.rows(); ++i)
-    // {
-    //     printf("%g\t", ll.data[i]);
-    // }
-    // printf("\n");
-
-    // printf("ul.rows cols %i %i\t", ul.rows(), ul.columns());
-    // for (int i = 0; i < ul.rows(); ++i)
-    // {
-    //     printf("%g\t", ul.data[i]);
-    // }
-    // printf("\n");
-
-    if (!callAction(ACTION_HOME)) setState(ERROR);
 }
 
 bool TTTController::goHome()
