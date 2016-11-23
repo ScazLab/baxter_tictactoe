@@ -32,22 +32,6 @@ target_link_libraries(${PROJECT_NAME}   ${OpenCV_LIBRARIES}
 
 target_link_libraries(ttt_controller   baxterTictactoe ${catkin_LIBRARIES})
 
-#Compile old software if required
-IF(COMPILE_OLD_SW STREQUAL true)
-    add_library(move_maker      include/move_maker/trajectory_xml_parser.h
-                                include/move_maker/trajectory_player.h
-                                include/move_maker/move_maker.h
-                                src/trajectory_xml_parser.cpp
-                                src/trajectory_player.cpp
-                                src/move_maker.cpp)
-    add_library(robot_state     include/robot_state/robot_state.h
-                                src/robot_state.cpp)
-
-    add_dependencies(move_maker         ${catkin_EXPORTED_TARGETS})
-    target_link_libraries(move_maker    ${QT_LIBRARIES}
-                                        ${catkin_LIBRARIES})
-ENDIF()
-
 ## Mark libraries for installation
 install (TARGETS ${PROJECT_NAME}
          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

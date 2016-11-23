@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(baxter_tictactoe)
 
 set(COMPILE_TESTS  false)
-set(COMPILE_OLD_SW false)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -63,11 +62,6 @@ add_message_files(FILES
     MsgBoard.msg
     MsgCell.msg
     TTTBrainState.msg
-)
-
-## Generate services in the 'srv' folder
-add_service_files(FILES
-    SetTrajectoryType.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -171,60 +165,20 @@ target_link_libraries(board_state_sensor        baxterTictactoe
                                                 ${QT_LIBRARIES}
                                                 ${catkin_LIBRARIES})
 
-# Compile old sw if required
-IF (COMPILE_OLD_SW STREQUAL true)
-    add_executable(trajectory_from_raw_to_xml       src/old/trajectory_from_raw_to_xml.cpp)
-    add_executable(concat_trajectory_xml_files      src/old/concat_trajectory_xml_files.cpp)
-    add_executable(move_maker_server                src/old/move_maker_server.cpp)
-    add_executable(move_maker_simpleclient          src/old/move_maker_simpleclient.cpp)
-
-    add_dependencies(trajectory_from_raw_to_xml     baxter_tictactoe_generate_messages_cpp
-                                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                    ${catkin_EXPORTED_TARGETS})
-    add_dependencies(concat_trajectory_xml_files    baxter_tictactoe_generate_messages_cpp
-                                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                    ${catkin_EXPORTED_TARGETS})
-    add_dependencies(move_maker_server              baxter_tictactoe_generate_messages_cpp
-                                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                    ${catkin_EXPORTED_TARGETS})
-    add_dependencies(move_maker_simpleclient        baxter_tictactoe_generate_messages_cpp
-                                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                    ${catkin_EXPORTED_TARGETS})
-
-    target_link_libraries(trajectory_from_raw_to_xml        move_maker)
-    target_link_libraries(concat_trajectory_xml_files       move_maker)
-    target_link_libraries(move_maker_server                 move_maker)
-    target_link_libraries(move_maker_simpleclient           ${Boost_LIBRARIES}  move_maker)
-ENDIF()
-
 # Compile tests if required
 IF(COMPILE_TESTS STREQUAL true)
     add_executable(test_vacuum_gripper          src/test/test_vacuum_gripper.cpp)
+    add_executable(test_thread_safe_variable    src/test/test_thread_safe_variable.cpp)
     add_executable(test_arm_controller          src/test/test_arm_controller.cpp)
 
     add_dependencies(test_vacuum_gripper        baxter_tictactoe_generate_messages_cpp)
+    add_dependencies(test_thread_safe_variable  baxter_tictactoe_generate_messages_cpp)
     add_dependencies(test_arm_controller        baxter_tictactoe_generate_messages_cpp)
 
     target_link_libraries(test_vacuum_gripper                   ${catkin_LIBRARIES})
     target_link_libraries(test_arm_controller   ${OpenCV_LIBS}  ${catkin_LIBRARIES})
-
-    IF(COMPILE_OLD_SW STREQUAL true)
-        add_executable(test_trajectory_player           src/test/test_trajectory_player.cpp)
-        add_executable(test_thread_safe_variable        src/test/test_thread_safe_variable.cpp)
-        add_executable(test_trajectory_xml_parser       src/test/test_trajectory_xml_parser.cpp)
-        add_executable(test_loading_trajectory_xml      src/test/test_loading_trajectory_xml.cpp)
-
-        add_dependencies(test_trajectory_player         baxter_tictactoe_generate_messages_cpp)
-        add_dependencies(test_thread_safe_variable      baxter_tictactoe_generate_messages_cpp)
-        add_dependencies(test_trajectory_xml_parser     baxter_tictactoe_generate_messages_cpp)
-        add_dependencies(test_loading_trajectory_xml    baxter_tictactoe_generate_messages_cpp)
-
-        target_link_libraries(test_trajectory_player            move_maker      ${catkin_LIBRARIES})
-        target_link_libraries(test_trajectory_xml_parser        move_maker)
-        target_link_libraries(test_loading_trajectory_xml       move_maker)
-    ENDIF()
-ELSE()
-    message(${PROJECT_NAME} ": Tests will not be compiled")
+#ELSE()
+#    message(${PROJECT_NAME} ": Tests will not be compiled")
 ENDIF()
 
 #############

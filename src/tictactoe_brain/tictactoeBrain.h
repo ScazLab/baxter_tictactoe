@@ -3,7 +3,6 @@
 
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>
-#include <baxter_tictactoe/SetTrajectoryType.h>
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxterTictactoe/T_ThreadSafe.h"
