@@ -1,9 +1,0 @@
-<!-- An online display running on real-time to show the state of the board -->
-<launch>
-
-  <node name="camera_view" pkg="image_view" type="image_view" respawn="false" output="screen">
-    <remap from="image" to="/usb_cam/image_raw"/>
-    <param name="autosize" value="true" />
-  </node>
-
-</launch>

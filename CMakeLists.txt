@@ -19,7 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
     	     cv_bridge
     	     image_transport
              baxter_collaboration
-             eigen_conversions
 )
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)

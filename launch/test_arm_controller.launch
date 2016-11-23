@@ -1,6 +1,0 @@
-<!--defines the area of the cells in the game-->
-<launch>
-    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
-
-    <node name="test_arm_controller" pkg="baxter_tictactoe" type="test_arm_controller" respawn="false" output="screen"></node>
-</launch>
