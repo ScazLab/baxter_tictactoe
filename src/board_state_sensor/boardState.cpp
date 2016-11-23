@@ -65,7 +65,7 @@ void BoardState::InternalThreadEntry()
     {
         if (state == STATE_INIT)
         {
-            ROS_INFO("[%i] InternalThreadEntry CD", state);
+            ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", state);
             if (!_img_empty)
             {
                 cv::Mat img_gray;
@@ -164,7 +164,7 @@ void BoardState::InternalThreadEntry()
         }
         else if (state == STATE_CALIB)
         {
-            ROS_INFO("[%i] InternalThreadEntry BS", state);
+            ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", state);
             if (!_img_empty)
             {
                 board.resetState();
@@ -239,7 +239,7 @@ void BoardState::InternalThreadEntry()
 
                     board_publisher.publish(msg_board);
                     last_msg_board=msg_board;
-                    ROS_INFO("New board state published");
+                    // ROS_INFO("New board state published");
 
                     cv::Mat img = img_copy.clone();
 
