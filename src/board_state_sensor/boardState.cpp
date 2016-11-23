@@ -64,7 +64,7 @@ void BoardState::InternalThreadEntry()
             ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
             if (brain_state == TTTBrainState::READY) ++board_state;
         }
-        if (board_state == STATE_CALIB)
+        if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
             ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
@@ -159,7 +159,7 @@ void BoardState::InternalThreadEntry()
                 }
             }
         }
-        else if (board_state == STATE_READY)
+        else if (board_state == STATE_READY && !ros::isShuttingDown())
         {
             ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", board_state);
             if (!_img_empty)
@@ -251,7 +251,7 @@ void BoardState::InternalThreadEntry()
                         cv::putText(img, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
                     }
 
-                    if (true) cv::imshow("[Board_State_Sensor] cell outlines", img);
+                    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img);
                     cv::waitKey(10);
                 }
             }
