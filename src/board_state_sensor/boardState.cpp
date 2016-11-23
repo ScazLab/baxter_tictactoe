@@ -29,10 +29,7 @@ BoardState::BoardState(string name, bool _show) :
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&mutex_b, &_mutex_attr);
 
-    cells_client = _n.serviceClient<DefineCells>("/define_cells");
-    service = _n.advertiseService("/define_cells", &BoardState::serviceCb, this);
-
-    board_publisher  = _n.advertise<MsgBoard>("/new_board", 1);
+    board_publisher  = _n.advertise<MsgBoard>("/baxter_tictactoe/new_board", 1);
     ROS_ASSERT_MSG(board_publisher,"Empty publisher");
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
@@ -124,7 +121,7 @@ void BoardState::InternalThreadEntry()
                 {
                     contours.erase(contours.begin() + largest_idx);
                     pthread_mutex_lock(&mutex_b);
-                    board.cells.clear();
+                    board.resetState();
                     pthread_mutex_unlock(&mutex_b);
 
                     // aproximate cell contours to quadrilaterals
@@ -159,7 +156,7 @@ void BoardState::InternalThreadEntry()
                         pthread_mutex_unlock(&mutex_b);
                     }
 
-                    cv::imshow("[Cells_Definition] cell boundaries", board_cells);
+                    if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
                     cv::waitKey(3);
                     ++state;
                 }
@@ -177,49 +174,11 @@ void BoardState::InternalThreadEntry()
                 img_copy=_curr_img;
                 pthread_mutex_unlock(&_mutex_img);
 
-                DefineCells cells_srv;
-                bool res = cells_client.call(cells_srv);
-                ROS_INFO("[%i] InternalThreadEntry BS. Res: %i", state, res);
-
-                if(res)
-                {
-                    board.resetState();
-                    int cells_num = cells_srv.response.board.cells.size();
-                    for(int i = 0; i < cells_num; i++)
-                    {
-                        cell.contours.clear();
-                        int edges_num = cells_srv.response.board.cells[i].contours.size();
-                        for(int j = 0; j < edges_num; j++)
-                        {
-
-                            cv::Point point(cells_srv.response.board.cells[i].contours[j].x, cells_srv.response.board.cells[i].contours[j].y);
-                            cell.contours.push_back(point);
-                        }
-
-                        switch(cells_srv.response.board.cells[i].state)
-                        {
-                            case MsgCell::EMPTY:
-                                cell.state = empty;
-                                break;
-                            case MsgCell::RED:
-                                cell.state = red;
-                                break;
-                            case MsgCell::BLUE:
-                                cell.state = blue;
-                                break;
-                            case MsgCell::UNDEFINED:
-                                cell.state = undefined;
-                                break;
-                        }
-                        board.cells.push_back(cell);
-                    }
-                }
-
                 if (board.cells.size() == 9)
                 {
                     MsgBoard msg_board;
-                    for(int i = 0; i < msg_board.cells.size(); i++){
-                        // msg_board.cells[i].state = MsgCell::UNDEFINED;
+                    for(int i = 0; i < msg_board.cells.size(); i++)
+                    {
                         msg_board.cells[i].state = MsgCell::EMPTY;
                     }
                     // msg_board.header.stamp = msg->header.stamp;
@@ -258,6 +217,7 @@ void BoardState::InternalThreadEntry()
                             }
                         }
                     }
+
                     cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
                     for(int i = 0; i < board.cells.size(); i++)
                     {
@@ -279,7 +239,7 @@ void BoardState::InternalThreadEntry()
 
                     board_publisher.publish(msg_board);
                     last_msg_board=msg_board;
-                    ROS_DEBUG("New board state published");
+                    ROS_INFO("New board state published");
 
                     cv::Mat img = img_copy.clone();
 
@@ -303,32 +263,6 @@ void BoardState::InternalThreadEntry()
         r.sleep();
     }
     ROS_INFO("[%i] Finishing", state);
-}
-
-bool BoardState::serviceCb(DefineCells::Request &req, DefineCells::Response &res)
-{
-    // ROS_INFO("[%i] serviceCb", state);
-    if(state == STATE_CALIB)
-    {
-        MsgCell cell;
-
-        pthread_mutex_lock(&mutex_b);
-        for(int i = 0; i < board.cells.size(); i++)
-        {
-            cell.state = MsgCell::EMPTY;
-            for(int j = 0; j < board.cells[i].contours.size(); j++)
-            {
-                cell.contours[j].x = board.cells[i].contours[j].x;
-                cell.contours[j].y = board.cells[i].contours[j].y;
-            }
-            res.board.cells[i] = cell;
-        }
-        pthread_mutex_unlock(&mutex_b);
-
-        return true;
-    }
-
-    return false;
 }
 
 int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)

@@ -1,5 +1,4 @@
 #include "boardState.h"
-#include "cellsDefinition.h"
 
 int main(int argc, char** argv)
 {
@@ -19,7 +18,7 @@ int main(int argc, char** argv)
     }
 
     BoardState bs("/baxter_tictactoe", show);
-    // cellsDefinition cd("/baxter_tictactoe");
+
     ros::spin();
 
     return 0;

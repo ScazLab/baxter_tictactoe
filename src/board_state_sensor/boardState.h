@@ -13,7 +13,7 @@
 
 #include "robot_interface/ros_thread_image.h"
 #include "baxterTictactoe/tictactoe_utils.h"
-#include "baxter_tictactoe/DefineCells.h"
+#include "baxter_tictactoe/MsgBoard.h"
 #include "baxter_tictactoe/ScanState.h"
 
 #define STATE_INIT      0
@@ -26,11 +26,6 @@ class BoardState : public ROSThreadImage
 {
 private:
     ros::Publisher  board_publisher;
-
-    ros::ServiceClient cells_client;
-    ros::ServiceServer service;
-
-    std::string board_config;
 
     ttt::Board board;
     ttt::Cell cell;
@@ -66,16 +61,6 @@ private:
     static bool ascendingY(std::vector<cv::Point> i, std::vector<cv::Point> j);
 
     static bool ascendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
-
-    /**
-     * service that provides data on the defined contours/boundaries of the board's cells
-     *
-     * @param      request variables and response variables
-     *
-     * @return     returns true when function is succesfully executed
-     */
-    bool serviceCb(baxter_tictactoe::DefineCells::Request  &req,
-                   baxter_tictactoe::DefineCells::Response &res);
 
 protected:
     void InternalThreadEntry();

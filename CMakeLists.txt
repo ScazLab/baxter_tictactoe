@@ -67,7 +67,6 @@ add_message_files(FILES
 ## Generate services in the 'srv' folder
 add_service_files(FILES
     SetTrajectoryType.srv
-    DefineCells.srv
     ScanState.srv
 )
 
@@ -137,20 +136,14 @@ add_subdirectory(lib)
 add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h
                                                 src/tictactoe_brain/tictactoeBrain.cpp
                                                 src/tictactoe_brain/tictactoe_brain.cpp)
-add_executable(show_board_cells                 src/show_board_cells/show_board_cells.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
 add_executable(board_state_sensor               src/board_state_sensor/boardState.h
                                                 src/board_state_sensor/boardState.cpp
-                                                src/board_state_sensor/cellsDefinition.h
-                                                src/board_state_sensor/cellsDefinition.cpp
                                                 src/board_state_sensor/board_state_sensor.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp
-                                                ${${PROJECT_NAME}_EXPORTED_TARGETS}
-                                                ${catkin_EXPORTED_TARGETS})
-add_dependencies(show_board_cells               baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp
@@ -168,10 +161,6 @@ target_link_libraries(tictactoe_brain           baxterTictactoe
                                                 ttt_controller
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(show_board_cells          baxterTictactoe
-                                                ${OpenCV_LIBS}
-                                                ${QT_LIBRARIES}
-                                                ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder          baxterTictactoe
                                                 ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
