@@ -60,7 +60,7 @@ int main(int argc, char** argv)
         {
             for (int j = 0; j < cheating_games.size(); ++j)
             {
-                if (j == i)
+                if (cheating_games[j] == i)
                 {
                     brain.set_strategy("cheating");
                     has_to_cheat=true;

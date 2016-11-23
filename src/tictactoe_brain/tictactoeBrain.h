@@ -195,10 +195,16 @@ public:
     void wait_for_opponent_turn(const uint8_t &num_tok_opp);
 
     /**
-     * This function indicates if all cells are occupied by tokens.
-     * @return True if all cells are occupied, false otherwise.
+     * Indicates if the board is full.
+     * @return  true/false if full or not
      **/
     bool is_board_full();
+
+    /**
+     * Indicates if the board is empty.
+     * @return  true/false if empty or not
+     **/
+    bool is_board_empty();
 
     /**
      * This function synthesizes sentence and waits t seconds.

@@ -28,6 +28,10 @@ private:
     ttt::hsvColorRange  hsv_red;
     ttt::hsvColorRange hsv_blue;
 
+    bool createCVWindows();
+
+    bool destroyCVWindows();
+
     /**
      * Sets the joint-level configuration for the home position
      */
@@ -78,10 +82,8 @@ private:
          * Calculates cell offsets; also prompts user to move board withing 'reachable zone'
          * (displayed on screen) if board is out of reach of Baxter's arm
          *
-         * @param     mode (test/run) indicating a test (does not exit out of scanning loop)
-         *                            or an actual run (quits once scanning finished)
          */
-        void processImage(std::string mode, float dist);
+        void processImage(float dist);
 
         /*
          * isolates black colored object in raw image

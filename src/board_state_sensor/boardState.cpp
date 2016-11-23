@@ -77,9 +77,9 @@ void BoardState::InternalThreadEntry()
         if (board_state == STATE_INIT)
         {
             ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
-            if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) ++board_state;
+            if (brain_state == TTTBrainState::READY) ++board_state;
         }
-        if (board_state == STATE_CALIB && !ros::isShuttingDown())
+        else if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
             ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
@@ -131,8 +131,8 @@ void BoardState::InternalThreadEntry()
                 // the largest-area contour (which is the inner board contour)
                 cv::Mat board_cells = cv::Mat::zeros(inner_board.size(), CV_8UC1);
 
-                // find and display cell centroids
-                if(contours.size() == 10)
+                // find and display cell
+                if(contours.size() == NUMBER_OF_CELLS + 1)
                 {
                     contours.erase(contours.begin() + largest_idx);
                     board.resetState();
@@ -181,7 +181,7 @@ void BoardState::InternalThreadEntry()
                 board.resetState();
                 cv::Mat img_copy = img_in.clone();
 
-                if (board.cells.size() == 9)
+                if (board.cells_size() == NUMBER_OF_CELLS)
                 {
                     MsgBoard msg_board;
                     for(int i = 0; i < msg_board.cells.size(); i++)
@@ -206,7 +206,7 @@ void BoardState::InternalThreadEntry()
                             if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
                             if (i==1) cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask);
                         }
-                        for (int j = 0; j < board.cells.size(); ++j)
+                        for (int j = 0; j < board.cells_size(); ++j)
                         {
                             Cell *cell = &(board.cells[j]);
                             cv::Mat crop = cell->mask_image(hsv_filt_mask);
@@ -226,14 +226,14 @@ void BoardState::InternalThreadEntry()
                     }
 
                     cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
-                    for(int i = 0; i < board.cells.size(); i++)
+                    for(int i = 0; i < board.cells_size(); i++)
                     {
                         vector<vector<cv::Point> > contours;
                         contours.push_back(board.cells[i].contours);
                         drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);
                     }
 
-                    for (int j = 0; j < board.cells.size(); ++j)
+                    for (int j = 0; j < board.cells_size(); ++j)
                     {
                         Cell *cell = &(board.cells[j]);
                         if (cell->cell_area_red || cell->cell_area_blue)
@@ -248,7 +248,7 @@ void BoardState::InternalThreadEntry()
                     last_msg_board=msg_board;
                     // ROS_INFO("New board state published");
 
-                    for(int i = 0; i < board.cells.size(); i++)
+                    for(int i = 0; i < board.cells_size(); i++)
                     {
                         cv::Point cell_centroid;
                         board.cells[i].get_cell_centroid(cell_centroid);
@@ -286,9 +286,9 @@ void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
     // ROS_INFO("[%i] brainStateCb %i", board_state, msg.state);
     brain_state = msg.state;
 
-    if (msg.state == TTTBrainState::MATCH_STARTED)
+    if (msg.state == TTTBrainState::GAME_FINISHED)
     {
-        board_state = STATE_CALIB;
+        board_state = STATE_INIT;
     }
 }
 

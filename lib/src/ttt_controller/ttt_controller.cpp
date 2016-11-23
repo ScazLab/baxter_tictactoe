@@ -40,17 +40,6 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
 
-    namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
-    resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
-    resizeWindow("Processed",   480, 300);
-    moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
-    moveWindow("Processed", 10, 720);
-    waitKey(10);
-
     // KDL::JntArray ll, ul; //lower joint limits, upper joint limits
     // getIKLimits(ll,ul);
 
@@ -84,6 +73,7 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
 /**************************************************************************/
 bool TTTController::gripToken()
 {
+    createCVWindows();
     cv::Point offset(0,0);
     // check if token is present before starting movement loop
     // (prevent gripper from colliding with play surface)
@@ -127,6 +117,7 @@ bool TTTController::gripToken()
         r.sleep();
     }
 
+    destroyCVWindows();
     gripObject();
     return true;
 }
@@ -251,7 +242,7 @@ bool TTTController::computeTokenOffset(Mat in, cv::Point &offset, Mat &out)
         offset.x = x_mid - x_trg;
         offset.y = y_mid - y_trg;
 
-        ROS_INFO_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
+        ROS_DEBUG_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
 
         return true;
     }
@@ -296,8 +287,9 @@ void TTTController::setDepth(float &dist)
     ROS_INFO("Dist is %g", dist);
 }
 
-void TTTController::processImage(string mode, float dist)
+void TTTController::processImage(float dist)
 {
+    createCVWindows();
     while(RobotInterface::ok())
     {
         ttt::Contours contours;
@@ -317,7 +309,7 @@ void TTTController::processImage(string mode, float dist)
             setOffsets(board_area, contours, dist, &board, &centroids);
             // imshow("[ScanBoard] Processed", board);
 
-            if(offsetsReachable() && mode == "run"){
+            if(offsetsReachable()){
                 ROS_INFO_THROTTLE(2, "[Scan Board] Board is positioned correctly! Proceed with game\n");
                 break;
             }
@@ -368,6 +360,7 @@ void TTTController::processImage(string mode, float dist)
 
         imshow("Processed", binary);
     }
+    destroyCVWindows();
 }
 
 void TTTController::isolateBlack(Mat &output)
@@ -580,6 +573,31 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
     return computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 }
 
+/**************************************************************************/
+/*                               MISC                                     */
+/**************************************************************************/
+
+bool TTTController::createCVWindows()
+{
+    namedWindow("Hand Camera", WINDOW_NORMAL);
+    namedWindow("Rough", WINDOW_NORMAL);
+    namedWindow("Processed", WINDOW_NORMAL);
+    resizeWindow("Hand Camera", 480, 300);
+    resizeWindow("Rough",   480, 300);
+    resizeWindow("Processed",   480, 300);
+    moveWindow("Hand Camera", 10, 10);
+    moveWindow("Rough", 10, 370);
+    moveWindow("Processed", 10, 720);
+    waitKey(10);
+}
+
+bool TTTController::destroyCVWindows()
+{
+    destroyWindow("Hand Camera");
+    destroyWindow("Processed");
+    destroyWindow("Rough");
+}
+
 bool TTTController::goHome()
 {
     return ArmCtrl::goHome();
@@ -655,7 +673,7 @@ bool TTTController::scanBoardImpl()
     float dist;
     setDepth(dist);
     if (!hoverAboveBoard()) return false;
-    processImage("run", dist);
+    processImage(dist);
 
     ROS_INFO("Hovering above tokens..");
     hoverAboveTokens(Z_HIGH);
@@ -695,7 +713,7 @@ bool TTTController::putDownTokenImpl()
     ros::Duration(0.2).sleep();
     if (!releaseObject()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
-    if (!hoverAboveTokens(Z_HIGH)) return false;
+    hoverAboveTokens(Z_HIGH);
 
     return true;
 }
@@ -722,12 +740,9 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
     pthread_mutex_unlock(&_mutex_img);
 }
 
-
 TTTController::~TTTController()
 {
-    destroyWindow("Hand Camera");
-    destroyWindow("Processed");
-    destroyWindow("Rough");
+    destroyCVWindows();
 
     pthread_mutex_destroy(&_mutex_img);
 }

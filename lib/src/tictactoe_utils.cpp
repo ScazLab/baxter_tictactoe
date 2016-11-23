@@ -107,6 +107,21 @@ hsvColorRange & hsvColorRange::operator=(const hsvColorRange &_hsvc)
 /**                        CELL                                          **/
 /**************************************************************************/
 
+Cell::Cell()
+{
+    state=empty;
+    cell_area_red=0;
+    cell_area_blue=0;
+    contours.clear();
+}
+
+Cell::Cell(std::vector<cv::Point> _vec) : contours(_vec)
+{
+    state=empty;
+    cell_area_red=0;
+    cell_area_blue=0;
+}
+
 cv::Mat Cell::mask_image(const cv::Mat &_src)
 {
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
@@ -181,12 +196,12 @@ string Cell::toString()
 
 bool Board::resetState()
 {
-    if (cells.size()==0)
+    if (cells_size()==0)
     {
         return false;
     }
 
-    for (int i = 0; i < cells.size(); ++i)
+    for (int i = 0; i < cells_size(); ++i)
     {
         cells[i].state      = empty;
         cells[i].cell_area_red  = 0;
@@ -198,14 +213,14 @@ bool Board::resetState()
 
 string Board::stateToString()
 {
-    if (cells.size()==0)
+    if (cells_size()==0)
     {
         return "";
     }
 
     stringstream res;
     res << cell_state_to_str(cells[0].state);
-    for (int i = 1; i < cells.size(); ++i)
+    for (int i = 1; i < cells_size(); ++i)
     {
         res << "\t" << cell_state_to_str(cells[i].state);
     }
@@ -217,7 +232,7 @@ std::vector<std::vector<cv::Point> > Board::as_vector_of_vectors()
 {
     std::vector<std::vector<cv::Point> > result;
 
-    for (int i = 0; i < cells.size(); ++i)
+    for (int i = 0; i < cells_size(); ++i)
     {
         result.push_back(cells[i].contours);
     }
@@ -248,7 +263,7 @@ bool Board::save()
 
             stream.writeStartElement("board");
 
-            for (size_t i=0; i< cells.size();++i)
+            for (size_t i=0; i< cells_size();++i)
             {
                 Cell c = cells[i];
                 stream.writeStartElement("cell");
@@ -321,9 +336,9 @@ bool Board::load(std::string cells_param)
         ROS_WARN_COND(xml.hasError(),"Error parsing xml data (l.%d, c.%d):%s",
                      (int)xml.lineNumber(), (int)xml.columnNumber(), xml.errorString().toStdString().c_str());
 
-        ROS_INFO("Xml data successfully loaded. %i cells loaded.", (int)cells.size());
+        ROS_INFO("Xml data successfully loaded. %i cells loaded.", (int)cells_size());
 
-        for (int i = 0; i < cells.size(); ++i)
+        for (int i = 0; i < cells_size(); ++i)
         {
             ROS_INFO("Cell %i:  %s",i,cells[i].toString().c_str());
         }

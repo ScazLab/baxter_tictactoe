@@ -92,8 +92,8 @@ public:
     double cell_area_blue;
 
 public:
-    Cell() { state=empty; cell_area_red=0; cell_area_blue=0; contours.clear(); };
-    Cell(std::vector<cv::Point> _vec) : contours(_vec) {};
+    Cell();
+    Cell(std::vector<cv::Point> _vec);
     ~Cell() {};
 
     std::vector<cv::Point> get_contours() { return contours; };
@@ -134,6 +134,8 @@ public:
     std::string stateToString();
 
     std::vector<std::vector<cv::Point> > as_vector_of_vectors();
+
+    int cells_size() { return cells.size(); };
 
     /**
      * Saves the board to file (whose name will be specified with a dialog window).
