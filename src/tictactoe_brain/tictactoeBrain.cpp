@@ -94,12 +94,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     }
 }
 
-bool tictactoeBrain::scanState(ScanState::Request &req, ScanState::Response &res)
-{
-    res.state = _setup == true ? true : false;
-    return true;
-}
-
 void tictactoeBrain::publishTTTBrainStateCb(const ros::TimerEvent&)
 {
     pthread_mutex_lock(&_mutex_brainstate);

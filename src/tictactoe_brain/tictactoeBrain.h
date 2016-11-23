@@ -4,7 +4,6 @@
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>
 #include <baxter_tictactoe/SetTrajectoryType.h>
-#include "baxter_tictactoe/ScanState.h"
 
 #include "baxterTictactoe/tictactoe_utils.h"
 #include "baxterTictactoe/T_ThreadSafe.h"
@@ -65,9 +64,6 @@ private:
     ros::Rate r;
 
     bool has_cheated;
-
-    bool scanState(baxter_tictactoe::ScanState::Request  &req,
-                   baxter_tictactoe::ScanState::Response &res);
 
     /**
      * It handles the message published when the state of a cell has changed. The new TTT board state
