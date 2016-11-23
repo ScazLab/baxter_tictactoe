@@ -137,7 +137,7 @@ add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBra
                                                 src/tictactoe_brain/tictactoeBrain.cpp
                                                 src/tictactoe_brain/tictactoe_brain.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
-add_executable(board_scheme                     src/board_scheme/board_scheme.cpp)
+add_executable(board_to_baxter_display          src/board_to_baxter_display/board_to_baxter_display.cpp)
 add_executable(board_state_sensor               src/board_state_sensor/boardState.h
                                                 src/board_state_sensor/boardState.cpp
                                                 src/board_state_sensor/board_state_sensor.cpp)
@@ -149,7 +149,7 @@ add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messag
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
-add_dependencies(board_scheme                   baxter_tictactoe_generate_messages_cpp
+add_dependencies(board_to_baxter_display        baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(board_state_sensor             baxter_tictactoe_generate_messages_cpp
@@ -164,7 +164,7 @@ target_link_libraries(tictactoe_brain           baxterTictactoe
 target_link_libraries(hsv_range_finder          baxterTictactoe
                                                 ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
-target_link_libraries(board_scheme              ${OpenCV_LIBS}
+target_link_libraries(board_to_baxter_display   ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
 target_link_libraries(board_state_sensor        baxterTictactoe
                                                 ${OpenCV_LIBS}

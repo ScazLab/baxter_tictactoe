@@ -13,12 +13,9 @@
 namespace ttt
 {
 
-class BoardScheme
+class BoardToBaxterDisplay
 {
 private:
-
-    static const char WINDOW[];
-
     ros::NodeHandle nh_;
     image_transport::ImageTransport it_;
     image_transport::Publisher image_pub_;
@@ -115,18 +112,9 @@ private:
 
     }
 
-    void show_board_temporary(cv::Mat& img, int msec) const
-    {
-        cv::namedWindow(BoardScheme::WINDOW);
-        cv::imshow(BoardScheme::WINDOW,img);
-        cv::waitKey(msec);
-        cv::destroyAllWindows();
-    }
-
     void publish_draw_board(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
     {
         cv::Mat img_board = this->draw_board(msg);
-        //this->show_board_temporary(img_board,30000);
 
         cv_bridge::CvImage out_msg;
         out_msg.header   = msg->header; // Same timestamp and tf frame as input image
@@ -138,10 +126,10 @@ private:
 
 public:
 
-    BoardScheme(std::string channel) : it_(nh_)
+    BoardToBaxterDisplay(std::string channel) : it_(nh_)
     {
         image_pub_ = it_.advertise(channel.c_str(), 1);
-        sub = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardScheme::publish_draw_board, this);
+        sub = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardToBaxterDisplay::publish_draw_board, this);
 
         height=600;
         width =1024;
@@ -165,8 +153,6 @@ public:
 
     }
 };
-
-const char BoardScheme::WINDOW[] = "Tic Tac Toe Board Status";
 }
 
 
@@ -178,7 +164,7 @@ int main(int argc, char** argv)
         channel=std::string(argv[1]);
     }
     ros::init(argc, argv, "board_display");
-    ttt::BoardScheme bd(channel);
+    ttt::BoardToBaxterDisplay bd(channel);
     ros::spin();
     return 0;
 }
