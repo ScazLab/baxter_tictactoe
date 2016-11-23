@@ -186,7 +186,7 @@ Mat TTTController::isolateToken(Mat pool)
     for (int i = 0; i < 4; ++i) dilate(out, out, Mat());
     for (int i = 0; i < 2; ++i) erode(out, out, Mat());
 
-    imshow("Rough", out);
+    // imshow("Rough", out);
 
     return out;
 }
@@ -351,7 +351,7 @@ void TTTController::processImage(float dist)
                         interval += 5;
                     }
 
-                    imshow("Rough", zone);
+                    // imshow("Rough", zone);
                     waitKey(3);
                     r.sleep();
                 }
@@ -580,13 +580,13 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 bool TTTController::createCVWindows()
 {
     namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
+    // namedWindow("Rough", WINDOW_NORMAL);
     namedWindow("Processed", WINDOW_NORMAL);
     resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
+    // resizeWindow("Rough",   480, 300);
     resizeWindow("Processed",   480, 300);
     moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
+    // moveWindow("Rough", 10, 370);
     moveWindow("Processed", 10, 720);
     waitKey(10);
 }
@@ -595,7 +595,7 @@ bool TTTController::destroyCVWindows()
 {
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
-    destroyWindow("Rough");
+    // destroyWindow("Rough");
 }
 
 bool TTTController::goHome()

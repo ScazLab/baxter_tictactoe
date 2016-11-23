@@ -129,6 +129,8 @@ public:
     Board()  {};
     ~Board() {};
 
+    void clear() { cells.clear(); };
+
     bool resetState();
 
     std::string stateToString();

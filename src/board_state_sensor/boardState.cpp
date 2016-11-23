@@ -135,16 +135,16 @@ void BoardState::InternalThreadEntry()
                 if(contours.size() == NUMBER_OF_CELLS + 1)
                 {
                     contours.erase(contours.begin() + largest_idx);
-                    board.resetState();
+                    board.clear();
 
                     // aproximate cell contours to quadrilaterals
                     vector<vector<cv::Point> > apx_contours;
                     for(int i = 0; i < contours.size(); i++)
                     {
                         double epsilon = arcLength(contours[i], true);
-                        vector<cv::Point> apx_cell;
-                        approxPolyDP(contours[i], apx_cell, 0.1 * epsilon, true);
-                        apx_contours.push_back(apx_cell);
+                        vector<cv::Point> apx_contour_cell;
+                        approxPolyDP(contours[i], apx_contour_cell, 0.1 * epsilon, true);
+                        apx_contours.push_back(apx_contour_cell);
                     }
 
                     for(int i = 0; i < apx_contours.size(); i++)
@@ -163,8 +163,7 @@ void BoardState::InternalThreadEntry()
 
                     for(int i = 0; i < apx_contours.size(); i++)
                     {
-                        Cell cell(apx_contours[i]);
-                        board.cells.push_back(cell);
+                        board.cells.push_back(Cell(apx_contours[i]));
                     }
 
                     if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
@@ -180,6 +179,8 @@ void BoardState::InternalThreadEntry()
             {
                 board.resetState();
                 cv::Mat img_copy = img_in.clone();
+
+                ROS_INFO("board cells size %i\n", board.cells_size());
 
                 if (board.cells_size() == NUMBER_OF_CELLS)
                 {
