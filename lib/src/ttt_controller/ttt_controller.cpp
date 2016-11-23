@@ -79,7 +79,7 @@ bool TTTController::gripToken()
     // (prevent gripper from colliding with play surface)
     while(RobotInterface::ok())
     {
-        if(processTokenImage(offset)) break;
+        if(computeTokenOffset(offset)) break;
 
         ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
         r.sleep();
@@ -93,7 +93,7 @@ bool TTTController::gripToken()
 
     while(RobotInterface::ok())
     {
-        processTokenImage(offset);
+        computeTokenOffset(offset);
 
         // move incrementally towards token
         double px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
@@ -104,10 +104,13 @@ bool TTTController::gripToken()
         prev_offset.y = py;
 
         vector<double> joint_angles;
-        computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
-        goToPoseNoCheck(joint_angles);
 
-        if(getPos().z < -0.2)
+        if (computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
+        {
+            goToPoseNoCheck(joint_angles);
+        }
+
+        if(pz < -0.2)
         {
             ROS_WARN("I went too low! Exiting.");
             return false;
@@ -122,19 +125,73 @@ bool TTTController::gripToken()
     return true;
 }
 
-bool TTTController::processTokenImage(cv::Point &offset)
+bool TTTController::computeTokenOffset(cv::Point &offset)
 {
-    Mat token;
-    Mat pool(_img_size, CV_8UC1);
-    ttt::Contours contours;
+    Mat token(_img_size, CV_8UC1);
+    Mat pool (_img_size, CV_8UC1);
 
     pool = detectPool();
-
     token = isolateToken(pool);
-    bool res = computeTokenOffset(token, offset, token);
-    imshow("Processed", token);
 
-    waitKey(1);
+    bool res = false;
+
+    ttt::Contours contours;
+    vector<cv::Vec4i> hierarchy;
+    findContours(token, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+
+    token = Mat::zeros(_img_size, CV_8UC1);
+
+    // when hand camera is blind due to being too close to token, go straight down;
+    if(contours.size() < 2)
+    {
+        offset = cv::Point(0,0);
+    }
+    else if(contours.size() <= 4)
+    {
+        // find highest and lowest x and y values from token triangles contours
+        // to find x-y coordinate of top left token edge and token side length
+        int y_min = (contours[0])[0].y;
+        int x_min = (contours[0])[0].x;
+        int y_max = 0;
+        int x_max = 0;
+
+        for(int i = 0; i < contours.size(); i++)
+        {
+            vector<cv::Point> contour = contours[i];
+            for(int j = 0; j < contour.size(); j++)
+            {
+                if(y_min > contour[j].y) y_min = contour[j].y;
+                if(x_min > contour[j].x) x_min = contour[j].x;
+                if(y_max < contour[j].y) y_max = contour[j].y;
+                if(x_max < contour[j].x) x_max = contour[j].x;
+            }
+        }
+
+        // reconstruct token's square shape
+        rectangle(token, Rect(x_min, y_min, y_max - y_min, y_max - y_min),
+                                          Scalar(255,255,255), CV_FILLED);
+
+        // find and draw the center of the token and the image
+        int x_mid = int((x_max + x_min) / 2);
+        int y_mid = int((y_max + y_min) / 2);
+
+        int x_trg = int(_img_size.width/2+20);   // some offset to center the tile on the gripper
+        int y_trg = int(_img_size.height/2-40);  // some offset to center the tile on the gripper
+
+        circle(token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
+        circle(token, cv::Point(x_trg, y_trg), 3, Scalar(180, 40, 40), CV_FILLED);
+
+        offset.x = x_mid - x_trg;
+        offset.y = y_mid - y_trg;
+
+        ROS_DEBUG_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
+
+        res=true;
+    }
+
+    imshow("Processed", token);
+    waitKey(10);
+
     return res;
 }
 
@@ -186,68 +243,9 @@ Mat TTTController::isolateToken(Mat pool)
     for (int i = 0; i < 4; ++i) dilate(out, out, Mat());
     for (int i = 0; i < 2; ++i) erode(out, out, Mat());
 
-    // imshow("Rough", out);
+    imshow("Rough", out);
 
     return out;
-}
-
-bool TTTController::computeTokenOffset(Mat in, cv::Point &offset, Mat &out)
-{
-    ttt::Contours contours;
-    vector<cv::Vec4i> hierarchy;
-    findContours(in, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-
-    out = Mat::zeros(_img_size, CV_8UC1);
-
-    // when hand camera is blind due to being too close to token, go straight down;
-    if(contours.size() < 2)
-    {
-        offset = cv::Point(0,0);
-    }
-    else if(contours.size() <= 4)
-    {
-        // find highest and lowest x and y values from token triangles contours
-        // to find x-y coordinate of top left token edge and token side length
-        int y_min = (contours[0])[0].y;
-        int x_min = (contours[0])[0].x;
-        int y_max = 0;
-        int x_max = 0;
-
-        for(int i = 0; i < contours.size(); i++)
-        {
-            vector<cv::Point> contour = contours[i];
-            for(int j = 0; j < contour.size(); j++)
-            {
-                if(y_min > contour[j].y) y_min = contour[j].y;
-                if(x_min > contour[j].x) x_min = contour[j].x;
-                if(y_max < contour[j].y) y_max = contour[j].y;
-                if(x_max < contour[j].x) x_max = contour[j].x;
-            }
-        }
-
-        // reconstruct token's square shape
-        rectangle(out, Rect(x_min, y_min, y_max - y_min, y_max - y_min),
-                       Scalar(255,255,255), CV_FILLED);
-
-        // find and draw the center of the token and the image
-        int x_mid = int((x_max + x_min) / 2);
-        int y_mid = int((y_max + y_min) / 2);
-
-        int x_trg = int(_img_size.width/2);
-        int y_trg = int(_img_size.height/2-20);
-
-        circle(out, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
-        circle(out, cv::Point(x_trg, y_trg), 3, Scalar(180, 40, 40), CV_FILLED);
-
-        offset.x = x_mid - x_trg;
-        offset.y = y_mid - y_trg;
-
-        ROS_DEBUG_THROTTLE(1, "Offset %i %i", offset.x, offset.y);
-
-        return true;
-    }
-
-    return false;
 }
 
 /**************************************************************************/
@@ -309,11 +307,13 @@ void TTTController::processImage(float dist)
             setOffsets(board_area, contours, dist, &board, &centroids);
             // imshow("[ScanBoard] Processed", board);
 
-            if(offsetsReachable()){
+            if(offsetsReachable())
+            {
                 ROS_INFO_THROTTLE(2, "[Scan Board] Board is positioned correctly! Proceed with game\n");
                 break;
             }
-            else if(!offsetsReachable()) {
+            else if(!offsetsReachable())
+            {
                 ROS_WARN("[Scan Board] Please move board within reachable zone\n");
                 setZone(contours, dist, board_corners, centroids, &cell_to_corner);
 
@@ -351,7 +351,7 @@ void TTTController::processImage(float dist)
                         interval += 5;
                     }
 
-                    // imshow("Rough", zone);
+                    imshow("Rough", zone);
                     waitKey(3);
                     r.sleep();
                 }
@@ -580,13 +580,13 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 bool TTTController::createCVWindows()
 {
     namedWindow("Hand Camera", WINDOW_NORMAL);
-    // namedWindow("Rough", WINDOW_NORMAL);
+    namedWindow("Rough", WINDOW_NORMAL);
     namedWindow("Processed", WINDOW_NORMAL);
     resizeWindow("Hand Camera", 480, 300);
-    // resizeWindow("Rough",   480, 300);
+    resizeWindow("Rough",   480, 300);
     resizeWindow("Processed",   480, 300);
     moveWindow("Hand Camera", 10, 10);
-    // moveWindow("Rough", 10, 370);
+    moveWindow("Rough", 10, 370);
     moveWindow("Processed", 10, 720);
     waitKey(10);
 }
@@ -595,7 +595,7 @@ bool TTTController::destroyCVWindows()
 {
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
-    // destroyWindow("Rough");
+    destroyWindow("Rough");
 }
 
 bool TTTController::goHome()

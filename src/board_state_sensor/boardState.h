@@ -73,6 +73,14 @@ private:
      **/
     void brainStateCb(const baxter_tictactoe::TTTBrainState & msg);
 
+    /**
+     * Checks if the detected board satisfies some empirical rule. For the time being, the only
+     * thing checked is if the centroids of the cells are not within the contour of any other cell.
+     *
+     * @return true/false if the board is "sane"
+     */
+    bool isBoardSane();
+
 protected:
     void InternalThreadEntry();
 

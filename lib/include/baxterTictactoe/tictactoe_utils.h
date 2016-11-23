@@ -108,10 +108,9 @@ public:
 
     /**
      * Computes the centroid of a cell.
-     * @param  centroid the centroid
-     * @return          true/false if success/failure.
+     * @return  the centroid as a cv::Point (defaults to [0,0] if ther is no contour)
      */
-    bool get_cell_centroid(cv::Point& centroid);
+    cv::Point get_centroid();
 
     /**
      * Prints some useful information from the cell

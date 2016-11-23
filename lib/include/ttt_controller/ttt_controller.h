@@ -164,7 +164,7 @@ private:
          *
          * @return     true/false if success/failure
          */
-        bool processTokenImage(cv::Point &offset);
+        bool computeTokenOffset(cv::Point &offset);
 
         /*
          * isolates blue colored object in raw image
@@ -187,17 +187,6 @@ private:
          * @return      output Mat displaying token,
          */
         cv::Mat isolateToken(cv::Mat pool);
-
-        /*
-         * calculates offset distance from arm to token
-         *
-         * @param     in        input matrix
-         * @oaram     offset    token offset
-         * @param     out Mat displaying token
-         *
-         * @return     true/false if success/failure
-         */
-        bool computeTokenOffset(cv::Mat in, cv::Point &offset, cv::Mat &out);
 
 protected:
     cv::Mat  _curr_img;

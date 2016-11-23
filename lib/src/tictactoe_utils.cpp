@@ -145,25 +145,18 @@ cv::Mat Cell::mask_image(const cv::Mat &_src)
     return im_crop;
 }
 
-bool Cell::get_cell_centroid(cv::Point& centroid)
+cv::Point Cell::get_centroid()
 {
-    uint sumX = 0, sumY = 0;
-    size_t size = contours.size();
-    centroid.x=centroid.y=0;
-    if(size > 0)
+    cv::Point centroid(0,0);
+
+    if(contours.size() > 0)
     {
-        for (std::vector<cv::Point>::iterator it = contours.begin(); it != contours.end(); ++it)
-        {
-            sumX += it->x;
-            sumY += it->y;
-        }
-        // TODO throw exception if size <= 0
-        centroid.x = sumX/size;
-        centroid.y = sumY/size;
-        return true;
+        cv::Moments mom;
+        mom = cv::moments(contours, false);
+        centroid = cv::Point( int(mom.m10/mom.m00) , int(mom.m01/mom.m00) );
     }
-    else
-        return false;
+
+    return centroid;
 }
 
 string Cell::toString()

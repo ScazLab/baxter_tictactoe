@@ -168,7 +168,7 @@ void BoardState::InternalThreadEntry()
 
                     if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
                     cv::waitKey(3);
-                    ++board_state;
+                    if (isBoardSane()) ++board_state;
                 }
             }
         }
@@ -179,8 +179,6 @@ void BoardState::InternalThreadEntry()
             {
                 board.resetState();
                 cv::Mat img_copy = img_in.clone();
-
-                ROS_INFO("board cells size %i\n", board.cells_size());
 
                 if (board.cells_size() == NUMBER_OF_CELLS)
                 {
@@ -251,10 +249,6 @@ void BoardState::InternalThreadEntry()
 
                     for(int i = 0; i < board.cells_size(); i++)
                     {
-                        cv::Point cell_centroid;
-                        board.cells[i].get_cell_centroid(cell_centroid);
-                        //cv::circle(img_out, p,5,cv::Scalar(0,0, 255),-1);
-                        // cv::line(img_out, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
                         cv::Scalar col = col_empty;
                         if (board.cells[i].state ==  red)  col = col_red;
                         if (board.cells[i].state == blue) col = col_blue;
@@ -263,7 +257,8 @@ void BoardState::InternalThreadEntry()
                         contours.push_back(board.cells[i].get_contours());
 
                         cv::drawContours(img_out, contours,-1, col, CV_FILLED); // drawing just the borders
-                        cv::putText(img_out, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
+                        cv::putText(img_out, intToString(i+1), board.cells[i].get_centroid(),
+                                             cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
                     }
 
                     if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_out);
@@ -291,6 +286,26 @@ void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
     {
         board_state = STATE_INIT;
     }
+}
+
+bool BoardState::isBoardSane()
+{
+    for (int i = 0; i < board.cells_size(); ++i)
+    {
+        for (int j = 0; j < board.cells_size(); ++j)
+        {
+            if (j != i)
+            {
+                if (cv::pointPolygonTest(board.cells[j].contours,
+                                         board.cells[i].get_centroid(), true) >= 0)
+                {
+                    ROS_WARN("Point #%i is inside cell #%i", i, j);
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)
