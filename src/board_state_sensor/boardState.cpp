@@ -292,6 +292,15 @@ bool BoardState::isBoardSane()
 {
     for (int i = 0; i < board.cells_size(); ++i)
     {
+        // Check if area of cell is big enough
+        int cell_area = cv::moments(board.cells[i].contours,false).m00;
+        if ( cell_area < area_threshold)
+        {
+            ROS_WARN("Cell #%i has area %i (smaller than area_threshold)", i, cell_area);
+            return false;
+        }
+
+        // Check if centroid of cells is not contained in another cell
         for (int j = 0; j < board.cells_size(); ++j)
         {
             if (j != i)
