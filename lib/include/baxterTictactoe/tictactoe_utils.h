@@ -138,35 +138,6 @@ public:
     int cells_size() { return cells.size(); };
 
     /**
-     * Saves the board to file (whose name will be specified with a dialog window).
-     * The format of the file is as follows:
-     *   <board>
-     *     <cell id="0">
-     *       <vertex x="195" y="50"/>
-     *       [...]
-     *     </cell>
-     *     [...]
-     *  </board>
-     * @return true/false if success/failure.
-     */
-    bool save();
-
-    /**
-     * Reads the contours of the cells from the parameter server,
-     * This data is formatted as a xml file, with the following format:
-     *   <board>
-     *     <cell id="0">
-     *       <vertex x="195" y="50"/>
-     *       [...]
-     *     </cell>
-     *     [...]
-     *  </board>
-     * @param  cells_param the name of the parameter where the raw data is stored.
-     * @return true/false if success/failure.
-     */
-    bool load(std::string cells_param);
-
-    /**
      * Returns a mask for a board, i.e. a new image that keeps only the portion
      * delimited by the board (the rest is set to black)
      * @param      the original image, where the mask will be extracted from.
