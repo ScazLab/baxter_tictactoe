@@ -19,7 +19,7 @@ int main(int argc, char** argv)
     }
 
     BoardState bs("/baxter_tictactoe", show);
-    cellsDefinition cd("/baxter_tictactoe");
+    // cellsDefinition cd("/baxter_tictactoe");
     ros::spin();
 
     return 0;

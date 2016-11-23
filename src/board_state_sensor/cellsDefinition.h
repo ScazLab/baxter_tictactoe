@@ -81,16 +81,6 @@ public:
     ~cellsDefinition();
 
     /**
-     * callback function executed whenever a new message (raw image) from the usb_cam node is received
-     * and identifies the boundaries of the tictactoe board and its cells
-     *
-     * @param      raw image from camera
-     *
-     * @return     N/A
-     */
-    void imageCb(const sensor_msgs::ImageConstPtr& msg);
-
-    /**
      * service that provides data on the defined contours/boundaries of the board's cells
      *
      * @param      request variables and response variables
