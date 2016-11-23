@@ -24,9 +24,10 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 BoardState::BoardState(string name, bool _show) :
                        ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(40) // 40Hz
 {
-    board_state_pub  = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
-    brain_state_sub  = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
-                                    &BoardState::brainStateCb, this);
+    board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
+    brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
+                                   &BoardState::brainStateCb, this);
+    img_pub         = _img_trp.advertise("/baxter_tictactoe/board_state_img", 1);
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
     ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
@@ -41,6 +42,10 @@ BoardState::BoardState(string name, bool _show) :
     {
         last_msg_board.cells[i].state = undefined;
     }
+
+    col_red   = cv::Scalar(  40,  40, 150);  // BGR color code
+    col_empty = cv::Scalar(  60, 160,  60);
+    col_blue  = cv::Scalar( 180,  40,  40);
 
     ROS_INFO("Red  tokens in\t%s", hsv_red.toString().c_str());
     ROS_INFO("Blue tokens in\t%s", hsv_blue.toString().c_str());
@@ -59,10 +64,20 @@ void BoardState::InternalThreadEntry()
 {
     while(ros::ok())
     {
+        cv::Mat img_in;
+        cv::Mat img_out;
+        if (!_img_empty)
+        {
+            pthread_mutex_lock(&_mutex_img);
+            img_in=_curr_img;
+            pthread_mutex_unlock(&_mutex_img);
+            img_out = img_in.clone();
+        }
+
         if (board_state == STATE_INIT)
         {
             ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
-            if (brain_state == TTTBrainState::READY) ++board_state;
+            if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) ++board_state;
         }
         if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
@@ -73,9 +88,8 @@ void BoardState::InternalThreadEntry()
                 cv::Mat img_binary;
 
                 // convert image color model from BGR to grayscale
-                pthread_mutex_lock(&_mutex_img);
-                cv::cvtColor(_curr_img, img_gray, CV_BGR2GRAY);
-                pthread_mutex_unlock(&_mutex_img);
+                cv::cvtColor(img_in, img_gray, CV_BGR2GRAY);
+
                 // convert grayscale image to binary image, using 155 threshold value to
                 // isolate white-colored board
                 cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
@@ -165,11 +179,7 @@ void BoardState::InternalThreadEntry()
             if (!_img_empty)
             {
                 board.resetState();
-                cv::Mat img_copy;
-
-                pthread_mutex_lock(&_mutex_img);
-                img_copy=_curr_img;
-                pthread_mutex_unlock(&_mutex_img);
+                cv::Mat img_copy = img_in.clone();
 
                 if (board.cells.size() == 9)
                 {
@@ -238,25 +248,34 @@ void BoardState::InternalThreadEntry()
                     last_msg_board=msg_board;
                     // ROS_INFO("New board state published");
 
-                    cv::Mat img = img_copy.clone();
-
-                    // drawing all cells of the board game
-                    cv::drawContours(img,board.as_vector_of_vectors(),-1, cv::Scalar(123,125,0),2); // drawing just the borders
                     for(int i = 0; i < board.cells.size(); i++)
                     {
                         cv::Point cell_centroid;
                         board.cells[i].get_cell_centroid(cell_centroid);
-                        //cv::circle(img, p,5,cv::Scalar(0,0, 255),-1);
-                        // cv::line(img, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
-                        cv::putText(img, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(255,255,0));
+                        //cv::circle(img_out, p,5,cv::Scalar(0,0, 255),-1);
+                        // cv::line(img_out, cell_centroid, cell_centroid, cv::Scalar(255,255,0), 2, 8);
+                        cv::Scalar col = col_empty;
+                        if (board.cells[i].state ==  red)  col = col_red;
+                        if (board.cells[i].state == blue) col = col_blue;
+
+                        ttt::Contours contours;
+                        contours.push_back(board.cells[i].get_contours());
+
+                        cv::drawContours(img_out, contours,-1, col, CV_FILLED); // drawing just the borders
+                        cv::putText(img_out, intToString(i+1), cell_centroid, cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
                     }
 
-                    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img);
+                    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_out);
                     cv::waitKey(10);
                 }
             }
         }
 
+        if (!_img_empty)
+        {
+            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img_out).toImageMsg();
+            img_pub.publish(msg);
+        }
         r.sleep();
     }
     ROS_INFO("[%i] Finishing", board_state);

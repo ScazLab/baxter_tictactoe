@@ -26,8 +26,9 @@
 class BoardState : public ROSThreadImage
 {
 private:
-    ros::Publisher   board_state_pub;
-    ros::Subscriber  brain_state_sub;
+    ros::Publisher          board_state_pub;
+    ros::Subscriber         brain_state_sub;
+    image_transport::Publisher      img_pub;
 
     ttt::Board board;
     ttt::Cell cell;
@@ -47,6 +48,10 @@ private:
 
     int board_state; // State of the board
     int brain_state; // state of the demo
+
+    cv::Scalar col_empty;
+    cv::Scalar   col_red;
+    cv::Scalar  col_blue;
 
     /**
      * @param      vector (i.e array) of contours, type indicating whether largest or

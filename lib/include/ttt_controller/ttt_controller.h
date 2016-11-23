@@ -34,7 +34,6 @@ private:
     void setHomeConfiguration();
 
     /* SCAN BOARD */
-        typedef std::vector<std::vector<cv::Point> > Contours;
         std::vector<geometry_msgs::Point> _offsets;
 
         /*
@@ -98,7 +97,7 @@ private:
          *            storing board contours, integer indicating the area of the board,
          *            and a vector<cv::Point> of the board's four corners
          */
-        void isolateBoard(Contours &contours, int &board_area,
+        void isolateBoard(ttt::Contours &contours, int &board_area,
                           std::vector<cv::Point> &board_corners, cv::Mat input, cv::Mat &output);
 
         /*
@@ -114,7 +113,7 @@ private:
          * @param      board area, cell contours, output Mat displaying cells, and height
          *            from arm to board surface
          */
-        void setOffsets(int board_area, Contours contours, float dist,
+        void setOffsets(int board_area, ttt::Contours contours, float dist,
                         cv::Mat *output, std::vector<cv::Point> *centroids);
 
         std::vector<geometry_msgs::Point> getOffsets() { return _offsets; };
@@ -129,7 +128,7 @@ private:
          * @param cell_to_corner vector representing distance between center of corner cell
          *                       and corner of corner cell
          */
-        void setZone(Contours contours, float dist, std::vector<cv::Point> board_corners,
+        void setZone(ttt::Contours contours, float dist, std::vector<cv::Point> board_corners,
                      std::vector<cv::Point> c, std::vector<cv::Point> * cell_to_corner);
 
         /*

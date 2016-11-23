@@ -34,6 +34,8 @@ typedef enum {empty=baxter_tictactoe::MsgCell::EMPTY,
               red=baxter_tictactoe::MsgCell::RED,
               undefined=baxter_tictactoe::MsgCell::UNDEFINED} cellState;
 
+typedef std::vector<std::vector<cv::Point> > Contours;
+
 std::string cell_state_to_str(cellState c_s);
 
 struct colorRange
