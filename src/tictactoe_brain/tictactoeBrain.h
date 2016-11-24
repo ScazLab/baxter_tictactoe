@@ -47,7 +47,7 @@ private:
     bool cheating;         // It determines if the robot can cheat or not.
 
     // Pointer to the function that chooses the next move
-    int (tictactoeBrain::*_choose_nextMove)(bool& cheating);
+    int (tictactoeBrain::*_choose_next_move)(bool& cheating);
 
     TTTController  leftArmCtrl;
     TTTController rightArmCtrl;
@@ -78,7 +78,7 @@ private:
      * \param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int cheating_to_win_randomMove(bool& cheating);
+    int cheatingToWinMove(bool& cheating);
 
     /**
      * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
@@ -87,7 +87,7 @@ private:
      * \param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int winning_defensive_randomMove(bool& cheating);
+    int winningDefensiveMove(bool& cheating);
 
     /*
      * It determines the next cell to place a token. It always will try to win in this turn, even if
@@ -98,7 +98,7 @@ private:
      * @param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int smart_cheating_randomMove(bool& cheating);
+    int smartCheatingMove(bool& cheating);
 
     /*
      * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell
@@ -138,14 +138,14 @@ public:
      * @return The return value is between 1 (first row, first column)
      * and NUMBER_OF_CELLS (last row, last column).
      **/
-    int get_nextMove(bool& cheating);
+    int getNextMove(bool& cheating);
 
     /**
      * This function counts the total number of tokens on the board.
      * That is, the number of cells that are not empty or undefined.
      * @return The number of cells where there is a red or blue token.
      **/
-    unsigned short int get_num_tokens();
+    unsigned short int getNumTokens();
 
     /**
      * This function counts the number of a particular type of tokens
@@ -153,7 +153,7 @@ public:
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
-    unsigned short int get_num_tokens(std::string token_type);
+    unsigned short int getNumTokens(std::string token_type);
 
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
@@ -164,13 +164,13 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const std::string& color, ttt::Board &b);
+    bool threeInARow(const std::string& color, ttt::Board &b);
 
     /**
      * This function returns the winner of the game.
      * @return 0 if there is not winner, 1 if the winner is the robot, or 2 if the winner is the opponent.
      **/
-    unsigned short int get_winner();
+    unsigned short int getWinner();
 
     /**
      * This function blocks until the opponent has done his move.
@@ -179,45 +179,45 @@ public:
      * of opponent's tokens in the board increases.
      * @param number of opponent's token at the beginning
      **/
-    void wait_for_opponent_turn(const uint8_t &num_tok_opp);
+    void waitForOpponentTurn(const uint8_t &num_tok_opp);
 
     /**
      * Indicates if the board is full.
      * @return  true/false if full or not
      **/
-    bool is_board_full();
+    bool isBoardFull();
 
     /**
      * Indicates if the board is empty.
      * @return  true/false if empty or not
      **/
-    bool is_board_empty();
+    bool isBoardEmpty();
 
     /**
      * This function synthesizes sentence and waits t seconds.
      * @param sentence string corresponding with the sentence to synthesize.
      * @param t number of seconds to block.
      **/
-    void say_sentence(std::string sentence, double t);
+    void saySentence(std::string sentence, double t);
 
     /**
      * Plays one game
      * @param  cheating if to cheat or not.
      * @return          The game results (i.e. the winner, if any)
      */
-    int play_one_game(bool &cheating);
+    int playOneGame(bool &cheating);
 
     /* GETTERS */
     ttt::Board  getBoard();
     std::string getRobotColor()        { return    _robot_col; };
     std::string getOpponentColor()     { return _opponent_col; };
 
-    bool get_cheating() { return cheating; };
+    bool getCheating() { return cheating; };
 
     /* SETTERS */
-    void set_cheating(bool _c) { cheating=_c; };
-    void set_strategy(std::string strategy);
-    void set_brain_state(int state);
+    void setCheating(bool _c) { cheating=_c; };
+    void setStrategy(std::string strategy);
+    void setBrainState(int state);
 };
 
 }

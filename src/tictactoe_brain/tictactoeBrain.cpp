@@ -22,7 +22,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
                                     &tictactoeBrain::boardStateCb, this);
     tttBrain_pub   = _nh.advertise<TTTBrainState>("baxter_tictactoe/ttt_brain_state", 1);
 
-    set_brain_state(TTTBrainState::INIT);
+    setBrainState(TTTBrainState::INIT);
     brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainStateCb, this, false);
 
     _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
@@ -38,16 +38,16 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     _robot_col=COL_BLUE;
     _opponent_col=_robot_col==COL_BLUE?COL_RED:COL_BLUE;
 
-    set_brain_state(TTTBrainState::CALIB);
+    setBrainState(TTTBrainState::CALIB);
     leftArmCtrl.startAction(ACTION_SCAN);
     while(ros::ok() && leftArmCtrl.getState() != DONE)
     {
         r.sleep();
     }
-    set_brain_state(TTTBrainState::READY);
+    setBrainState(TTTBrainState::READY);
 
     qsrand(ros::Time::now().nsec);
-    set_strategy(_strategy);
+    setStrategy(_strategy);
 
     has_cheated=false;
 }
@@ -70,7 +70,7 @@ void tictactoeBrain::publishTTTBrainStateCb(const ros::TimerEvent&)
     pthread_mutex_unlock(&_mutex_brainstate);
 }
 
-void tictactoeBrain::set_brain_state(int state)
+void tictactoeBrain::setBrainState(int state)
 {
     pthread_mutex_lock(&_mutex_brainstate);
     s.state = state;
@@ -101,7 +101,7 @@ int tictactoeBrain::randomMove(bool& cheating)
     return r;
 }
 
-int tictactoeBrain::cheating_to_win_randomMove(bool& cheating)
+int tictactoeBrain::cheatingToWinMove(bool& cheating)
 {
     int next_cell_id=-1;
     if ((next_cell_id = victoryMove()) != -1) return next_cell_id;
@@ -114,7 +114,7 @@ int tictactoeBrain::cheating_to_win_randomMove(bool& cheating)
     return randomMove(cheating);
 }
 
-int tictactoeBrain::winning_defensive_randomMove(bool& cheating)
+int tictactoeBrain::winningDefensiveMove(bool& cheating)
 {
     cheating=false;
     int next_cell_id=-1;
@@ -133,7 +133,7 @@ int tictactoeBrain::cheatingMove()
         {
             cell_state=aux.getCellState(i);
             aux.getCellState(i)=_robot_col;
-            if (three_in_a_row(_robot_col, aux))
+            if (threeInARow(_robot_col, aux))
             {
                 ROS_INFO("Cheating move to cell # %lu", i+1);
                 has_cheated=true;
@@ -156,7 +156,7 @@ int tictactoeBrain::defensiveMove()
         {
             cell_state = aux.getCellState(i);
             aux.getCellState(i) = _opponent_col;
-            if (three_in_a_row(_opponent_col, aux))
+            if (threeInARow(_opponent_col, aux))
             {
                 ROS_INFO("Defensive move to cell # %lu", i+1);
                 return i+1;
@@ -179,7 +179,7 @@ int tictactoeBrain::victoryMove()
         {
             cell_state = aux.getCellState(i);
             aux.getCellState(i) = _robot_col;
-            if (three_in_a_row(_robot_col, aux))
+            if (threeInARow(_robot_col, aux))
             {
                 ROS_INFO("Victory move to cell # %lu", i+1);
                 return i+1;
@@ -192,12 +192,12 @@ int tictactoeBrain::victoryMove()
     return -1;
 }
 
-int tictactoeBrain::get_nextMove(bool& cheating)
+int tictactoeBrain::getNextMove(bool& cheating)
 {
-    return (this->*_choose_nextMove)(cheating);
+    return (this->*_choose_next_move)(cheating);
 }
 
-unsigned short int tictactoeBrain::get_num_tokens()
+unsigned short int tictactoeBrain::getNumTokens()
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
@@ -208,7 +208,7 @@ unsigned short int tictactoeBrain::get_num_tokens()
     return counter;
 }
 
-unsigned short int tictactoeBrain::get_num_tokens(std::string token_type)
+unsigned short int tictactoeBrain::getNumTokens(std::string token_type)
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
@@ -219,7 +219,7 @@ unsigned short int tictactoeBrain::get_num_tokens(std::string token_type)
     return counter;
 }
 
-bool tictactoeBrain::three_in_a_row(const std::string& color, ttt::Board& b)
+bool tictactoeBrain::threeInARow(const std::string& color, ttt::Board& b)
 {
     if(color!=COL_BLUE && color!=COL_RED) return false; // There are only red and blue tokens
 
@@ -235,15 +235,15 @@ bool tictactoeBrain::three_in_a_row(const std::string& color, ttt::Board& b)
     return false;
 }
 
-unsigned short int tictactoeBrain::get_winner()
+unsigned short int tictactoeBrain::getWinner()
 {
     ttt::Board aux = getBoard();
-    if (three_in_a_row(_robot_col, aux))      return 1;
-    if (three_in_a_row(_opponent_col, aux))   return 2;
+    if (threeInARow(_robot_col, aux))      return 1;
+    if (threeInARow(_opponent_col, aux))   return 2;
     return 0;
 }
 
-void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
+void tictactoeBrain::waitForOpponentTurn(const uint8_t& num_tok_opp)
 {
     uint8_t cur_tok_opp = num_tok_opp;
 
@@ -254,7 +254,7 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
         std::cin.get();
 
         {
-            cur_tok_opp = get_num_tokens(_opponent_col);
+            cur_tok_opp = getNumTokens(_opponent_col);
 
             if (cur_tok_opp > num_tok_opp) return;
         }
@@ -263,47 +263,37 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
     }
 }
 
-bool tictactoeBrain::is_board_empty()
+bool tictactoeBrain::isBoardEmpty()
 {
-    ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
-    {
-        if(aux.getCellState(i)==COL_RED || aux.getCellState(i)==COL_BLUE) return false;
-    }
-    return true;
+    return getBoard().isEmpty();
 }
 
-bool tictactoeBrain::is_board_full()
+bool tictactoeBrain::isBoardFull()
 {
-    ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
-    {
-        if(aux.getCellState(i)==COL_EMPTY) return false;
-    }
-    return true;
+    return getBoard().isFull();
 }
 
-void tictactoeBrain::say_sentence(std::string sentence, double t)
+void tictactoeBrain::saySentence(std::string sentence, double t)
 {
     _voice_synthesizer.say(sentence, _voice_type);
     ros::Duration(t).sleep();
 }
 
-void tictactoeBrain::set_strategy(std::string strategy)
+void tictactoeBrain::setStrategy(std::string strategy)
 {
     if (strategy=="random")
     {
-        _choose_nextMove=&tictactoeBrain::randomMove;
+        _choose_next_move=&tictactoeBrain::randomMove;
         ROS_INFO("[strategy] Randomly place tokens");
     }
     else if (strategy=="smart")
     {
-        _choose_nextMove=&tictactoeBrain::winning_defensive_randomMove;
+        _choose_next_move=&tictactoeBrain::winningDefensiveMove;
         ROS_INFO("[strategy] Randomly place tokens but win if possible, or block opponent's victory");
     }
     else if (strategy=="cheating")
     {
-        _choose_nextMove=&tictactoeBrain::cheating_to_win_randomMove;
+        _choose_next_move=&tictactoeBrain::cheatingToWinMove;
         ROS_INFO("[strategy] Randomly place tokens but win if possible "
                             "even if cheating is required, or block opponent's victory");
     }
@@ -313,14 +303,14 @@ void tictactoeBrain::set_strategy(std::string strategy)
     }
 }
 
-int tictactoeBrain::play_one_game(bool &cheating)
+int tictactoeBrain::playOneGame(bool &cheating)
 {
-    set_brain_state(TTTBrainState::READY);
+    setBrainState(TTTBrainState::READY);
     while(ros::ok())
     {
-        if (is_board_empty())
+        if (isBoardEmpty())
         {
-            set_brain_state(TTTBrainState::GAME_STARTED);
+            setBrainState(TTTBrainState::GAME_STARTED);
             break;
         }
     }
@@ -329,20 +319,20 @@ int tictactoeBrain::play_one_game(bool &cheating)
     int winner=0; // no winner
     has_cheated=false;
 
-    say_sentence("I start the game.",2);
+    saySentence("I start the game.",2);
 
     ROS_WARN("PRESS ENTER TO START THE GAME");
     std::cin.get();
     uint8_t num_tok_opp=0;
     // uint8_t n_robot_tokens=0;
-    while ((winner=get_winner())==0 && !is_board_full() && !ros::isShuttingDown())
+    while ((winner=getWinner())==0 && !isBoardFull() && !ros::isShuttingDown())
     {
         if (robot_turn) // Robot's turn
         {
-            // n_robot_tokens=get_num_tokens(_robot_col);
-            num_tok_opp=get_num_tokens(_opponent_col);
-            say_sentence("It is my turn", 0.3);
-            int cell_toMove = get_nextMove(cheating);
+            // n_robot_tokens=getNum_tokens(_robot_col);
+            num_tok_opp=getNumTokens(_opponent_col);
+            saySentence("It is my turn", 0.3);
+            int cell_toMove = getNextMove(cheating);
             ROS_INFO("Moving to cell %i", cell_toMove);
 
             leftArmCtrl.startAction(ACTION_PICKUP);
@@ -351,13 +341,13 @@ int tictactoeBrain::play_one_game(bool &cheating)
         else // Participant's turn
         {
             ROS_INFO("Waiting for the participant's move.");
-            say_sentence("It is your turn", 0.1);
-            wait_for_opponent_turn(num_tok_opp);
+            saySentence("It is your turn", 0.1);
+            waitForOpponentTurn(num_tok_opp);
         }
         robot_turn=!robot_turn;
     }
 
-    set_brain_state(TTTBrainState::GAME_FINISHED);
+    setBrainState(TTTBrainState::GAME_FINISHED);
 
     switch(winner)
     {
@@ -365,17 +355,17 @@ int tictactoeBrain::play_one_game(bool &cheating)
         ROS_INFO("ROBOT's VICTORY");
         if (has_cheated)
         {
-            say_sentence("You humans are so easy to beat!", 5);
+            saySentence("You humans are so easy to beat!", 5);
         }
-        say_sentence("I won", 3);
+        saySentence("I won", 3);
         break;
     case 2:
         ROS_INFO("OPPONENT's VICTORY");
-        say_sentence("You won this time", 4);
+        saySentence("You won this time", 4);
         break;
     default:
         ROS_INFO("TIE");
-        say_sentence("That's a tie. I will win next time.", 8);
+        saySentence("That's a tie. I will win next time.", 8);
         winner=3;
     }
 

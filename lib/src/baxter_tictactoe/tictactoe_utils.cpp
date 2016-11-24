@@ -250,6 +250,24 @@ bool Board::computeState()
     return true;
 }
 
+bool Board::isFull()
+{
+    for(int i = 0; i < getNumCells(); i++)
+    {
+        if(getCellState(i)==COL_EMPTY) return false;
+    }
+    return true;
+}
+
+bool Board::isEmpty()
+{
+    for(int i = 0; i < getNumCells(); i++)
+    {
+        if(getCellState(i)==COL_RED || getCellState(i)==COL_BLUE) return false;
+    }
+    return true;
+}
+
 void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
 {
     resetState();

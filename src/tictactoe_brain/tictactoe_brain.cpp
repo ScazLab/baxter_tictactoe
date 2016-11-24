@@ -37,9 +37,9 @@ int main(int argc, char** argv)
     // ros::spin();
     // return 0;
 
-    brain.set_brain_state(baxter_tictactoe::TTTBrainState::MATCH_STARTED);
-    brain.say_sentence("Welcome!  Let's play Tic Tac Toe.",4);
-    brain.say_sentence("Do not grasp your token before I say that it is your turn",5);
+    brain.setBrainState(baxter_tictactoe::TTTBrainState::MATCH_STARTED);
+    brain.saySentence("Welcome!  Let's play Tic Tac Toe.",4);
+    brain.saySentence("Do not grasp your token before I say that it is your turn",5);
 
     int n_robot_win=0;
     int n_opponent_win=0;
@@ -52,23 +52,23 @@ int main(int argc, char** argv)
         printf("\n");
         ROS_INFO("GAME #%i", i);
 
-        brain.set_strategy("smart");
+        brain.setStrategy("smart");
         bool cheated=false;
         bool has_to_cheat=false;
 
-        if (brain.get_cheating())
+        if (brain.getCheating())
         {
             for (int j = 0; j < cheating_games.size(); ++j)
             {
                 if (cheating_games[j] == i)
                 {
-                    brain.set_strategy("cheating");
+                    brain.setStrategy("cheating");
                     has_to_cheat=true;
                 }
             }
         }
 
-        game_result=brain.play_one_game(cheated);
+        game_result=brain.playOneGame(cheated);
 
         switch(game_result)
         {
@@ -88,8 +88,8 @@ int main(int argc, char** argv)
         }
     }
 
-    brain.say_sentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
-    brain.set_brain_state(baxter_tictactoe::TTTBrainState::MATCH_FINISHED);
+    brain.saySentence("Game over. It was my pleasure to win over you. Thanks for being so human.",10);
+    brain.setBrainState(baxter_tictactoe::TTTBrainState::MATCH_FINISHED);
 
     ROS_INFO("Baxter %i - Human %i - n_ties %i", n_robot_win, n_opponent_win, n_ties);
 

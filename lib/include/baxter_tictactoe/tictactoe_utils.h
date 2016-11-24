@@ -198,6 +198,18 @@ public:
     bool computeState();
 
     /**
+     * Indicates if the board is full.
+     * @return  true/false if full or not
+     **/
+    bool isFull();
+
+    /**
+     * Indicates if the board is empty.
+     * @return  true/false if empty or not
+     **/
+    bool isEmpty();
+
+    /**
      * Converts a MsgBoard object to the board.
      */
     void fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb);
