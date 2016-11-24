@@ -260,7 +260,7 @@ unsigned short int tictactoeBrain::get_num_tokens()
     return counter;
 }
 
-unsigned short int tictactoeBrain::get_num_tokens(cellState token_type)
+unsigned short int tictactoeBrain::get_num_tokens(std::string token_type)
 {
     unsigned short int counter=0;
     pthread_mutex_lock(&_mutex_boardstate);
@@ -273,7 +273,7 @@ unsigned short int tictactoeBrain::get_num_tokens(cellState token_type)
     return counter;
 }
 
-bool tictactoeBrain::three_in_a_row(const cellState& color, const TTT_Board_State& b)
+bool tictactoeBrain::three_in_a_row(const std::string& color, const TTT_Board_State& b)
 {
     if(color!=blue && color!=red) return false; // There are only red and blue tokens
 

@@ -20,7 +20,7 @@ private:
     image_transport::ImageTransport it_;
     image_transport::Publisher image_pub_;
 
-    ros::Subscriber sub;
+    ros::Subscriber board_sub;
 
     int height;
     int width;
@@ -38,7 +38,7 @@ private:
     cv::Scalar   red;
     cv::Scalar  blue;
 
-    cv::Mat draw_board(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
+    cv::Mat drawBoard(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
     {
         ROS_DEBUG("@display_board");
 
@@ -47,7 +47,7 @@ private:
         // 3x3 tic tac toe board
         unsigned short int col, row;
 
-        this->draw_lines(img);
+        drawLines(img);
 
         for (size_t i = 0; i < msg->cells.size(); ++i) {
             ROS_DEBUG_STREAM("Processing Cell " << i);
@@ -60,13 +60,13 @@ private:
                 cv::Point   top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
                 ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
 
-                draw_tile(img,i,msg->cells[i].state);
+                drawCell(img,i,msg->cells[i].state);
             }
         }
         return img;
     }
 
-    void draw_tile(cv::Mat& img, size_t cell_number, unsigned int cell_data) const
+    void drawCell(cv::Mat& img, size_t cell_number, unsigned int cell_data) const
     {
         cv::Point top_left =compute_cell_top_left(cell_number);
         cv::Point diag_incr(cols_cell_img*1/12,rows_cell_img*1/12);
@@ -103,25 +103,24 @@ private:
         return result;
     }
 
-    void draw_lines(cv::Mat& img) const
+    void drawLines(cv::Mat& img) const
     {
         cv::line(img,compute_cell_top_left(3),compute_cell_top_left(5)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
         cv::line(img,compute_cell_top_left(6),compute_cell_top_left(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
         cv::line(img,compute_cell_top_left(1),compute_cell_top_left(7)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
         cv::line(img,compute_cell_top_left(2),compute_cell_top_left(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
-
     }
 
-    void publish_draw_board(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
+    void newBoardCb(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
     {
-        cv::Mat img_board = this->draw_board(msg);
+        cv::Mat img_board = drawBoard(msg);
 
         cv_bridge::CvImage out_msg;
         out_msg.header   = msg->header; // Same timestamp and tf frame as input image
         out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Or whatever
         out_msg.image    = img_board; // Your cv::Mat
 
-        this->image_pub_.publish(out_msg.toImageMsg());
+        image_pub_.publish(out_msg.toImageMsg());
     }
 
 public:
@@ -129,7 +128,7 @@ public:
     BoardToBaxterDisplay(std::string channel) : it_(nh_)
     {
         image_pub_ = it_.advertise(channel.c_str(), 1);
-        sub = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardToBaxterDisplay::publish_draw_board, this);
+        board_sub  = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardToBaxterDisplay::newBoardCb, this);
 
         height=600;
         width =1024;

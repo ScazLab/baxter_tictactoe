@@ -45,8 +45,8 @@ private:
     void publishTTTBrainStateCb(const ros::TimerEvent&);  // callback to publish the state of the demo
 
     /* MISC */
-    cellState    _robot_color;  // It represents the color of the tokens the robot    is playing with.
-    cellState _opponent_color;  // It represents the color of the tokens the opponent is playing with.
+    std::string    _robot_col;  // Color of the tokens the robot    is playing with.
+    std::string _opponent_col;  // Color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer;
     std::string                    _voice_type; // Type of voice.
@@ -161,7 +161,7 @@ public:
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
-    unsigned short int get_num_tokens(cellState token_type);
+    unsigned short int get_num_tokens(std::string token_type);
 
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
@@ -172,7 +172,7 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const cellState& color, const TTT_Board_State &b);
+    bool three_in_a_row(const std::string& color, const TTT_Board_State &b);
 
     /**
      * This function returns the winner of the game.
@@ -216,10 +216,8 @@ public:
     int play_one_game(bool &cheating);
 
     /* GETTERS */
-    cellState   get_robot_color()        { return _robot_color; };
-    cellState   get_opponent_color()     { return _opponent_color; };
-    std::string get_robot_color_str()    { return cell_state_to_str(_robot_color); };
-    std::string get_opponent_color_str() { return cell_state_to_str(_opponent_color); };
+    std::string   get_robot_color()        { return    _robot_col; };
+    std::string   get_opponent_color()     { return _opponent_col; };
 
     bool get_cheating() { return cheating; };
 
