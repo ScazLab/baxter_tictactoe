@@ -11,7 +11,7 @@
 #include <iostream>
 
 #include "robot_interface/ros_thread_image.h"
-#include "baxterTictactoe/tictactoe_utils.h"
+#include "baxter_tictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/TTTBrainState.h"
 
 #define STATE_INIT      0

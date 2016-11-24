@@ -1,5 +1,4 @@
-#include "ttt_controller/ttt_controller.h"
-#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include "baxter_tictactoe/ttt_controller.h"
 
 using namespace std;
 using namespace baxter_core_msgs;
@@ -39,31 +38,6 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
         _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
-
-    // KDL::JntArray ll, ul; //lower joint limits, upper joint limits
-    // getIKLimits(ll,ul);
-
-    // double s1l = -1.1;
-    // double s1u =  1.0;
-    // ROS_INFO("[%s] Setting custom joint limits for %s_s1: [%g %g]", getLimb().c_str(), getLimb().c_str(), s1l, s1u);
-    // ll.data[1] =  s1l;
-    // ul.data[1] =  s1u;
-    // setIKLimits(ll,ul);
-    // getIKLimits(ll,ul);
-
-    // printf("ll.rows cols %i %i\t", ll.rows(), ll.columns());
-    // for (int i = 0; i < ll.rows(); ++i)
-    // {
-    //     printf("%g\t", ll.data[i]);
-    // }
-    // printf("\n");
-
-    // printf("ul.rows cols %i %i\t", ul.rows(), ul.columns());
-    // for (int i = 0; i < ul.rows(); ++i)
-    // {
-    //     printf("%g\t", ul.data[i]);
-    // }
-    // printf("\n");
 
     if (!callAction(ACTION_HOME)) setState(ERROR);
 }

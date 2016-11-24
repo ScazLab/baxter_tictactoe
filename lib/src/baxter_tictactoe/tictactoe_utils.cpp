@@ -1,4 +1,4 @@
-#include "baxterTictactoe/tictactoe_utils.h"
+#include "baxter_tictactoe/tictactoe_utils.h"
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>

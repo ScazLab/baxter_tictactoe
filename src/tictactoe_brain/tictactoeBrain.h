@@ -4,8 +4,8 @@
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>
 
-#include "baxterTictactoe/tictactoe_utils.h"
-#include "ttt_controller/ttt_controller.h"
+#include "baxter_tictactoe/tictactoe_utils.h"
+#include "baxter_tictactoe/ttt_controller.h"
 
 #include <pthread.h>
 
