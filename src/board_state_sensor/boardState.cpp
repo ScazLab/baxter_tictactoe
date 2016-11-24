@@ -22,7 +22,7 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 }
 
 BoardState::BoardState(string name, bool _show) :
-                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(40) // 40Hz
+                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(30) // 30Hz
 {
     board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
     brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
@@ -38,10 +38,6 @@ BoardState::BoardState(string name, bool _show) :
     hsv_blue=hsvColorRange(hsv_blue_symbols);
 
     ROS_ASSERT_MSG(_n.getParam("area_threshold",area_threshold), "No area threshold!");
-    for(int i = 0; i < last_msg_board.cells.size(); i++)
-    {
-        last_msg_board.cells[i].state = undefined;
-    }
 
     col_red   = cv::Scalar(  40,  40, 150);  // BGR color code
     col_empty = cv::Scalar(  60, 160,  60);
@@ -76,12 +72,12 @@ void BoardState::InternalThreadEntry()
 
         if (board_state == STATE_INIT)
         {
-            ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
+            ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
             if (brain_state == TTTBrainState::READY) ++board_state;
         }
         else if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
-            ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", board_state);
+            ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
             {
                 cv::Mat img_gray;
@@ -95,7 +91,7 @@ void BoardState::InternalThreadEntry()
                 cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
 
                 // a contour is an array of x-y coordinates describing the boundaries of an object
-                vector<vector<cv::Point> > contours;
+                Contours contours;
                 // Vec4i = vectors w/ 4 ints
                 vector<cv::Vec4i> hierarchy;
 
@@ -135,14 +131,14 @@ void BoardState::InternalThreadEntry()
                 if(contours.size() == NUMBER_OF_CELLS + 1)
                 {
                     contours.erase(contours.begin() + largest_idx);
-                    board.clear();
+                    board.resetBoard();
 
                     // aproximate cell contours to quadrilaterals
-                    vector<vector<cv::Point> > apx_contours;
+                    Contours apx_contours;
                     for(int i = 0; i < contours.size(); i++)
                     {
                         double epsilon = arcLength(contours[i], true);
-                        vector<cv::Point> apx_contour_cell;
+                        Contour apx_contour_cell;
                         approxPolyDP(contours[i], apx_contour_cell, 0.1 * epsilon, true);
                         apx_contours.push_back(apx_contour_cell);
                     }
@@ -163,7 +159,7 @@ void BoardState::InternalThreadEntry()
 
                     for(int i = 0; i < apx_contours.size(); i++)
                     {
-                        board.cells.push_back(Cell(apx_contours[i]));
+                        board.addCell(Cell(apx_contours[i]));
                     }
 
                     if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
@@ -174,95 +170,69 @@ void BoardState::InternalThreadEntry()
         }
         else if (board_state == STATE_READY && !ros::isShuttingDown())
         {
-            ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", board_state);
+            ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %i", board_state, board.getNumCells());
             if (!_img_empty)
             {
-                board.resetState();
+                board.resetCellStates();
                 cv::Mat img_copy = img_in.clone();
 
-                if (board.cells_size() == NUMBER_OF_CELLS)
+                if (board.getNumCells() == NUMBER_OF_CELLS)
                 {
-                    MsgBoard msg_board;
-                    for(int i = 0; i < msg_board.cells.size(); i++)
-                    {
-                        msg_board.cells[i].state = MsgCell::EMPTY;
-                    }
-                    // msg_board.header.stamp = msg->header.stamp;
-                    // msg_board.header.frame_id = msg->header.frame_id;
-
                     // convert the original image to hsv color space
                     cv::Mat img_hsv;
                     cv::cvtColor(img_copy,img_hsv,CV_BGR2HSV);
 
                     // mask the original image to the board
-                    cv::Mat img_hsv_mask = board.mask_image(img_hsv);
+                    cv::Mat img_hsv_mask = board.maskImage(img_hsv);
 
                     for (int i = 0; i < 2; ++i)
                     {
-                        cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
+                        cv::Mat hsv_filt_mask = hsvThreshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
                         if (doShow)
                         {
                             if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
                             if (i==1) cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask);
                         }
-                        for (int j = 0; j < board.cells_size(); ++j)
+                        for (int j = 0; j < board.getNumCells(); ++j)
                         {
-                            Cell *cell = &(board.cells[j]);
-                            cv::Mat crop = cell->mask_image(hsv_filt_mask);
+                            Cell &cell = board.getCell(j);
+                            cv::Mat crop = cell.maskImage(hsv_filt_mask);
 
-                            /* we smooth the image to reduce the noise */
+                            // Let's smooth the image to reduce noise
                             cv::GaussianBlur(crop.clone(),crop,cv::Size(3,3),0,0);
 
                             // the area formed by the remaining pixels is computed based on the moments
-                            double cell_area=cv::moments(crop,true).m00;
+                            int col_area = cv::moments(crop,true).m00;
 
-                            if (cell_area > area_threshold)
+                            if (col_area > area_threshold)
                             {
-                                if (i==0)  cell->cell_area_red =cell_area;
-                                else       cell->cell_area_blue=cell_area;
+                                if (i==0)  cell.setRedArea(col_area);
+                                else       cell.setBlueArea(col_area);
                             }
                         }
                     }
 
-                    cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
-                    for(int i = 0; i < board.cells_size(); i++)
-                    {
-                        vector<vector<cv::Point> > contours;
-                        contours.push_back(board.cells[i].contours);
-                        drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);
-                    }
+                    board.computeState();
+                    board_state_pub.publish(board.toMsgBoard());
 
-                    for (int j = 0; j < board.cells_size(); ++j)
-                    {
-                        Cell *cell = &(board.cells[j]);
-                        if (cell->cell_area_red || cell->cell_area_blue)
-                        {
-                            cell->cell_area_red>cell->cell_area_blue?cell->state=red:cell->state=blue;
-                        }
-
-                        msg_board.cells[j].state=cell->state;
-                    }
-
-                    board_state_pub.publish(msg_board);
-                    last_msg_board=msg_board;
                     // ROS_INFO("New board state published");
 
-                    for(int i = 0; i < board.cells_size(); i++)
+                    for(int i = 0; i < board.getNumCells(); i++)
                     {
                         cv::Scalar col = col_empty;
-                        if (board.cells[i].state ==  red)  col = col_red;
-                        if (board.cells[i].state == blue) col = col_blue;
+                        if (board.getCellState(i) ==  COL_RED) col =  col_red;
+                        if (board.getCellState(i) == COL_BLUE) col = col_blue;
 
                         ttt::Contours contours;
-                        contours.push_back(board.cells[i].get_contours());
+                        contours.push_back(board.getCellContour(i));
 
                         cv::drawContours(img_out, contours,-1, col, CV_FILLED); // drawing just the borders
-                        cv::putText(img_out, intToString(i+1), board.cells[i].get_centroid(),
+                        cv::putText(img_out, intToString(i+1), board.getCellCentroid(i),
                                              cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
                     }
 
                     if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_out);
-                    cv::waitKey(10);
+                    cv::waitKey(1);
                 }
             }
         }
@@ -274,7 +244,6 @@ void BoardState::InternalThreadEntry()
         }
         r.sleep();
     }
-    ROS_INFO("[%i] Finishing", board_state);
 }
 
 void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
@@ -290,10 +259,10 @@ void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
 
 bool BoardState::isBoardSane()
 {
-    for (int i = 0; i < board.cells_size(); ++i)
+    for (int i = 0; i < board.getNumCells(); ++i)
     {
         // Check if area of cell is big enough
-        int cell_area = cv::moments(board.cells[i].contours,false).m00;
+        int cell_area = board.getCellArea(i);
         if ( cell_area < area_threshold)
         {
             ROS_WARN("Cell #%i has area %i (smaller than area_threshold)", i, cell_area);
@@ -301,12 +270,11 @@ bool BoardState::isBoardSane()
         }
 
         // Check if centroid of cells is not contained in another cell
-        for (int j = 0; j < board.cells_size(); ++j)
+        for (int j = 0; j < board.getNumCells(); ++j)
         {
             if (j != i)
             {
-                if (cv::pointPolygonTest(board.cells[j].contours,
-                                         board.cells[i].get_centroid(), true) >= 0)
+                if (cv::pointPolygonTest(board.getCellContour(j), board.getCellCentroid(i), true) >= 0)
                 {
                     ROS_WARN("Point #%i is inside cell #%i", i, j);
                     return false;
@@ -317,7 +285,7 @@ bool BoardState::isBoardSane()
     return true;
 }
 
-int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)
+int BoardState::getIthIndex(Contours contours, int ith)
 {
     double largest_area = 0;
     int largest_idx = 0;
@@ -352,7 +320,7 @@ std::string BoardState::intToString( const int a )
     return ss.str();
 }
 
-bool BoardState::ascendingY(vector<cv::Point> i, vector<cv::Point> j)
+bool BoardState::ascendingY(Contour i, Contour j)
 {
     double y_i = moments(i, false).m01 / moments(i, false).m00;
     double y_j = moments(j, false).m01 / moments(j, false).m00;
@@ -360,7 +328,7 @@ bool BoardState::ascendingY(vector<cv::Point> i, vector<cv::Point> j)
     return y_i < y_j;
 }
 
-bool BoardState::ascendingX(vector<cv::Point> i, vector<cv::Point> j)
+bool BoardState::ascendingX(Contour i, Contour j)
 {
     double x_i = moments(i, false).m10 / moments(i, false).m00;
     double x_j = moments(j, false).m10 / moments(j, false).m00;

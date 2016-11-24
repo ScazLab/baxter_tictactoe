@@ -57,7 +57,6 @@ find_package(Threads)
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
-    Point.msg
     MsgBoard.msg
     MsgCell.msg
     TTTBrainState.msg
@@ -101,7 +100,7 @@ generate_messages(DEPENDENCIES
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
     INCLUDE_DIRS lib/include
-    LIBRARIES baxterTictactoe
+    LIBRARIES baxter_tictactoe
     CATKIN_DEPENDS message_runtime
 )
 
@@ -150,16 +149,15 @@ add_dependencies(board_state_sensor             baxter_tictactoe_generate_messag
                                                 ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(tictactoe_brain           baxterTictactoe
-                                                ttt_controller
+target_link_libraries(tictactoe_brain           baxter_tictactoe
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(hsv_range_finder          baxterTictactoe
+target_link_libraries(hsv_range_finder          baxter_tictactoe
                                                 ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
 target_link_libraries(board_to_baxter_display   ${OpenCV_LIBS}
                                                 ${catkin_LIBRARIES})
-target_link_libraries(board_state_sensor        baxterTictactoe
+target_link_libraries(board_state_sensor        baxter_tictactoe
                                                 ${OpenCV_LIBS}
                                                 ${QT_LIBRARIES}
                                                 ${catkin_LIBRARIES})

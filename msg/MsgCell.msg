@@ -1,5 +1,3 @@
-Header header
-
 # Information from each cell in the board
 # Index of each cell in the array:
 #            _ _ _ _ _ _
@@ -12,10 +10,8 @@ Header header
 #       1=blue token (X)
 #       2=red token (O)
 
-uint8 EMPTY=0
-uint8 BLUE=1
-uint8 RED=2
-uint8 UNDEFINED=3
+string EMPTY=empty
+string BLUE=blue
+string RED=red
 
-baxter_tictactoe/Point[4] contours
-uint8 state
+string state

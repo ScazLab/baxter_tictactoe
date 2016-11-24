@@ -11,7 +11,7 @@
 #include "robot_interface/arm_ctrl.h"
 #include "robot_interface/gripper.h"
 
-#include "baxterTictactoe/tictactoe_utils.h"
+#include "tictactoe_utils.h"
 
 #define HOVER_BOARD_X   0.575  // [m]
 #define HOVER_BOARD_Y   0.100  // [m]
