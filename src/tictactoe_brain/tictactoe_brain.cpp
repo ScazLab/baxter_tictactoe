@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     ttt::tictactoeBrain brain("ttt_brain", "smart");
 
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
-              brain.get_robot_color_str().c_str(), brain.get_opponent_color_str().c_str());
+              brain.get_robot_color().c_str(), brain.get_opponent_color().c_str());
 
     // ros::spin();
     // return 0;

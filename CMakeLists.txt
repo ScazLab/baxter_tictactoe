@@ -57,7 +57,6 @@ find_package(Threads)
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
-    Point.msg
     MsgBoard.msg
     MsgCell.msg
     TTTBrainState.msg

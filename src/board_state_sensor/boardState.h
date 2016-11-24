@@ -10,10 +10,8 @@
 #include <string>
 #include <iostream>
 
-
 #include "robot_interface/ros_thread_image.h"
 #include "baxterTictactoe/tictactoe_utils.h"
-#include "baxter_tictactoe/MsgBoard.h"
 #include "baxter_tictactoe/TTTBrainState.h"
 
 #define STATE_INIT      0
@@ -41,10 +39,6 @@ private:
     bool doShow;
 
     ros::Rate r;
-
-    // Last TTT board state message sent. Used to avoid the publication of the same board state messages.
-    // It publishes the board only if its state changes.
-    baxter_tictactoe::MsgBoard last_msg_board;
 
     int board_state; // State of the board
     int brain_state; // state of the demo

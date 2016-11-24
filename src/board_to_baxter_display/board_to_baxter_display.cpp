@@ -38,7 +38,7 @@ private:
     cv::Scalar   red;
     cv::Scalar  blue;
 
-    cv::Mat drawBoard(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
+    cv::Mat drawBoard(const baxter_tictactoe::MsgBoard::ConstPtr& msg)
     {
         ROS_DEBUG("@display_board");
 
@@ -49,24 +49,25 @@ private:
 
         drawLines(img);
 
-        for (size_t i = 0; i < msg->cells.size(); ++i) {
+        for (size_t i = 0; i < msg->cells.size(); ++i)
+        {
             ROS_DEBUG_STREAM("Processing Cell " << i);
-            if(msg->cells[i].state>0)
+            if(msg->cells[i].state != "empty")
             {
                 col=i%n_cols;
                 row=i/n_rows;
                 cv::Point center_cell(cols_cell_img/2 + cols_cell_img*col, rows_cell_img/2 + rows_cell_img*row);
                 cv::Point bottom_left_corner;
-                cv::Point   top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
+                cv::Point top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
                 ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
 
-                drawCell(img,i,msg->cells[i].state);
+                drawCell(img, i, msg->cells[i].state);
             }
         }
         return img;
     }
 
-    void drawCell(cv::Mat& img, size_t cell_number, unsigned int cell_data) const
+    void drawCell(cv::Mat& img, size_t cell_number, const std::string &cell_data)
     {
         cv::Point top_left =compute_cell_top_left(cell_number);
         cv::Point diag_incr(cols_cell_img*1/12,rows_cell_img*1/12);
@@ -92,7 +93,7 @@ private:
         }
     }
 
-    cv::Point compute_cell_top_left(int cell_number) const
+    cv::Point compute_cell_top_left(int cell_number)
     {
         unsigned short int col=cell_number%n_cols;
         unsigned short int row=cell_number/n_rows;
@@ -103,7 +104,7 @@ private:
         return result;
     }
 
-    void drawLines(cv::Mat& img) const
+    void drawLines(cv::Mat& img)
     {
         cv::line(img,compute_cell_top_left(3),compute_cell_top_left(5)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
         cv::line(img,compute_cell_top_left(6),compute_cell_top_left(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
@@ -111,7 +112,7 @@ private:
         cv::line(img,compute_cell_top_left(2),compute_cell_top_left(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
     }
 
-    void newBoardCb(const baxter_tictactoe::MsgBoard::ConstPtr& msg) const
+    void newBoardCb(const baxter_tictactoe::MsgBoard::ConstPtr& msg)
     {
         cv::Mat img_board = drawBoard(msg);
 

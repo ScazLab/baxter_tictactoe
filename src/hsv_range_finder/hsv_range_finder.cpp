@@ -69,7 +69,7 @@ public:
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
         cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV);
 
-        cv::Mat img_thresh = ttt::hsv_threshold(img_hsv, hsv);
+        cv::Mat img_thresh = ttt::hsvThreshold(img_hsv, hsv);
 
         cv::imshow(window, img_thresh);
 
@@ -82,7 +82,7 @@ public:
             printf("        S: [ %i, %i]\n", hsv.S.min, hsv.S.max);
             printf("        V: [ %i, %i]\n", hsv.V.min, hsv.V.max);
             ros::shutdown();
-        }        
+        }
     }
 };
 

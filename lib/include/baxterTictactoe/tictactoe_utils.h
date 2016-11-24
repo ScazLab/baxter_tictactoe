@@ -5,7 +5,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/core/core.hpp>
 
-#include "baxter_tictactoe/MsgCell.h"
+#include "baxter_tictactoe/MsgBoard.h"
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -25,24 +25,14 @@ namespace ttt
 #define CHEATING_GAME_A     2
 #define CHEATING_GAME_B     3
 
-#define COLOR_RED       "red"
-#define COLOR_BLUE      "blue"
-#define COLOR_EMPTY     "empty"
-#define COLOR_UNDEFINED "undef"
+#define COL_RED       "red"
+#define COL_BLUE      "blue"
+#define COL_EMPTY     "empty"
 
 #define VOICE       "voice_kal_diphone"
 
-// Used to determine the three possible states of a cell.
-// Undefined is just used when it is created and non state has been assigned.
-typedef enum {empty=baxter_tictactoe::MsgCell::EMPTY,
-              blue=baxter_tictactoe::MsgCell::BLUE,
-              red=baxter_tictactoe::MsgCell::RED,
-              undefined=baxter_tictactoe::MsgCell::UNDEFINED} cellState;
-
 typedef std::vector<cv::Point>  Contour;
 typedef std::vector<Contour>    Contours;
-
-std::string cell_state_to_str(cellState c_s);
 
 struct colorRange
 {
@@ -87,69 +77,73 @@ struct hsvColorRange
 };
 
 /**
- * Thresholds the HSV image and create a binary image
+ * Thresholds the HSV image and create a binary image. It can automatically
+ * take care of the fact that the red is at the extremes of the HSV spectrum,
+ * so two thresholds may be needed in order to robustly detect the red color.
+ *
  * @param  _src [description]
  * @param  _hsv [description]
  * @return      [description]
  */
-cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv);
+cv::Mat hsvThreshold(const cv::Mat& _src, hsvColorRange _hsv);
 
-struct Cell
+class Cell
 {
 private:
-    Contour  contour;
-    cellState  state;
-    int     area_red;
-    int    area_blue;
+    Contour     contour;
+    std::string   state;
+    int        area_red;
+    int       area_blue;
 
 public:
-    Cell(cellState _s = empty, int _ar = 0, int _ab = 0);
-    Cell(Contour _c, cellState _s = empty, int _ar = 0, int _ab = 0);
+    Cell(            std::string _s = COL_EMPTY, int _ar = 0, int _ab = 0);
+    Cell(Contour _c, std::string _s = COL_EMPTY, int _ar = 0, int _ab = 0);
 
     ~Cell() {};
 
-    void reset();
+    /**
+     * Resets the cell to an empty, pristine state.
+     */
+    void resetCell();
+
+    /**
+     * Computes and updates its state according to the amount of red and blue area.
+     *
+     * @return true/false if the cell is colored or still empty.
+     */
+    bool computeState();
 
     /**
      * Returns a mask for a cell, i.e. a new image that keeps only the portion
      * delimited by the cell (the rest is set to black)
+     *
      * @param      the original image, where the mask will be extracted from.
      * @return     the mask. It has the same size than the original image.
      */
     cv::Mat maskImage(const cv::Mat &);
 
     /**
-     * Computes the centroid of a cell.
-     * @return  the centroid as a cv::Point (defaults to [0,0] if ther is no contour)
-     */
-    cv::Point getCentroid();
-
-    /**
-     * Computes the area of the contour
-     * @return the area of the contour (defaults to 0 if there is no contour)
-     */
-    int getContourArea();
-
-    /**
      * Prints some useful information from the cell
+     *
      * @return the string with the information
      */
     std::string toString();
 
     /* Self-explaining "getters" */
-    std::string getStateStr();
+    std::string getState()    { return state;     };
+    Contour     getContour()  { return contour;   };
+    cv::Point   getCentroid();
+    int         getContourArea();
     int         getRedArea()  { return area_red;  };
     int         getBlueArea() { return area_blue; };
-    cellState   getState()    { return state;     };
-    Contour     getContour()  { return contour;   };
 
     /* Self-explaining "setters" */
-    void setState(cellState s) { state = s;      };
+    void setState(std::string s) { state = s;      };
     void setRedArea (int _a)   { area_red  = _a; };
     void setBlueArea(int _a)   { area_blue = _a; };
 };
 
-struct Board
+class Board
 {
 private:
     std::vector<Cell> cells;
@@ -167,6 +161,7 @@ public:
 
     /**
      * Masks the board onto an image
+     *
      * @param      the original image.
      * @return     the masked image.
      */
@@ -178,6 +173,25 @@ public:
     void clear() { cells.clear(); };
 
     bool resetState();
+
+    /**
+     * Computes and updates the cells' states according to the amount of red and blue area.
+     *
+     * @return true/false if there are cells on the board.
+     */
+    bool computeState();
+
+    /**
+     * Converts a MsgBoard object to the board.
+     */
+    void fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb);
+
+    /**
+     * Converts the board to a MsgBoard (ready to be sent)
+     *
+     * @return the MsgBoard
+     */
+    baxter_tictactoe::MsgBoard toMsgBoard();
 
     /**
      * Print function.
@@ -194,12 +208,12 @@ public:
     int         getCellArea(int i)     { return cells[i].getContourArea(); };
     int         getCellAreaRed(int i)  { return cells[i].getRedArea();     };
     int         getCellAreaBlue(int i) { return cells[i].getBlueArea();    };
-    cellState   getCellState(int i)    { return cells[i].getState();       };
+    std::string getCellState(int i)    { return cells[i].getState();       };
     Contour     getCellContour(int i)  { return cells[i].getContour();     };
     cv::Point   getCellCentroid(int i) { return cells[i].getCentroid();    };
 
     /* Self-explaining "setters" */
-    void setCellState(int i, cellState s) { cells[i].setState(s); };
+    void setCellState(int i, std::string s) { cells[i].setState(s); };
 };
 
 }

@@ -12,7 +12,7 @@
 using namespace std;
 using namespace ttt;
 
-cv::Mat ttt::hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
+cv::Mat ttt::hsvThreshold(const cv::Mat& _src, hsvColorRange _hsv)
 {
     cv::Mat res = _src.clone();
 
@@ -95,24 +95,34 @@ hsvColorRange & hsvColorRange::operator=(const hsvColorRange &_hsvc)
 /**                        CELL                                          **/
 /**************************************************************************/
 
-Cell::Cell(cellState _s, int _ar, int _ab) :
+Cell::Cell(std::string _s, int _ar, int _ab) :
            state(_s), area_red(_ar), area_blue(_ab)
 {
     contour.clear();
 }
 
-Cell::Cell(Contour _c, cellState _s, int _ar, int _ab) :
+Cell::Cell(Contour _c, std::string _s, int _ar, int _ab) :
            contour(_c), state(_s), area_red(_ar), area_blue(_ab)
 {
 
 }
 
-void Cell::reset()
+void Cell::resetCell()
 {
-    state     = empty;
-    area_red  =     0;
-    area_blue =     0;
+    state     = "empty";
+    area_red  =       0;
+    area_blue =       0;
     contour.clear();
+}
+
+bool Cell::computeState()
+{
+    if (area_red || area_blue)
+    {
+        area_red>area_blue?setState(COL_RED):setState(COL_BLUE);
+        return true;
+    }
+    return false;
 }
 
 cv::Mat Cell::maskImage(const cv::Mat &_src)
@@ -151,23 +161,11 @@ int Cell::getContourArea()
     return 0;
 }
 
-std::string Cell::getStateStr()
-{
-    switch(state)
-    {
-        case empty:     return std::string("empty");
-        case blue:      return std::string("blue");
-        case red:       return std::string("red");
-        case undefined: return std::string("undefined");
-        default:        return std::string("[value unknown]");
-    }
-}
-
 string Cell::toString()
 {
     stringstream res;
 
-    res<<"State:"<<getStateStr()<<"\t";
+    res<<"State:"<<getState()<<"\t";
     res<<"Red  Area: "<<area_red<<"\t";
     res<<"Blue Area: "<<area_blue<<"\t";
 
@@ -193,31 +191,82 @@ string Cell::toString()
 
 bool Board::resetState()
 {
-    if (getNumCells()==0)
-    {
-        return false;
-    }
+    if (getNumCells()==0) return false;
 
     for (int i = 0; i < getNumCells(); ++i)
     {
-        cells[i].reset();
+        cells[i].resetCell();
     }
 
     return true;
 }
 
-string Board::toString()
+bool Board::computeState()
 {
-    if (getNumCells()==0)
+    if (getNumCells()==0) return false;
+
+    for (int i = 0; i < getNumCells(); ++i)
     {
-        return "";
+        cells[i].computeState();
     }
 
+    return true;
+}
+
+void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
+{
+    resetState();
+
+    for (int i = 0; i < msgb.cells.size(); ++i)
+    {
+        if      (msgb.cells[i].state == COL_RED  ) addCell(Cell(COL_RED  , 1, 0));
+        else if (msgb.cells[i].state == COL_BLUE ) addCell(Cell(COL_BLUE , 0, 1));
+        else if (msgb.cells[i].state == COL_EMPTY) addCell(Cell(COL_EMPTY, 0, 0));
+        else
+        {
+            ROS_WARN("MsgBoard cell state %s not allowed!", msgb.cells[i].state.c_str());
+        }
+    }
+}
+
+baxter_tictactoe::MsgBoard Board::toMsgBoard()
+{
+    baxter_tictactoe::MsgBoard res;
+    res.header = std_msgs::Header();
+
+    if (getNumCells() == 0 || getNumCells() != res.cells.size())
+    {
+        for (int i = 0; i < res.cells.size(); ++i)
+        {
+            res.cells[i].state = COL_EMPTY;
+        }
+
+        if (getNumCells() != res.cells.size())
+        {
+            ROS_WARN("Number of cells in board [%i] different from those in MsgBoard [%lu].",
+                                                            getNumCells(), res.cells.size());
+        }
+    }
+    else if (getNumCells() == res.cells.size())
+    {
+        for (int i = 0; i < res.cells.size(); ++i)
+        {
+            res.cells[i].state = getCellState(i);
+        }
+    }
+
+    return res;
+}
+
+string Board::toString()
+{
+    if (getNumCells()==0)   return "";
+
     stringstream res;
-    res << cells[0].getStateStr();
+    res << cells[0].getState();
     for (int i = 1; i < getNumCells(); ++i)
     {
-        res << "\t" << cells[i].getStateStr();
+        res << "\t" << cells[i].getState();
     }
 
     return res.str();

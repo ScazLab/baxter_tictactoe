@@ -38,10 +38,6 @@ BoardState::BoardState(string name, bool _show) :
     hsv_blue=hsvColorRange(hsv_blue_symbols);
 
     ROS_ASSERT_MSG(_n.getParam("area_threshold",area_threshold), "No area threshold!");
-    for(int i = 0; i < last_msg_board.cells.size(); i++)
-    {
-        last_msg_board.cells[i].state = undefined;
-    }
 
     col_red   = cv::Scalar(  40,  40, 150);  // BGR color code
     col_empty = cv::Scalar(  60, 160,  60);
@@ -191,7 +187,7 @@ void BoardState::InternalThreadEntry()
 
                     for (int i = 0; i < 2; ++i)
                     {
-                        cv::Mat hsv_filt_mask = hsv_threshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
+                        cv::Mat hsv_filt_mask = hsvThreshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
                         if (doShow)
                         {
                             if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
@@ -216,37 +212,16 @@ void BoardState::InternalThreadEntry()
                         }
                     }
 
-                    MsgBoard msg_board;
-                    msg_board.header = std_msgs::Header();
+                    board.computeState();
+                    board_state_pub.publish(board.toMsgBoard());
 
-                    for (int j = 0; j < board.getNumCells(); ++j)
-                    {
-                        Cell &cell = board.getCell(j);
-                        if (cell.area_red || cell.area_blue)
-                        {
-                            cell.area_red>cell.area_blue?cell.state=red:cell.state=blue;
-                        }
-
-                        msg_board.cells[j].state=cell.state;
-                    }
-
-                    board_state_pub.publish(msg_board);
-                    last_msg_board=msg_board;
                     // ROS_INFO("New board state published");
-
-                    // cv::Mat bg = cv::Mat::zeros(img_hsv.size(), CV_8UC1);
-                    // for(int i = 0; i < board.getNumCells(); i++)
-                    // {
-                    //     vector<vector<cv::Point> > contours;
-                    //     contours.push_back(board.getCellContour(i));
-                    //     drawContours(bg, contours, -1, cv::Scalar(255,255,255), CV_FILLED, 8);
-                    // }
 
                     for(int i = 0; i < board.getNumCells(); i++)
                     {
                         cv::Scalar col = col_empty;
-                        if (board.getCellState(i) ==  red)  col = col_red;
-                        if (board.getCellState(i) == blue) col = col_blue;
+                        if (board.getCellState(i) ==  COL_RED)  col = col_red;
+                        if (board.getCellState(i) == COL_BLUE) col = col_blue;
 
                         ttt::Contours contours;
                         contours.push_back(board.getCellContour(i));

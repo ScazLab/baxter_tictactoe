@@ -380,7 +380,7 @@ void TTTController::isolateBlue(Mat &output)
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
     pthread_mutex_unlock(&_mutex_img);
 
-    output = hsv_threshold(hsv, hsv_blue);
+    output = hsvThreshold(hsv, hsv_blue);
 }
 
 void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
