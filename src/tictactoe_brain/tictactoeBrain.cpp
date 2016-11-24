@@ -7,7 +7,7 @@ using namespace std;
 using namespace baxter_tictactoe;
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _setup(false), _nh(name), spinner(4),
+                               r(100), _nh(name), spinner(4),
                                leftArmCtrl("ttt_controller", "left"),
                                rightArmCtrl("ttt_controller", "right")
 {
@@ -50,10 +50,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     set_strategy(_strategy);
 
     has_cheated=false;
-
-    _setup = true; // indicates whether board has been scanned by arm camera
-                   // (signal to boardStateSensing that the board's position
-                   // is locked and ready to be scanned by head camera)
 }
 
 ttt::Board tictactoeBrain::getBoard()

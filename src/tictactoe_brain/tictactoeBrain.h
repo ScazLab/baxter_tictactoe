@@ -44,7 +44,6 @@ private:
     sound_play::SoundClient _voice_synthesizer;
     std::string                    _voice_type; // Type of voice.
 
-    bool _setup;
     bool cheating;         // It determines if the robot can cheat or not.
 
     // Pointer to the function that chooses the next move
