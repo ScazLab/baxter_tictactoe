@@ -107,6 +107,27 @@ Cell::Cell(Contour _c, std::string _s, int _ar, int _ab) :
 
 }
 
+Cell::Cell(const Cell &_c) :
+           contour(_c.contour), state(_c.state),
+           area_red(_c.area_red), area_blue(_c.area_blue)
+{
+
+}
+
+Cell& Cell::operator=(const Cell& _c)
+{
+    // self-assignment check
+    if (this != &_c)
+    {
+        contour   = _c.contour;
+        state     = _c.state;
+        area_red  = _c.area_red;
+        area_blue = _c.area_blue;
+    }
+
+    return *this;
+}
+
 void Cell::resetCell()
 {
     state     = "empty";
@@ -189,6 +210,22 @@ string Cell::toString()
 /**                                 BOARD                                **/
 /**************************************************************************/
 
+Board& Board::operator=(const Board& _b)
+{
+    // self-assignment check
+    if (this != &_b)
+    {
+        resetState();
+
+        for (int i = 0; i < _b.cells.size(); ++i)
+        {
+            addCell(Cell(_b.cells[i]));
+        }
+    }
+
+    return *this;
+}
+
 bool Board::resetState()
 {
     if (getNumCells()==0) return false;
@@ -219,6 +256,8 @@ void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
 
     for (int i = 0; i < msgb.cells.size(); ++i)
     {
+        // We want to keep the cell self-consistent. To this end, we add a fake
+        // non empty area if the cell is red or blue colored.
         if      (msgb.cells[i].state == COL_RED  ) addCell(Cell(COL_RED  , 1, 0));
         else if (msgb.cells[i].state == COL_BLUE ) addCell(Cell(COL_BLUE , 0, 1));
         else if (msgb.cells[i].state == COL_EMPTY) addCell(Cell(COL_EMPTY, 0, 0));

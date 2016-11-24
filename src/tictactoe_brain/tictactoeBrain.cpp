@@ -6,25 +6,6 @@ using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
-bool ttt::operator==(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
-                     boost::array<MsgCell, NUMBER_OF_CELLS> cells2)
-{
-    for(int i = 0; i < cells1.size(); i++)
-    {
-        if(cells1[i].state != cells2[i].state)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool ttt::operator!=(boost::array<MsgCell, NUMBER_OF_CELLS> cells1,
-                     boost::array<MsgCell, NUMBER_OF_CELLS> cells2)
-{
-    return !(cells1==cells2);
-}
-
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
                                r(100), _setup(false), _nh(name), spinner(4),
                                leftArmCtrl("ttt_controller", "left"),
@@ -34,7 +15,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     pthread_mutexattr_init(&_mutex_attr);
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&_mutex_brainstate, &_mutex_attr);
-    pthread_mutex_init(&_mutex_boardstate, &_mutex_attr);
+    pthread_mutex_init(&_mutex_board, &_mutex_attr);
 
     printf("\n");
     boardState_sub = _nh.subscribe("baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
@@ -65,16 +46,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     }
     set_brain_state(TTTBrainState::READY);
 
-    TTT_Board_State aux; // aux is an array of 9 MsgCells
-    for(int i = 0; i < aux.size(); i++)
-    {
-        aux[i].state = MsgCell::EMPTY;
-    }
-
-    pthread_mutex_lock(&_mutex_boardstate);
-    boardState = aux;
-    pthread_mutex_unlock(&_mutex_boardstate);
-
     qsrand(ros::Time::now().nsec);
     set_strategy(_strategy);
 
@@ -83,20 +54,17 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     _setup = true; // indicates whether board has been scanned by arm camera
                    // (signal to boardStateSensing that the board's position
                    // is locked and ready to be scanned by head camera)
+}
 
-    while(ros::ok())
-    {
-        pthread_mutex_lock(&_mutex_boardstate);
-        TTT_Board_State arr = boardState;
-        pthread_mutex_unlock(&_mutex_boardstate);
-        if(arr != aux)
-        {
-            break;
-        }
+ttt::Board tictactoeBrain::getBoard()
+{
+    ttt::Board res;
 
-        ROS_WARN_THROTTLE(1, "Board was not detected. Make sure it is within view and not obscured.");
-        r.sleep();
-    }
+    pthread_mutex_lock(&_mutex_board);
+    res = board;
+    pthread_mutex_unlock(&_mutex_board);
+
+    return res;
 }
 
 void tictactoeBrain::publishTTTBrainStateCb(const ros::TimerEvent&)
@@ -113,128 +81,114 @@ void tictactoeBrain::set_brain_state(int state)
     pthread_mutex_unlock(&_mutex_brainstate);
 }
 
-void tictactoeBrain::boardStateCb(const MsgBoardConstPtr &msg)
+void tictactoeBrain::boardStateCb(const baxter_tictactoe::MsgBoard &msg)
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
-    if (msg->cells != aux)
-    {
-        ROS_DEBUG("New TTT board state received");
-        pthread_mutex_lock(&_mutex_boardstate);
-        boardState = msg->cells;
-        pthread_mutex_unlock(&_mutex_boardstate);
-    }
+    ROS_DEBUG("New TTT board state received");
+    pthread_mutex_lock(&_mutex_board);
+    board.fromMsgBoard(msg);
+    pthread_mutex_unlock(&_mutex_board);
 }
 
-int tictactoeBrain::random_move(bool& cheating)
+int tictactoeBrain::randomMove(bool& cheating)
 {
     cheating=false;
     int r;
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
+    ttt::Board aux = getBoard();
     do {
         r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
-        ROS_DEBUG("Cell %d is in state %s ==? %s", r, aux[r-1].state.c_str(),
+        ROS_DEBUG("Cell %d is in state %s ==? %s", r, aux.getCellState(r-1).c_str(),
                   MsgCell::EMPTY.c_str());
     }
-    while(aux[r-1].state!=COL_EMPTY);
+    while(aux.getCellState(r-1)!=COL_EMPTY);
 
     ROS_INFO("Random move to cell # %i", r);
     return r;
 }
 
-int tictactoeBrain::cheating_to_win_random_move(bool& cheating)
+int tictactoeBrain::cheating_to_win_randomMove(bool& cheating)
 {
     int next_cell_id=-1;
-    if ((next_cell_id = victory_move()) != -1) return next_cell_id;
-    if ((next_cell_id = cheating_move()) != -1)
+    if ((next_cell_id = victoryMove()) != -1) return next_cell_id;
+    if ((next_cell_id = cheatingMove()) != -1)
     {
         cheating=true;
         return next_cell_id;
     }
-    if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
-    return random_move(cheating);
+    if ((next_cell_id = defensiveMove()) != -1) return next_cell_id;
+    return randomMove(cheating);
 }
 
-int tictactoeBrain::winning_defensive_random_move(bool& cheating)
+int tictactoeBrain::winning_defensive_randomMove(bool& cheating)
 {
     cheating=false;
     int next_cell_id=-1;
-    if ((next_cell_id = victory_move()) != -1) return next_cell_id;
-    if ((next_cell_id = defensive_move()) != -1) return next_cell_id;
-    return random_move(cheating);
+    if ((next_cell_id = victoryMove()) != -1) return next_cell_id;
+    if ((next_cell_id = defensiveMove()) != -1) return next_cell_id;
+    return randomMove(cheating);
 }
 
-int tictactoeBrain::cheating_move()
+int tictactoeBrain::cheatingMove()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
+    ttt::Board aux = getBoard();
     string cell_state = COL_EMPTY;
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
-        if (aux[i].state==_opponent_col)
+        if (aux.getCellState(i)==_opponent_col)
         {
-            cell_state=aux[i].state;
-            aux[i].state=_robot_col;
+            cell_state=aux.getCellState(i);
+            aux.getCellState(i)=_robot_col;
             if (three_in_a_row(_robot_col, aux))
             {
                 ROS_INFO("Cheating move to cell # %lu", i+1);
                 has_cheated=true;
                 return i+1;
             }
-            aux[i].state=cell_state;
+            aux.getCellState(i)=cell_state;
         }
     }
     ROS_INFO("No chance to win in this turn");
     return -1;
 }
 
-int tictactoeBrain::defensive_move()
+int tictactoeBrain::defensiveMove()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
+    ttt::Board aux = getBoard();
     string cell_state = COL_EMPTY;
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
-        if (aux[i].state==COL_EMPTY)
+        if (aux.getCellState(i)==COL_EMPTY)
         {
-            cell_state = aux[i].state;
-            aux[i].state = _opponent_col;
+            cell_state = aux.getCellState(i);
+            aux.getCellState(i) = _opponent_col;
             if (three_in_a_row(_opponent_col, aux))
             {
                 ROS_INFO("Defensive move to cell # %lu", i+1);
                 return i+1;
             }
-            aux[i].state=cell_state;
+            aux.getCellState(i)=cell_state;
         }
     }
     // ROS_INFO("No chance to lose in this turn");
     return -1;
 }
 
-int tictactoeBrain::victory_move()
+int tictactoeBrain::victoryMove()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
+    ttt::Board aux = getBoard();
     string cell_state = COL_EMPTY;
 
     for (size_t i = 0; i < NUMBER_OF_CELLS; ++i)
     {
-        if (aux[i].state==COL_EMPTY)
+        if (aux.getCellState(i)==COL_EMPTY)
         {
-            cell_state = aux[i].state;
-            aux[i].state = _robot_col;
+            cell_state = aux.getCellState(i);
+            aux.getCellState(i) = _robot_col;
             if (three_in_a_row(_robot_col, aux))
             {
                 ROS_INFO("Victory move to cell # %lu", i+1);
                 return i+1;
             }
-            aux[i].state = cell_state;
+            aux.getCellState(i) = cell_state;
         }
     }
 
@@ -242,20 +196,18 @@ int tictactoeBrain::victory_move()
     return -1;
 }
 
-int tictactoeBrain::get_next_move(bool& cheating)
+int tictactoeBrain::get_nextMove(bool& cheating)
 {
-    return (this->*_choose_next_move)(cheating);
+    return (this->*_choose_nextMove)(cheating);
 }
 
 unsigned short int tictactoeBrain::get_num_tokens()
 {
     unsigned short int counter=0;
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
-    for(int i = 0; i < aux.size(); i++)
+    ttt::Board aux = getBoard();
+    for(int i = 0; i < aux.getNumCells(); i++)
     {
-        if(aux[i].state!=COL_EMPTY) counter++;
+        if(aux.getCellState(i)!=COL_EMPTY) counter++;
     }
     return counter;
 }
@@ -263,37 +215,33 @@ unsigned short int tictactoeBrain::get_num_tokens()
 unsigned short int tictactoeBrain::get_num_tokens(std::string token_type)
 {
     unsigned short int counter=0;
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
-    for(int i = 0; i < aux.size(); i++)
+    ttt::Board aux = getBoard();
+    for(int i = 0; i < aux.getNumCells(); i++)
     {
-       if(aux[i].state==token_type) counter++;
+       if(aux.getCellState(i)==token_type) counter++;
     }
     return counter;
 }
 
-bool tictactoeBrain::three_in_a_row(const std::string& color, const TTT_Board_State& b)
+bool tictactoeBrain::three_in_a_row(const std::string& color, ttt::Board& b)
 {
     if(color!=COL_BLUE && color!=COL_RED) return false; // There are only red and blue tokens
 
-    if(b[0].state==color && b[1].state==color && b[2].state==color) return true; // first row
-    if(b[3].state==color && b[4].state==color && b[5].state==color) return true; // second row
-    if(b[6].state==color && b[7].state==color && b[8].state==color) return true; // third row
-    if(b[0].state==color && b[3].state==color && b[6].state==color) return true; // first column
-    if(b[1].state==color && b[4].state==color && b[7].state==color) return true; // second column
-    if(b[2].state==color && b[5].state==color && b[8].state==color) return true; // third column
-    if(b[0].state==color && b[4].state==color && b[8].state==color) return true; // first diagonal
-    if(b[2].state==color && b[4].state==color && b[6].state==color) return true; // second diagonal
+    if(b.getCellState(0)==color && b.getCellState(1)==color && b.getCellState(2)==color) return true; // first row
+    if(b.getCellState(3)==color && b.getCellState(4)==color && b.getCellState(5)==color) return true; // second row
+    if(b.getCellState(6)==color && b.getCellState(7)==color && b.getCellState(8)==color) return true; // third row
+    if(b.getCellState(0)==color && b.getCellState(3)==color && b.getCellState(6)==color) return true; // first column
+    if(b.getCellState(1)==color && b.getCellState(4)==color && b.getCellState(7)==color) return true; // second column
+    if(b.getCellState(2)==color && b.getCellState(5)==color && b.getCellState(8)==color) return true; // third column
+    if(b.getCellState(0)==color && b.getCellState(4)==color && b.getCellState(8)==color) return true; // first diagonal
+    if(b.getCellState(2)==color && b.getCellState(4)==color && b.getCellState(6)==color) return true; // second diagonal
 
     return false;
 }
 
 unsigned short int tictactoeBrain::get_winner()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
+    ttt::Board aux = getBoard();
     if (three_in_a_row(_robot_col, aux))      return 1;
     if (three_in_a_row(_opponent_col, aux))   return 2;
     return 0;
@@ -321,24 +269,20 @@ void tictactoeBrain::wait_for_opponent_turn(const uint8_t& num_tok_opp)
 
 bool tictactoeBrain::is_board_empty()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
-    for(int i = 0; i < aux.size(); i++)
+    ttt::Board aux = getBoard();
+    for(int i = 0; i < aux.getNumCells(); i++)
     {
-        if(aux[i].state==COL_RED || aux[i].state==COL_BLUE) return false;
+        if(aux.getCellState(i)==COL_RED || aux.getCellState(i)==COL_BLUE) return false;
     }
     return true;
 }
 
 bool tictactoeBrain::is_board_full()
 {
-    pthread_mutex_lock(&_mutex_boardstate);
-    TTT_Board_State aux = boardState;
-    pthread_mutex_unlock(&_mutex_boardstate);
-    for(int i = 0; i < aux.size(); i++)
+    ttt::Board aux = getBoard();
+    for(int i = 0; i < aux.getNumCells(); i++)
     {
-        if(aux[i].state==COL_EMPTY) return false;
+        if(aux.getCellState(i)==COL_EMPTY) return false;
     }
     return true;
 }
@@ -353,17 +297,17 @@ void tictactoeBrain::set_strategy(std::string strategy)
 {
     if (strategy=="random")
     {
-        _choose_next_move=&tictactoeBrain::random_move;
+        _choose_nextMove=&tictactoeBrain::randomMove;
         ROS_INFO("[strategy] Randomly place tokens");
     }
     else if (strategy=="smart")
     {
-        _choose_next_move=&tictactoeBrain::winning_defensive_random_move;
+        _choose_nextMove=&tictactoeBrain::winning_defensive_randomMove;
         ROS_INFO("[strategy] Randomly place tokens but win if possible, or block opponent's victory");
     }
     else if (strategy=="cheating")
     {
-        _choose_next_move=&tictactoeBrain::cheating_to_win_random_move;
+        _choose_nextMove=&tictactoeBrain::cheating_to_win_randomMove;
         ROS_INFO("[strategy] Randomly place tokens but win if possible "
                             "even if cheating is required, or block opponent's victory");
     }
@@ -402,11 +346,11 @@ int tictactoeBrain::play_one_game(bool &cheating)
             // n_robot_tokens=get_num_tokens(_robot_col);
             num_tok_opp=get_num_tokens(_opponent_col);
             say_sentence("It is my turn", 0.3);
-            int cell_to_move = get_next_move(cheating);
-            ROS_INFO("Moving to cell %i", cell_to_move);
+            int cell_toMove = get_nextMove(cheating);
+            ROS_INFO("Moving to cell %i", cell_toMove);
 
             leftArmCtrl.startAction(ACTION_PICKUP);
-            leftArmCtrl.startAction(ACTION_PUTDOWN, cell_to_move);
+            leftArmCtrl.startAction(ACTION_PUTDOWN, cell_toMove);
         }
         else // Participant's turn
         {
@@ -445,6 +389,6 @@ int tictactoeBrain::play_one_game(bool &cheating)
 tictactoeBrain::~tictactoeBrain()
 {
     pthread_mutex_destroy(&_mutex_brainstate);
-    pthread_mutex_destroy(&_mutex_boardstate);
+    pthread_mutex_destroy(&_mutex_board);
     brainstate_timer.stop();
 }

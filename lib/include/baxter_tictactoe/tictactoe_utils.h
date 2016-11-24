@@ -96,10 +96,18 @@ private:
     int       area_blue;
 
 public:
+    /* CONSTRUCTORS */
     Cell(            std::string _s = COL_EMPTY, int _ar = 0, int _ab = 0);
     Cell(Contour _c, std::string _s = COL_EMPTY, int _ar = 0, int _ab = 0);
+    Cell(const Cell &_c);
 
+    /* DESTRUCTOR */
     ~Cell() {};
+
+    /**
+     * Assignment operator
+     */
+    Cell& operator=(const Cell& _c);
 
     /**
      * Resets the cell to an empty, pristine state.
@@ -149,8 +157,16 @@ private:
     std::vector<Cell> cells;
 
 public:
+    /* CONSTRUCTOR */
     Board()  {};
+
+    /* DESTRUCTOR */
     ~Board() {};
+
+    /**
+     * Assignment operator. Does not care about boards with different sizes.
+     */
+    Board& operator=(const Board& _c);
 
     /**
      * Adds a cell to the board.

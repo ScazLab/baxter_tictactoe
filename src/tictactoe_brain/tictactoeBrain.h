@@ -12,12 +12,6 @@
 namespace ttt
 {
 
-bool operator==(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
-                boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
-
-bool operator!=(boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells1,
-                boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> cells2);
-
 class tictactoeBrain
 {
 private:
@@ -27,12 +21,11 @@ private:
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     /* STATE OF THE BOARD */
-    typedef boost::array<baxter_tictactoe::MsgCell, NUMBER_OF_CELLS> TTT_Board_State;
-    TTT_Board_State boardState;
+    ttt::Board board;
 
     ros::Subscriber boardState_sub; // subscriber to receive the state of the board
 
-    pthread_mutex_t _mutex_boardstate;
+    pthread_mutex_t _mutex_board;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system
@@ -55,7 +48,7 @@ private:
     bool cheating;         // It determines if the robot can cheat or not.
 
     // Pointer to the function that chooses the next move
-    int (tictactoeBrain::*_choose_next_move)(bool& cheating);
+    int (tictactoeBrain::*_choose_nextMove)(bool& cheating);
 
     TTTController  leftArmCtrl;
     TTTController rightArmCtrl;
@@ -69,14 +62,14 @@ private:
      * is stored in the thread-safe private attribute called boardState.
      * \param msg the message with the new TTT state, i.e. the states of each of the cells
      **/
-    void boardStateCb(const baxter_tictactoe::MsgBoardConstPtr & msg);
+    void boardStateCb(const baxter_tictactoe::MsgBoard &msg);
 
     /**
      * It determines randomly the next empty cell to place a token.
      * \param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int random_move(bool& cheating);
+    int randomMove(bool& cheating);
 
     /**
      * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat
@@ -86,7 +79,7 @@ private:
      * \param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int cheating_to_win_random_move(bool& cheating);
+    int cheating_to_win_randomMove(bool& cheating);
 
     /**
      * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
@@ -95,7 +88,7 @@ private:
      * \param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int winning_defensive_random_move(bool& cheating);
+    int winning_defensive_randomMove(bool& cheating);
 
     /*
      * It determines the next cell to place a token. It always will try to win in this turn, even if
@@ -106,7 +99,7 @@ private:
      * @param cheating It indicates if cheating has happened.
      * @return an integer representing the cell where to place the next token
      **/
-    int smart_cheating_random_move(bool& cheating);
+    int smart_cheating_randomMove(bool& cheating);
 
     /*
      * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell
@@ -116,7 +109,7 @@ private:
      * is an opponent's token in that cell. The cell ids are between 1 (first row, first column)
      * and NUMBER_OF_CELLS (last row, last column).
      */
-    int cheating_move();
+    int cheatingMove();
 
     /**
      * It determines if the opponent can win in the next move.
@@ -124,7 +117,7 @@ private:
      * to the first found cell where an opponent's token can be placed to win the game.
      * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
      **/
-    int defensive_move();
+    int defensiveMove();
 
     /**
      * It determines if the robot can win in the next move.
@@ -132,7 +125,7 @@ private:
      * to the first found cell where a robot's token can be placed to win the game. The
      * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
      **/
-    int victory_move();
+    int victoryMove();
 
 public:
 
@@ -146,7 +139,7 @@ public:
      * @return The return value is between 1 (first row, first column)
      * and NUMBER_OF_CELLS (last row, last column).
      **/
-    int get_next_move(bool& cheating);
+    int get_nextMove(bool& cheating);
 
     /**
      * This function counts the total number of tokens on the board.
@@ -172,7 +165,7 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool three_in_a_row(const std::string& color, const TTT_Board_State &b);
+    bool three_in_a_row(const std::string& color, ttt::Board &b);
 
     /**
      * This function returns the winner of the game.
@@ -216,8 +209,9 @@ public:
     int play_one_game(bool &cheating);
 
     /* GETTERS */
-    std::string   get_robot_color()        { return    _robot_col; };
-    std::string   get_opponent_color()     { return _opponent_col; };
+    ttt::Board  getBoard();
+    std::string getRobotColor()        { return    _robot_col; };
+    std::string getOpponentColor()     { return _opponent_col; };
 
     bool get_cheating() { return cheating; };
 
