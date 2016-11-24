@@ -12,18 +12,6 @@
 using namespace std;
 using namespace ttt;
 
-std::string ttt::cell_state_to_str(cellState c_s)
-{
-    switch(c_s)
-    {
-        case empty: return std::string("empty");
-        case blue: return std::string("blue");
-        case red: return std::string("red");
-        case undefined: return std::string("undefined");
-        default: return std::string("[value unknown]");
-    }
-}
-
 cv::Mat ttt::hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv)
 {
     cv::Mat res = _src.clone();
@@ -107,76 +95,92 @@ hsvColorRange & hsvColorRange::operator=(const hsvColorRange &_hsvc)
 /**                        CELL                                          **/
 /**************************************************************************/
 
-Cell::Cell()
+Cell::Cell(cellState _s, int _ar, int _ab) :
+           state(_s), area_red(_ar), area_blue(_ab)
 {
-    state=empty;
-    cell_area_red=0;
-    cell_area_blue=0;
-    contours.clear();
+    contour.clear();
 }
 
-Cell::Cell(std::vector<cv::Point> _vec) : contours(_vec)
+Cell::Cell(Contour _c, cellState _s, int _ar, int _ab) :
+           contour(_c), state(_s), area_red(_ar), area_blue(_ab)
 {
-    state=empty;
-    cell_area_red=0;
-    cell_area_blue=0;
+
 }
 
-cv::Mat Cell::mask_image(const cv::Mat &_src)
+void Cell::reset()
+{
+    state     = empty;
+    area_red  =     0;
+    area_blue =     0;
+    contour.clear();
+}
+
+cv::Mat Cell::maskImage(const cv::Mat &_src)
 {
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 
     // CV_FILLED fills the connected components found with white
-    cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,contours),
+    cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,contour),
                                             -1, cv::Scalar(255), CV_FILLED);
 
     cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);
     im_crop.setTo(cv::Scalar(0));
     _src.copyTo(im_crop, mask);
 
-    // normalize so imwrite(...)/imshow(...) shows the mask correctly
-    //cv::normalize(mask.clone(), mask, 0.0, 255.0, CV_MINMAX, CV_8UC1);
-
-    // show the images
-    // cv::imshow("original", _src);
-    // cv::imshow("mask", mask);
-    // cv::imshow("masked cell", im_crop);
-
     return im_crop;
 }
 
-cv::Point Cell::get_centroid()
+cv::Point Cell::getCentroid()
 {
     cv::Point centroid(0,0);
 
-    if(contours.size() > 0)
+    if(contour.size() > 0)
     {
         cv::Moments mom;
-        mom = cv::moments(contours, false);
+        mom = cv::moments(contour, false);
         centroid = cv::Point( int(mom.m10/mom.m00) , int(mom.m01/mom.m00) );
     }
 
     return centroid;
 }
 
+int Cell::getContourArea()
+{
+    if (contour.size() > 0)  return cv::moments(getContour(),false).m00;
+
+    return 0;
+}
+
+std::string Cell::getStateStr()
+{
+    switch(state)
+    {
+        case empty:     return std::string("empty");
+        case blue:      return std::string("blue");
+        case red:       return std::string("red");
+        case undefined: return std::string("undefined");
+        default:        return std::string("[value unknown]");
+    }
+}
+
 string Cell::toString()
 {
     stringstream res;
 
-    res<<"State:"<<cell_state_to_str(state)<<"\t";
-    res<<"Red  Area: "<<cell_area_red<<"\t";
-    res<<"Blue Area: "<<cell_area_blue<<"\t";
+    res<<"State:"<<getStateStr()<<"\t";
+    res<<"Red  Area: "<<area_red<<"\t";
+    res<<"Blue Area: "<<area_blue<<"\t";
 
-    if (contours.size()==0)
+    if (contour.size()==0)
     {
         res << "Points:\tNONE;\t";
     }
     else
     {
         res << "Points:\t";
-        for (int i = 0; i < contours.size(); ++i)
+        for (int i = 0; i < contour.size(); ++i)
         {
-            res <<"["<<contours[i].x<<"  "<<contours[i].y<<"]\t";
+            res <<"["<<contour[i].x<<"  "<<contour[i].y<<"]\t";
         }
     }
 
@@ -189,57 +193,54 @@ string Cell::toString()
 
 bool Board::resetState()
 {
-    if (cells_size()==0)
+    if (getNumCells()==0)
     {
         return false;
     }
 
-    for (int i = 0; i < cells_size(); ++i)
+    for (int i = 0; i < getNumCells(); ++i)
     {
-        cells[i].state      = empty;
-        cells[i].cell_area_red  = 0;
-        cells[i].cell_area_blue = 0;
+        cells[i].reset();
     }
 
     return true;
 }
 
-string Board::stateToString()
+string Board::toString()
 {
-    if (cells_size()==0)
+    if (getNumCells()==0)
     {
         return "";
     }
 
     stringstream res;
-    res << cell_state_to_str(cells[0].state);
-    for (int i = 1; i < cells_size(); ++i)
+    res << cells[0].getStateStr();
+    for (int i = 1; i < getNumCells(); ++i)
     {
-        res << "\t" << cell_state_to_str(cells[i].state);
+        res << "\t" << cells[i].getStateStr();
     }
 
     return res.str();
 }
 
-std::vector<std::vector<cv::Point> > Board::as_vector_of_vectors()
+Contours Board::getContours()
 {
-    std::vector<std::vector<cv::Point> > result;
+    Contours result;
 
-    for (int i = 0; i < cells_size(); ++i)
+    for (int i = 0; i < getNumCells(); ++i)
     {
-        result.push_back(cells[i].contours);
+        result.push_back(getCellContour(i));
     }
 
     return result;
 };
 
-cv::Mat Board::mask_image(const cv::Mat &_src)
+cv::Mat Board::maskImage(const cv::Mat &_src)
 {
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 
     // CV_FILLED fills the connected components found with white
-    cv::drawContours(mask, as_vector_of_vectors(),
-                     -1, cv::Scalar(255), CV_FILLED);
+    cv::drawContours(mask, getContours(), -1, cv::Scalar(255), CV_FILLED);
 
     cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);
     im_crop.setTo(cv::Scalar(0));

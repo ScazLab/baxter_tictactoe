@@ -25,6 +25,11 @@ namespace ttt
 #define CHEATING_GAME_A     2
 #define CHEATING_GAME_B     3
 
+#define COLOR_RED       "red"
+#define COLOR_BLUE      "blue"
+#define COLOR_EMPTY     "empty"
+#define COLOR_UNDEFINED "undef"
+
 #define VOICE       "voice_kal_diphone"
 
 // Used to determine the three possible states of a cell.
@@ -34,7 +39,8 @@ typedef enum {empty=baxter_tictactoe::MsgCell::EMPTY,
               red=baxter_tictactoe::MsgCell::RED,
               undefined=baxter_tictactoe::MsgCell::UNDEFINED} cellState;
 
-typedef std::vector<std::vector<cv::Point> > Contours;
+typedef std::vector<cv::Point>  Contour;
+typedef std::vector<Contour>    Contours;
 
 std::string cell_state_to_str(cellState c_s);
 
@@ -67,6 +73,11 @@ struct hsvColorRange
     cv::Scalar get_hsv_min() { return cv::Scalar(H.min, S.min, V.min); };
     cv::Scalar get_hsv_max() { return cv::Scalar(H.max, S.max, V.max); };
 
+    /**
+     * Print function.
+     *
+     * @return A text description of the cell
+     */
     std::string toString();
 
     /**
@@ -85,18 +96,19 @@ cv::Mat hsv_threshold(const cv::Mat& _src, hsvColorRange _hsv);
 
 struct Cell
 {
-public:
-    std::vector<cv::Point> contours;
-    cellState state;
-    double cell_area_red;
-    double cell_area_blue;
+private:
+    Contour  contour;
+    cellState  state;
+    int     area_red;
+    int    area_blue;
 
 public:
-    Cell();
-    Cell(std::vector<cv::Point> _vec);
+    Cell(cellState _s = empty, int _ar = 0, int _ab = 0);
+    Cell(Contour _c, cellState _s = empty, int _ar = 0, int _ab = 0);
+
     ~Cell() {};
 
-    std::vector<cv::Point> get_contours() { return contours; };
+    void reset();
 
     /**
      * Returns a mask for a cell, i.e. a new image that keeps only the portion
@@ -104,47 +116,90 @@ public:
      * @param      the original image, where the mask will be extracted from.
      * @return     the mask. It has the same size than the original image.
      */
-    cv::Mat mask_image(const cv::Mat &);
+    cv::Mat maskImage(const cv::Mat &);
 
     /**
      * Computes the centroid of a cell.
      * @return  the centroid as a cv::Point (defaults to [0,0] if ther is no contour)
      */
-    cv::Point get_centroid();
+    cv::Point getCentroid();
+
+    /**
+     * Computes the area of the contour
+     * @return the area of the contour (defaults to 0 if there is no contour)
+     */
+    int getContourArea();
 
     /**
      * Prints some useful information from the cell
      * @return the string with the information
      */
     std::string toString();
+
+    /* Self-explaining "getters" */
+    std::string getStateStr();
+    int         getRedArea()  { return area_red;  };
+    int         getBlueArea() { return area_blue; };
+    cellState   getState()    { return state;     };
+    Contour     getContour()  { return contour;   };
+
+    /* Self-explaining "setters" */
+    void setState(cellState s) { state = s;      };
+    void setRedArea (int _a)   { area_red  = _a; };
+    void setBlueArea(int _a)   { area_blue = _a; };
 };
 
 struct Board
 {
-public:
+private:
     std::vector<Cell> cells;
 
 public:
     Board()  {};
     ~Board() {};
 
+    /**
+     * Adds a cell to the board.
+     *
+     * @param c The cell to be added.
+     */
+    void addCell(Cell _c) { cells.push_back(_c); };
+
+    /**
+     * Masks the board onto an image
+     * @param      the original image.
+     * @return     the masked image.
+     */
+    cv::Mat maskImage(const cv::Mat &);
+
+    /**
+     * Clears the board, by deleting any cell.
+     */
     void clear() { cells.clear(); };
 
     bool resetState();
 
-    std::string stateToString();
-
-    std::vector<std::vector<cv::Point> > as_vector_of_vectors();
-
-    int cells_size() { return cells.size(); };
-
     /**
-     * Returns a mask for a board, i.e. a new image that keeps only the portion
-     * delimited by the board (the rest is set to black)
-     * @param      the original image, where the mask will be extracted from.
-     * @return     the mask. It has the same size than the original image.
+     * Print function.
+     *
+     * @return A text description of the board
      */
-    cv::Mat mask_image(const cv::Mat &);
+    std::string toString();
+
+    /* Self-explaining "getters" */
+    Contours getContours();
+    int      getNumCells()             { return cells.size();              };
+
+    Cell&       getCell(int i)         { return cells[i];                  };
+    int         getCellArea(int i)     { return cells[i].getContourArea(); };
+    int         getCellAreaRed(int i)  { return cells[i].getRedArea();     };
+    int         getCellAreaBlue(int i) { return cells[i].getBlueArea();    };
+    cellState   getCellState(int i)    { return cells[i].getState();       };
+    Contour     getCellContour(int i)  { return cells[i].getContour();     };
+    cv::Point   getCellCentroid(int i) { return cells[i].getCentroid();    };
+
+    /* Self-explaining "setters" */
+    void setCellState(int i, cellState s) { cells[i].setState(s); };
 };
 
 }
