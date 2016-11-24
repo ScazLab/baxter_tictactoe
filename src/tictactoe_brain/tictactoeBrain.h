@@ -9,6 +9,11 @@
 
 #include <pthread.h>
 
+#define WIN_NONE    0
+#define WIN_ROBOT   1
+#define WIN_OPP     2
+#define WIN_TIE     3
+
 namespace ttt
 {
 
@@ -32,7 +37,7 @@ private:
 
     ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
 
-    pthread_mutex_t _mutex_brainstate;
+    pthread_mutex_t _mutex_brain;
 
     /* MISC */
     std::string    _robot_col;  // Color of the tokens the robot    is playing with.

@@ -14,7 +14,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     pthread_mutexattr_t _mutex_attr;
     pthread_mutexattr_init(&_mutex_attr);
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_brainstate, &_mutex_attr);
+    pthread_mutex_init(&_mutex_brain, &_mutex_attr);
     pthread_mutex_init(&_mutex_board, &_mutex_attr);
 
     printf("\n");
@@ -70,16 +70,16 @@ ttt::Board tictactoeBrain::getBoard()
 
 void tictactoeBrain::publishTTTBrainState(const ros::TimerEvent&)
 {
-    pthread_mutex_lock(&_mutex_brainstate);
+    pthread_mutex_lock(&_mutex_brain);
     tttBrain_pub.publish(s);
-    pthread_mutex_unlock(&_mutex_brainstate);
+    pthread_mutex_unlock(&_mutex_brain);
 }
 
 void tictactoeBrain::setBrainState(int state)
 {
-    pthread_mutex_lock(&_mutex_brainstate);
+    pthread_mutex_lock(&_mutex_brain);
     s.state = state;
-    pthread_mutex_unlock(&_mutex_brainstate);
+    pthread_mutex_unlock(&_mutex_brain);
     if (state == TTTBrainState::GAME_FINISHED)
     {
         _is_board_detected = false;
@@ -248,9 +248,9 @@ bool tictactoeBrain::threeInARow(const std::string& color, ttt::Board& b)
 unsigned short int tictactoeBrain::getWinner()
 {
     ttt::Board aux = getBoard();
-    if (threeInARow(_robot_col, aux))      return 1;
-    if (threeInARow(_opponent_col, aux))   return 2;
-    return 0;
+    if (threeInARow(_robot_col, aux))      return WIN_ROBOT;
+    if (threeInARow(_opponent_col, aux))   return   WIN_OPP;
+    return WIN_NONE;
 }
 
 void tictactoeBrain::waitForOpponentTurn(const uint8_t& num_tok_opp)
@@ -325,9 +325,9 @@ int tictactoeBrain::playOneGame(bool &cheating)
         }
     }
 
-    bool robot_turn=true;
-    int winner=0; // no winner
-    has_cheated=false;
+    bool robot_turn = true;
+    int winner  = WIN_NONE;
+    has_cheated =    false;
 
     saySentence("I start the game.",2);
 
@@ -335,7 +335,8 @@ int tictactoeBrain::playOneGame(bool &cheating)
     std::cin.get();
     uint8_t num_tok_opp=0;
     // uint8_t n_robot_tokens=0;
-    while ((winner=getWinner())==0 && !isBoardFull() && !ros::isShuttingDown())
+
+    while (winner == WIN_NONE && !isBoardFull() && !ros::isShuttingDown())
     {
         if (robot_turn) // Robot's turn
         {
@@ -355,28 +356,29 @@ int tictactoeBrain::playOneGame(bool &cheating)
             waitForOpponentTurn(num_tok_opp);
         }
         robot_turn=!robot_turn;
+        winner = getWinner();
     }
 
     setBrainState(TTTBrainState::GAME_FINISHED);
 
     switch(winner)
     {
-    case 1:
-        ROS_INFO("ROBOT's VICTORY");
-        if (has_cheated)
-        {
-            saySentence("You humans are so easy to beat!", 5);
-        }
-        saySentence("I won", 3);
-        break;
-    case 2:
-        ROS_INFO("OPPONENT's VICTORY");
-        saySentence("You won this time", 4);
-        break;
-    default:
-        ROS_INFO("TIE");
-        saySentence("That's a tie. I will win next time.", 8);
-        winner=3;
+        case WIN_ROBOT:
+            ROS_INFO("ROBOT's VICTORY");
+            if (has_cheated)
+            {
+                saySentence("You humans are so easy to beat!", 5);
+            }
+            saySentence("I won", 3);
+            break;
+        case WIN_OPP:
+            ROS_INFO("OPPONENT's VICTORY");
+            saySentence("You won this time", 4);
+            break;
+        default:
+            ROS_INFO("TIE");
+            saySentence("That's a tie. I will win next time.", 8);
+            winner = WIN_TIE;
     }
 
     return winner;
@@ -384,7 +386,7 @@ int tictactoeBrain::playOneGame(bool &cheating)
 
 tictactoeBrain::~tictactoeBrain()
 {
-    pthread_mutex_destroy(&_mutex_brainstate);
+    pthread_mutex_destroy(&_mutex_brain);
     pthread_mutex_destroy(&_mutex_board);
     brainstate_timer.stop();
 }
