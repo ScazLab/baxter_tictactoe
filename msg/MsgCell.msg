@@ -10,8 +10,8 @@
 #       1=blue token (X)
 #       2=red token (O)
 
-string EMPTY="empty"
-string BLUE="blue"
-string RED="red"
+string EMPTY=empty
+string BLUE=blue
+string RED=red
 
 string state

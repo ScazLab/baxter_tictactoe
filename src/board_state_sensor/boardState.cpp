@@ -22,7 +22,7 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 }
 
 BoardState::BoardState(string name, bool _show) :
-                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(40) // 40Hz
+                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(30) // 30Hz
 {
     board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
     brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
@@ -72,12 +72,12 @@ void BoardState::InternalThreadEntry()
 
         if (board_state == STATE_INIT)
         {
-            ROS_INFO_THROTTLE(1,"[%i] Initializing..", board_state);
+            ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
             if (brain_state == TTTBrainState::READY) ++board_state;
         }
         else if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
-            ROS_INFO_THROTTLE(1,"[%i] Calibrating board..", board_state);
+            ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
             {
                 cv::Mat img_gray;
@@ -91,7 +91,7 @@ void BoardState::InternalThreadEntry()
                 cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
 
                 // a contour is an array of x-y coordinates describing the boundaries of an object
-                vector<vector<cv::Point> > contours;
+                Contours contours;
                 // Vec4i = vectors w/ 4 ints
                 vector<cv::Vec4i> hierarchy;
 
@@ -131,14 +131,14 @@ void BoardState::InternalThreadEntry()
                 if(contours.size() == NUMBER_OF_CELLS + 1)
                 {
                     contours.erase(contours.begin() + largest_idx);
-                    board.clear();
+                    board.resetBoard();
 
                     // aproximate cell contours to quadrilaterals
-                    vector<vector<cv::Point> > apx_contours;
+                    Contours apx_contours;
                     for(int i = 0; i < contours.size(); i++)
                     {
                         double epsilon = arcLength(contours[i], true);
-                        vector<cv::Point> apx_contour_cell;
+                        Contour apx_contour_cell;
                         approxPolyDP(contours[i], apx_contour_cell, 0.1 * epsilon, true);
                         apx_contours.push_back(apx_contour_cell);
                     }
@@ -170,10 +170,10 @@ void BoardState::InternalThreadEntry()
         }
         else if (board_state == STATE_READY && !ros::isShuttingDown())
         {
-            ROS_INFO_THROTTLE(1, "[%i] Detecting Board State..", board_state);
+            ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %i", board_state, board.getNumCells());
             if (!_img_empty)
             {
-                board.resetState();
+                board.resetCellStates();
                 cv::Mat img_copy = img_in.clone();
 
                 if (board.getNumCells() == NUMBER_OF_CELLS)
@@ -220,7 +220,7 @@ void BoardState::InternalThreadEntry()
                     for(int i = 0; i < board.getNumCells(); i++)
                     {
                         cv::Scalar col = col_empty;
-                        if (board.getCellState(i) ==  COL_RED)  col = col_red;
+                        if (board.getCellState(i) ==  COL_RED) col =  col_red;
                         if (board.getCellState(i) == COL_BLUE) col = col_blue;
 
                         ttt::Contours contours;
@@ -232,7 +232,7 @@ void BoardState::InternalThreadEntry()
                     }
 
                     if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_out);
-                    cv::waitKey(10);
+                    cv::waitKey(1);
                 }
             }
         }
@@ -244,7 +244,6 @@ void BoardState::InternalThreadEntry()
         }
         r.sleep();
     }
-    ROS_INFO("[%i] Finishing", board_state);
 }
 
 void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
@@ -286,7 +285,7 @@ bool BoardState::isBoardSane()
     return true;
 }
 
-int BoardState::getIthIndex(vector<vector<cv::Point> > contours, int ith)
+int BoardState::getIthIndex(Contours contours, int ith)
 {
     double largest_area = 0;
     int largest_idx = 0;
@@ -321,7 +320,7 @@ std::string BoardState::intToString( const int a )
     return ss.str();
 }
 
-bool BoardState::ascendingY(vector<cv::Point> i, vector<cv::Point> j)
+bool BoardState::ascendingY(Contour i, Contour j)
 {
     double y_i = moments(i, false).m01 / moments(i, false).m00;
     double y_j = moments(j, false).m01 / moments(j, false).m00;
@@ -329,7 +328,7 @@ bool BoardState::ascendingY(vector<cv::Point> i, vector<cv::Point> j)
     return y_i < y_j;
 }
 
-bool BoardState::ascendingX(vector<cv::Point> i, vector<cv::Point> j)
+bool BoardState::ascendingX(Contour i, Contour j)
 {
     double x_i = moments(i, false).m10 / moments(i, false).m00;
     double x_j = moments(j, false).m10 / moments(j, false).m00;

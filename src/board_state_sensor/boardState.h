@@ -54,13 +54,13 @@ private:
      *
      * @return     index of the contour with the largest area or the next largest area
      */
-    int getIthIndex(std::vector<std::vector<cv::Point> > contours, int ith);
+    int getIthIndex(ttt::Contours contours, int ith);
 
     std::string intToString( const int a );
 
-    static bool ascendingY(std::vector<cv::Point> i, std::vector<cv::Point> j);
+    static bool ascendingY(ttt::Contour i, ttt::Contour j);
 
-    static bool ascendingX(std::vector<cv::Point> i, std::vector<cv::Point> j);
+    static bool ascendingX(ttt::Contour i, ttt::Contour j);
 
     /**
      * Callback to get the state of the demo.

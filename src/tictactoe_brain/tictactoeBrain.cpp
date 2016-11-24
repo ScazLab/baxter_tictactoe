@@ -7,7 +7,7 @@ using namespace std;
 using namespace baxter_tictactoe;
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _nh(name), spinner(4),
+                               r(100), _nh(name), spinner(4), _is_board_detected(false),
                                leftArmCtrl("ttt_controller", "left"),
                                rightArmCtrl("ttt_controller", "right")
 {
@@ -23,7 +23,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     tttBrain_pub   = _nh.advertise<TTTBrainState>("baxter_tictactoe/ttt_brain_state", 1);
 
     setBrainState(TTTBrainState::INIT);
-    brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainStateCb, this, false);
+    brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainState, this, false);
 
     _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
     ROS_INFO("Using voice %s", _voice_type.c_str());
@@ -46,6 +46,11 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     }
     setBrainState(TTTBrainState::READY);
 
+    while(ros::ok())
+    {
+        if (_is_board_detected) break;
+    }
+
     qsrand(ros::Time::now().nsec);
     setStrategy(_strategy);
 
@@ -63,7 +68,7 @@ ttt::Board tictactoeBrain::getBoard()
     return res;
 }
 
-void tictactoeBrain::publishTTTBrainStateCb(const ros::TimerEvent&)
+void tictactoeBrain::publishTTTBrainState(const ros::TimerEvent&)
 {
     pthread_mutex_lock(&_mutex_brainstate);
     tttBrain_pub.publish(s);
@@ -75,6 +80,10 @@ void tictactoeBrain::setBrainState(int state)
     pthread_mutex_lock(&_mutex_brainstate);
     s.state = state;
     pthread_mutex_unlock(&_mutex_brainstate);
+    if (state == TTTBrainState::GAME_FINISHED)
+    {
+        _is_board_detected = false;
+    }
 }
 
 void tictactoeBrain::boardStateCb(const baxter_tictactoe::MsgBoard &msg)
@@ -83,6 +92,7 @@ void tictactoeBrain::boardStateCb(const baxter_tictactoe::MsgBoard &msg)
     pthread_mutex_lock(&_mutex_board);
     board.fromMsgBoard(msg);
     pthread_mutex_unlock(&_mutex_board);
+    _is_board_detected = true;
 }
 
 int tictactoeBrain::randomMove(bool& cheating)

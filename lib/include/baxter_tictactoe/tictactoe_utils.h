@@ -110,6 +110,11 @@ public:
     Cell& operator=(const Cell& _c);
 
     /**
+     * Resets only the cell state to empty
+     */
+    void resetState();
+
+    /**
      * Resets the cell to an empty, pristine state.
      */
     void resetCell();
@@ -184,11 +189,19 @@ public:
     cv::Mat maskImage(const cv::Mat &);
 
     /**
-     * Clears the board, by deleting any cell.
+     * Resets only the cells' states to empty
      */
-    void clear() { cells.clear(); };
+    bool resetCellStates();
 
-    bool resetState();
+    /**
+     * Resets the cells to an empty, pristine state.
+     */
+    bool resetCells();
+
+    /**
+     * Resets the board to an empty, pristine state. It deletes the cells.
+     */
+    bool resetBoard() { cells.clear(); };
 
     /**
      * Computes and updates the cells' states according to the amount of red and blue area.

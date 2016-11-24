@@ -128,11 +128,16 @@ Cell& Cell::operator=(const Cell& _c)
     return *this;
 }
 
-void Cell::resetCell()
+void Cell::resetState()
 {
     state     = "empty";
     area_red  =       0;
     area_blue =       0;
+}
+
+void Cell::resetCell()
+{
+    resetState();
     contour.clear();
 }
 
@@ -215,7 +220,7 @@ Board& Board::operator=(const Board& _b)
     // self-assignment check
     if (this != &_b)
     {
-        resetState();
+        resetBoard();
 
         for (int i = 0; i < _b.cells.size(); ++i)
         {
@@ -226,7 +231,19 @@ Board& Board::operator=(const Board& _b)
     return *this;
 }
 
-bool Board::resetState()
+bool Board::resetCellStates()
+{
+    if (getNumCells()==0) return false;
+
+    for (int i = 0; i < getNumCells(); ++i)
+    {
+        cells[i].resetState();
+    }
+
+    return true;
+}
+
+bool Board::resetCells()
 {
     if (getNumCells()==0) return false;
 
@@ -270,7 +287,7 @@ bool Board::isEmpty()
 
 void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
 {
-    resetState();
+    resetBoard();
 
     for (int i = 0; i < msgb.cells.size(); ++i)
     {

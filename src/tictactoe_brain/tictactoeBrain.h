@@ -21,11 +21,10 @@ private:
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     /* STATE OF THE BOARD */
-    ttt::Board board;
-
+    ttt::Board               board;
     ros::Subscriber boardState_sub; // subscriber to receive the state of the board
-
-    pthread_mutex_t _mutex_board;
+    pthread_mutex_t   _mutex_board;
+    bool        _is_board_detected;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system
@@ -34,8 +33,6 @@ private:
     ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
 
     pthread_mutex_t _mutex_brainstate;
-
-    void publishTTTBrainStateCb(const ros::TimerEvent&);  // callback to publish the state of the demo
 
     /* MISC */
     std::string    _robot_col;  // Color of the tokens the robot    is playing with.
@@ -55,6 +52,11 @@ private:
     ros::Rate r;
 
     bool has_cheated;
+
+    /**
+     * Timer callback to publish the state of the demo.
+     */
+    void publishTTTBrainState(const ros::TimerEvent&);
 
     /**
      * It handles the message published when the state of a cell has changed. The new TTT board state
