@@ -73,7 +73,7 @@ void BoardState::InternalThreadEntry()
         if (board_state == STATE_INIT)
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
-            if (brain_state == TTTBrainState::READY) ++board_state;
+            if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) ++board_state;
         }
         else if (board_state == STATE_CALIB && !ros::isShuttingDown())
         {
