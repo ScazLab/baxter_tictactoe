@@ -1,6 +1,6 @@
 #include "tictactoeBrain.h"
 
-#include <QFile> // this is for qrand (but we should use something else)
+#include <stdlib.h> // srand, rand
 
 using namespace ttt;
 using namespace std;
@@ -13,7 +13,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
 {
     setBrainState(TTTBrainState::INIT);
 
-    qsrand(ros::Time::now().nsec);
+    srand(ros::Time::now().nsec);
     setStrategy(_strategy);
 
     pthread_mutexattr_t _mutex_attr;
@@ -257,7 +257,7 @@ int tictactoeBrain::randomStrategyMove()
     int r;
     ttt::Board aux = getBoard();
     do {
-        r = qrand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
+        r = rand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
         ROS_DEBUG("Cell %d is in state %s ==? %s", r, aux.getCellState(r-1).c_str(),
                   MsgCell::EMPTY.c_str());
     }
