@@ -110,7 +110,7 @@ void tictactoeBrain::InternalThreadEntry()
         else if (getBrainState() == TTTBrainState::MATCH_FINISHED)
         {
             saySentence("Game over. It was my pleasure to win over you. Thanks for being so human.", 10);
-            ROS_INFO("Baxter %i - Human %i - n_ties %i", wins[0], wins[1], wins[2]);
+            ROS_INFO("Baxter Wins: %i\tHuman Wins: %i\tTies: %i", wins[0], wins[1], wins[2]);
             break;
         }
 
