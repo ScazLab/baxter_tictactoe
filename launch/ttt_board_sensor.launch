@@ -21,8 +21,9 @@
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
     <arg name="show" default="false" />
 
-    <!-- Minimum area size for which a cell is considered colored. It depends on the distance between camera and board. -->
-    <param name="baxter_tictactoe/area_threshold" type="int" value="150" />
+    <!-- Minimum area size for which a cell is considered colored. -->
+    <!-- It depends on the distance between camera and board, and camera resolution -->
+    <param name="baxter_tictactoe/area_threshold" type="int" value="650" />
 
     <node name="board_state_sensor" pkg="baxter_tictactoe" type="board_state_sensor" args="--show $(arg show)" respawn="false" output="screen" required="false">
         <remap from="/baxter_tictactoe/image" to="/usb_cam/image_raw"/>
