@@ -23,7 +23,6 @@ class tictactoeBrain : public ROSThread
 {
 private:
     std::string name;
-    bool    cheating;         // If the robot can cheat or not.
 
     int    num_games;
     int    curr_game;
@@ -103,28 +102,27 @@ private:
     /*
      * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell
      * occupied with an opponent's token.
-     * @return -1 if the robot cannot win in the next move,
-     * or an integer corresponding to the cell where to place the next token to win, even if there
-     * is an opponent's token in that cell. The cell ids are between 1 (first row, first column)
-     * and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      */
-    int cheatingMove();
+    bool cheatingMove(int &cell_id);
 
     /**
      * It determines if the opponent can win in the next move.
-     * @return -1 if the opponent cannot win in the next move, or an integer corresponding
-     * to the first found cell where an opponent's token can be placed to win the game.
-     * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      **/
-    int defensiveMove();
+    bool defensiveMove(int &cell_id);
 
     /**
      * It determines if the robot can win in the next move.
-     * @return -1 if the robot cannot win in the next move, or an integer corresponding
-     * to the first found cell where a robot's token can be placed to win the game. The
-     * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      **/
-    int victoryMove();
+    bool victoryMove(int &cell_id);
 
 protected:
 
@@ -168,7 +166,7 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool threeInARow(const std::string& color, ttt::Board &b);
+    bool threeInARow(const std::string& col, ttt::Board &b);
 
     /**
      * This function returns the winner of the game.
@@ -215,10 +213,7 @@ public:
     std::string getOpponentColor()     { return _opponent_col; };
     int         getBrainState();
 
-    bool getCheating() { return cheating; };
-
     /* SETTERS */
-    void setCheating(bool _c) { cheating=_c; };
     void setStrategy(std::string strategy);
     void setBrainState(int state);
 };
