@@ -484,7 +484,7 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
 }
 
 void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point> board_corners,
-                        vector<cv::Point> c, vector<cv::Point> * cell_to_corner)
+                            vector<cv::Point> c, vector<cv::Point> * cell_to_corner)
 {
     (*cell_to_corner).resize(4);
 
@@ -512,7 +512,7 @@ void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point
 
 bool TTTController::offsetsReachable()
 {
-    for(int i = 0; i < 9; i++)
+    for(int i = 0; i < NUMBER_OF_CELLS; i++)
     {
         double px = getPos().x + _offsets[i].x;
         double py = getPos().y + _offsets[i].y;
@@ -658,7 +658,8 @@ bool TTTController::scanBoardImpl()
 bool TTTController::pickUpTokenImpl()
 {
     ROS_INFO("Picking up token..");
-    // wait for IR sensor callback
+    setTracIK(true);
+
     while(RobotInterface::ok())
     {
         if(is_ir_ok()) break;
@@ -676,6 +677,8 @@ bool TTTController::pickUpTokenImpl()
     gripToken();
     hoverAboveTokens(Z_LOW);
 
+    setTracIK(false);
+
     return true;
 }
 
@@ -684,7 +687,7 @@ bool TTTController::putDownTokenImpl()
     ROS_INFO("Putting down token..");
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveCell()) return false;
-    ros::Duration(0.2).sleep();
+    ros::Duration(0.1).sleep();
     if (!releaseObject()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
     hoverAboveTokens(Z_HIGH);

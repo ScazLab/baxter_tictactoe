@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <sound_play/sound_play.h>
 
+#include <robot_interface/ros_thread.h>
+
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>
 
@@ -17,10 +19,16 @@
 namespace ttt
 {
 
-class tictactoeBrain
+class tictactoeBrain : public ROSThread
 {
 private:
     std::string name;
+
+    int    num_games;
+    int    curr_game;
+
+    std::vector<int> cheating_games; // vector that stores which of the games will be a cheating one.
+    std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
 
     ros::NodeHandle _nh;        // ROS node handle
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
@@ -36,8 +44,7 @@ private:
     ros::Timer          brainstate_timer; // timer to publish the state of the system at a specific rate
 
     ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
-
-    pthread_mutex_t _mutex_brain;
+    pthread_mutex_t _mutex_brain;   // mutex to protect the state of the system
 
     /* MISC */
     std::string    _robot_col;  // Color of the tokens the robot    is playing with.
@@ -46,10 +53,8 @@ private:
     sound_play::SoundClient _voice_synthesizer;
     std::string                    _voice_type; // Type of voice.
 
-    bool cheating;         // It determines if the robot can cheat or not.
-
     // Pointer to the function that chooses the next move
-    int (tictactoeBrain::*_choose_next_move)(bool& cheating);
+    int (tictactoeBrain::*_choose_next_move)();
 
     TTTController  leftArmCtrl;
     TTTController rightArmCtrl;
@@ -64,74 +69,64 @@ private:
     void publishTTTBrainState(const ros::TimerEvent&);
 
     /**
-     * It handles the message published when the state of a cell has changed. The new TTT board state
-     * is stored in the thread-safe private attribute called boardState.
-     * \param msg the message with the new TTT state, i.e. the states of each of the cells
+     * ROS callback to handle the message published when the state of a cell has changed.
+     *
+     * \param msg the message with the new the state of each of the cells
      **/
     void boardStateCb(const baxter_tictactoe::MsgBoard &msg);
 
     /**
      * It determines randomly the next empty cell to place a token.
-     * \param cheating It indicates if cheating has happened.
-     * @return an integer representing the cell where to place the next token
+     *
+     * @return                the cell where to place the next token
      **/
-    int randomMove(bool& cheating);
+    int randomStrategyMove();
 
     /**
-     * It determines the next cell to place a token. It will try to win in this turn, even if it has to cheat
-     * placing a token on top of an opponent's token. If the robot can win without breaking the rules, it will
-     * do it. Otherwise, if it can win cheating, it will do it. It will block opponent's victory. If it cannot
-     * win anyway, it will randomly choose a cell.
-     * \param cheating It indicates if cheating has happened.
-     * @return an integer representing the cell where to place the next token
+     * It determines the next cell to win by cheating (by placing a token on top of an opponent's token).
+     * If the robot cannot win by explicitly cheating, it will try to win without breaking the rules.
+     * Otherwise, it will try block opponent's victory. If this is not needed, it will randomly choose a cell.
+     *
+     * @return                the cell where to place the next token
      **/
-    int cheatingToWinMove(bool& cheating);
+    int cheatingStrategyMove();
 
     /**
-     * It determines the next cell to place a token. It tries to win in its turn but it does no cheat.
-     * If the robot can win, it will do it. Otherwise, if it cannot win in this turn anyway, it will
+     * It determines the next cell to win without cheating. If the robot cannot win, it will
      * try to block the opponent's victory. If this is not needed, it will randomly choose a cell.
-     * \param cheating It indicates if cheating has happened.
-     * @return an integer representing the cell where to place the next token
+     *
+     * @return                the cell where to place the next token
      **/
-    int winningDefensiveMove(bool& cheating);
-
-    /*
-     * It determines the next cell to place a token. It always will try to win in this turn, even if
-     * there is an opponent's token already in that cell. If the robot can win without breaking the
-     * rules, it will do it. Otherwise, if it can win cheating, it will do it. If it cannot win in
-     * this turn anyway, it will try to block the opponent's victory. If this is not needed it will
-     * randomly choose a cell.
-     * @param cheating It indicates if cheating has happened.
-     * @return an integer representing the cell where to place the next token
-     **/
-    int smartCheatingMove(bool& cheating);
+    int smartStrategyMove();
 
     /*
      * It determines if the robot can win in this turn cheating, i.e. placing a token in a cell
      * occupied with an opponent's token.
-     * @return -1 if the robot cannot win in the next move,
-     * or an integer corresponding to the cell where to place the next token to win, even if there
-     * is an opponent's token in that cell. The cell ids are between 1 (first row, first column)
-     * and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      */
-    int cheatingMove();
+    bool cheatingMove(int &cell_id);
 
     /**
      * It determines if the opponent can win in the next move.
-     * @return -1 if the opponent cannot win in the next move, or an integer corresponding
-     * to the first found cell where an opponent's token can be placed to win the game.
-     * The cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      **/
-    int defensiveMove();
+    bool defensiveMove(int &cell_id);
 
     /**
      * It determines if the robot can win in the next move.
-     * @return -1 if the robot cannot win in the next move, or an integer corresponding
-     * to the first found cell where a robot's token can be placed to win the game. The
-     * cell ids are between 1 (first row, first column) and NUMBER_OF_CELLS (last row, last column).
+     *
+     * @param       id of the cell to move to if the action was successful (-1 if not)
+     * @return      true/false if success/failure
      **/
-    int victoryMove();
+    bool victoryMove(int &cell_id);
+
+protected:
+
+    void InternalThreadEntry();
 
 public:
 
@@ -145,7 +140,7 @@ public:
      * @return The return value is between 1 (first row, first column)
      * and NUMBER_OF_CELLS (last row, last column).
      **/
-    int getNextMove(bool& cheating);
+    int getNextMove();
 
     /**
      * This function counts the total number of tokens on the board.
@@ -171,7 +166,7 @@ public:
      *
      * @return True in case of a 3 token row is found, false otherwise.
      **/
-    bool threeInARow(const std::string& color, ttt::Board &b);
+    bool threeInARow(const std::string& col, ttt::Board &b);
 
     /**
      * This function returns the winner of the game.
@@ -209,20 +204,16 @@ public:
 
     /**
      * Plays one game
-     * @param  cheating if to cheat or not.
-     * @return          The game results (i.e. the winner, if any)
      */
-    int playOneGame(bool &cheating);
+    void playOneGame();
 
     /* GETTERS */
     ttt::Board  getBoard();
     std::string getRobotColor()        { return    _robot_col; };
     std::string getOpponentColor()     { return _opponent_col; };
-
-    bool getCheating() { return cheating; };
+    int         getBrainState();
 
     /* SETTERS */
-    void setCheating(bool _c) { cheating=_c; };
     void setStrategy(std::string strategy);
     void setBrainState(int state);
 };
