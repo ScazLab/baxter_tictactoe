@@ -81,7 +81,7 @@ bool TTTController::gripToken()
 
         if (computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
         {
-            goToPoseNoCheck(joint_angles);
+            goToJointPoseNoCheck(joint_angles);
         }
 
         if(pz < -0.2)
@@ -248,7 +248,7 @@ void TTTController::setDepth(float &dist)
 
         vector<double> joint_angles;
         computeIK(px,py,pz,ox,oy,oz,ow, joint_angles);
-        goToPoseNoCheck(joint_angles);
+        goToJointPoseNoCheck(joint_angles);
 
         if(hasCollided("loose")) break;
         r.sleep();
