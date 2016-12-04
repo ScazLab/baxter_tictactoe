@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include <sound_play/sound_play.h>
 
-#include <robot_interface/ros_thread.h>
+#include <robot_utils/ros_thread.h>
 
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>

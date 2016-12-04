@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 
-#include "robot_interface/ros_thread_image.h"
+#include "robot_utils/ros_thread_image.h"
 #include "baxter_tictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/TTTBrainState.h"
 
