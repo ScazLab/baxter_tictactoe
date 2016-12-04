@@ -16,8 +16,8 @@ namespace ttt
 #define ACTION_PICKUP       "pick_up"
 #define ACTION_PUTDOWN      "put_down"
 
-#undef  PICK_UP_SPEED
-#define PICK_UP_SPEED  0.080    // [m/s]
+#undef  ARM_SPEED
+#define ARM_SPEED  0.080    // [m/s]
 
 #define NUMBER_OF_CELLS 9
 
