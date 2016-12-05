@@ -53,7 +53,6 @@
   <depend>opencv2</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
-  <depend>image_vi</depend>
   <depend>libqt4-dev</depend>
 
   <exec_depend>usb_cam</exec_depend>
