@@ -45,11 +45,10 @@
 # Use ubuntu trusty (14.04) with sudo privileges.
 dist: trusty
 sudo: required
+language: cpp
 compiler:
   - clang
   - gcc
-language:
-  - generic
 cache:
   - apt
 
