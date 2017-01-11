@@ -22,7 +22,7 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
 }
 
 BoardState::BoardState(string name, bool _show) :
-                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT), r(30) // 30Hz
+                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT)
 {
     board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
     brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,

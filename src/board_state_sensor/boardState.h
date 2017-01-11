@@ -38,8 +38,6 @@ private:
 
     bool doShow;
 
-    ros::Rate r;
-
     int board_state; // State of the board
     int brain_state; // state of the demo
 
