@@ -7,9 +7,11 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "robot_interface/robot_interface.h"
-#include "robot_interface/arm_ctrl.h"
-#include "robot_interface/gripper.h"
+#include <robot_perception/hsv_detection.h>
+
+#include <robot_interface/robot_interface.h>
+#include <robot_interface/arm_ctrl.h>
+#include <robot_interface/gripper.h>
 
 #include "tictactoe_utils.h"
 
@@ -25,8 +27,8 @@ private:
 
     ros::Rate r;
 
-    ttt::hsvColorRange  hsv_red;
-    ttt::hsvColorRange hsv_blue;
+    hsvColorRange  hsv_red;
+    hsvColorRange hsv_blue;
 
     bool createCVWindows();
 

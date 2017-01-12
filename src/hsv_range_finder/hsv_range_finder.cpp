@@ -8,48 +8,44 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "baxter_tictactoe/tictactoe_utils.h"
-
-
-namespace ttt
-{
+#include <robot_perception/hsv_detection.h>
 
 class HsvRangeFinder
 {
 private:
-
     ros::NodeHandle node_handle;
+
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber image_subscriber;
 
     hsvColorRange hsv;
 
-    std::string window;
+    std::string window_name;
 
 public:
-    HsvRangeFinder() : image_transport(node_handle), window("HSV Range Finder"),
-                       hsv(colorRange(60, 130),colorRange(90,256),colorRange(10,256))
+    HsvRangeFinder(std::string _name) : node_handle(_name), image_transport(node_handle), window_name(_name),
+                                        hsv(colorRange(60, 130), colorRange(90,256), colorRange(10,256))
     {
         // left hand camera
-        image_subscriber = image_transport.subscribe("/cameras/left_hand_camera/image", 1,
+        image_subscriber = image_transport.subscribe("/image_in", 1,
                             &HsvRangeFinder::imageCallback, this);
         // usb camera
         // image_subscriber = image_transport.subscribe("image_in", 1,
         //                     &HsvRangeFinder::imageCallback, this);
 
-        cv::namedWindow(window);
+        cv::namedWindow(window_name);
 
-        cv::createTrackbar("LowerH", window, &hsv.H.min, 180, NULL);
-        cv::createTrackbar("UpperH", window, &hsv.H.max, 180, NULL);
-        cv::createTrackbar("LowerS", window, &hsv.S.min, 256, NULL);
-        cv::createTrackbar("UpperS", window, &hsv.S.max, 256, NULL);
-        cv::createTrackbar("LowerV", window, &hsv.V.min, 256, NULL);
-        cv::createTrackbar("UpperV", window, &hsv.V.max, 256, NULL);
+        cv::createTrackbar("LowerH", window_name, &hsv.H.min, 180, NULL);
+        cv::createTrackbar("UpperH", window_name, &hsv.H.max, 180, NULL);
+        cv::createTrackbar("LowerS", window_name, &hsv.S.min, 256, NULL);
+        cv::createTrackbar("UpperS", window_name, &hsv.S.max, 256, NULL);
+        cv::createTrackbar("LowerV", window_name, &hsv.V.min, 256, NULL);
+        cv::createTrackbar("UpperV", window_name, &hsv.V.max, 256, NULL);
     }
 
     ~HsvRangeFinder()
     {
-        cv::destroyWindow(window);
+        cv::destroyWindow(window_name);
     }
 
     void imageCallback(const sensor_msgs::ImageConstPtr& msg)
@@ -69,9 +65,9 @@ public:
         cv::Mat img_hsv(cv_ptr->image.rows, cv_ptr->image.cols,CV_8UC3);
         cv::cvtColor(cv_ptr->image, img_hsv, CV_BGR2HSV);
 
-        cv::Mat img_thresh = ttt::hsvThreshold(img_hsv, hsv);
+        cv::Mat img_thresh = hsvThreshold(img_hsv, hsv);
 
-        cv::imshow(window, img_thresh);
+        cv::imshow(window_name, img_thresh);
 
         int c = cv::waitKey(3);
         if( (c & 255) == 27 ) // ESC key pressed
@@ -86,12 +82,10 @@ public:
     }
 };
 
-}
-
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "hsv_range_finder");
-    ttt::HsvRangeFinder cd;
+    HsvRangeFinder hsv_range_finder("hsv_range_finder");
     ros::spin();
     return 0;
 }

@@ -5,8 +5,8 @@
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
   <node name="hsv_range_finder" pkg="baxter_tictactoe" type="hsv_range_finder" respawn="false" output="screen">
-    <remap from="/image_in" to="/usb_cam/image_raw"/>        
+    <remap from="/image_in" to="/usb_cam/image_raw"/>
   </node>
- 
+
 </launch>
 

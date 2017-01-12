@@ -21,11 +21,11 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
     ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
-    hsv_red=ttt::hsvColorRange(hsv_red_symbols);
+    hsv_red=hsvColorRange(hsv_red_symbols);
 
     XmlRpc::XmlRpcValue hsv_blue_symbols;
     ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
-    hsv_blue=ttt::hsvColorRange(hsv_blue_symbols);
+    hsv_blue=hsvColorRange(hsv_blue_symbols);
 
     setHomeConfiguration();
 

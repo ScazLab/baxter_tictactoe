@@ -10,7 +10,10 @@
 #include <string>
 #include <iostream>
 
-#include "robot_utils/ros_thread_image.h"
+#include <robot_perception/hsv_detection.h>
+
+#include <robot_utils/ros_thread_image.h>
+
 #include "baxter_tictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/TTTBrainState.h"
 
@@ -33,8 +36,8 @@ private:
 
     double area_threshold;
 
-    ttt::hsvColorRange hsv_red;
-    ttt::hsvColorRange hsv_blue;
+    hsvColorRange  hsv_red;
+    hsvColorRange hsv_blue;
 
     bool doShow;
 
