@@ -29,9 +29,6 @@ public:
         // left hand camera
         image_subscriber = image_transport.subscribe("/image_in", 1,
                             &HsvRangeFinder::imageCallback, this);
-        // usb camera
-        // image_subscriber = image_transport.subscribe("image_in", 1,
-        //                     &HsvRangeFinder::imageCallback, this);
 
         cv::namedWindow(window_name);
 
@@ -54,7 +51,7 @@ public:
         cv_bridge::CvImageConstPtr cv_ptr;
         try
         {
-            cv_ptr = cv_bridge::toCvShare(msg, enc::BGR8);
+            cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
         }
         catch (cv_bridge::Exception& e)
         {
