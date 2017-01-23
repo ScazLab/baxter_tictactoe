@@ -587,8 +587,8 @@ bool TTTController::startAction(string a, int o)
 {
     baxter_collaboration::DoAction::Request  req;
     baxter_collaboration::DoAction::Response res;
-    req.action = a;
-    req.object = o;
+    req.action     = a;
+    req.objects[0] = o;
 
     serviceCb(req,res);
     return res.success;
