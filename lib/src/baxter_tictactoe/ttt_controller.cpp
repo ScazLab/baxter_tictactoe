@@ -85,7 +85,7 @@ bool TTTController::gripToken()
             return false;
         }
 
-        if(hasCollided("loose")) break;
+        if(hasCollidedIR("loose")) break;
         r.sleep();
     }
 
@@ -243,7 +243,7 @@ void TTTController::setDepth(float &dist)
 
         goToPoseNoCheck(px,py,pz,ox,oy,oz,ow);
 
-        if(hasCollided("loose")) break;
+        if(hasCollidedIR("loose")) break;
         r.sleep();
     }
 
