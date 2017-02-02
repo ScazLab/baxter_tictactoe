@@ -10,15 +10,15 @@ set(COMPILE_TESTS  false)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+             baxter_collaboration_lib
+             baxter_collaboration_msgs
+             baxter_core_msgs
+             cv_bridge
+             image_transport
              message_generation
-             genmsg
              rosconsole
              sound_play
-             baxter_core_msgs
-    	     std_msgs
-    	     cv_bridge
-    	     image_transport
-             baxter_collaboration
+             std_msgs
 )
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
