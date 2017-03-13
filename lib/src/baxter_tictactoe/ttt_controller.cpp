@@ -468,17 +468,26 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
     // drawing a circle with color denoted with the RGB combination of Scalar at the matrix output
     //ASK FOR CLARIFICATION: Does Mat& img mean that circle takes the actual matrix data as a parameter isntead of a pointer to the matrix
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
+
+    //draws a text string? ASK: why is this necessary?
     cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
     for(int i = contours.size(); i >= 3; i -= 3)
     {
+        // we are sorting in clusters of three starting from the back, why is this necessary?
         std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);
     }
 
+    //where is offsets initialized?
     _offsets.resize(9);
+
+    //does the resize function resize every element of the vector?
     (*centroids).resize(9);
     for(int i = contours.size() - 1; i >= 0; i--)
     {
+        // why exactly is moments used?
+
+        //TO DO: figure out how exactly moments in physics differ from moments in computer vision
         double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
         cv::Point centroid(x,y);
@@ -489,8 +498,11 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
         // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
         line(*output, centroid, center, cv::Scalar(180,40,40), 1);
 
+        //understand why we are currently taking the difference between centroid and the center of a point
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
+
+        //where did this 0.065 come from?
         _offsets[i].z = dist - 0.065;
     }
 }
