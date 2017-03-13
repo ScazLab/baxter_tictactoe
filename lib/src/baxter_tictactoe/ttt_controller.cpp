@@ -258,6 +258,7 @@ void TTTController::processImage(float dist)
     while(RobotInterface::ok())
     {
         ttt::Contours contours;
+        // vectors of 2 tuples
         vector<cv::Point> centroids, board_corners, cell_to_corner;
 
         Mat binary, board;
