@@ -263,6 +263,20 @@ void TTTController::processImage(float dist)
 
         // Mat is a class with two data parts: matrix header containing size, storage address; a pointer to the
         //matrix containing the pixel values , dimensionality depending on storage method
+
+        /* The following only copy headers (pointers to the matrix), not the actual data itself
+        Mat B(A); --> constructor that copies
+        C = A; -->assignment
+
+        Creating intersections:
+        Mat D (A, Rect(10, 10, 20, 20));
+        Mat E = A(Range::all(), Range(1,3));
+
+        the below copy the actual data instead of by reference:
+        Mat F = A.clone();
+        Mat G;
+        A.copyTo(G);
+        */
         Mat binary, board;
 
         int board_area;
@@ -451,6 +465,8 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
 {
     cv::Point center(_img_size.width / 2, _img_size.height / 2);
 
+    // drawing a circle with color denoted with the RGB combination of Scalar at the matrix output
+    //ASK FOR CLARIFICATION: Does Mat& img mean that circle takes the actual matrix data as a parameter isntead of a pointer to the matrix
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
     cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
