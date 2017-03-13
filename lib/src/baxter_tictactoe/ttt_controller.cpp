@@ -261,6 +261,8 @@ void TTTController::processImage(float dist)
         // vectors of 2 tuples
         vector<cv::Point> centroids, board_corners, cell_to_corner;
 
+        // Mat is a class with two data parts: matrix header containing size, storage address; a pointer to the
+        //matrix containing the pixel values , dimensionality depending on storage method
         Mat binary, board;
 
         int board_area;
