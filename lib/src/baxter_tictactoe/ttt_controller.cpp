@@ -144,43 +144,56 @@ bool TTTController::boardPossFromParam(XmlRpc::XmlRpcValue _params)
 /**************************************************************************/
 bool TTTController::gripToken()
 {
-    createCVWindows();
-    cv::Point offset(0,0);
-    // check if token is present before starting movement loop
-    // (prevent gripper from colliding with play surface)
-    while(RobotInterface::ok())
+    if (_legacy_code == true)
     {
-        if(computeTokenOffset(offset)) break;
+        createCVWindows();
+        cv::Point offset(0,0);
+        // check if token is present before starting movement loop
+        // (prevent gripper from colliding with play surface)
+        while(RobotInterface::ok())
+        {
+            if(computeTokenOffset(offset)) break;
 
-        ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
-        r.sleep();
+            ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
+            r.sleep();
+        }
+
+        offset = cv::Point(0,0);
     }
 
-    offset = cv::Point(0,0);
     ros::Time start_time = ros::Time::now();
-    cv::Point2d prev_offset(0.540, 0.540);
-
     double start_z = getPos().z;
 
     while(RobotInterface::ok())
     {
-        computeTokenOffset(offset);
+        double px = 0.0, py = 0.0, pz = 0.0;
 
-        // move incrementally towards token
-        double px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
-        double py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
-        double pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
+        if (_legacy_code == true)
+        {
+            cv::Point offset(0,0);
+            computeTokenOffset(offset);
 
-        prev_offset.x = px;
-        prev_offset.y = py;
+            // move incrementally towards token
+            px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
+            py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
+            pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
+        }
+        else
+        {
+            px = _tiles_pile_pos.x;
+            py = _tiles_pile_pos.y;
+            pz = start_z - ARM_SPEED * (ros::Time::now() - start_time).toSec();
+        }
 
         goToPoseNoCheck(px,py,pz,VERTICAL_ORI_L);
 
         if(pz < -0.3)
         {
             ROS_WARN("I went too low! Exiting.");
-            destroyCVWindows();
+
+            if (_legacy_code == true) { destroyCVWindows(); }
             gripObject();
+
             return false;
         }
 
@@ -188,7 +201,7 @@ bool TTTController::gripToken()
         r.sleep();
     }
 
-    destroyCVWindows();
+    if (_legacy_code == true) { destroyCVWindows(); }
     gripObject();
     return true;
 }
@@ -706,19 +719,40 @@ bool TTTController::hoverAboveBoard()
 bool TTTController::hoverAboveCenterOfBoard()
 {
     ROS_INFO("Hovering above center of board..");
-    return goToPose(HOVER_BOARD_X + _offsets[4].x,
-                    HOVER_BOARD_Y + _offsets[4].y,
-                    HOVER_BOARD_Z - _offsets[4].z + 0.3,    // TODO this minus sign is a bug
-                    VERTICAL_ORI_L);
+
+    if (_legacy_code == true)
+    {
+        return goToPose(HOVER_BOARD_X + _offsets[4].x,
+                        HOVER_BOARD_Y + _offsets[4].y,
+                        HOVER_BOARD_Z - _offsets[4].z + 0.3,    // TODO this minus sign is a bug
+                        VERTICAL_ORI_L);
+    }
+    else
+    {
+        return goToPose(_board_centers_poss[4].x,
+                        _board_centers_poss[4].y,
+                        _board_centers_poss[4].z + 0.3,
+                        VERTICAL_ORI_L);
+    }
 }
 
 bool TTTController::hoverAboveCell()
 {
     ROS_INFO("Hovering above cell..");
-    return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
-                    HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
-                    HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
-                    VERTICAL_ORI_L);
+    if (_legacy_code == true)
+    {
+        return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
+                        HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
+                        HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
+                        VERTICAL_ORI_L);
+    }
+    else
+    {
+        return goToPose(_board_centers_poss[getObjectID()-1].x,
+                        _board_centers_poss[getObjectID()-1].y,
+                        _board_centers_poss[getObjectID()-1].z + 0.05,
+                        VERTICAL_ORI_L);
+    }
 }
 
 bool TTTController::hoverAboveTokens(double height)
@@ -728,6 +762,11 @@ bool TTTController::hoverAboveTokens(double height)
 
 bool TTTController::scanBoardImpl()
 {
+    if (_legacy_code == true)
+    {
+        return true;
+    }
+
     ROS_INFO("Scanning depth..");
     if (!hoverAboveBoard()) return false;
 
