@@ -62,7 +62,7 @@ void BoardState::InternalThreadEntry()
     {
         cv::Mat img_in;
         cv::Mat img_out;
-        if (!_img_empty)
+        if (not _img_empty)
         {
             pthread_mutex_lock(&_mutex_img);
             img_in=_curr_img;
@@ -75,7 +75,7 @@ void BoardState::InternalThreadEntry()
             ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
             if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) ++board_state;
         }
-        else if (board_state == STATE_CALIB && !ros::isShuttingDown())
+        else if (board_state == STATE_CALIB && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (!_img_empty)
@@ -168,7 +168,7 @@ void BoardState::InternalThreadEntry()
                 }
             }
         }
-        else if (board_state == STATE_READY && !ros::isShuttingDown())
+        else if (board_state == STATE_READY && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %i", board_state, board.getNumCells());
             if (!_img_empty)
@@ -221,8 +221,8 @@ void BoardState::InternalThreadEntry()
                     for (size_t i = 0; i < board.getNumCells(); i++)
                     {
                         cv::Scalar col = col_empty;
-                        if (board.getCellState(i) ==  COL_RED) col =  col_red;
-                        if (board.getCellState(i) == COL_BLUE) col = col_blue;
+                        if (board.getCellState(i) ==  COL_RED) { col =  col_red; }
+                        if (board.getCellState(i) == COL_BLUE) { col = col_blue; }
 
                         ttt::Contours contours;
                         contours.push_back(board.getCellContour(i));

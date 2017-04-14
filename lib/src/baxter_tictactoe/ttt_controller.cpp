@@ -746,9 +746,9 @@ bool TTTController::hoverAboveCell()
     ROS_INFO("Hovering above cell..");
     if (_legacy_code == true)
     {
-        return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
-                        HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
-                        HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
+        return goToPose(HOVER_BOARD_X + _offsets[getObjectID()-1].x,
+                        HOVER_BOARD_Y + _offsets[getObjectID()-1].y,
+                        HOVER_BOARD_Z - _offsets[getObjectID()-1].z + 0.05,
                         VERTICAL_ORI_L);
     }
     else
