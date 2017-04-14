@@ -12,7 +12,7 @@ using namespace cv;
 
 TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
                              ArmCtrl(name, limb, no_robot, use_forces, false),
-                             r(100), _img_trp(_n), _is_img_empty(true)
+                             r(100), _img_trp(_n), _legacy_code(false), _is_img_empty(true)
 {
     pthread_mutexattr_t _mutex_attr;
     pthread_mutexattr_init(&_mutex_attr);
@@ -33,9 +33,9 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
         ROS_ASSERT_MSG(_n.getParam("tile_pile_position",tiles_pile_pos), "No 3D position of the pile of tiles!");
         tilesPilePosFromParam(tiles_pile_pos);
 
-        XmlRpc::XmlRpcValue board_coordinates;
-        ROS_ASSERT_MSG(_n.getParam("board_coordinates",board_coordinates), "No 3D position of the board!");
-        boardCoordsFromParam(board_coordinates);
+        XmlRpc::XmlRpcValue board_corner_poss;
+        ROS_ASSERT_MSG(_n.getParam("board_corner_poss",board_corner_poss), "No 3D position of the board!");
+        boardPossFromParam(board_corner_poss);
 
         setHomeConfiguration();
 
@@ -69,10 +69,10 @@ bool TTTController::tilesPilePosFromParam(XmlRpc::XmlRpcValue _params)
     return true;
 }
 
-bool TTTController::boardCoordsFromParam(XmlRpc::XmlRpcValue _params)
+bool TTTController::boardPossFromParam(XmlRpc::XmlRpcValue _params)
 {
     ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeStruct);
-    _board_coords.clear();
+    _board_corners_poss.clear();
 
     for (XmlRpc::XmlRpcValue::iterator i=_params.begin(); i!=_params.end(); ++i)
     {
@@ -91,20 +91,50 @@ bool TTTController::boardCoordsFromParam(XmlRpc::XmlRpcValue _params)
             p.y = i->second[1];
             p.z = i->second[2];
 
-            _board_coords.push_back(p);
+            _board_corners_poss.push_back(p);
         }
     }
 
-    ROS_ASSERT(_board_coords.size() == 4);
+    ROS_ASSERT(_board_corners_poss.size() == 4);
 
     std::string coords_str = "";
-    for (size_t i = 0; i < _board_coords.size(); ++i)
+    for (size_t i = 0; i < _board_corners_poss.size(); ++i)
     {
-        coords_str = coords_str + "[ " + toString(_board_coords[i].x) + " " +
-                                         toString(_board_coords[i].y) + " " +
-                                         toString(_board_coords[i].z) + "] ";
+        coords_str = coords_str + "[ " + toString(_board_corners_poss[i].x) + " " +
+                                         toString(_board_corners_poss[i].y) + " " +
+                                         toString(_board_corners_poss[i].z) + "] ";
     }
-    ROS_INFO("[%s] Board coordinates [BL BR TL TR]: %s", getLimb().c_str(), coords_str.c_str());
+    ROS_INFO("[%s] Board corners [BL BR TL TR]: %s", getLimb().c_str(), coords_str.c_str());
+
+    // Now that we have the corners, let's compute all the coordinates
+    _board_centers_poss.clear();
+    _board_centers_poss.resize(9);
+
+    _board_centers_poss[0] =                              _board_corners_poss[2];  // TL
+    _board_centers_poss[1] = (_board_corners_poss[2] + _board_corners_poss[3])/2;
+    _board_centers_poss[2] =                              _board_corners_poss[3];  // TR
+    _board_centers_poss[3] = (_board_corners_poss[0] + _board_corners_poss[2])/2;
+    _board_centers_poss[4] = (_board_corners_poss[0] + _board_corners_poss[1] +
+                              _board_corners_poss[2] + _board_corners_poss[3])/4;
+    _board_centers_poss[5] = (_board_corners_poss[1] + _board_corners_poss[3])/2;
+    _board_centers_poss[6] =                              _board_corners_poss[0];  // BL
+    _board_centers_poss[7] = (_board_corners_poss[0] + _board_corners_poss[1])/2;
+    _board_centers_poss[8] =                              _board_corners_poss[1];  // BR
+
+    ROS_INFO("[%s] Computed board centers [TL TR BL BR]:", getLimb().c_str());
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        std::string coords_str = "";
+        for (size_t j = 0; j < 3; ++j)
+        {
+            coords_str = coords_str + "[ " + toString(_board_centers_poss[i*3 + j].x) + " " +
+                                             toString(_board_centers_poss[i*3 + j].y) + " " +
+                                             toString(_board_centers_poss[i*3 + j].z) + "] ";
+        }
+
+        ROS_INFO("[%s] %s", getLimb().c_str(), coords_str.c_str());
+    }
 
     return true;
 }

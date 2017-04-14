@@ -27,6 +27,8 @@ private:
     image_transport::ImageTransport _img_trp;
     image_transport::Subscriber     _img_sub;
 
+    bool _legacy_code;   // Flag to enable the legacy code , who does not work
+
     hsvColorRange  hsv_red;
     hsvColorRange hsv_blue;
 
@@ -34,9 +36,14 @@ private:
 
     std::vector<geometry_msgs::Point>       _offsets;   // Legacy, it does not work
 
-    std::vector<geometry_msgs::Point>    _board_poss;
-    std::vector<geometry_msgs::Point>  _board_coords;
-    std::vector<geometry_msgs::Point> _board_offsets;
+    std::vector<geometry_msgs::Point> _board_centers_poss;
+    std::vector<geometry_msgs::Point> _board_corners_poss;
+
+    cv::Mat  _curr_img;
+    cv::Size _img_size;
+    bool _is_img_empty;
+
+    pthread_mutex_t _mutex_img;
 
     bool createCVWindows();
 
@@ -44,7 +51,7 @@ private:
 
     bool tilesPilePosFromParam(XmlRpc::XmlRpcValue _params);
 
-    bool  boardCoordsFromParam(XmlRpc::XmlRpcValue _params);
+    bool    boardPossFromParam(XmlRpc::XmlRpcValue _params);
 
     /**
      * Sets the joint-level configuration for the home position
@@ -201,12 +208,6 @@ private:
          */
         cv::Mat isolateToken(cv::Mat pool);
 
-protected:
-    cv::Mat  _curr_img;
-    cv::Size _img_size;
-    bool _is_img_empty;
-
-    pthread_mutex_t _mutex_img;
 
     bool pickUpTokenImpl();
 
