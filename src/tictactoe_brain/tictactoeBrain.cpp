@@ -79,11 +79,11 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::CALIB)
         {
-            if (leftArmCtrl.getState() == DONE) setBrainState(TTTBrainState::READY);
+            if (leftArmCtrl.getState() == DONE) { setBrainState(TTTBrainState::READY); }
         }
         else if (getBrainState() == TTTBrainState::READY)
         {
-            if (_is_board_detected) setBrainState(TTTBrainState::MATCH_STARTED);
+            if (_is_board_detected) { setBrainState(TTTBrainState::MATCH_STARTED); }
         }
         else if (getBrainState() == TTTBrainState::MATCH_STARTED)
         {
@@ -94,7 +94,7 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::GAME_STARTED)
         {
-            if (isBoardEmpty())     setBrainState(TTTBrainState::GAME_RUNNING);
+            if (isBoardEmpty())     { setBrainState(TTTBrainState::GAME_RUNNING); }
         }
         else if (getBrainState() == TTTBrainState::GAME_RUNNING)
         {
@@ -102,8 +102,8 @@ void tictactoeBrain::InternalThreadEntry()
 
             playOneGame();
 
-            if (curr_game == num_games) setBrainState(baxter_tictactoe::TTTBrainState::MATCH_FINISHED);
-            else                        setBrainState(baxter_tictactoe::TTTBrainState::GAME_STARTED);
+            if (curr_game == num_games) { setBrainState(baxter_tictactoe::TTTBrainState::MATCH_FINISHED); }
+            else                        { setBrainState(baxter_tictactoe::TTTBrainState::GAME_STARTED); }
         }
         else if (getBrainState() == TTTBrainState::MATCH_FINISHED)
         {
@@ -142,7 +142,7 @@ void tictactoeBrain::playOneGame()
     std::cin.get();
     size_t n_robot_tokens=0;
 
-    while (winner == WIN_NONE && !isBoardFull() && !ros::isShuttingDown())
+    while (winner == WIN_NONE && not isBoardFull() && not ros::isShuttingDown())
     {
         if (robot_turn) // Robot's turn
         {
@@ -190,7 +190,7 @@ void tictactoeBrain::playOneGame()
     // Let's increment the winners' count
     wins[winner-1] = wins[winner-1] + 1;
 
-    if (has_to_cheat && !has_cheated)
+    if (has_to_cheat && not has_cheated)
     {
         ROS_WARN("Cheating game ended without cheating. Game counter does not increase.");
         curr_game--;
@@ -267,17 +267,17 @@ int tictactoeBrain::randomStrategyMove()
 int tictactoeBrain::cheatingStrategyMove()
 {
     int next_cell_id=-1;
-    if ( cheatingMove(next_cell_id))    return next_cell_id;
-    if (  victoryMove(next_cell_id))    return next_cell_id;
-    if (defensiveMove(next_cell_id))    return next_cell_id;
+    if ( cheatingMove(next_cell_id))    { return next_cell_id; }
+    if (  victoryMove(next_cell_id))    { return next_cell_id; }
+    if (defensiveMove(next_cell_id))    { return next_cell_id; }
     return randomStrategyMove();
 }
 
 int tictactoeBrain::smartStrategyMove()
 {
     int next_cell_id=-1;
-    if (  victoryMove(next_cell_id))    return next_cell_id;
-    if (defensiveMove(next_cell_id))    return next_cell_id;
+    if (  victoryMove(next_cell_id))    { return next_cell_id; }
+    if (defensiveMove(next_cell_id))    { return next_cell_id; }
     return randomStrategyMove();
 }
 
@@ -370,7 +370,7 @@ unsigned short int tictactoeBrain::getNumTokens()
 
     for (size_t i = 0; i < aux.getNumCells(); i++)
     {
-        if(aux.getCellState(i)!=COL_EMPTY) counter++;
+        if(aux.getCellState(i)!=COL_EMPTY) { counter++; }
     }
     return counter;
 }
@@ -382,23 +382,23 @@ unsigned short int tictactoeBrain::getNumTokens(std::string token_type)
 
     for (size_t i = 0; i < aux.getNumCells(); i++)
     {
-       if(aux.getCellState(i)==token_type) counter++;
+       if(aux.getCellState(i)==token_type) { counter++; }
     }
     return counter;
 }
 
 bool tictactoeBrain::threeInARow(const std::string& col, ttt::Board& b)
 {
-    if(col!=COL_BLUE && col!=COL_RED) return false; // There are only red and blue tokens
+    if(col!=COL_BLUE && col!=COL_RED) { return false; } // There are only red and blue tokens
 
-    if(b.getCellState(0)==col && b.getCellState(1)==col && b.getCellState(2)==col) return true; // first row
-    if(b.getCellState(3)==col && b.getCellState(4)==col && b.getCellState(5)==col) return true; // second row
-    if(b.getCellState(6)==col && b.getCellState(7)==col && b.getCellState(8)==col) return true; // third row
-    if(b.getCellState(0)==col && b.getCellState(3)==col && b.getCellState(6)==col) return true; // first column
-    if(b.getCellState(1)==col && b.getCellState(4)==col && b.getCellState(7)==col) return true; // second column
-    if(b.getCellState(2)==col && b.getCellState(5)==col && b.getCellState(8)==col) return true; // third column
-    if(b.getCellState(0)==col && b.getCellState(4)==col && b.getCellState(8)==col) return true; // first diagonal
-    if(b.getCellState(2)==col && b.getCellState(4)==col && b.getCellState(6)==col) return true; // second diagonal
+    if(b.getCellState(0)==col && b.getCellState(1)==col && b.getCellState(2)==col) { return true; } // first row
+    if(b.getCellState(3)==col && b.getCellState(4)==col && b.getCellState(5)==col) { return true; } // second row
+    if(b.getCellState(6)==col && b.getCellState(7)==col && b.getCellState(8)==col) { return true; } // third row
+    if(b.getCellState(0)==col && b.getCellState(3)==col && b.getCellState(6)==col) { return true; } // first column
+    if(b.getCellState(1)==col && b.getCellState(4)==col && b.getCellState(7)==col) { return true; } // second column
+    if(b.getCellState(2)==col && b.getCellState(5)==col && b.getCellState(8)==col) { return true; } // third column
+    if(b.getCellState(0)==col && b.getCellState(4)==col && b.getCellState(8)==col) { return true; } // first diagonal
+    if(b.getCellState(2)==col && b.getCellState(4)==col && b.getCellState(6)==col) { return true; } // second diagonal
 
     return false;
 }
@@ -406,8 +406,10 @@ bool tictactoeBrain::threeInARow(const std::string& col, ttt::Board& b)
 unsigned short int tictactoeBrain::getWinner()
 {
     ttt::Board aux = getBoard();
-    if (threeInARow(getRobotColor(), aux))      return WIN_ROBOT;
-    if (threeInARow(getOpponentColor(), aux))   return   WIN_OPP;
+
+    if (threeInARow(getRobotColor(), aux))      { return WIN_ROBOT; }
+    if (threeInARow(getOpponentColor(), aux))   { return   WIN_OPP; }
+
     return WIN_NONE;
 }
 
