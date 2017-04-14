@@ -182,7 +182,7 @@ public:
      * of opponent's tokens in the board increases.
      * @param number of opponent's token at the beginning
      **/
-    void waitForOpponentTurn(const uint8_t &num_tok_opp);
+    void waitForOpponentTurn(const uint8_t& n_robot_tokens);
 
     /**
      * Indicates if the board is full.
