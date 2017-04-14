@@ -23,9 +23,9 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
     pthread_mutex_init(&_mutex_board, &_mutex_attr);
 
     printf("\n");
-    boardState_sub = _nh.subscribe("baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
+    boardState_sub = _nh.subscribe("/baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
                                     &tictactoeBrain::boardStateCb, this);
-    tttBrain_pub   = _nh.advertise<TTTBrainState>("baxter_tictactoe/ttt_brain_state", 1);
+    tttBrain_pub   = _nh.advertise<TTTBrainState>("/baxter_tictactoe/ttt_brain_state", 1);
 
     brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainState, this, false);
 

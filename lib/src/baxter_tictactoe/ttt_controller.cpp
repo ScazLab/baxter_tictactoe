@@ -37,8 +37,6 @@ TTTController::TTTController(string name, string limb, bool legacy_code, bool no
         ROS_ASSERT_MSG(_n.getParam("board_corner_poss",board_corner_poss), "No 3D position of the board!");
         boardPossFromParam(board_corner_poss);
 
-        setHomeConfiguration();
-
         insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
         insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
         insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
@@ -47,6 +45,7 @@ TTTController::TTTController(string name, string limb, bool legacy_code, bool no
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
 
+    setHomeConfiguration();
     if (!callAction(ACTION_HOME)) setState(ERROR);
 }
 
@@ -182,7 +181,7 @@ bool TTTController::gripToken()
         {
             px = _tiles_pile_pos.x;
             py = _tiles_pile_pos.y;
-            pz = start_z - ARM_SPEED * (ros::Time::now() - start_time).toSec();
+            pz = start_z - 0.15 * (ros::Time::now() - start_time).toSec();
         }
 
         goToPoseNoCheck(px,py,pz,VERTICAL_ORI_L);
@@ -762,7 +761,7 @@ bool TTTController::hoverAboveTokens(double height)
 
 bool TTTController::scanBoardImpl()
 {
-    if (_legacy_code == true)
+    if (_legacy_code == false)
     {
         return true;
     }
@@ -784,7 +783,7 @@ bool TTTController::scanBoardImpl()
     processImage(dist);
 
     ROS_INFO("Hovering above tokens..");
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
 
     return true;
 }
@@ -807,7 +806,7 @@ bool TTTController::pickUpTokenImpl()
         r.sleep();
     }
 
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
     gripToken();
     hoverAboveTokens(Z_LOW);
 
@@ -824,7 +823,7 @@ bool TTTController::putDownTokenImpl()
     ros::Duration(0.1).sleep();
     if (!releaseObject()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
 
     return true;
 }
