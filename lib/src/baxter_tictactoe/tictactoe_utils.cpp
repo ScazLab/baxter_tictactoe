@@ -123,7 +123,7 @@ string Cell::toString()
     else
     {
         res << "Points:\t";
-        for (int i = 0; i < contour.size(); ++i)
+        for (size_t i = 0; i < contour.size(); ++i)
         {
             res <<"["<<contour[i].x<<"  "<<contour[i].y<<"]\t";
         }
@@ -143,7 +143,7 @@ Board& Board::operator=(const Board& _b)
     {
         resetBoard();
 
-        for (int i = 0; i < _b.cells.size(); ++i)
+        for (size_t i = 0; i < _b.cells.size(); ++i)
         {
             addCell(Cell(_b.cells[i]));
         }
@@ -156,7 +156,7 @@ bool Board::resetCellStates()
 {
     if (getNumCells()==0) return false;
 
-    for (int i = 0; i < getNumCells(); ++i)
+    for (size_t i = 0; i < getNumCells(); ++i)
     {
         cells[i].resetState();
     }
@@ -168,7 +168,7 @@ bool Board::resetCells()
 {
     if (getNumCells()==0) return false;
 
-    for (int i = 0; i < getNumCells(); ++i)
+    for (size_t i = 0; i < getNumCells(); ++i)
     {
         cells[i].resetCell();
     }
@@ -180,7 +180,7 @@ bool Board::computeState()
 {
     if (getNumCells()==0) return false;
 
-    for (int i = 0; i < getNumCells(); ++i)
+    for (size_t i = 0; i < getNumCells(); ++i)
     {
         cells[i].computeState();
     }
@@ -190,7 +190,7 @@ bool Board::computeState()
 
 bool Board::isFull()
 {
-    for(int i = 0; i < getNumCells(); i++)
+    for (size_t i = 0; i < getNumCells(); i++)
     {
         if(getCellState(i)==COL_EMPTY) return false;
     }
@@ -199,7 +199,7 @@ bool Board::isFull()
 
 bool Board::isEmpty()
 {
-    for(int i = 0; i < getNumCells(); i++)
+    for (size_t i = 0; i < getNumCells(); i++)
     {
         if(getCellState(i)==COL_RED || getCellState(i)==COL_BLUE) return false;
     }
@@ -210,7 +210,7 @@ void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
 {
     resetBoard();
 
-    for (int i = 0; i < msgb.cells.size(); ++i)
+    for (size_t i = 0; i < msgb.cells.size(); ++i)
     {
         // We want to keep the cell self-consistent. To this end, we add a fake
         // non empty area if the cell is red or blue colored.
@@ -231,7 +231,7 @@ baxter_tictactoe::MsgBoard Board::toMsgBoard()
 
     if (getNumCells() == 0 || getNumCells() != res.cells.size())
     {
-        for (int i = 0; i < res.cells.size(); ++i)
+        for (size_t i = 0; i < res.cells.size(); ++i)
         {
             res.cells[i].state = COL_EMPTY;
         }
@@ -244,7 +244,7 @@ baxter_tictactoe::MsgBoard Board::toMsgBoard()
     }
     else if (getNumCells() == res.cells.size())
     {
-        for (int i = 0; i < res.cells.size(); ++i)
+        for (size_t i = 0; i < res.cells.size(); ++i)
         {
             res.cells[i].state = getCellState(i);
         }
@@ -259,7 +259,7 @@ string Board::toString()
 
     stringstream res;
     res << cells[0].getState();
-    for (int i = 1; i < getNumCells(); ++i)
+    for (size_t i = 1; i < getNumCells(); ++i)
     {
         res << "\t" << cells[i].getState();
     }
@@ -271,7 +271,7 @@ Contours Board::getContours()
 {
     Contours result;
 
-    for (int i = 0; i < getNumCells(); ++i)
+    for (size_t i = 0; i < getNumCells(); ++i)
     {
         result.push_back(getCellContour(i));
     }

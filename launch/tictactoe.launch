@@ -17,6 +17,16 @@
         V: [ 10, 256]
     </rosparam>
 
+    <rosparam param = "ttt_controller/tile_pile_position">[0.5213, 0.6264, -0.0954]</rosparam>
+
+    <!-- 3D positions of the corners of the board -->
+    <rosparam param = "ttt_controller/board_corner_poss">
+        TL: [0.8107, 0.3807, -0.1713]
+        TR: [0.8099, 0.0982, -0.1732]
+        BR: [0.5024, 0.0935, -0.1858]
+        BL: [0.5179, 0.3762, -0.1879]
+    </rosparam>
+
     <!-- Red is not working as of now -->
     <!-- <rosparam param="ttt_brain/robot_color">blue</rosparam> -->
     <rosparam param="ttt_brain/num_games">3</rosparam>
@@ -29,5 +39,5 @@
     <!-- <include file="$(find sound_play)/soundplay_node.launch" /> We don't use the existing launch file because we want this node to be a must, i.e.required="true"-->
     <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 
-    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
+    <!-- <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/> -->
 </launch>

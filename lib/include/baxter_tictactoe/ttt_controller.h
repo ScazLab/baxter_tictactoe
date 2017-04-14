@@ -22,17 +22,36 @@
 class TTTController : public ArmCtrl
 {
 private:
+    ros::Rate r;
+
     image_transport::ImageTransport _img_trp;
     image_transport::Subscriber     _img_sub;
 
-    ros::Rate r;
+    bool _legacy_code;   // Flag to enable the legacy code [who does not work]
 
     hsvColorRange  hsv_red;
     hsvColorRange hsv_blue;
 
+    geometry_msgs::Point _tiles_pile_pos;
+
+    std::vector<geometry_msgs::Point>       _offsets;   // Legacy, it does not work
+
+    std::vector<geometry_msgs::Point> _board_centers_poss;
+    std::vector<geometry_msgs::Point> _board_corners_poss;
+
+    cv::Mat  _curr_img;
+    cv::Size _img_size;
+    bool _is_img_empty;
+
+    pthread_mutex_t _mutex_img;
+
     bool createCVWindows();
 
     bool destroyCVWindows();
+
+    bool tilesPilePosFromParam(XmlRpc::XmlRpcValue _params);
+
+    bool    boardPossFromParam(XmlRpc::XmlRpcValue _params);
 
     /**
      * Sets the joint-level configuration for the home position
@@ -40,7 +59,6 @@ private:
     void setHomeConfiguration();
 
     /* SCAN BOARD */
-        std::vector<geometry_msgs::Point> _offsets;
 
         /*
          * Hovers arm above board
@@ -118,7 +136,7 @@ private:
          *            from arm to board surface
          */
         void setOffsets(int board_area, ttt::Contours contours, float dist,
-                        cv::Mat *output, std::vector<cv::Point> *centroids);
+                        cv::Mat &output, std::vector<cv::Point> &centroids);
 
         std::vector<geometry_msgs::Point> getOffsets() { return _offsets; };
 
@@ -133,7 +151,7 @@ private:
          *                       and corner of corner cell
          */
         void setZone(ttt::Contours contours, float dist, std::vector<cv::Point> board_corners,
-                     std::vector<cv::Point> c, std::vector<cv::Point> * cell_to_corner);
+                     std::vector<cv::Point> c, std::vector<cv::Point> &cell_to_corner);
 
         /*
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets
@@ -190,12 +208,6 @@ private:
          */
         cv::Mat isolateToken(cv::Mat pool);
 
-protected:
-    cv::Mat  _curr_img;
-    cv::Size _img_size;
-    bool _is_img_empty;
-
-    pthread_mutex_t _mutex_img;
 
     bool pickUpTokenImpl();
 
@@ -204,7 +216,7 @@ protected:
     bool putDownTokenImpl();
 
 public:
-    TTTController(std::string name, std::string limb,
+    TTTController(std::string name, std::string limb, bool legacy_code = false,
                   bool no_robot = false, bool use_forces = false);
     ~TTTController();
 

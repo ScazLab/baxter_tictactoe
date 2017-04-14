@@ -6,11 +6,11 @@ using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
-tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _nh(name), spinner(4), _is_board_detected(false),
-                               leftArmCtrl("ttt_controller", "left"),
-                               rightArmCtrl("ttt_controller", "right")
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool legacy_code) : _nh(_name),
+                               spinner(4), r(100), _legacy_code(legacy_code), _is_board_detected(false),
+                               leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code)
 {
+    ROS_INFO("Legacy code %s enabled.", legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
 
     srand(ros::Time::now().nsec);
@@ -23,9 +23,9 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
     pthread_mutex_init(&_mutex_board, &_mutex_attr);
 
     printf("\n");
-    boardState_sub = _nh.subscribe("baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
+    boardState_sub = _nh.subscribe("/baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
                                     &tictactoeBrain::boardStateCb, this);
-    tttBrain_pub   = _nh.advertise<TTTBrainState>("baxter_tictactoe/ttt_brain_state", 1);
+    tttBrain_pub   = _nh.advertise<TTTBrainState>("/baxter_tictactoe/ttt_brain_state", 1);
 
     brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainState, this, false);
 
@@ -112,7 +112,7 @@ void tictactoeBrain::InternalThreadEntry()
             break;
         }
 
-        ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
+        // ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
 
         r.sleep();
     }
@@ -125,7 +125,7 @@ void tictactoeBrain::playOneGame()
 
     bool has_to_cheat=false;
 
-    for (int j = 0; j < cheating_games.size(); ++j)
+    for (size_t j = 0; j < cheating_games.size(); ++j)
     {
         if (cheating_games[j] == curr_game)
         {
@@ -367,7 +367,8 @@ unsigned short int tictactoeBrain::getNumTokens()
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
+
+    for (size_t i = 0; i < aux.getNumCells(); i++)
     {
         if(aux.getCellState(i)!=COL_EMPTY) counter++;
     }
@@ -378,7 +379,8 @@ unsigned short int tictactoeBrain::getNumTokens(std::string token_type)
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
+
+    for (size_t i = 0; i < aux.getNumCells(); i++)
     {
        if(aux.getCellState(i)==token_type) counter++;
     }

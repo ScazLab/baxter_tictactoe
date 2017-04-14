@@ -10,36 +10,132 @@ using namespace cv;
 /*                            TTTController                               */
 /**************************************************************************/
 
-TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
-                             ArmCtrl(name, limb, no_robot, use_forces, false),
-                             r(100), _img_trp(_n), _is_img_empty(true)
+TTTController::TTTController(string name, string limb, bool legacy_code, bool no_robot, bool use_forces):
+                             ArmCtrl(name, limb, no_robot, use_forces, false, false),
+                             r(100), _img_trp(_n), _legacy_code(legacy_code), _is_img_empty(true)
 {
     pthread_mutexattr_t _mutex_attr;
     pthread_mutexattr_init(&_mutex_attr);
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&_mutex_img, &_mutex_attr);
 
-    XmlRpc::XmlRpcValue hsv_red_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
-    hsv_red=hsvColorRange(hsv_red_symbols);
-
-    XmlRpc::XmlRpcValue hsv_blue_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
-    hsv_blue=hsvColorRange(hsv_blue_symbols);
-
-    setHomeConfiguration();
-
-    insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
-    insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
-    insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
-
     if (getLimb() == "left")
     {
+        XmlRpc::XmlRpcValue hsv_red_symbols;
+        ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+        hsv_red=hsvColorRange(hsv_red_symbols);
+
+        XmlRpc::XmlRpcValue hsv_blue_symbols;
+        ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+        hsv_blue=hsvColorRange(hsv_blue_symbols);
+
+        XmlRpc::XmlRpcValue tiles_pile_pos;
+        ROS_ASSERT_MSG(_n.getParam("tile_pile_position",tiles_pile_pos), "No 3D position of the pile of tiles!");
+        tilesPilePosFromParam(tiles_pile_pos);
+
+        XmlRpc::XmlRpcValue board_corner_poss;
+        ROS_ASSERT_MSG(_n.getParam("board_corner_poss",board_corner_poss), "No 3D position of the board!");
+        boardPossFromParam(board_corner_poss);
+
+        insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
+        insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
+        insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
+
         _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
 
+    setHomeConfiguration();
     if (!callAction(ACTION_HOME)) setState(ERROR);
+}
+
+bool TTTController::tilesPilePosFromParam(XmlRpc::XmlRpcValue _params)
+{
+    ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeArray);
+
+    for(int j=0; j<_params.size(); ++j)
+    {
+        ROS_ASSERT(_params[j].getType()==XmlRpc::XmlRpcValue::TypeDouble);
+    }
+
+    _tiles_pile_pos.x = _params[0];
+    _tiles_pile_pos.y = _params[1];
+    _tiles_pile_pos.z = _params[2];
+
+    ROS_INFO("[%s] Tile Pile Position: %g %g %g", getLimb().c_str(), _tiles_pile_pos.x,
+                                                  _tiles_pile_pos.y, _tiles_pile_pos.z);
+
+    return true;
+}
+
+bool TTTController::boardPossFromParam(XmlRpc::XmlRpcValue _params)
+{
+    ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeStruct);
+    _board_corners_poss.clear();
+
+    for (XmlRpc::XmlRpcValue::iterator i=_params.begin(); i!=_params.end(); ++i)
+    {
+        ROS_ASSERT(i->second.getType()==XmlRpc::XmlRpcValue::TypeArray);
+        for(int j=0; j<i->second.size(); ++j)
+        {
+            ROS_ASSERT(i->second[j].getType()==XmlRpc::XmlRpcValue::TypeDouble);
+        }
+        // printf("%s %i %i\n", i->first.c_str(), static_cast<int>(i->second[0]),
+        //                                        static_cast<int>(i->second[1]));
+        if (i->first == "TL" || i->first == "TR" ||
+            i->first == "BR" || i->first == "BL")
+        {
+            geometry_msgs::Point p;
+            p.x = i->second[0];
+            p.y = i->second[1];
+            p.z = i->second[2];
+
+            _board_corners_poss.push_back(p);
+        }
+    }
+
+    ROS_ASSERT(_board_corners_poss.size() == 4);
+
+    std::string coords_str = "";
+    for (size_t i = 0; i < _board_corners_poss.size(); ++i)
+    {
+        coords_str = coords_str + "[ " + toString(_board_corners_poss[i].x) + " " +
+                                         toString(_board_corners_poss[i].y) + " " +
+                                         toString(_board_corners_poss[i].z) + "] ";
+    }
+    ROS_INFO("[%s] Board corners [BL BR TL TR]: %s", getLimb().c_str(), coords_str.c_str());
+
+    // Now that we have the corners, let's compute all the coordinates
+    _board_centers_poss.clear();
+    _board_centers_poss.resize(9);
+
+    _board_centers_poss[0] =                              _board_corners_poss[2];  // TL
+    _board_centers_poss[1] = (_board_corners_poss[2] + _board_corners_poss[3])/2;
+    _board_centers_poss[2] =                              _board_corners_poss[3];  // TR
+    _board_centers_poss[3] = (_board_corners_poss[0] + _board_corners_poss[2])/2;
+    _board_centers_poss[4] = (_board_corners_poss[0] + _board_corners_poss[1] +
+                              _board_corners_poss[2] + _board_corners_poss[3])/4;
+    _board_centers_poss[5] = (_board_corners_poss[1] + _board_corners_poss[3])/2;
+    _board_centers_poss[6] =                              _board_corners_poss[0];  // BL
+    _board_centers_poss[7] = (_board_corners_poss[0] + _board_corners_poss[1])/2;
+    _board_centers_poss[8] =                              _board_corners_poss[1];  // BR
+
+    ROS_INFO("[%s] Computed board centers [TL TR BL BR]:", getLimb().c_str());
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        std::string coords_str = "";
+        for (size_t j = 0; j < 3; ++j)
+        {
+            coords_str = coords_str + "[ " + toString(_board_centers_poss[i*3 + j].x) + " " +
+                                             toString(_board_centers_poss[i*3 + j].y) + " " +
+                                             toString(_board_centers_poss[i*3 + j].z) + "] ";
+        }
+
+        ROS_INFO("[%s] %s", getLimb().c_str(), coords_str.c_str());
+    }
+
+    return true;
 }
 
 /**************************************************************************/
@@ -47,41 +143,56 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
 /**************************************************************************/
 bool TTTController::gripToken()
 {
-    createCVWindows();
-    cv::Point offset(0,0);
-    // check if token is present before starting movement loop
-    // (prevent gripper from colliding with play surface)
-    while(RobotInterface::ok())
+    if (_legacy_code == true)
     {
-        if(computeTokenOffset(offset)) break;
+        createCVWindows();
+        cv::Point offset(0,0);
+        // check if token is present before starting movement loop
+        // (prevent gripper from colliding with play surface)
+        while(RobotInterface::ok())
+        {
+            if(computeTokenOffset(offset)) break;
 
-        ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
-        r.sleep();
+            ROS_WARN_THROTTLE(2,"No token detected by hand camera.");
+            r.sleep();
+        }
+
+        offset = cv::Point(0,0);
     }
 
-    offset = cv::Point(0,0);
     ros::Time start_time = ros::Time::now();
-    cv::Point2d prev_offset(0.540, 0.540);
-
     double start_z = getPos().z;
 
     while(RobotInterface::ok())
     {
-        computeTokenOffset(offset);
+        double px = 0.0, py = 0.0, pz = 0.0;
 
-        // move incrementally towards token
-        double px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
-        double py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
-        double pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
+        if (_legacy_code == true)
+        {
+            cv::Point offset(0,0);
+            computeTokenOffset(offset);
 
-        prev_offset.x = px;
-        prev_offset.y = py;
+            // move incrementally towards token
+            px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
+            py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
+            pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
+        }
+        else
+        {
+            px = _tiles_pile_pos.x;
+            py = _tiles_pile_pos.y;
+            pz = start_z - 0.15 * (ros::Time::now() - start_time).toSec();
+        }
 
         goToPoseNoCheck(px,py,pz,VERTICAL_ORI_L);
 
-        if(pz < -0.2)
+        if(pz < -0.3)
         {
             ROS_WARN("I went too low! Exiting.");
+
+            if (_legacy_code == true) { destroyCVWindows(); }
+            gripObject();
+
             return false;
         }
 
@@ -89,7 +200,7 @@ bool TTTController::gripToken()
         r.sleep();
     }
 
-    destroyCVWindows();
+    if (_legacy_code == true) { destroyCVWindows(); }
     gripObject();
     return true;
 }
@@ -124,10 +235,10 @@ bool TTTController::computeTokenOffset(cv::Point &offset)
         int y_max = 0;
         int x_max = 0;
 
-        for(int i = 0; i < contours.size(); i++)
+        for (size_t i = 0; i < contours.size(); i++)
         {
             vector<cv::Point> contour = contours[i];
-            for(int j = 0; j < contour.size(); j++)
+            for (size_t j = 0; j < contour.size(); j++)
             {
                 if(y_min > contour[j].y) y_min = contour[j].y;
                 if(x_min > contour[j].x) x_min = contour[j].x;
@@ -182,7 +293,7 @@ cv::Mat TTTController::detectPool()
     int largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -208,9 +319,9 @@ Mat TTTController::isolateToken(Mat pool)
     bitwise_and(blue, pool, out);
 
     // Some morphological operations to remove noise and clean up the image
-    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
-    for (int i = 0; i < 4; ++i) dilate(out, out, Mat());
-    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
+    for (size_t i = 0; i < 2; ++i)  erode(out, out, Mat());
+    for (size_t i = 0; i < 4; ++i) dilate(out, out, Mat());
+    for (size_t i = 0; i < 2; ++i)  erode(out, out, Mat());
 
     imshow("Rough", out);
 
@@ -271,7 +382,7 @@ void TTTController::processImage(float dist)
 
         if(contours.size() == 9)
         {
-            setOffsets(board_area, contours, dist, &board, &centroids);
+            setOffsets(board_area, contours, dist, board, centroids);
             // imshow("[ScanBoard] Processed", board);
 
             if(offsetsReachable())
@@ -282,7 +393,7 @@ void TTTController::processImage(float dist)
             else if(!offsetsReachable())
             {
                 ROS_WARN("[Scan Board] Please move board within reachable zone\n");
-                setZone(contours, dist, board_corners, centroids, &cell_to_corner);
+                setZone(contours, dist, board_corners, centroids, cell_to_corner);
 
                 // calls to IK solver in setZone takes too long; makes the image update
                 // very slow and hard for users to calibrate board position, which is why
@@ -309,12 +420,10 @@ void TTTController::processImage(float dist)
                         isolateBoard(contours, board_area, temp_board_corners, binary.clone(), board);
                         if(contours.size() == 9)
                         {
-                            setOffsets(board_area, contours, dist, &board, &temp_centroids);
+                            setOffsets(board_area, contours, dist, board, temp_centroids);
                         }
-                        if(offsetsReachable())
-                        {
-                            break;
-                        }
+
+                        if(offsetsReachable()) { break; }
                         interval += 5;
                     }
 
@@ -363,7 +472,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     int largest_index = 0, next_largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ 2nd-largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -389,7 +498,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -406,7 +515,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     double y_max = 0;
     double x_max = 0;
 
-    for(int i = 0; i < board_outline.size(); i++)
+    for (size_t i = 0; i < board_outline.size(); i++)
     {
         if(y_min > board_outline[i].y) y_min = board_outline[i].y;
         if(x_min > board_outline[i].x) x_min = board_outline[i].x;
@@ -422,7 +531,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     // remove outer board contours
     contours.erase(contours.begin() + largest_index);
 
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) < 200)
         {
@@ -430,7 +539,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
         }
     }
 
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
     }
@@ -444,31 +553,32 @@ bool TTTController::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void TTTController::setOffsets(int board_area, ttt::Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
+void TTTController::setOffsets(int board_area, ttt::Contours contours, float dist, Mat &output, vector<cv::Point> &centroids)
 {
     cv::Point center(_img_size.width / 2, _img_size.height / 2);
 
-    circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
-    cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+    circle(output, center, 3, Scalar(180,40,40), CV_FILLED);
+    cv::putText(output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
-    for(int i = contours.size(); i >= 3; i -= 3)
+    for (size_t i = contours.size(); i >= 3; i -= 3)
     {
         std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);
     }
 
     _offsets.resize(9);
-    (*centroids).resize(9);
-    for(int i = contours.size() - 1; i >= 0; i--)
+    centroids.resize(9);
+
+    for (int i = int(contours.size()) - 1; i >= 0; i--)
     {
         double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
         cv::Point centroid(x,y);
 
-        (*centroids)[i] = centroid;
+        centroids[i] = centroid;
 
-        // cv::putText(*output, intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-        // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
-        line(*output, centroid, center, cv::Scalar(180,40,40), 1);
+        // cv::putText(output, intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        // circle(output, centroid, 2, Scalar(180,40,40), CV_FILLED);
+        line(output, centroid, center, cv::Scalar(180,40,40), 1);
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
@@ -477,15 +587,15 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
 }
 
 void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point> board_corners,
-                            vector<cv::Point> c, vector<cv::Point> * cell_to_corner)
+                            vector<cv::Point> c, vector<cv::Point> &cell_to_corner)
 {
-    (*cell_to_corner).resize(4);
+    cell_to_corner.resize(4);
 
     // calculate offset between the center of corner cells and the corners of the board
-    (*cell_to_corner)[0] = cv::Point(board_corners[0].x - c[0].x, board_corners[0].y - c[0].y);
-    (*cell_to_corner)[1] = cv::Point(board_corners[1].x - c[2].x, board_corners[1].y - c[2].y);
-    (*cell_to_corner)[2] = cv::Point(board_corners[2].x - c[6].x, board_corners[2].y - c[6].y);
-    (*cell_to_corner)[3] = cv::Point(board_corners[3].x - c[8].x, board_corners[3].y - c[8].y);
+    cell_to_corner[0] = cv::Point(board_corners[0].x - c[0].x, board_corners[0].y - c[0].y);
+    cell_to_corner[1] = cv::Point(board_corners[1].x - c[2].x, board_corners[1].y - c[2].y);
+    cell_to_corner[2] = cv::Point(board_corners[2].x - c[6].x, board_corners[2].y - c[6].y);
+    cell_to_corner[3] = cv::Point(board_corners[3].x - c[8].x, board_corners[3].y - c[8].y);
 
     // if the centroid of a corner cell is reachable,
     // iterate and check if a location 10 pixels further from arm is still reachable
@@ -505,7 +615,7 @@ void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point
 
 bool TTTController::offsetsReachable()
 {
-    for(int i = 0; i < NUMBER_OF_CELLS; i++)
+    for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
         double px = getPos().x + _offsets[i].x;
         double py = getPos().y + _offsets[i].y;
@@ -514,7 +624,7 @@ bool TTTController::offsetsReachable()
         vector<double> joint_angles;
         if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
         {
-            ROS_INFO("Offset number %i not reachable", i);
+            ROS_INFO("Offset number %lu not reachable", i);
             return false;
         }
     }
@@ -547,15 +657,17 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 bool TTTController::createCVWindows()
 {
     namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
+    namedWindow(      "Rough", WINDOW_NORMAL);
+    namedWindow(  "Processed", WINDOW_NORMAL);
     resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
-    resizeWindow("Processed",   480, 300);
-    moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
-    moveWindow("Processed", 10, 720);
+    resizeWindow(      "Rough", 480, 300);
+    resizeWindow(  "Processed", 480, 300);
+    moveWindow("Hand Camera", 10,  10);
+    moveWindow(      "Rough", 10, 370);
+    moveWindow(  "Processed", 10, 720);
     waitKey(10);
+
+    return true;
 }
 
 bool TTTController::destroyCVWindows()
@@ -563,6 +675,8 @@ bool TTTController::destroyCVWindows()
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
     destroyWindow("Rough");
+
+    return true;
 }
 
 bool TTTController::goHome()
@@ -604,19 +718,40 @@ bool TTTController::hoverAboveBoard()
 bool TTTController::hoverAboveCenterOfBoard()
 {
     ROS_INFO("Hovering above center of board..");
-    return goToPose(HOVER_BOARD_X + _offsets[4].x,
-                    HOVER_BOARD_Y + _offsets[4].y,
-                    HOVER_BOARD_Z - _offsets[4].z + 0.3,    // TODO this minus sign is a bug
-                    VERTICAL_ORI_L);
+
+    if (_legacy_code == true)
+    {
+        return goToPose(HOVER_BOARD_X + _offsets[4].x,
+                        HOVER_BOARD_Y + _offsets[4].y,
+                        HOVER_BOARD_Z - _offsets[4].z + 0.3,    // TODO this minus sign is a bug
+                        VERTICAL_ORI_L);
+    }
+    else
+    {
+        return goToPose(_board_centers_poss[4].x,
+                        _board_centers_poss[4].y,
+                        _board_centers_poss[4].z + 0.3,
+                        VERTICAL_ORI_L);
+    }
 }
 
 bool TTTController::hoverAboveCell()
 {
     ROS_INFO("Hovering above cell..");
-    return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
-                    HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
-                    HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
-                    VERTICAL_ORI_L);
+    if (_legacy_code == true)
+    {
+        return goToPose(HOVER_BOARD_X + _offsets[getObjectID() - 1].x,
+                        HOVER_BOARD_Y + _offsets[getObjectID() - 1].y,
+                        HOVER_BOARD_Z - _offsets[getObjectID() - 1].z + 0.05,
+                        VERTICAL_ORI_L);
+    }
+    else
+    {
+        return goToPose(_board_centers_poss[getObjectID()-1].x,
+                        _board_centers_poss[getObjectID()-1].y,
+                        _board_centers_poss[getObjectID()-1].z + 0.05,
+                        VERTICAL_ORI_L);
+    }
 }
 
 bool TTTController::hoverAboveTokens(double height)
@@ -626,6 +761,11 @@ bool TTTController::hoverAboveTokens(double height)
 
 bool TTTController::scanBoardImpl()
 {
+    if (_legacy_code == false)
+    {
+        return true;
+    }
+
     ROS_INFO("Scanning depth..");
     if (!hoverAboveBoard()) return false;
 
@@ -643,7 +783,7 @@ bool TTTController::scanBoardImpl()
     processImage(dist);
 
     ROS_INFO("Hovering above tokens..");
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
 
     return true;
 }
@@ -666,7 +806,7 @@ bool TTTController::pickUpTokenImpl()
         r.sleep();
     }
 
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
     gripToken();
     hoverAboveTokens(Z_LOW);
 
@@ -683,7 +823,7 @@ bool TTTController::putDownTokenImpl()
     ros::Duration(0.1).sleep();
     if (!releaseObject()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
-    hoverAboveTokens(Z_HIGH);
+    hoverAboveTokens(Z_LOW);
 
     return true;
 }

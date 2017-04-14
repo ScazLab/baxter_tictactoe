@@ -22,16 +22,18 @@ namespace ttt
 class tictactoeBrain : public ROSThread
 {
 private:
-    std::string name;
+    ros::NodeHandle _nh;        // ROS node handle
+    ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
+
+    ros::Rate r;
+
+    bool _legacy_code;   // Flag to enable the legacy code [who does not work]
 
     int    num_games;
     int    curr_game;
 
     std::vector<int> cheating_games; // vector that stores which of the games will be a cheating one.
     std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
-
-    ros::NodeHandle _nh;        // ROS node handle
-    ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     /* STATE OF THE BOARD */
     ttt::Board               board;
@@ -58,8 +60,6 @@ private:
 
     TTTController  leftArmCtrl;
     TTTController rightArmCtrl;
-
-    ros::Rate r;
 
     bool has_cheated;
 
@@ -130,7 +130,8 @@ protected:
 
 public:
 
-    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random");
+    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random",
+                   bool legacy_code = false);
 
     ~tictactoeBrain();
 

@@ -135,7 +135,7 @@ void BoardState::InternalThreadEntry()
 
                     // aproximate cell contours to quadrilaterals
                     Contours apx_contours;
-                    for(int i = 0; i < contours.size(); i++)
+                    for (size_t i = 0; i < contours.size(); i++)
                     {
                         double epsilon = arcLength(contours[i], true);
                         Contour apx_contour_cell;
@@ -143,7 +143,7 @@ void BoardState::InternalThreadEntry()
                         apx_contours.push_back(apx_contour_cell);
                     }
 
-                    for(int i = 0; i < apx_contours.size(); i++)
+                    for (size_t i = 0; i < apx_contours.size(); i++)
                     {
                         drawContours(board_cells, apx_contours, i, cv::Scalar(255,255,255), CV_FILLED, 8);
                     }
@@ -152,12 +152,12 @@ void BoardState::InternalThreadEntry()
                     // that findContours apparently finds contours in ascending order of y-coordinate already)
                     std::sort(apx_contours.begin(), apx_contours.end(), ascendingY);
 
-                    for(int i = 0; i <=6; i += 3)
+                    for (size_t i = 0; i <=6; i += 3)
                     {
                         std::sort(apx_contours.begin() + i, apx_contours.begin() + i + 3, ascendingX);
                     }
 
-                    for(int i = 0; i < apx_contours.size(); i++)
+                    for (size_t i = 0; i < apx_contours.size(); i++)
                     {
                         board.addCell(Cell(apx_contours[i]));
                     }
@@ -185,7 +185,7 @@ void BoardState::InternalThreadEntry()
                     // mask the original image to the board
                     cv::Mat img_hsv_mask = board.maskImage(img_hsv);
 
-                    for (int i = 0; i < 2; ++i)
+                    for (size_t i = 0; i < 2; ++i)
                     {
                         cv::Mat hsv_filt_mask = hsvThreshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
                         if (doShow)
@@ -193,7 +193,7 @@ void BoardState::InternalThreadEntry()
                             if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
                             if (i==1) cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask);
                         }
-                        for (int j = 0; j < board.getNumCells(); ++j)
+                        for (size_t j = 0; j < board.getNumCells(); ++j)
                         {
                             Cell &cell = board.getCell(j);
                             cv::Mat crop = cell.maskImage(hsv_filt_mask);
@@ -217,7 +217,7 @@ void BoardState::InternalThreadEntry()
 
                     // ROS_INFO("New board state published");
 
-                    for(int i = 0; i < board.getNumCells(); i++)
+                    for (size_t i = 0; i < board.getNumCells(); i++)
                     {
                         cv::Scalar col = col_empty;
                         if (board.getCellState(i) ==  COL_RED) col =  col_red;
@@ -259,24 +259,24 @@ void BoardState::brainStateCb(const baxter_tictactoe::TTTBrainState & msg)
 
 bool BoardState::isBoardSane()
 {
-    for (int i = 0; i < board.getNumCells(); ++i)
+    for (size_t i = 0; i < board.getNumCells(); ++i)
     {
         // Check if area of cell is big enough
         int cell_area = board.getCellArea(i);
         if ( cell_area < area_threshold)
         {
-            ROS_WARN("Cell #%i has area %i (smaller than area_threshold)", i, cell_area);
+            ROS_WARN("Cell #%lu has area %i (smaller than area_threshold)", i, cell_area);
             return false;
         }
 
         // Check if centroid of cells is not contained in another cell
-        for (int j = 0; j < board.getNumCells(); ++j)
+        for (size_t j = 0; j < board.getNumCells(); ++j)
         {
             if (j != i)
             {
                 if (cv::pointPolygonTest(board.getCellContour(j), board.getCellCentroid(i), true) >= 0)
                 {
-                    ROS_WARN("Point #%i is inside cell #%i", i, j);
+                    ROS_WARN("Point #%lu is inside cell #%lu", i, j);
                     return false;
                 }
             }
@@ -288,12 +288,12 @@ bool BoardState::isBoardSane()
 int BoardState::getIthIndex(Contours contours, int ith)
 {
     double largest_area = 0;
-    int largest_idx = 0;
+    int     largest_idx = 0;
     double next_largest_area = 0;
-    int next_largest_idx = 0;
+    int     next_largest_idx = 0;
 
     // iterate through contours and keeps track of contour w/ largest and 2nd-largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest_area)
         {
