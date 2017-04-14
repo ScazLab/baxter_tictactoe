@@ -6,13 +6,13 @@ using namespace std;
 
 bool operator==(MsgBoard board1, MsgBoard board2)
 {
-    if (board1.cells.size()!=board2.cells.size()) return false;
+    if (board1.cells.size()!=board2.cells.size()) { return false; }
 
-    for (size_t i = 0; i < board1.cells.size(); ++i) {
-        if (board1.cells[i].state!=board2.cells[i].state) {
-            return false;
-        }
+    for (size_t i = 0; i < board1.cells.size(); ++i)
+    {
+        if (board1.cells[i].state!=board2.cells[i].state) { return false; }
     }
+
     return true;
 }
 
@@ -21,8 +21,8 @@ bool operator!=(MsgBoard board1, MsgBoard board2)
     return !(board1==board2);
 }
 
-BoardState::BoardState(string name, bool _show) :
-                       ROSThreadImage(name), doShow(_show), board_state(STATE_INIT)
+BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
+               doShow(_show), board_state(STATE_INIT), brain_state(-1)
 {
     board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
     brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
@@ -190,9 +190,10 @@ void BoardState::InternalThreadEntry()
                         cv::Mat hsv_filt_mask = hsvThreshold(img_hsv_mask, i==0?hsv_red:hsv_blue);
                         if (doShow)
                         {
-                            if (i==0) cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask);
-                            if (i==1) cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask);
+                            if (i==0) { cv::imshow("[Board_State_Sensor] red  mask of the board", hsv_filt_mask); }
+                            if (i==1) { cv::imshow("[Board_State_Sensor] blue mask of the board", hsv_filt_mask); }
                         }
+
                         for (size_t j = 0; j < board.getNumCells(); ++j)
                         {
                             Cell &cell = board.getCell(j);
@@ -231,7 +232,7 @@ void BoardState::InternalThreadEntry()
                                              cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
                     }
 
-                    if (doShow) cv::imshow("[Board_State_Sensor] cell outlines", img_out);
+                    if (doShow) { cv::imshow("[Board_State_Sensor] cell outlines", img_out); }
                     cv::waitKey(1);
                 }
             }
