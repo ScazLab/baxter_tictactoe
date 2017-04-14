@@ -17,7 +17,7 @@
         V: [ 10, 256]
     </rosparam>
 
-    <rosparam param = "ttt_controller/tile_pile_position">[0.6630, 0.6660, -0.1036]</rosparam>
+    <rosparam param = "ttt_controller/tile_pile_position">[0.5213, 0.6264, -0.0954]</rosparam>
 
     <!-- Range thresholds for the blue tokens -->
     <rosparam param = "ttt_controller/board_corner_poss">
