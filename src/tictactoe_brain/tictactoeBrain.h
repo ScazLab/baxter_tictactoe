@@ -156,7 +156,7 @@ public:
      * @param token_type The kind of tokens we are counting
      * @return The number of cells where there is a token_type token.
      **/
-    unsigned short int getNumTokens(std::string token_type);
+    unsigned short int getNumTokens(const std::string& token_type)
 
     /**
      * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.

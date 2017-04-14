@@ -133,8 +133,8 @@ void tictactoeBrain::playOneGame()
         }
     }
 
-    if (has_to_cheat)   setStrategy("cheating");
-    else                setStrategy(   "smart");
+    if (has_to_cheat)   { setStrategy("cheating"); }
+    else                { setStrategy(   "smart"); }
 
     saySentence("I start the game.",2);
 
@@ -161,7 +161,8 @@ void tictactoeBrain::playOneGame()
             saySentence("It is your turn", 0.1);
             waitForOpponentTurn(n_robot_tokens);
         }
-        robot_turn=!robot_turn;
+
+        robot_turn = not robot_turn;
         winner = getWinner();
     }
 
@@ -375,7 +376,7 @@ unsigned short int tictactoeBrain::getNumTokens()
     return counter;
 }
 
-unsigned short int tictactoeBrain::getNumTokens(std::string token_type)
+unsigned short int tictactoeBrain::getNumTokens(const std::string& token_type)
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
