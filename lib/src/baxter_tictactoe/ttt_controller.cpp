@@ -688,9 +688,14 @@ void TTTController::setHomeConfiguration()
 {
     if (getLimb() == "left")
     {
-        setHomeConf( 0.688, -0.858, -1.607, 1.371, 0.742, 1.733, 0.007);
-        // setHomeConf( 0.688, -0.858, -1.607, 1.371, 0.742, 1.733, 0.007);
-        // setHomeConf( 0.022, -0.503, -2.071, 1.466,` 1.075, 2.065, -0.915);
+        if (_legacy_code == true)
+        {
+            setHomeConf( 0.688, -0.858, -1.607, 1.371, 0.742, 1.733, 0.007);
+        }
+        else
+        {
+            setHomeConf( 0.581, -0.923, -1.162, 1.722, 0.653, 1.193, 0.024);
+        }
     }
     else if (getLimb() == "right")
     {
