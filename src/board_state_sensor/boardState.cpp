@@ -18,7 +18,7 @@ bool operator==(MsgBoard board1, MsgBoard board2)
 
 bool operator!=(MsgBoard board1, MsgBoard board2)
 {
-    return !(board1==board2);
+    return not (board1==board2);
 }
 
 BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
@@ -73,7 +73,7 @@ void BoardState::InternalThreadEntry()
         if (board_state == STATE_INIT)
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
-            if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) ++board_state;
+            if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) { ++board_state; }
         }
         else if (board_state == STATE_CALIB && not ros::isShuttingDown())
         {
@@ -166,7 +166,7 @@ void BoardState::InternalThreadEntry()
 
                     cv::waitKey(3);
 
-                    if (isBoardSane()) ++board_state;
+                    if (isBoardSane()) { ++board_state; }
                 }
             }
         }
@@ -209,8 +209,8 @@ void BoardState::InternalThreadEntry()
 
                             if (col_area > area_threshold)
                             {
-                                if (i==0)  cell.setRedArea(col_area);
-                                else       cell.setBlueArea(col_area);
+                                if (i==0)  { cell. setRedArea(col_area); }
+                                else       { cell.setBlueArea(col_area); }
                             }
                         }
                     }
