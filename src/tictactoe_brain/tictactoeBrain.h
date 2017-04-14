@@ -27,6 +27,8 @@ private:
 
     ros::Rate r;
 
+    bool _legacy_code;   // Flag to enable the legacy code [who does not work]
+
     int    num_games;
     int    curr_game;
 
@@ -128,7 +130,8 @@ protected:
 
 public:
 
-    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random");
+    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random",
+                   bool legacy_code = false);
 
     ~tictactoeBrain();
 

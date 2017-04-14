@@ -27,7 +27,7 @@ private:
     image_transport::ImageTransport _img_trp;
     image_transport::Subscriber     _img_sub;
 
-    bool _legacy_code;   // Flag to enable the legacy code , who does not work
+    bool _legacy_code;   // Flag to enable the legacy code [who does not work]
 
     hsvColorRange  hsv_red;
     hsvColorRange hsv_blue;
@@ -216,7 +216,7 @@ private:
     bool putDownTokenImpl();
 
 public:
-    TTTController(std::string name, std::string limb,
+    TTTController(std::string name, std::string limb, bool legacy_code = false,
                   bool no_robot = false, bool use_forces = false);
     ~TTTController();
 

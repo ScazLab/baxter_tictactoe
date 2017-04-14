@@ -6,10 +6,11 @@ using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
-tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) : _nh(_name),
-                               spinner(4), r(100), _is_board_detected(false),
-                               leftArmCtrl(_name, "left"), rightArmCtrl(_name, "right")
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool legacy_code) : _nh(_name),
+                               spinner(4), r(100), _legacy_code(legacy_code), _is_board_detected(false),
+                               leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code)
 {
+    ROS_INFO("Legacy code %s enabled.", legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
 
     srand(ros::Time::now().nsec);
@@ -111,7 +112,7 @@ void tictactoeBrain::InternalThreadEntry()
             break;
         }
 
-        ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
+        // ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
 
         r.sleep();
     }

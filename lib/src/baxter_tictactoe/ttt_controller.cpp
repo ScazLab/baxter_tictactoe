@@ -10,9 +10,9 @@ using namespace cv;
 /*                            TTTController                               */
 /**************************************************************************/
 
-TTTController::TTTController(string name, string limb, bool no_robot, bool use_forces):
-                             ArmCtrl(name, limb, no_robot, use_forces, false),
-                             r(100), _img_trp(_n), _legacy_code(false), _is_img_empty(true)
+TTTController::TTTController(string name, string limb, bool legacy_code, bool no_robot, bool use_forces):
+                             ArmCtrl(name, limb, no_robot, use_forces, false, false),
+                             r(100), _img_trp(_n), _legacy_code(legacy_code), _is_img_empty(true)
 {
     pthread_mutexattr_t _mutex_attr;
     pthread_mutexattr_init(&_mutex_attr);
@@ -176,9 +176,11 @@ bool TTTController::gripToken()
 
         goToPoseNoCheck(px,py,pz,VERTICAL_ORI_L);
 
-        if(pz < -0.2)
+        if(pz < -0.3)
         {
             ROS_WARN("I went too low! Exiting.");
+            destroyCVWindows();
+            gripObject();
             return false;
         }
 
