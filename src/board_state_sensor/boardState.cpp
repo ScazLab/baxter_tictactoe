@@ -162,8 +162,10 @@ void BoardState::InternalThreadEntry()
                         board.addCell(Cell(apx_contours[i]));
                     }
 
-                    if(doShow) cv::imshow("[Cells_Definition] cell boundaries", board_cells);
+                    if(doShow) { cv::imshow("[Cells_Definition] cell boundaries", board_cells); }
+
                     cv::waitKey(3);
+
                     if (isBoardSane()) ++board_state;
                 }
             }
@@ -171,7 +173,7 @@ void BoardState::InternalThreadEntry()
         else if (board_state == STATE_READY && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %i", board_state, board.getNumCells());
-            if (!_img_empty)
+            if (not _img_empty)
             {
                 board.resetCellStates();
                 cv::Mat img_copy = img_in.clone();
@@ -238,7 +240,7 @@ void BoardState::InternalThreadEntry()
             }
         }
 
-        if (!_img_empty)
+        if (not _img_empty)
         {
             sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img_out).toImageMsg();
             img_pub.publish(msg);

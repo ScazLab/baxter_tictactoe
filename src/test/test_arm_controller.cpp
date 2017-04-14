@@ -16,7 +16,7 @@ int main(int argc, char * argv[])
     // ScanState srv;
 
     // while(!client.call(srv))
-    // {        
+    // {
     //     cout << "No client" << endl;
     // }
     // cout << (srv.response.state ? "true" : "false") << endl;
@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
 
     left_ac->moveToRest();
     right_ac->moveToRest();
-    while(!(left_ac->getState() == REST && right_ac->getState() == REST)) 
+    while(not (left_ac->getState() == REST && right_ac->getState() == REST))
     {
         ros::spinOnce();
     }
@@ -42,10 +42,10 @@ int main(int argc, char * argv[])
         while(left_ac->getState() != PICK_UP){ros::spinOnce();}
 
         left_ac->putDownToken(i + 1);
-        while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}    
+        while(left_ac->getState() != PUT_DOWN){ros::spinOnce();}
     }
 
-  
+
     // left_ac->moveToRest();
     // while(!(left_ac->getState() == REST)) {ros::spinOnce();}
 
