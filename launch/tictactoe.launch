@@ -39,5 +39,5 @@
     <!-- <include file="$(find sound_play)/soundplay_node.launch" /> We don't use the existing launch file because we want this node to be a must, i.e.required="true"-->
     <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 
-    <!-- <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/> -->
+    <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
 </launch>
