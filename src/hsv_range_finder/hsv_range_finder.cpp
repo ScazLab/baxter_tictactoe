@@ -18,9 +18,9 @@ private:
     image_transport::ImageTransport image_transport;
     image_transport::Subscriber image_subscriber;
 
-    hsvColorRange hsv;
-
     std::string window_name;
+
+    hsvColorRange hsv;
 
 public:
     HsvRangeFinder(std::string _name) : node_handle(_name), image_transport(node_handle), window_name(_name),

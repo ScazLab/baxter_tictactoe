@@ -124,10 +124,10 @@ bool TTTController::computeTokenOffset(cv::Point &offset)
         int y_max = 0;
         int x_max = 0;
 
-        for(int i = 0; i < contours.size(); i++)
+        for (size_t i = 0; i < contours.size(); i++)
         {
             vector<cv::Point> contour = contours[i];
-            for(int j = 0; j < contour.size(); j++)
+            for (size_t j = 0; j < contour.size(); j++)
             {
                 if(y_min > contour[j].y) y_min = contour[j].y;
                 if(x_min > contour[j].x) x_min = contour[j].x;
@@ -182,7 +182,7 @@ cv::Mat TTTController::detectPool()
     int largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -208,9 +208,9 @@ Mat TTTController::isolateToken(Mat pool)
     bitwise_and(blue, pool, out);
 
     // Some morphological operations to remove noise and clean up the image
-    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
-    for (int i = 0; i < 4; ++i) dilate(out, out, Mat());
-    for (int i = 0; i < 2; ++i) erode(out, out, Mat());
+    for (size_t i = 0; i < 2; ++i)  erode(out, out, Mat());
+    for (size_t i = 0; i < 4; ++i) dilate(out, out, Mat());
+    for (size_t i = 0; i < 2; ++i)  erode(out, out, Mat());
 
     imshow("Rough", out);
 
@@ -363,7 +363,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     int largest_index = 0, next_largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ 2nd-largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -389,7 +389,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     largest_index = 0;
 
     // iterate through contours and keeps track of contour w/ largest area
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) > largest)
         {
@@ -406,7 +406,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     double y_max = 0;
     double x_max = 0;
 
-    for(int i = 0; i < board_outline.size(); i++)
+    for (size_t i = 0; i < board_outline.size(); i++)
     {
         if(y_min > board_outline[i].y) y_min = board_outline[i].y;
         if(x_min > board_outline[i].x) x_min = board_outline[i].x;
@@ -422,7 +422,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
     // remove outer board contours
     contours.erase(contours.begin() + largest_index);
 
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         if(contourArea(contours[i], false) < 200)
         {
@@ -430,7 +430,7 @@ void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
         }
     }
 
-    for(int i = 0; i < contours.size(); i++)
+    for (size_t i = 0; i < contours.size(); i++)
     {
         drawContours(output, contours, i, Scalar(255,255,255), CV_FILLED);
     }
@@ -451,14 +451,14 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
     cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
-    for(int i = contours.size(); i >= 3; i -= 3)
+    for (size_t i = contours.size(); i >= 3; i -= 3)
     {
         std::sort(contours.begin() + (i - 3), contours.begin() + i, descendingX);
     }
 
     _offsets.resize(9);
     (*centroids).resize(9);
-    for(int i = contours.size() - 1; i >= 0; i--)
+    for (int i = int(contours.size()) - 1; i >= 0; i--)
     {
         double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
@@ -505,7 +505,7 @@ void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point
 
 bool TTTController::offsetsReachable()
 {
-    for(int i = 0; i < NUMBER_OF_CELLS; i++)
+    for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
         double px = getPos().x + _offsets[i].x;
         double py = getPos().y + _offsets[i].y;
@@ -514,7 +514,7 @@ bool TTTController::offsetsReachable()
         vector<double> joint_angles;
         if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
         {
-            ROS_INFO("Offset number %i not reachable", i);
+            ROS_INFO("Offset number %lu not reachable", i);
             return false;
         }
     }
@@ -547,15 +547,17 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
 bool TTTController::createCVWindows()
 {
     namedWindow("Hand Camera", WINDOW_NORMAL);
-    namedWindow("Rough", WINDOW_NORMAL);
-    namedWindow("Processed", WINDOW_NORMAL);
+    namedWindow(      "Rough", WINDOW_NORMAL);
+    namedWindow(  "Processed", WINDOW_NORMAL);
     resizeWindow("Hand Camera", 480, 300);
-    resizeWindow("Rough",   480, 300);
-    resizeWindow("Processed",   480, 300);
-    moveWindow("Hand Camera", 10, 10);
-    moveWindow("Rough", 10, 370);
-    moveWindow("Processed", 10, 720);
+    resizeWindow(      "Rough", 480, 300);
+    resizeWindow(  "Processed", 480, 300);
+    moveWindow("Hand Camera", 10,  10);
+    moveWindow(      "Rough", 10, 370);
+    moveWindow(  "Processed", 10, 720);
     waitKey(10);
+
+    return true;
 }
 
 bool TTTController::destroyCVWindows()
@@ -563,6 +565,8 @@ bool TTTController::destroyCVWindows()
     destroyWindow("Hand Camera");
     destroyWindow("Processed");
     destroyWindow("Rough");
+
+    return true;
 }
 
 bool TTTController::goHome()

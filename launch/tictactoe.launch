@@ -17,6 +17,16 @@
         V: [ 10, 256]
     </rosparam>
 
+    <rosparam param = "ttt_controller/tile_pile_position">[0.2, 0.3, 0.3]</rosparam>
+
+    <!-- Range thresholds for the blue tokens -->
+    <rosparam param = "ttt_controller/board_coordinates">
+        TL: [ 1.0, 0.0, 0.0]
+        TR: [ 1.0, 0.0, 0.0]
+        BR: [ 1.0, 0.0, 0.0]
+        BL: [ 1.0, 0.0, 0.0]
+    </rosparam>
+
     <!-- Red is not working as of now -->
     <!-- <rosparam param="ttt_brain/robot_color">blue</rosparam> -->
     <rosparam param="ttt_brain/num_games">3</rosparam>

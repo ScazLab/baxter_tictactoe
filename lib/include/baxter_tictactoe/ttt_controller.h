@@ -22,10 +22,10 @@
 class TTTController : public ArmCtrl
 {
 private:
+    ros::Rate r;
+
     image_transport::ImageTransport _img_trp;
     image_transport::Subscriber     _img_sub;
-
-    ros::Rate r;
 
     hsvColorRange  hsv_red;
     hsvColorRange hsv_blue;

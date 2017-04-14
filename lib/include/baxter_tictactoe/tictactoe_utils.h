@@ -148,7 +148,7 @@ public:
     /**
      * Resets the board to an empty, pristine state. It deletes the cells.
      */
-    bool resetBoard() { cells.clear(); };
+    bool resetBoard() { cells.clear(); return true; };
 
     /**
      * Computes and updates the cells' states according to the amount of red and blue area.
@@ -190,7 +190,7 @@ public:
 
     /* Self-explaining "getters" */
     Contours getContours();
-    int      getNumCells()             { return cells.size();              };
+    unsigned int getNumCells()         { return cells.size();              };
 
     Cell&       getCell(int i)         { return cells[i];                  };
     int         getCellArea(int i)     { return cells[i].getContourArea(); };

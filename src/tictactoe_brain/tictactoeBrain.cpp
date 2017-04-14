@@ -125,7 +125,7 @@ void tictactoeBrain::playOneGame()
 
     bool has_to_cheat=false;
 
-    for (int j = 0; j < cheating_games.size(); ++j)
+    for (size_t j = 0; j < cheating_games.size(); ++j)
     {
         if (cheating_games[j] == curr_game)
         {
@@ -367,7 +367,8 @@ unsigned short int tictactoeBrain::getNumTokens()
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
+
+    for (size_t i = 0; i < aux.getNumCells(); i++)
     {
         if(aux.getCellState(i)!=COL_EMPTY) counter++;
     }
@@ -378,7 +379,8 @@ unsigned short int tictactoeBrain::getNumTokens(std::string token_type)
 {
     unsigned short int counter=0;
     ttt::Board aux = getBoard();
-    for(int i = 0; i < aux.getNumCells(); i++)
+
+    for (size_t i = 0; i < aux.getNumCells(); i++)
     {
        if(aux.getCellState(i)==token_type) counter++;
     }
