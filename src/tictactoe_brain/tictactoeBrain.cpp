@@ -157,7 +157,7 @@ void tictactoeBrain::playOneGame()
         else // Participant's turn
         {
             ROS_INFO("Waiting for the participant's move.");
-            ROS_INFO("I am expecting %lu token%s from my opponent", n_robot_tokens, n_robot_tokens==0?"":"s");
+            ROS_INFO("I am expecting %lu token%s from my opponent", n_robot_tokens, n_robot_tokens==1?"":"s");
             saySentence("It is your turn", 0.1);
             waitForOpponentTurn(n_robot_tokens);
         }
@@ -413,13 +413,21 @@ unsigned short int tictactoeBrain::getWinner()
 
 void tictactoeBrain::waitForOpponentTurn(const uint8_t& n_robot_tokens)
 {
+    int cnt = 0;
     // We wait until the number of opponent's tokens equals the robots'
     while(ros::ok())
     {
-        ROS_WARN("Press ENTER when the opponent's turn is done");
-        std::cin.get();
+        if (getNumTokens(getOpponentColor()) == n_robot_tokens)
+        {
+            ++cnt;
+            ROS_INFO_THROTTLE(1, "Correct number of tiles! Cnt %i", cnt);
+        }
+        else
+        {
+            cnt = 0;
+        }
 
-        if (getNumTokens(getOpponentColor()) == n_robot_tokens) { return; }
+        if (cnt == 100) { return; } // 100 means 1 second
 
         r.sleep();
     }
