@@ -78,7 +78,7 @@ void BoardState::InternalThreadEntry()
         else if (board_state == STATE_CALIB && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
-            if (!_img_empty)
+            if (not _img_empty)
             {
                 cv::Mat img_gray;
                 cv::Mat img_binary;
