@@ -30,9 +30,21 @@ private:
     hsvColorRange  hsv_red;
     hsvColorRange hsv_blue;
 
+    geometry_msgs::Point _tiles_pile_pos;
+
+    std::vector<geometry_msgs::Point>       _offsets;   // Legacy, it does not work
+
+    std::vector<geometry_msgs::Point>    _board_poss;
+    std::vector<geometry_msgs::Point>  _board_coords;
+    std::vector<geometry_msgs::Point> _board_offsets;
+
     bool createCVWindows();
 
     bool destroyCVWindows();
+
+    bool tilesPilePosFromParam(XmlRpc::XmlRpcValue _params);
+
+    bool  boardCoordsFromParam(XmlRpc::XmlRpcValue _params);
 
     /**
      * Sets the joint-level configuration for the home position
@@ -40,7 +52,6 @@ private:
     void setHomeConfiguration();
 
     /* SCAN BOARD */
-        std::vector<geometry_msgs::Point> _offsets;
 
         /*
          * Hovers arm above board
@@ -118,7 +129,7 @@ private:
          *            from arm to board surface
          */
         void setOffsets(int board_area, ttt::Contours contours, float dist,
-                        cv::Mat *output, std::vector<cv::Point> *centroids);
+                        cv::Mat &output, std::vector<cv::Point> &centroids);
 
         std::vector<geometry_msgs::Point> getOffsets() { return _offsets; };
 
@@ -133,7 +144,7 @@ private:
          *                       and corner of corner cell
          */
         void setZone(ttt::Contours contours, float dist, std::vector<cv::Point> board_corners,
-                     std::vector<cv::Point> c, std::vector<cv::Point> * cell_to_corner);
+                     std::vector<cv::Point> c, std::vector<cv::Point> &cell_to_corner);
 
         /*
          * checks if Baxter's arm has a joint angles solution for all the calculated cell offsets

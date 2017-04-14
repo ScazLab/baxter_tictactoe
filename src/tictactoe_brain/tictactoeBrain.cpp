@@ -6,10 +6,9 @@ using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
-tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) :
-                               r(100), _nh(name), spinner(4), _is_board_detected(false),
-                               leftArmCtrl("ttt_controller", "left"),
-                               rightArmCtrl("ttt_controller", "right")
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy) : _nh(_name),
+                               spinner(4), r(100), _is_board_detected(false),
+                               leftArmCtrl(_name, "left"), rightArmCtrl(_name, "right")
 {
     setBrainState(TTTBrainState::INIT);
 

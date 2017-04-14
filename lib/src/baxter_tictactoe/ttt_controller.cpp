@@ -19,27 +19,94 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
     pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
     pthread_mutex_init(&_mutex_img, &_mutex_attr);
 
-    XmlRpc::XmlRpcValue hsv_red_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
-    hsv_red=hsvColorRange(hsv_red_symbols);
-
-    XmlRpc::XmlRpcValue hsv_blue_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
-    hsv_blue=hsvColorRange(hsv_blue_symbols);
-
-    setHomeConfiguration();
-
-    insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
-    insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
-    insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
-
     if (getLimb() == "left")
     {
+        XmlRpc::XmlRpcValue hsv_red_symbols;
+        ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+        hsv_red=hsvColorRange(hsv_red_symbols);
+
+        XmlRpc::XmlRpcValue hsv_blue_symbols;
+        ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+        hsv_blue=hsvColorRange(hsv_blue_symbols);
+
+        XmlRpc::XmlRpcValue tiles_pile_pos;
+        ROS_ASSERT_MSG(_n.getParam("tile_pile_position",tiles_pile_pos), "No 3D position of the pile of tiles!");
+        tilesPilePosFromParam(tiles_pile_pos);
+
+        XmlRpc::XmlRpcValue board_coordinates;
+        ROS_ASSERT_MSG(_n.getParam("board_coordinates",board_coordinates), "No 3D position of the board!");
+        boardCoordsFromParam(board_coordinates);
+
+        setHomeConfiguration();
+
+        insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
+        insertAction(ACTION_PICKUP,  static_cast<f_action>(&TTTController::pickUpTokenImpl));
+        insertAction(ACTION_PUTDOWN, static_cast<f_action>(&TTTController::putDownTokenImpl));
+
         _img_sub = _img_trp.subscribe("/cameras/"+getLimb()+"_hand_camera/image",
                                SUBSCRIBER_BUFFER, &TTTController::imageCb, this);
     }
 
     if (!callAction(ACTION_HOME)) setState(ERROR);
+}
+
+bool TTTController::tilesPilePosFromParam(XmlRpc::XmlRpcValue _params)
+{
+    ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeArray);
+
+    for(int j=0; j<_params.size(); ++j)
+    {
+        ROS_ASSERT(_params[j].getType()==XmlRpc::XmlRpcValue::TypeDouble);
+    }
+
+    _tiles_pile_pos.x = _params[0];
+    _tiles_pile_pos.y = _params[1];
+    _tiles_pile_pos.z = _params[2];
+
+    ROS_INFO("[%s] Tile Pile Position: %g %g %g", getLimb().c_str(), _tiles_pile_pos.x,
+                                                  _tiles_pile_pos.y, _tiles_pile_pos.z);
+
+    return true;
+}
+
+bool TTTController::boardCoordsFromParam(XmlRpc::XmlRpcValue _params)
+{
+    ROS_ASSERT(_params.getType()==XmlRpc::XmlRpcValue::TypeStruct);
+    _board_coords.clear();
+
+    for (XmlRpc::XmlRpcValue::iterator i=_params.begin(); i!=_params.end(); ++i)
+    {
+        ROS_ASSERT(i->second.getType()==XmlRpc::XmlRpcValue::TypeArray);
+        for(int j=0; j<i->second.size(); ++j)
+        {
+            ROS_ASSERT(i->second[j].getType()==XmlRpc::XmlRpcValue::TypeDouble);
+        }
+        // printf("%s %i %i\n", i->first.c_str(), static_cast<int>(i->second[0]),
+        //                                        static_cast<int>(i->second[1]));
+        if (i->first == "TL" || i->first == "TR" ||
+            i->first == "BR" || i->first == "BL")
+        {
+            geometry_msgs::Point p;
+            p.x = i->second[0];
+            p.y = i->second[1];
+            p.z = i->second[2];
+
+            _board_coords.push_back(p);
+        }
+    }
+
+    ROS_ASSERT(_board_coords.size() == 4);
+
+    std::string coords_str = "";
+    for (size_t i = 0; i < _board_coords.size(); ++i)
+    {
+        coords_str = coords_str + "[ " + toString(_board_coords[i].x) + " " +
+                                         toString(_board_coords[i].y) + " " +
+                                         toString(_board_coords[i].z) + "] ";
+    }
+    ROS_INFO("[%s] Board coordinates [BL BR TL TR]: %s", getLimb().c_str(), coords_str.c_str());
+
+    return true;
 }
 
 /**************************************************************************/
@@ -271,7 +338,7 @@ void TTTController::processImage(float dist)
 
         if(contours.size() == 9)
         {
-            setOffsets(board_area, contours, dist, &board, &centroids);
+            setOffsets(board_area, contours, dist, board, centroids);
             // imshow("[ScanBoard] Processed", board);
 
             if(offsetsReachable())
@@ -282,7 +349,7 @@ void TTTController::processImage(float dist)
             else if(!offsetsReachable())
             {
                 ROS_WARN("[Scan Board] Please move board within reachable zone\n");
-                setZone(contours, dist, board_corners, centroids, &cell_to_corner);
+                setZone(contours, dist, board_corners, centroids, cell_to_corner);
 
                 // calls to IK solver in setZone takes too long; makes the image update
                 // very slow and hard for users to calibrate board position, which is why
@@ -309,12 +376,10 @@ void TTTController::processImage(float dist)
                         isolateBoard(contours, board_area, temp_board_corners, binary.clone(), board);
                         if(contours.size() == 9)
                         {
-                            setOffsets(board_area, contours, dist, &board, &temp_centroids);
+                            setOffsets(board_area, contours, dist, board, temp_centroids);
                         }
-                        if(offsetsReachable())
-                        {
-                            break;
-                        }
+
+                        if(offsetsReachable()) { break; }
                         interval += 5;
                     }
 
@@ -444,12 +509,12 @@ bool TTTController::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void TTTController::setOffsets(int board_area, ttt::Contours contours, float dist, Mat *output, vector<cv::Point> *centroids)
+void TTTController::setOffsets(int board_area, ttt::Contours contours, float dist, Mat &output, vector<cv::Point> &centroids)
 {
     cv::Point center(_img_size.width / 2, _img_size.height / 2);
 
-    circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
-    cv::putText(*output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+    circle(output, center, 3, Scalar(180,40,40), CV_FILLED);
+    cv::putText(output, "Center", center, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
 
     for (size_t i = contours.size(); i >= 3; i -= 3)
     {
@@ -457,18 +522,19 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
     }
 
     _offsets.resize(9);
-    (*centroids).resize(9);
+    centroids.resize(9);
+
     for (int i = int(contours.size()) - 1; i >= 0; i--)
     {
         double x = moments(contours[i], false).m10 / moments(contours[i], false).m00;
         double y = moments(contours[i], false).m01 / moments(contours[i], false).m00;
         cv::Point centroid(x,y);
 
-        (*centroids)[i] = centroid;
+        centroids[i] = centroid;
 
-        // cv::putText(*output, intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
-        // circle(*output, centroid, 2, Scalar(180,40,40), CV_FILLED);
-        line(*output, centroid, center, cv::Scalar(180,40,40), 1);
+        // cv::putText(output, intToString(i), centroid, cv::FONT_HERSHEY_PLAIN, 0.9, cv::Scalar(180,40,40));
+        // circle(output, centroid, 2, Scalar(180,40,40), CV_FILLED);
+        line(output, centroid, center, cv::Scalar(180,40,40), 1);
 
         _offsets[i].x = (centroid.y - center.y) * 0.0025 * dist + 0.04;
         _offsets[i].y = (centroid.x - center.x) * 0.0025 * dist;
@@ -477,15 +543,15 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
 }
 
 void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point> board_corners,
-                            vector<cv::Point> c, vector<cv::Point> * cell_to_corner)
+                            vector<cv::Point> c, vector<cv::Point> &cell_to_corner)
 {
-    (*cell_to_corner).resize(4);
+    cell_to_corner.resize(4);
 
     // calculate offset between the center of corner cells and the corners of the board
-    (*cell_to_corner)[0] = cv::Point(board_corners[0].x - c[0].x, board_corners[0].y - c[0].y);
-    (*cell_to_corner)[1] = cv::Point(board_corners[1].x - c[2].x, board_corners[1].y - c[2].y);
-    (*cell_to_corner)[2] = cv::Point(board_corners[2].x - c[6].x, board_corners[2].y - c[6].y);
-    (*cell_to_corner)[3] = cv::Point(board_corners[3].x - c[8].x, board_corners[3].y - c[8].y);
+    cell_to_corner[0] = cv::Point(board_corners[0].x - c[0].x, board_corners[0].y - c[0].y);
+    cell_to_corner[1] = cv::Point(board_corners[1].x - c[2].x, board_corners[1].y - c[2].y);
+    cell_to_corner[2] = cv::Point(board_corners[2].x - c[6].x, board_corners[2].y - c[6].y);
+    cell_to_corner[3] = cv::Point(board_corners[3].x - c[8].x, board_corners[3].y - c[8].y);
 
     // if the centroid of a corner cell is reachable,
     // iterate and check if a location 10 pixels further from arm is still reachable

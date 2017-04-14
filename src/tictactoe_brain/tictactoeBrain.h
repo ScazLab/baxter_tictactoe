@@ -22,18 +22,16 @@ namespace ttt
 class tictactoeBrain : public ROSThread
 {
 private:
-    std::string name;
+    ros::NodeHandle _nh;        // ROS node handle
+    ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
+
+    ros::Rate r;
 
     int    num_games;
     int    curr_game;
 
     std::vector<int> cheating_games; // vector that stores which of the games will be a cheating one.
     std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
-
-    ros::Rate r;
-
-    ros::NodeHandle _nh;        // ROS node handle
-    ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     /* STATE OF THE BOARD */
     ttt::Board               board;

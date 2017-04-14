@@ -17,14 +17,14 @@
         V: [ 10, 256]
     </rosparam>
 
-    <rosparam param = "ttt_controller/tile_pile_position">[0.2, 0.3, 0.3]</rosparam>
+    <rosparam param = "ttt_controller/tile_pile_position">[0.2, 0.3, 0.1]</rosparam>
 
     <!-- Range thresholds for the blue tokens -->
     <rosparam param = "ttt_controller/board_coordinates">
-        TL: [ 1.0, 0.0, 0.0]
-        TR: [ 1.0, 0.0, 0.0]
-        BR: [ 1.0, 0.0, 0.0]
-        BL: [ 1.0, 0.0, 0.0]
+        TL: [ 1.0, 0.2, 0.0]
+        TR: [ 1.0, 0.3, 0.0]
+        BR: [ 1.0, 0.4, 0.0]
+        BL: [ 1.0, 0.1, 0.0]
     </rosparam>
 
     <!-- Red is not working as of now -->
