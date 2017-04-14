@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 # project(baxter_tictactoe)
 
+
+
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 ## Declare a C++ library
@@ -13,12 +15,20 @@ add_library(${PROJECT_NAME}   include/${PROJECT_NAME}/tictactoe_utils.h
                               src/${PROJECT_NAME}/tictactoe_utils.cpp
                               src/${PROJECT_NAME}/ttt_controller.cpp)
 
+add_library(tile_detection
+                              include/baxter_ttt_perception/tile_detection.h
+                              src/baxter_ttt_perception/tile_detection.cpp
+                          )
+
+
+#add_executable(ttt-executable             src/baxter_ttt_perception/wrapper.cpp)
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(${PROJECT_NAME}   baxter_tictactoe_generate_messages_cpp
                                    ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                    ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}   ${OpenCV_LIBRARIES}

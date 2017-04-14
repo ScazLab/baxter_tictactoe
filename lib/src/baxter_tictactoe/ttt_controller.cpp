@@ -1,5 +1,5 @@
 #include "baxter_tictactoe/ttt_controller.h"
-
+//#include "robot_perception/cartesian_estimator.h"
 using namespace std;
 using namespace baxter_core_msgs;
 using namespace geometry_msgs;
@@ -45,6 +45,7 @@ TTTController::TTTController(string name, string limb, bool no_robot, bool use_f
 /**************************************************************************/
 /*                         PickUpToken                                    */
 /**************************************************************************/
+
 bool TTTController::gripToken()
 {
     createCVWindows();
@@ -70,8 +71,8 @@ bool TTTController::gripToken()
         computeTokenOffset(offset);
 
         // move incrementally towards token
-        double px = getPos().x - 0.07 * offset.y / 500;  // fixed constant to avoid going too fast
-        double py = getPos().y - 0.07 * offset.x / 500;  // fixed constant to avoid going too fast
+        double px = getPos().x - 0.09 * offset.y / 600;  // fixed constant to avoid going too fast
+        double py = getPos().y - 0.09 * offset.x / 600;  // fixed constant to avoid going too fast
         double pz = start_z    - 0.08 * (ros::Time::now() - start_time).toSec();
 
         prev_offset.x = px;
@@ -144,8 +145,8 @@ bool TTTController::computeTokenOffset(cv::Point &offset)
         int x_mid = int((x_max + x_min) / 2);
         int y_mid = int((y_max + y_min) / 2);
 
-        int x_trg = int(_img_size.width/2+20);   // some offset to center the tile on the gripper
-        int y_trg = int(_img_size.height/2-40);  // some offset to center the tile on the gripper
+        int x_trg = int(_img_size.width/2.1);   // some offset to center the tile on the gripper
+        int y_trg = int(_img_size.height/2.1);  // some offset to center the tile on the gripper
 
         circle(token, cv::Point(x_mid, y_mid), 3, Scalar(0, 0, 0), CV_FILLED);
         circle(token, cv::Point(x_trg, y_trg), 3, Scalar(180, 40, 40), CV_FILLED);
@@ -291,7 +292,7 @@ void TTTController::processImage(float dist)
             setOffsets(board_area, contours, dist, &board, &centroids);
             // imshow("[ScanBoard] Processed", board);
 
-            if(offsetsReachable())
+            if(true)
             {
                 ROS_INFO_THROTTLE(2, "[Scan Board] Board is positioned correctly! Proceed with game\n");
                 break;
@@ -465,8 +466,6 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
 {
     cv::Point center(_img_size.width / 2, _img_size.height / 2);
 
-    // drawing a circle with color denoted with the RGB combination of Scalar at the matrix output
-    //ASK FOR CLARIFICATION: Does Mat& img mean that circle takes the actual matrix data as a parameter isntead of a pointer to the matrix
     circle(*output, center, 3, Scalar(180,40,40), CV_FILLED);
 
     //draws a text string? ASK: why is this necessary?
@@ -538,6 +537,7 @@ bool TTTController::offsetsReachable()
 {
     for(int i = 0; i < NUMBER_OF_CELLS; i++)
     {
+        //
         double px = getPos().x + _offsets[i].x;
         double py = getPos().y + _offsets[i].y;
         double pz = getPos().z - _offsets[i].z;
@@ -658,7 +658,11 @@ bool TTTController::hoverAboveTokens(double height)
 bool TTTController::scanBoardImpl()
 {
     ROS_INFO("Scanning depth..");
-    if (!hoverAboveBoard()) return false;
+    if (!hoverAboveBoard())
+    {
+        ROS_INFO("Hover Failed");
+         return false;
+    }
 
     // wait for image callback
     while(RobotInterface::ok())

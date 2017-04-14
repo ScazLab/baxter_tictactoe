@@ -3,12 +3,37 @@
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find baxter_tictactoe)/custom_rosconsole.conf"/>
 
     <include file="$(find baxter_tictactoe)/launch/usb_cam_node.launch" />
+        <node name="image_view_hsv" pkg="image_view" type="image_view" respawn="false" output="log">
+        <remap from="image" to="/ttt_executable/image_result"/>
+        <param name="autosize" value="true" />
+    </node>
+
+    <param name="ttt_executable/reference_frame" value="/base"/>
+    <param name="ttt_executable/camera_frame"    value="/left_hand_camera"/>
+    <param name="ttt_executable/area_threshold"  value="250"/>
+
+    <node pkg="baxter_collaboration" type="ttt_executable" name="ttt_executable" output="screen" respawn="true">
+        <remap from="ttt_executable/image" to="/cameras/left_hand_camera/image"/>
+        <remap from="ttt_executable/camera_info" to="/cameras/left_hand_camera/camera_info"/>
+    </node>
 
     <!-- Range thresholds for the red tokens -->
     <rosparam param = "baxter_tictactoe/hsv_red">
         H: [160,  20]
         S: [ 40, 196]
         V: [ 50, 196]
+    </rosparam>
+
+    <rosparam param = "ttt_executable/objects_db">
+         <!-- This should be the blue box -->
+        "RED" : { size: [0.099, 0.030], HSV: { H: [160,  20], S: [ 40, 196], V: [50,  196]}}
+         <!-- This should be the blue box -->
+        "BLUE"  : { size: [0.111, 0.111], HSV: { H: [ 60, 130], S: [90, 256], V: [10, 256]}}
+        "screwdriver" : { size: [0.099, 0.030], HSV: { H: [160,  10], S: [ 70, 166], V: [10,  66]}}
+         <!-- This should be the blue box -->
+        "screws_box"  : { size: [0.111, 0.111], HSV: { H: [ 80, 130], S: [120, 216], V: [70, 146]}}
+         <!-- This should be the green box -->
+        "brackets_box": { size: [0.111, 0.111], HSV: { H: [ 30, 100], S: [ 80, 246], V: [20,  96]}}
     </rosparam>
 
     <!-- Range thresholds for the blue tokens -->
@@ -35,6 +60,8 @@
         <remap from="image" to="/robot/xdisplay"/>
         <param name="autosize" value="true" />
     </node> -->
+
+    <node pkg="baxter_collaboration" type="modular_action_provider" name="modular_action_provider" output="screen"/>
 
     <node name="camera_view" pkg="image_view" type="image_view" respawn="false" output="screen">
         <remap from="image" to="/baxter_tictactoe/board_state_img"/>

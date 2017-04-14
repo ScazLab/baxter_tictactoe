@@ -87,8 +87,8 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::MATCH_STARTED)
         {
-            saySentence("Welcome!  Let's play Tic Tac Toe.", 4);
-            saySentence("Do not grasp your token before I say that it is your turn", 5);
+            // saySentence("Welcome!  Let's play Tic Tac Toe.", 4);
+            // saySentence("Do not grasp your token before I say that it is your turn", 5);
             curr_game = 1;
             setBrainState(TTTBrainState::GAME_STARTED);
         }
@@ -112,7 +112,7 @@ void tictactoeBrain::InternalThreadEntry()
             break;
         }
 
-        ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
+        // ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
 
         r.sleep();
     }

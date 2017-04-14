@@ -128,6 +128,7 @@ add_subdirectory(lib)
 add_executable(tictactoe_brain                  src/tictactoe_brain/tictactoeBrain.h
                                                 src/tictactoe_brain/tictactoeBrain.cpp
                                                 src/tictactoe_brain/tictactoe_brain.cpp)
+add_executable(ttt_executable                   src/baxter_ttt_perception/wrapper.cpp)
 add_executable(hsv_range_finder                 src/hsv_range_finder/hsv_range_finder.cpp)
 add_executable(board_to_baxter_display          src/board_to_baxter_display/board_to_baxter_display.cpp)
 add_executable(board_state_sensor               src/board_state_sensor/boardState.h
@@ -135,7 +136,11 @@ add_executable(board_state_sensor               src/board_state_sensor/boardStat
                                                 src/board_state_sensor/board_state_sensor.cpp)
 
 ## Add cmake target dependencies of the executable
+
 add_dependencies(tictactoe_brain                baxter_tictactoe_generate_messages_cpp
+                                                ${${PROJECT_NAME}_EXPORTED_TARGETS}
+                                                ${catkin_EXPORTED_TARGETS})
+add_dependencies(ttt_executable                 baxter_tictactoe_generate_messages_cpp
                                                 ${${PROJECT_NAME}_EXPORTED_TARGETS}
                                                 ${catkin_EXPORTED_TARGETS})
 add_dependencies(hsv_range_finder               baxter_tictactoe_generate_messages_cpp
@@ -150,6 +155,9 @@ add_dependencies(board_state_sensor             baxter_tictactoe_generate_messag
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(tictactoe_brain           baxter_tictactoe
+                                                ${catkin_LIBRARIES}
+                                                ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(ttt_executable            tile_detection
                                                 ${catkin_LIBRARIES}
                                                 ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(hsv_range_finder          baxter_tictactoe
