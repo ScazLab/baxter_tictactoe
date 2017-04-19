@@ -70,6 +70,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
 
 void tictactoeBrain::InternalThreadEntry()
 {
+    bool wipe_out_board_message = true;
     while (ros::ok())
     {
         if      (getBrainState() == TTTBrainState::INIT)
@@ -94,16 +95,25 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::GAME_STARTED)
         {
-            if (isBoardEmpty())     { setBrainState(TTTBrainState::GAME_RUNNING); }
+            if (isBoardEmpty())
+            {
+                setBrainState(TTTBrainState::GAME_RUNNING);
+                wipe_out_board_message = true;
+            }
+            else if (wipe_out_board_message == true)
+            {
+                wipe_out_board_message = false;
+                saySentence("Please clean the board so that we can start a new game.", 6);
+            }
         }
         else if (getBrainState() == TTTBrainState::GAME_RUNNING)
         {
-            ROS_INFO("GAME #%i", curr_game);
+            ROS_WARN("GAME #%i", curr_game);
 
             playOneGame();
 
-            if (curr_game == num_games) { setBrainState(baxter_tictactoe::TTTBrainState::MATCH_FINISHED); }
-            else                        { setBrainState(baxter_tictactoe::TTTBrainState::GAME_STARTED); }
+            if (curr_game > num_games) { setBrainState(baxter_tictactoe::TTTBrainState::MATCH_FINISHED); }
+            else                       { setBrainState(baxter_tictactoe::TTTBrainState::GAME_STARTED);   }
         }
         else if (getBrainState() == TTTBrainState::MATCH_FINISHED)
         {
@@ -111,8 +121,6 @@ void tictactoeBrain::InternalThreadEntry()
             ROS_INFO("Baxter Wins: %i\tHuman Wins: %i\tTies: %i", wins[0], wins[1], wins[2]);
             break;
         }
-
-        // ROS_INFO_THROTTLE(2, "[%i]", getBrainState());
 
         r.sleep();
     }
@@ -156,8 +164,8 @@ void tictactoeBrain::playOneGame()
         }
         else // Participant's turn
         {
-            ROS_INFO("Waiting for the participant's move.");
-            ROS_INFO("I am expecting %lu token%s from my opponent", n_robot_tokens, n_robot_tokens==1?"":"s");
+            ROS_INFO("Waiting for the participant's move. "
+                     "I am expecting %lu token%s from my opponent", n_robot_tokens, n_robot_tokens==1?"":"s");
             saySentence("It is your turn", 0.1);
             waitForOpponentTurn(n_robot_tokens);
         }
@@ -174,17 +182,17 @@ void tictactoeBrain::playOneGame()
             ROS_INFO("ROBOT's VICTORY");
             if (has_cheated)
             {
-                saySentence("You humans are so easy to beat!", 5);
+                saySentence("You humans are so easy to beat!", 3);
             }
-            saySentence("I won", 3);
+            saySentence("I won", 2);
             break;
         case WIN_OPP:
             ROS_INFO("OPPONENT's VICTORY");
-            saySentence("You won this time", 4);
+            saySentence("You won this time", 3);
             break;
         default:
             ROS_INFO("TIE");
-            saySentence("That's a tie. I will win next time.", 8);
+            saySentence("That's a tie. I will win next time.", 4);
             winner = WIN_TIE;
     }
 
@@ -232,9 +240,14 @@ int tictactoeBrain::getBrainState()
 
 void tictactoeBrain::setBrainState(int state)
 {
-    pthread_mutex_lock(&_mutex_brain);
-    s.state = state;
-    pthread_mutex_unlock(&_mutex_brain);
+    if (state != getBrainState())
+    {
+        pthread_mutex_lock(&_mutex_brain);
+        s.state = state;
+        pthread_mutex_unlock(&_mutex_brain);
+        ROS_WARN("New state [%i]", state);
+    }
+
     if (state == TTTBrainState::GAME_FINISHED)
     {
         _is_board_detected = false;
@@ -423,7 +436,7 @@ void tictactoeBrain::waitForOpponentTurn(const uint8_t& n_robot_tokens)
         if (getNumTokens(getOpponentColor()) == n_robot_tokens)
         {
             ++cnt;
-            ROS_INFO_THROTTLE(1, "Correct number of tiles! Cnt %i", cnt);
+            // ROS_INFO_THROTTLE(1, "Correct number of tiles! Cnt %i", cnt);
         }
         else
         {
@@ -448,6 +461,7 @@ bool tictactoeBrain::isBoardFull()
 
 void tictactoeBrain::saySentence(std::string sentence, double t)
 {
+    ROS_INFO("saySentence: %s", sentence.c_str());
     _voice_synthesizer.say(sentence, _voice_type);
     ros::Duration(t).sleep();
 }

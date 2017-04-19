@@ -716,14 +716,14 @@ bool TTTController::startAction(string a, int o)
 
 bool TTTController::hoverAboveBoard()
 {
-    ROS_INFO("Hovering above board..");
+    ROS_DEBUG("Hovering above board..");
     // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
     return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
 }
 
 bool TTTController::hoverAboveCenterOfBoard()
 {
-    ROS_INFO("Hovering above center of board..");
+    ROS_DEBUG("Hovering above center of board..");
 
     if (_legacy_code == true)
     {
@@ -743,7 +743,8 @@ bool TTTController::hoverAboveCenterOfBoard()
 
 bool TTTController::hoverAboveCell()
 {
-    ROS_INFO("Hovering above cell..");
+    ROS_DEBUG("Hovering above cell..");
+
     if (_legacy_code == true)
     {
         return goToPose(HOVER_BOARD_X + _offsets[getObjectID()-1].x,
@@ -772,7 +773,7 @@ bool TTTController::scanBoardImpl()
         return true;
     }
 
-    ROS_INFO("Scanning depth..");
+    ROS_DEBUG("Scanning depth..");
     if (!hoverAboveBoard()) return false;
 
     // wait for image callback
@@ -788,7 +789,7 @@ bool TTTController::scanBoardImpl()
     if (!hoverAboveBoard()) return false;
     processImage(dist);
 
-    ROS_INFO("Hovering above tokens..");
+    ROS_DEBUG("Hovering above tokens..");
     hoverAboveTokens(Z_LOW);
 
     return true;
@@ -796,7 +797,7 @@ bool TTTController::scanBoardImpl()
 
 bool TTTController::pickUpTokenImpl()
 {
-    ROS_INFO("Picking up token..");
+    ROS_DEBUG("Picking up token..");
     setTracIK(true);
 
     while(RobotInterface::ok())
@@ -823,7 +824,7 @@ bool TTTController::pickUpTokenImpl()
 
 bool TTTController::putDownTokenImpl()
 {
-    ROS_INFO("Putting down token..");
+    ROS_WARN("Putting down token..");
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveCell()) return false;
     ros::Duration(0.1).sleep();
