@@ -49,8 +49,8 @@ private:
     pthread_mutex_t _mutex_brain;   // mutex to protect the state of the system
 
     /* MISC */
-    std::string    _robot_col;  // Color of the tokens the robot    is playing with.
-    std::string _opponent_col;  // Color of the tokens the opponent is playing with.
+    std::string    _robot_color;  // Color of the tokens the robot    is playing with.
+    std::string _opponent_color;  // Color of the tokens the opponent is playing with.
 
     sound_play::SoundClient _voice_synthesizer;
     std::string                    _voice_type; // Type of voice.
@@ -210,8 +210,8 @@ public:
 
     /* GETTERS */
     ttt::Board  getBoard();
-    std::string getRobotColor()        { return    _robot_col; };
-    std::string getOpponentColor()     { return _opponent_col; };
+    std::string getRobotColor()        { return    _robot_color; };
+    std::string getOpponentColor()     { return _opponent_color; };
     int         getBrainState();
 
     /* SETTERS */

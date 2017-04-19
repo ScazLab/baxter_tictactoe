@@ -28,7 +28,7 @@
     </rosparam>
 
     <!-- Red is not working as of now -->
-    <!-- <rosparam param="ttt_brain/robot_color">blue</rosparam> -->
+    <rosparam param="ttt_brain/robot_color">blue</rosparam>
     <rosparam param="ttt_brain/num_games">3</rosparam>
     <rosparam param="ttt_brain/cheating_games">[2, 3]</rosparam>
 
