@@ -8,7 +8,8 @@ using namespace baxter_tictactoe;
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool legacy_code) : _nh(_name),
                                spinner(4), r(100), _legacy_code(legacy_code), _is_board_detected(false),
-                               leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code)
+                               leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code),
+                               n_robot_tokens(0), n_human_tokens(0)
 {
     ROS_INFO("Legacy code %s enabled.", legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
@@ -149,7 +150,8 @@ void tictactoeBrain::playOneGame()
 
     // ROS_WARN("PRESS ENTER TO START THE GAME");
     // std::cin.get();
-    size_t n_robot_tokens=0;
+    n_robot_tokens=0;
+    n_human_tokens=0;
 
     while (winner == WIN_NONE && not isBoardFull() && not ros::isShuttingDown())
     {
@@ -309,6 +311,8 @@ bool tictactoeBrain::cheatingMove(int &cell_id)
                 ROS_WARN("Cheating move to cell # %lu", i+1);
                 has_cheated=true;
                 cell_id = i+1;
+                // If the robot cheats, the number of tokens expected from the humans decreases.
+                --n_human_tokens;
                 return true;
             }
             aux.setCellState(i, cell_state);
@@ -430,7 +434,7 @@ void tictactoeBrain::waitForOpponentTurn(const size_t& n_robot_tokens)
     ROS_INFO("Waiting for the participant's move. "
              "I am expecting %lu token%s from myself and %lu token%s from my opponent",
              n_robot_tokens, n_robot_tokens==1?"":"s",
-             n_robot_tokens, n_robot_tokens==1?"":"s");
+             n_human_tokens, n_human_tokens==1?"":"s");
 
     int cnt = 0;
     bool say_it_is_your_turn = true;
@@ -438,7 +442,7 @@ void tictactoeBrain::waitForOpponentTurn(const size_t& n_robot_tokens)
     // We wait until the number of opponent's tokens equals the robots'
     while(ros::ok())
     {
-        if (getNumTokens(getOpponentColor()) == n_robot_tokens && getNumTokens(getRobotColor()) == n_robot_tokens)
+        if (getNumTokens(getOpponentColor()) == n_human_tokens+1 && getNumTokens(getRobotColor()) == n_robot_tokens)
         {
             ++cnt;
             // ROS_INFO_THROTTLE(1, "Correct number of tiles! Cnt %i", cnt);
@@ -454,7 +458,11 @@ void tictactoeBrain::waitForOpponentTurn(const size_t& n_robot_tokens)
             cnt = 0;
         }
 
-        if (cnt == 100) { return; } // 100 means 1 second
+        if (cnt == 100)
+        {
+            ++n_human_tokens;
+            return;
+        } // 100 means 1 second
 
         r.sleep();
     }

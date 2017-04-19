@@ -63,6 +63,9 @@ private:
 
     bool has_cheated;
 
+    size_t n_robot_tokens;
+    size_t n_human_tokens;
+
     /**
      * Timer callback to publish the state of the demo.
      */
