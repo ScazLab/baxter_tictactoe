@@ -39,6 +39,12 @@ TEST(UtilsLib, testCellClass)
     EXPECT_EQ(cell_b.computeState(), true);
     EXPECT_EQ(cell_b.getState(), COL_BLUE);
 
+    // Testing comparison operators
+    EXPECT_EQ(cell_b == cell_a,  true);
+    EXPECT_EQ(cell_a == cell_b,  true);
+    EXPECT_EQ(cell_b != cell_a, false);
+    EXPECT_EQ(cell_a != cell_b, false);
+
     // Testing assignment operator
     Cell cell_c;
     cell_c = cell_b;
@@ -48,11 +54,27 @@ TEST(UtilsLib, testCellClass)
     EXPECT_EQ(cell_c.computeState(), true);
     EXPECT_EQ(cell_c.getState(), COL_BLUE);
 
+    // Testing comparison operators
+    EXPECT_EQ(cell_c == cell_a,  true);
+    EXPECT_EQ(cell_a == cell_c,  true);
+    EXPECT_EQ(cell_c != cell_a, false);
+    EXPECT_EQ(cell_a != cell_c, false);
+
     // Testing resetState
     EXPECT_EQ(cell_a. resetState(),      true);
     EXPECT_EQ(cell_a.   getState(), COL_EMPTY);
     EXPECT_EQ(cell_a. getRedArea(), 0);
     EXPECT_EQ(cell_a.getBlueArea(), 0);
+
+    // Testing comparison operators
+    EXPECT_EQ(cell_b == cell_a, false);
+    EXPECT_EQ(cell_a == cell_b, false);
+    EXPECT_EQ(cell_b != cell_a,  true);
+    EXPECT_EQ(cell_a != cell_b,  true);
+    EXPECT_EQ(cell_c == cell_a, false);
+    EXPECT_EQ(cell_a == cell_c, false);
+    EXPECT_EQ(cell_c != cell_a,  true);
+    EXPECT_EQ(cell_a != cell_c,  true);
 }
 
 TEST(UtilsLib, testBoardClass)

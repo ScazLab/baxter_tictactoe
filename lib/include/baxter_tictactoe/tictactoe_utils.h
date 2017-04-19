@@ -57,6 +57,22 @@ public:
     Cell& operator=(const Cell& _c);
 
     /**
+     * Comparison operator (isEqual). It compares only the state of the cell,
+     * which is the only value that matters.
+     *
+     * @return true/false if equal/different
+     */
+    bool operator==(const Cell &_c) const;
+
+    /**
+     * Comparison operator (isDifferent). It compares only the state of the cell,
+     * which is the only value that matters.
+     *
+     * @return true/false if different/equal
+     */
+    bool operator!=(const Cell &_c) const;
+
+    /**
      * Resets only the cell state to empty
      */
     bool resetState();

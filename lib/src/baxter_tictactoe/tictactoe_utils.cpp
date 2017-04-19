@@ -49,6 +49,16 @@ Cell& Cell::operator=(const Cell& _c)
     return *this;
 }
 
+bool Cell::operator==(const Cell &_c) const
+{
+    return state == _c.state;
+}
+
+bool Cell::operator!=(const Cell &_c) const
+{
+    return not (*this == _c);
+}
+
 bool Cell::resetState()
 {
     state     = COL_EMPTY;
