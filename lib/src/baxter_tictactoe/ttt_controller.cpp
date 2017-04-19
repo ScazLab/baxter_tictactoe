@@ -824,7 +824,7 @@ bool TTTController::pickUpTokenImpl()
 
 bool TTTController::putDownTokenImpl()
 {
-    ROS_WARN("Putting down token..");
+    ROS_DEBUG("Putting down token..");
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveCell()) return false;
     ros::Duration(0.1).sleep();

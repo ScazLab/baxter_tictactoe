@@ -274,7 +274,7 @@ int tictactoeBrain::randomStrategyMove()
     }
     while(aux.getCellState(r-1)!=COL_EMPTY);
 
-    // ROS_INFO("Random move to cell # %i", r);
+    ROS_WARN("Random move to cell # %i", r);
     return r;
 }
 
@@ -317,7 +317,7 @@ bool tictactoeBrain::cheatingMove(int &cell_id)
         }
     }
 
-    // ROS_INFO("CheatingMove not successful!");
+    // ROS_WARN("Cheating move not successful!");
     return false;
 }
 
