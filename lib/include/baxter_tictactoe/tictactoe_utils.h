@@ -208,16 +208,16 @@ public:
     Contours getContours();
     unsigned int getNumCells()         { return cells.size();              };
 
-    Cell&       getCell(int i)         { return cells[i];                  };
-    int         getCellArea(int i)     { return cells[i].getContourArea(); };
-    int         getCellAreaRed(int i)  { return cells[i].getRedArea();     };
-    int         getCellAreaBlue(int i) { return cells[i].getBlueArea();    };
-    std::string getCellState(int i)    { return cells[i].getState();       };
-    Contour     getCellContour(int i)  { return cells[i].getContour();     };
-    cv::Point   getCellCentroid(int i) { return cells[i].getCentroid();    };
+    Cell&       getCell(size_t i)         { return cells[i];                  };
+    int         getCellArea(size_t i)     { return cells[i].getContourArea(); };
+    int         getCellAreaRed(size_t i)  { return cells[i].getRedArea();     };
+    int         getCellAreaBlue(size_t i) { return cells[i].getBlueArea();    };
+    std::string getCellState(size_t i)    { return cells[i].getState();       };
+    Contour     getCellContour(size_t i)  { return cells[i].getContour();     };
+    cv::Point   getCellCentroid(size_t i) { return cells[i].getCentroid();    };
 
     /* Self-explaining "setters" */
-    void setCellState(int i, const std::string& s) { cells[i].setState(s); };
+    void setCellState(size_t i, const std::string& s) { cells[i].setState(s); };
 };
 
 }
