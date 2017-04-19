@@ -205,8 +205,8 @@ public:
     std::string toString();
 
     /* Self-explaining "getters" */
-    Contours getContours();
-    unsigned int getNumCells()         { return cells.size();              };
+    Contours    getContours();
+    size_t      getNumCells()             { return cells.size();              };
 
     Cell&       getCell(size_t i)         { return cells[i];                  };
     int         getCellArea(size_t i)     { return cells[i].getContourArea(); };
