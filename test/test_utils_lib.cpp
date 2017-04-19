@@ -7,6 +7,7 @@ using namespace ttt;
 // Declare a test
 TEST(UtilsLib, testCellClass)
 {
+    // Testing default constructor
     Cell cell_a;
 
     EXPECT_EQ(cell_a.getState(), COL_EMPTY);
@@ -30,6 +31,24 @@ TEST(UtilsLib, testCellClass)
     EXPECT_EQ(cell_a.computeState(), true);
     EXPECT_EQ(cell_a.getState(), COL_BLUE);
 
+    // Testing copy constructor
+    Cell cell_b(cell_a);
+    EXPECT_EQ(cell_b.  getRedArea(), 10);
+    EXPECT_EQ(cell_b. getBlueArea(), 20);
+
+    EXPECT_EQ(cell_b.computeState(), true);
+    EXPECT_EQ(cell_b.getState(), COL_BLUE);
+
+    // Testing assignment operator
+    Cell cell_c;
+    cell_c = cell_b;
+    EXPECT_EQ(cell_c.  getRedArea(), 10);
+    EXPECT_EQ(cell_c. getBlueArea(), 20);
+
+    EXPECT_EQ(cell_c.computeState(), true);
+    EXPECT_EQ(cell_c.getState(), COL_BLUE);
+
+    // Testing resetState
     EXPECT_EQ(cell_a. resetState(),      true);
     EXPECT_EQ(cell_a.   getState(), COL_EMPTY);
     EXPECT_EQ(cell_a. getRedArea(), 0);
