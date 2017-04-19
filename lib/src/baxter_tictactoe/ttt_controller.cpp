@@ -801,7 +801,7 @@ bool TTTController::pickUpTokenImpl()
 
     while(RobotInterface::ok())
     {
-        if(is_ir_ok()) break;
+        if(isIRok()) break;
         r.sleep();
     }
 
