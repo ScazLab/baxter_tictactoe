@@ -433,7 +433,7 @@ void tictactoeBrain::waitForOpponentTurn(const uint8_t& n_robot_tokens)
     // We wait until the number of opponent's tokens equals the robots'
     while(ros::ok())
     {
-        if (getNumTokens(getOpponentColor()) == n_robot_tokens)
+        if (getNumTokens(getOpponentColor()) == n_robot_tokens && getNumTokens(getRobotColor()) == n_robot_tokens)
         {
             ++cnt;
             // ROS_INFO_THROTTLE(1, "Correct number of tiles! Cnt %i", cnt);
