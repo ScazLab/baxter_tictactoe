@@ -53,7 +53,7 @@ cache:
   - apt
 notifications:
   slack:
-    secure: DHrr+QWmiliV0O3EvNUqqPYiuqqBkvYSwxIR+ufyDOCo2itGNakOzfmcJP0QEBBRvz6R84SqNPq4xxHwrnFJ9T82gfyiDznStptCS0j2+JVlFkvDYA+K9ZbJZcBLzg812S6H6me+0rdS1Ho0rI8d5uIK6DcLHR0inBE26AKOLmvpFfoGqfBPDxOftJR9s/vk9hl8hkj6Z/3F7w45VKWHCI4pqaiFxcVoQ+jS9BajB5eDmCglxD8yHkL06hsMcDw27eOyKgsg2mt0A+VETCCt+9GtYraSDyxPvm2oOt7L99spVmWfURtmZxSBwRmeLxVdamBKdGJPH7TpzLFR6VinGIbdOk87ptGKgVMSMsOQMHFlEKY+3zNqBkAE4Q34es+JJA0r1ZSIDXj10VUBQ9CXkeKr3782sdGNepMtXUkJM2xNNsUo8ibKfcK7CA3vOcQWjYJtAt+2F5OqRNDUFWH0L3LloCHyY4cVywBTC0hNdfOofE0e9YZqs6et8loVw+d3ehmYw1TdCOZCzItD4RMQ7DYoc6KCMRX5fErRAYqI2ClHx39j+4F85oUTJxyhklQswAbfg6i5L+o5EgPjH/JuEqRuSw7/dKyv/QcCxn4FsAv45jw7/P69rpSfNougNggWUuIDx2AeFzAFge1VEfeJcUE9MdPgcoBI0dOr1TejTrM=
+    secure: bjQ+kAMNjk3GkbSCpl4twNcJndaaaFbhX6oa3WubK9V8qvExL0DDGRU+J66GLl2SIWmZl4AXuV5Q3Hopj7nvY8JPvr2dlkTcmHNS5hAoD99ByjOTFzbtNY/UiqVCGKZIUQ+X2QofMf+pGecORTyXyx6rQSvuqEZEjW8fZs0D7G4zc5RERDMMxTziUvE8xI1Gb5aJ/BuiieLCzGBLVY1wb+QP7iVtJll6jT5yPjFA6us60ntACSShYmzNKLnlEmCVDzzga4zscOALWRem8UR6/ghNZLfaGwdnfbtLeBv6eS82sOcTFcU68XvfQnEXAxcRbf7B5XbrovnCqi1N/DIHRM0ZHHoqK/W0UxzNgPDRhsjB/yj9hMQxRvIt5pCzFBZ4o1LvKm4tmMPu/y1FvhABFS5gK/JptykgMwytG7XXOtVAqYAC4tjXNM2Pa8+w7jyRtjLTZJzmb/1R9KXQu4pTOvHojE8MUZZ/Gcq8HYpNcUBMwc49DfYLeKFE51ZN8LkhGTyf8Wi5kLhWMxAUCzQjL/mILnQx61r/XtmHaIodk7IKn1Me3Uwd7hJy5X3DGUn0J7rAoKPkdCIkKIR1hGW8zmbXfUX8XMA40IASRuy+uXsDUP4OLjFUDzOq3SBkyizI6zbstZhF/ZEFYYbna5gBoVWDfa54bVZvY6JQnVApYv4=
 
 # Configuration variables. All variables are global now, but this can be used to
 # trigger a build matrix for different ROS distributions if desired.
@@ -120,4 +120,5 @@ script:
   - catkin build $REPO_NAME $( [ -f $CATKIN_OPTIONS ] && cat $CATKIN_OPTIONS )
   # Run the tests, ensuring the path is set correctly.
   - source devel/setup.bash
-  - catkin build $REPO_NAME --catkin-make-args run_tests && catkin_test_results build/$REPO_NAME
+  - catkin build $REPO_NAME --catkin-make-args run_tests
+  - catkin_test_results build/$REPO_NAME || (cat build/$REPO_NAME/test_results/$REPO_NAME/*.xml ; false)
