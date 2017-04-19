@@ -281,8 +281,8 @@ int tictactoeBrain::randomStrategyMove()
 int tictactoeBrain::cheatingStrategyMove()
 {
     int next_cell_id=-1;
-    if ( cheatingMove(next_cell_id))    { return next_cell_id; }
     if (  victoryMove(next_cell_id))    { return next_cell_id; }
+    if ( cheatingMove(next_cell_id))    { return next_cell_id; }
     if (defensiveMove(next_cell_id))    { return next_cell_id; }
     return randomStrategyMove();
 }
