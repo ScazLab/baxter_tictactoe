@@ -209,3 +209,24 @@ install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
 
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+if(CATKIN_ENABLE_TESTING)
+  # find_package(rostest            REQUIRED)
+  # find_package(baxter_description REQUIRED)
+
+  catkin_add_gtest(test_utils test/test_utils_lib.cpp)
+  add_dependencies(test_utils   baxter_tictactoe_generate_messages_cpp
+                                ${${PROJECT_NAME}_EXPORTED_TARGETS}
+                                ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test_utils ${PROJECT_NAME} ${catkin_LIBRARIES})
+
+  # add_rostest_gtest(test_ipopt test/test_ipopt.launch test/test_ipopt.cpp)
+  # target_link_libraries(test_ipopt  react_controller ${catkin_LIBRARIES})
+endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)

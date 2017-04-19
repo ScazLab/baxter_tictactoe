@@ -49,17 +49,21 @@ Cell& Cell::operator=(const Cell& _c)
     return *this;
 }
 
-void Cell::resetState()
+bool Cell::resetState()
 {
-    state     = "empty";
-    area_red  =       0;
-    area_blue =       0;
+    state     = COL_EMPTY;
+    area_red  =         0;
+    area_blue =         0;
+
+    return true;
 }
 
-void Cell::resetCell()
+bool Cell::resetCell()
 {
     resetState();
     contour.clear();
+
+    return true;
 }
 
 bool Cell::computeState()
@@ -106,6 +110,17 @@ int Cell::getContourArea()
     if (contour.size() > 0)  return cv::moments(getContour(),false).m00;
 
     return 0;
+}
+
+bool Cell::setState(const string& _s)
+{
+    if (_s == COL_RED || _s == COL_BLUE || _s == COL_EMPTY)
+    {
+        state = _s;
+        return true;
+    }
+
+    return false;
 }
 
 string Cell::toString()

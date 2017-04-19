@@ -59,12 +59,12 @@ public:
     /**
      * Resets only the cell state to empty
      */
-    void resetState();
+    bool resetState();
 
     /**
      * Resets the cell to an empty, pristine state.
      */
-    void resetCell();
+    bool resetCell();
 
     /**
      * Computes and updates its state according to the amount of red and blue area.
@@ -98,9 +98,9 @@ public:
     int         getBlueArea() { return area_blue; };
 
     /* Self-explaining "setters" */
-    void setState(std::string s) { state = s;      };
-    void setRedArea (int _a)   { area_red  = _a; };
-    void setBlueArea(int _a)   { area_blue = _a; };
+    bool setState(const std::string& _s);
+    void setRedArea (size_t _a) { area_red  = _a; };
+    void setBlueArea(size_t _a) { area_blue = _a; };
 };
 
 class Board
