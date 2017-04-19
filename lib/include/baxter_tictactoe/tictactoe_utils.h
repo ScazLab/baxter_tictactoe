@@ -217,7 +217,7 @@ public:
     cv::Point   getCellCentroid(int i) { return cells[i].getCentroid();    };
 
     /* Self-explaining "setters" */
-    void setCellState(int i, std::string s) { cells[i].setState(s); };
+    void setCellState(int i, const std::string& s) { cells[i].setState(s); };
 };
 
 }
