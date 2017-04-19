@@ -165,9 +165,6 @@ void tictactoeBrain::playOneGame()
         }
         else // Participant's turn
         {
-            ROS_INFO("Waiting for the participant's move. "
-                     "I am expecting %lu token%s from my opponent", n_robot_tokens, n_robot_tokens==1?"":"s");
-            saySentence("It is your turn", 0.1);
             waitForOpponentTurn(n_robot_tokens);
         }
 
@@ -428,9 +425,16 @@ unsigned short int tictactoeBrain::getWinner()
     return WIN_NONE;
 }
 
-void tictactoeBrain::waitForOpponentTurn(const uint8_t& n_robot_tokens)
+void tictactoeBrain::waitForOpponentTurn(const size_t& n_robot_tokens)
 {
+    ROS_INFO("Waiting for the participant's move. "
+             "I am expecting %lu token%s from myself and %lu token%s from my opponent",
+             n_robot_tokens, n_robot_tokens==1?"":"s",
+             n_robot_tokens, n_robot_tokens==1?"":"s");
+
     int cnt = 0;
+    bool say_it_is_your_turn = true;
+
     // We wait until the number of opponent's tokens equals the robots'
     while(ros::ok())
     {
@@ -441,6 +445,12 @@ void tictactoeBrain::waitForOpponentTurn(const uint8_t& n_robot_tokens)
         }
         else
         {
+            if (say_it_is_your_turn == true)
+            {
+                saySentence("It is your turn", 0.1);
+                say_it_is_your_turn = false;
+            }
+
             cnt = 0;
         }
 
