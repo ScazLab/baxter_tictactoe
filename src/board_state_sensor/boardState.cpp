@@ -172,7 +172,7 @@ void BoardState::InternalThreadEntry()
         }
         else if (board_state == STATE_READY && not ros::isShuttingDown())
         {
-            ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %i", board_state, board.getNumCells());
+            ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %lu", board_state, board.getNumCells());
             if (not _img_empty)
             {
                 board.resetCellStates();
