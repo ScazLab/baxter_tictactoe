@@ -75,6 +75,26 @@ TEST(UtilsLib, testCellClass)
     EXPECT_EQ(a == c, false);
     EXPECT_EQ(c != a,  true);
     EXPECT_EQ(a != c,  true);
+
+    // Testing setState
+    a.setState(COL_EMPTY);
+    b.setState(COL_BLUE);
+    c.setState(COL_RED);
+
+    a.computeState();
+    EXPECT_EQ(a.getState(), COL_EMPTY);
+
+    b.computeState();
+    EXPECT_EQ(b.getState(), COL_BLUE);
+    b.setState(COL_RED);
+    b.computeState();
+    EXPECT_EQ(b.getState(), COL_RED);
+
+    c.computeState();
+    EXPECT_EQ(c.getState(), COL_RED);
+    c.setState(COL_BLUE);
+    c.computeState();
+    EXPECT_EQ(c.getState(), COL_BLUE);
 }
 
 TEST(UtilsLib, testBoardClass)

@@ -129,6 +129,21 @@ bool Cell::setState(const string& _s)
     if (_s == COL_RED || _s == COL_BLUE || _s == COL_EMPTY)
     {
         state = _s;
+
+        // Ensure consistency of the number pixels w.r.t. the state
+        if (_s == COL_RED && getRedArea() < getBlueArea())
+        {
+            setRedArea(getBlueArea()+1);
+        }
+        else if (_s == COL_BLUE && getBlueArea() < getRedArea())
+        {
+            setBlueArea(getRedArea()+1);
+        }
+        else if (_s == COL_EMPTY)
+        {
+            resetState();
+        }
+
         return true;
     }
 
