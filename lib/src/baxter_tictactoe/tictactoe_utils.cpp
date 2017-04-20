@@ -83,6 +83,8 @@ bool Cell::computeState()
         area_red>area_blue?setState(COL_RED):setState(COL_BLUE);
         return true;
     }
+
+    setState(COL_EMPTY);
     return false;
 }
 
@@ -137,7 +139,7 @@ string Cell::toString()
 {
     stringstream res;
 
-    res<<"State:"<<getState()<<"\t";
+    res<<"State: "<<getState()<<"\t";
     res<<"Red  Area: "<<area_red<<"\t";
     res<<"Blue Area: "<<area_blue<<"\t";
 
@@ -173,6 +175,11 @@ Board::Board(size_t n_cells)
     }
 }
 
+Board::Board(const Board &_b) : cells(_b.cells)
+{
+
+}
+
 Board& Board::operator=(const Board& _b)
 {
     // self-assignment check
@@ -204,6 +211,13 @@ bool Board::operator==(const Board &_b) const
 bool Board::operator!=(const Board &_b) const
 {
     return not (*this == _b);
+}
+
+bool Board::addCell(const Cell& _c)
+{
+    cells.push_back(_c);
+
+    return true;
 }
 
 bool Board::resetCellStates()
@@ -352,6 +366,18 @@ cv::Mat Board::maskImage(const cv::Mat &_src)
     _src.copyTo(im_crop, mask);
 
     return im_crop;
+}
+
+bool Board::setCellState(size_t i, const std::string& _s)
+{
+    return cells[i].setState(_s);
+}
+
+bool Board::setCell(size_t i, const Cell& _c)
+{
+    cells[i] = _c;
+
+    return true;
 }
 
 Board::~Board()

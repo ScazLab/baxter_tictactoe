@@ -101,6 +101,35 @@ TEST(UtilsLib, testBoardClass)
     // Testing isEqual/isDifferent
     EXPECT_TRUE (a == b);
     EXPECT_FALSE(a != b);
+
+    // Testing copy constructor
+    Board c(a);
+
+    EXPECT_TRUE (a == c);
+    EXPECT_FALSE(a != c);
+
+    // Start assigning random values to the boards
+    for (size_t i = 0; i < b.getNumCells(); ++i)
+    {
+        b.setCell(i, Cell(COL_RED));
+    }
+
+    EXPECT_FALSE(b.isEmpty());
+    EXPECT_TRUE(b.isFull());
+
+    b.setCellState(4, COL_EMPTY);
+    EXPECT_FALSE(b.isEmpty());
+    EXPECT_FALSE(b.isFull());
+
+    // Testing toMsgBoard/fromMsgBoard
+    a.fromMsgBoard(b.toMsgBoard());
+    EXPECT_EQ(a, b);
+
+    // Computing state of cells without a red or blue area
+    // sets the cells to COL_EMPTY state
+    b.computeState();
+    EXPECT_TRUE(b.isEmpty());
+    EXPECT_FALSE(b.isFull());
 }
 
 // Run all the tests that were declared with TEST()

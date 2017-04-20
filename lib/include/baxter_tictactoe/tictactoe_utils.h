@@ -39,8 +39,8 @@ class Cell
 private:
     Contour     contour;
     std::string   state;
-    int        area_red;
-    int       area_blue;
+    size_t     area_red;
+    size_t    area_blue;
 
 public:
     /* CONSTRUCTORS */
@@ -128,6 +128,7 @@ public:
     /* CONSTRUCTORS */
     Board();
     Board(size_t n_cells);
+    Board(const Board &_b);
 
     /* DESTRUCTOR */
     ~Board();
@@ -156,7 +157,7 @@ public:
      *
      * @param c The cell to be added.
      */
-    void addCell(Cell _c) { cells.push_back(_c); };
+    bool addCell(const Cell& _c);
 
     /**
      * Masks the board onto an image
@@ -232,7 +233,8 @@ public:
     cv::Point   getCellCentroid(size_t i) { return cells[i].getCentroid();    };
 
     /* Self-explaining "setters" */
-    void setCellState(size_t i, const std::string& s) { cells[i].setState(s); };
+    bool setCellState(size_t i, const std::string& _s);
+    bool setCell(size_t i, const Cell& _c);
 };
 
 }
