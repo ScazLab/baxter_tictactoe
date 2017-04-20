@@ -52,6 +52,14 @@ public:
     ~Cell() {};
 
     /**
+     * Checks for the integrity of the cell according to the state. If there
+     * is no integrity, this function will proceed to restore integrity.
+     *
+     * @return true/false if cell had integrity or not
+     */
+    bool checkIntegrity();
+
+    /**
      * Assignment operator
      */
     Cell& operator=(const Cell& _c);

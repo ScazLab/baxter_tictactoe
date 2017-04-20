@@ -20,19 +20,59 @@ Cell::Cell(std::string _s, int _ar, int _ab) :
            state(_s), area_red(_ar), area_blue(_ab)
 {
     contour.clear();
+    checkIntegrity();
 }
 
 Cell::Cell(Contour _c, std::string _s, int _ar, int _ab) :
            contour(_c), state(_s), area_red(_ar), area_blue(_ab)
 {
-
+    checkIntegrity();
 }
 
 Cell::Cell(const Cell &_c) :
            contour(_c.contour), state(_c.state),
            area_red(_c.area_red), area_blue(_c.area_blue)
 {
+    checkIntegrity();
+}
 
+bool Cell::checkIntegrity()
+{
+    // check for integrity of state
+    if (state != COL_RED && state != COL_BLUE && state != COL_EMPTY)
+    {
+        resetState();
+        return false;
+    }
+
+    // check for integrity for state and area colors
+    if (state == COL_EMPTY)
+    {
+        if (area_red == 0 && area_blue == 0) { return true; }
+        else
+        {
+            resetState();
+            return false;
+        }
+    }
+    else if (state == COL_RED)
+    {
+        if (area_red > area_blue) { return true; }
+        else
+        {
+            area_red = area_blue + 1;
+            return false;
+        }
+    }
+    else if (state == COL_BLUE)
+    {
+        if (area_blue > area_red) { return true; }
+        else
+        {
+            area_blue = area_red + 1;
+        }
+    }
+    return true;
 }
 
 Cell& Cell::operator=(const Cell& _c)

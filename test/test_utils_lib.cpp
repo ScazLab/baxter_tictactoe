@@ -144,12 +144,6 @@ TEST(UtilsLib, testBoardClass)
     // Testing toMsgBoard/fromMsgBoard
     a.fromMsgBoard(b.toMsgBoard());
     EXPECT_EQ(a, b);
-
-    // Computing state of cells without a red or blue area
-    // sets the cells to COL_EMPTY state
-    b.computeState();
-    EXPECT_TRUE(b.isEmpty());
-    EXPECT_FALSE(b.isFull());
 }
 
 // Run all the tests that were declared with TEST()
