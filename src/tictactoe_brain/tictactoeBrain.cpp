@@ -91,7 +91,7 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::MATCH_STARTED)
         {
-            saySentence("Welcome! Let's play Tic Tac Toe.", 4);
+            saySentence("Welcome! Let's play Tic Tac Toe.", 3);
             saySentence("Do not grasp your token before I say that it is your turn", 4);
             curr_game = 1;
             setBrainState(TTTBrainState::GAME_STARTED);
@@ -156,7 +156,8 @@ void tictactoeBrain::playOneGame()
     {
         if (robot_turn) // Robot's turn
         {
-            saySentence("It is my turn", 0.3);
+            if (n_robot_tokens != 0) { saySentence("It is my turn", 0.3); }
+
             int cell_toMove = getNextMove();    // This should be from 1 to 9
             ROS_INFO("Moving to cell %i", cell_toMove);
 
@@ -206,6 +207,7 @@ void tictactoeBrain::playOneGame()
     }
 
     curr_game++;
+    internal_board.resetCellStates();
 
     return;
 }
