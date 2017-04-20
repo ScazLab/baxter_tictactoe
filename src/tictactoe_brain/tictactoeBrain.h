@@ -36,10 +36,11 @@ private:
     std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
 
     /* STATE OF THE BOARD */
-    ttt::Board               board;
-    ros::Subscriber boardState_sub; // subscriber to receive the state of the board
-    pthread_mutex_t   _mutex_board;
-    bool        _is_board_detected;
+    ttt::Board            curr_board; // Board as read from the board state sensor
+    ttt::Board        internal_board; // Internal model of the state of the world
+    ros::Subscriber   boardState_sub; // subscriber to receive the state of the board
+    pthread_mutex_t mutex_curr_board;
+    bool          _is_board_detected;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system
@@ -174,7 +175,7 @@ public:
     void playOneGame();
 
     /* GETTERS */
-    ttt::Board  getBoard();
+    ttt::Board  getCurrBoard();
     std::string getRobotColor()        { return    _robot_color; };
     std::string getOpponentColor()     { return _opponent_color; };
     int         getBrainState();
