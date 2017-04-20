@@ -125,16 +125,31 @@ private:
     std::vector<Cell> cells;
 
 public:
-    /* CONSTRUCTOR */
-    Board()  {};
+    /* CONSTRUCTORS */
+    Board();
+    Board(size_t n_cells);
 
     /* DESTRUCTOR */
-    ~Board() {};
+    ~Board();
 
     /**
      * Assignment operator. Does not care about boards with different sizes.
      */
     Board& operator=(const Board& _c);
+
+    /**
+     * Comparison operator (isEqual).
+     *
+     * @return true/false if equal/different
+     */
+    bool operator==(const Board &_b) const;
+
+    /**
+     * Comparison operator (isDifferent).
+     *
+     * @return true/false if different/equal
+     */
+    bool operator!=(const Board &_b) const;
 
     /**
      * Adds a cell to the board.
@@ -164,7 +179,7 @@ public:
     /**
      * Resets the board to an empty, pristine state. It deletes the cells.
      */
-    bool resetBoard() { cells.clear(); return true; };
+    bool resetBoard();
 
     /**
      * Computes and updates the cells' states according to the amount of red and blue area.

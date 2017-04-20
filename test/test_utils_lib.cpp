@@ -79,8 +79,23 @@ TEST(UtilsLib, testCellClass)
 
 TEST(UtilsLib, testBoardClass)
 {
+    // Testing empty constructor
+    Board board_a;
 
-    EXPECT_TRUE(true);
+    // An empty board is both empty and full at the same time,
+    // because there are no cells in check against
+    EXPECT_TRUE(board_a.isEmpty());
+    EXPECT_TRUE(board_a.isFull());
+
+    // Testing constructor with number of cells
+    Board board_b(9);
+
+    EXPECT_TRUE(board_b.isEmpty());
+    EXPECT_FALSE(board_b.isFull());
+
+    // Testing toMsgBoard/fromMsgBoard
+    board_a.fromMsgBoard(board_b.toMsgBoard());
+    EXPECT_EQ(board_a, board_b);
 }
 
 // Run all the tests that were declared with TEST()

@@ -160,6 +160,18 @@ string Cell::toString()
 /**************************************************************************/
 /**                                 BOARD                                **/
 /**************************************************************************/
+Board::Board()
+{
+
+}
+
+Board::Board(size_t n_cells)
+{
+    for (size_t i = 0; i < n_cells; ++i)
+    {
+        addCell(Cell());
+    }
+}
 
 Board& Board::operator=(const Board& _b)
 {
@@ -175,6 +187,23 @@ Board& Board::operator=(const Board& _b)
     }
 
     return *this;
+}
+
+bool Board::operator==(const Board &_b) const
+{
+    if (cells.size() != _b.cells.size())  { return false; };
+
+    for (size_t i = 0; i < _b.cells.size(); ++i)
+    {
+        if (cells[i] != _b.cells[i])      { return false; };
+    }
+
+    return true;
+}
+
+bool Board::operator!=(const Board &_b) const
+{
+    return not (*this == _b);
 }
 
 bool Board::resetCellStates()
@@ -197,6 +226,13 @@ bool Board::resetCells()
     {
         cells[i].resetCell();
     }
+
+    return true;
+}
+
+bool Board::resetBoard()
+{
+    cells.clear();
 
     return true;
 }
@@ -318,3 +354,7 @@ cv::Mat Board::maskImage(const cv::Mat &_src)
     return im_crop;
 }
 
+Board::~Board()
+{
+
+}
