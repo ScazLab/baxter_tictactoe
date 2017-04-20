@@ -263,8 +263,8 @@ baxter_tictactoe::MsgBoard Board::toMsgBoard()
 
         if (getNumCells() != res.cells.size())
         {
-            ROS_WARN("Number of cells in board [%i] different from those in MsgBoard [%lu].",
-                                                            getNumCells(), res.cells.size());
+            ROS_WARN("Number of cells in board [%lu] different from those in MsgBoard [%lu].",
+                                                             getNumCells(), res.cells.size());
         }
     }
     else if (getNumCells() == res.cells.size())
