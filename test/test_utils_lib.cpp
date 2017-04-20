@@ -143,6 +143,8 @@ TEST(UtilsLib, testBoardClass)
     b.setCellState(4, COL_EMPTY);
     EXPECT_FALSE(b.isEmpty());
     EXPECT_FALSE(b.isFull());
+    EXPECT_FALSE(b.setCellState(14, COL_EMPTY));
+    EXPECT_FALSE(b.setCellState( 9, COL_EMPTY));
 
     // Testing toMsgBoard/fromMsgBoard
     a.fromMsgBoard(b.toMsgBoard());
@@ -165,11 +167,35 @@ TEST(UtilsLib, testBoardStates)
 {
     Board a(9);
 
+    EXPECT_FALSE(a.threeInARow());
+    EXPECT_FALSE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+
+    a.setCellState(3, COL_RED);
+    a.setCellState(4, COL_RED);
+    a.setCellState(5, COL_RED);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+
+    a.resetCellStates();
+    EXPECT_FALSE(a.threeInARow());
+    EXPECT_FALSE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+    a.setCellState(6, COL_RED);
+    a.setCellState(7, COL_RED);
+    a.setCellState(8, COL_RED);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+
+    a.resetCellStates();
     a.setCellState(0, COL_RED);
     a.setCellState(1, COL_RED);
     a.setCellState(2, COL_RED);
     EXPECT_TRUE(a.threeInARow());
     EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
 
     a.setCellState(1, COL_BLUE);
     EXPECT_FALSE(a.threeInARow());
@@ -198,6 +224,62 @@ TEST(UtilsLib, testBoardStates)
     EXPECT_TRUE(a.threeInARow());
     EXPECT_TRUE(a.threeInARow(COL_RED));
     EXPECT_FALSE(a.threeInARow(COL_BLUE));
+}
+
+TEST(UtilsLib, testBoardNoCheating)
+{
+    Board a(9), b(a);
+
+    // Let's add one red token at a time
+    for (size_t i = 0; i < a.getNumCells(); ++i)
+    {
+        a.setCellState(i, COL_RED);
+        EXPECT_TRUE(b.isOneTokenAddedRemoved(a));
+        EXPECT_TRUE(b.isOneTokenAdded(a));
+        EXPECT_FALSE(b.isOneTokenRemoved(a));
+        EXPECT_TRUE(b.isOneTokenAdded(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_BLUE));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_BLUE));
+        b = a;
+        EXPECT_FALSE(b.isOneTokenAddedRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a));
+        EXPECT_FALSE(b.isOneTokenRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_BLUE));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_BLUE));
+    }
+
+    // Let's switch everything to blue
+    for (size_t i = 0; i < a.getNumCells(); ++i)
+    {
+        a.setCellState(i, COL_BLUE);
+        EXPECT_FALSE(b.isOneTokenAddedRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a));
+        EXPECT_FALSE(b.isOneTokenRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_BLUE));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_BLUE));
+        b = a;
+        EXPECT_FALSE(b.isOneTokenAddedRemoved(a));
+    }
+
+    // Let's remove one token at a time
+    for (size_t i = 0; i < a.getNumCells(); ++i)
+    {
+        a.setCellState(i, COL_EMPTY);
+        EXPECT_TRUE(b.isOneTokenAddedRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a));
+        EXPECT_TRUE(b.isOneTokenRemoved(a));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_RED));
+        EXPECT_FALSE(b.isOneTokenAdded(a, COL_BLUE));
+        EXPECT_FALSE(b.isOneTokenRemoved(a, COL_RED));
+        EXPECT_TRUE(b.isOneTokenRemoved(a, COL_BLUE));
+        b = a;
+        EXPECT_FALSE(b.isOneTokenAddedRemoved(a));
+    }
 }
 
 // Run all the tests that were declared with TEST()

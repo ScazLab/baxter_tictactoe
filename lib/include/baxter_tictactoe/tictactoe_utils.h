@@ -226,6 +226,58 @@ public:
     size_t getNumTokens(const std::string& _col);
 
     /**
+     * Checks if one token of any color has been either added to or removed from the
+     * board by comparing it with a new board. If some cheating is in place (e.g.
+     * some tokens have been swapped), this method returns false.
+     *
+     * @param  _new new board to check against
+     * @return      true/false if success/failure
+     */
+    bool isOneTokenAddedRemoved(const Board& _new);
+
+    /**
+     * Checks if one token of any color has been added to the board by
+     * comparing it with a new board. If some cheating is in place (e.g.
+     * some tokens have been swapped), this method returns false.
+     *
+     * @param  _new new board to check against
+     * @return      true/false if success/failure
+     */
+    bool isOneTokenAdded(const Board& _new);
+
+    /**
+     * Checks if one token of a specific color has been added to the board by
+     * comparing it with a new board. If some cheating is in place (e.g.
+     * some tokens have been swapped), this method returns false.
+     *
+     * @param  _new new board to check against
+     * @param  _col The color of tokens to check against
+     * @return      true/false if success/failure
+     */
+    bool isOneTokenAdded(const Board &_new, const std::string& _col);
+
+    /**
+     * Checks if one token of any color has been removed from the board by
+     * comparing it with a new board. If some cheating is in place (e.g.
+     * some tokens have been swapped), this method returns false.
+     *
+     * @param  _new new board to check against
+     * @return      true/false if success/failure
+     */
+    bool isOneTokenRemoved(const Board& _new);
+
+    /**
+     * Checks if one token of a specific color has been removed from the board by
+     * comparing it with a new board. If some cheating is in place (e.g.
+     * some tokens have been swapped), this method returns false.
+     *
+     * @param  _new new board to check against
+     * @param  _col The color of tokens to check against
+     * @return      true/false if success/failure
+     */
+    bool isOneTokenRemoved(const Board &_new, const std::string& _col);
+
+    /**
      * Checks if there are 3 tokens of any color in a row. In a 3x3 board there
      * are 8 possible combinations to get 3 tokens in a row. We explore all of them.
      *

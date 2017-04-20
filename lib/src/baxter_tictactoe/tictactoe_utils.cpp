@@ -1,5 +1,7 @@
 #include "baxter_tictactoe/tictactoe_utils.h"
 
+#include <stdlib.h>
+
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -16,14 +18,14 @@ using namespace ttt;
 /**                        CELL                                          **/
 /**************************************************************************/
 
-Cell::Cell(std::string _s, int _ar, int _ab) :
+Cell::Cell(string _s, int _ar, int _ab) :
            state(_s), area_red(_ar), area_blue(_ab)
 {
     contour.clear();
     checkIntegrity();
 }
 
-Cell::Cell(Contour _c, std::string _s, int _ar, int _ab) :
+Cell::Cell(Contour _c, string _s, int _ar, int _ab) :
            contour(_c), state(_s), area_red(_ar), area_blue(_ab)
 {
     checkIntegrity();
@@ -133,7 +135,7 @@ cv::Mat Cell::maskImage(const cv::Mat &_src)
     cv::Mat mask = cv::Mat::zeros(_src.rows, _src.cols, CV_8UC1);
 
     // CV_FILLED fills the connected components found with white
-    cv::drawContours(mask, std::vector<std::vector<cv::Point> >(1,contour),
+    cv::drawContours(mask, vector<vector<cv::Point> >(1,contour),
                                             -1, cv::Scalar(255), CV_FILLED);
 
     cv::Mat im_crop(_src.rows, _src.cols, CV_8UC3);
@@ -147,7 +149,7 @@ cv::Point Cell::getCentroid()
 {
     cv::Point centroid(0,0);
 
-    if(contour.size() > 0)
+    if (contour.size() > 0)
     {
         cv::Moments mom;
         mom = cv::moments(contour, false);
@@ -277,7 +279,7 @@ bool Board::addCell(const Cell& _c)
 
 bool Board::resetCellStates()
 {
-    if (getNumCells()==0) return false;
+    if (getNumCells()==0) { return false; }
 
     for (size_t i = 0; i < getNumCells(); ++i)
     {
@@ -289,7 +291,7 @@ bool Board::resetCellStates()
 
 bool Board::resetCells()
 {
-    if (getNumCells()==0) return false;
+    if (getNumCells()==0) { return false; }
 
     for (size_t i = 0; i < getNumCells(); ++i)
     {
@@ -308,7 +310,7 @@ bool Board::resetBoard()
 
 bool Board::computeState()
 {
-    if (getNumCells()==0) return false;
+    if (getNumCells()==0) { return false; }
 
     for (size_t i = 0; i < getNumCells(); ++i)
     {
@@ -322,7 +324,7 @@ bool Board::isFull()
 {
     for (size_t i = 0; i < getNumCells(); i++)
     {
-        if(getCellState(i)==COL_EMPTY) return false;
+        if (getCellState(i)==COL_EMPTY) { return false; }
     }
     return true;
 }
@@ -331,7 +333,7 @@ bool Board::isEmpty()
 {
     for (size_t i = 0; i < getNumCells(); i++)
     {
-        if(getCellState(i)==COL_RED || getCellState(i)==COL_BLUE) return false;
+        if (getCellState(i)==COL_RED || getCellState(i)==COL_BLUE) { return false; }
     }
     return true;
 }
@@ -341,7 +343,7 @@ size_t Board::getNumTokens()
     return getNumTokens(COL_RED) + getNumTokens(COL_BLUE);
 }
 
-size_t Board::getNumTokens(const std::string& _col)
+size_t Board::getNumTokens(const string& _col)
 {
     if (_col != COL_RED && _col != COL_BLUE) { return 0; }
 
@@ -349,10 +351,69 @@ size_t Board::getNumTokens(const std::string& _col)
 
     for (size_t i = 0; i < getNumCells(); i++)
     {
-        if(getCellState(i)==_col) ++cnt;
+        if (getCellState(i)==_col) ++cnt;
     }
 
     return cnt;
+}
+
+bool Board::isOneTokenAddedRemoved(const Board& _new)
+{
+    if (getNumCells() != _new.cells.size())  { return false; };
+
+    size_t sum = 0;
+
+    for (size_t i = 0; i < getNumCells(); i++)
+    {
+        Cell c = _new.cells[i];
+
+        if (getCell(i) != c)
+        {
+            if ( getCell(i).getState() == COL_EMPTY ||
+                          c.getState() == COL_EMPTY)
+            {
+                sum += 1;
+            }
+            else
+            {
+                sum += 2;
+            }
+        }
+    }
+
+    return sum == 1;
+}
+
+bool Board::isOneTokenAdded(const Board& _new)
+{
+    if (not isOneTokenAddedRemoved(_new)) { return false; }
+
+    return isOneTokenAdded(_new, COL_RED) || isOneTokenAdded(_new, COL_BLUE);
+}
+
+bool Board::isOneTokenAdded(const Board &_new, const string& _col)
+{
+    if (not isOneTokenAddedRemoved(_new)) { return false; }
+    if (_col!=COL_BLUE && _col!=COL_RED)  { return false; }
+
+    Board b(_new);
+    return b.getNumTokens(_col) > getNumTokens(_col);
+}
+
+bool Board::isOneTokenRemoved(const Board& _new)
+{
+    if (not isOneTokenAddedRemoved(_new)) { return false; }
+
+    return isOneTokenRemoved(_new, COL_RED) || isOneTokenRemoved(_new, COL_BLUE);
+}
+
+bool Board::isOneTokenRemoved(const Board &_new, const string& _col)
+{
+    if (not isOneTokenAddedRemoved(_new)) { return false; }
+    if (_col!=COL_BLUE && _col!=COL_RED)  { return false; }
+
+    Board b(_new);
+    return b.getNumTokens(_col) < getNumTokens(_col);
 }
 
 bool Board::threeInARow()
@@ -360,21 +421,21 @@ bool Board::threeInARow()
     return threeInARow(COL_RED) || threeInARow(COL_BLUE);
 }
 
-bool Board::threeInARow(const std::string& _col)
+bool Board::threeInARow(const string& _col)
 {
-    if(_col!=COL_BLUE && _col!=COL_RED) { return false; }
+    if (_col!=COL_BLUE && _col!=COL_RED) { return false; }
 
     // Rows
-    if(getCellState(0)==_col && getCellState(1)==_col && getCellState(2)==_col) { return true; }
-    if(getCellState(3)==_col && getCellState(4)==_col && getCellState(5)==_col) { return true; }
-    if(getCellState(6)==_col && getCellState(7)==_col && getCellState(8)==_col) { return true; }
+    if (getCellState(0)==_col && getCellState(1)==_col && getCellState(2)==_col) { return true; }
+    if (getCellState(3)==_col && getCellState(4)==_col && getCellState(5)==_col) { return true; }
+    if (getCellState(6)==_col && getCellState(7)==_col && getCellState(8)==_col) { return true; }
     // Columns
-    if(getCellState(0)==_col && getCellState(3)==_col && getCellState(6)==_col) { return true; }
-    if(getCellState(1)==_col && getCellState(4)==_col && getCellState(7)==_col) { return true; }
-    if(getCellState(2)==_col && getCellState(5)==_col && getCellState(8)==_col) { return true; }
+    if (getCellState(0)==_col && getCellState(3)==_col && getCellState(6)==_col) { return true; }
+    if (getCellState(1)==_col && getCellState(4)==_col && getCellState(7)==_col) { return true; }
+    if (getCellState(2)==_col && getCellState(5)==_col && getCellState(8)==_col) { return true; }
     // Diagonals
-    if(getCellState(0)==_col && getCellState(4)==_col && getCellState(8)==_col) { return true; }
-    if(getCellState(2)==_col && getCellState(4)==_col && getCellState(6)==_col) { return true; }
+    if (getCellState(0)==_col && getCellState(4)==_col && getCellState(8)==_col) { return true; }
+    if (getCellState(2)==_col && getCellState(4)==_col && getCellState(6)==_col) { return true; }
 
     return false;
 }
@@ -466,8 +527,10 @@ cv::Mat Board::maskImage(const cv::Mat &_src)
     return im_crop;
 }
 
-bool Board::setCellState(size_t i, const std::string& _s)
+bool Board::setCellState(size_t i, const string& _s)
 {
+    if (i >= getNumCells()) { return false; }
+
     return cells[i].setState(_s);
 }
 
