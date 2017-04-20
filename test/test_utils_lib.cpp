@@ -144,6 +144,18 @@ TEST(UtilsLib, testBoardClass)
     // Testing toMsgBoard/fromMsgBoard
     a.fromMsgBoard(b.toMsgBoard());
     EXPECT_EQ(a, b);
+
+    // Testing resetCellStates
+    b.resetCellStates();
+    EXPECT_TRUE(b.isEmpty());
+    EXPECT_FALSE(b.isFull());
+
+    // Testing resetBoard
+    b.resetBoard();
+    // An empty board is both empty and full at the same time,
+    // because there are no cells in check against
+    EXPECT_TRUE(b.isEmpty());
+    EXPECT_TRUE(b.isFull());
 }
 
 // Run all the tests that were declared with TEST()
