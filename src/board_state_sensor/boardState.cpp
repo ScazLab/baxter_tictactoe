@@ -70,12 +70,17 @@ void BoardState::InternalThreadEntry()
             img_out = img_in.clone();
         }
 
+        if (ros::isShuttingDown())
+        {
+            Board empty_board(9);
+            board_state_pub.publish(empty_board.toMsgBoard());
+        }
         if (board_state == STATE_INIT)
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Initializing..", board_state);
             if (brain_state == TTTBrainState::READY || brain_state == TTTBrainState::GAME_STARTED) { ++board_state; }
         }
-        else if (board_state == STATE_CALIB && not ros::isShuttingDown())
+        else if (board_state == STATE_CALIB)
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
             if (not _img_empty)
@@ -170,7 +175,7 @@ void BoardState::InternalThreadEntry()
                 }
             }
         }
-        else if (board_state == STATE_READY && not ros::isShuttingDown())
+        else if (board_state == STATE_READY)
         {
             ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %lu", board_state, board.getNumCells());
             if (not _img_empty)
