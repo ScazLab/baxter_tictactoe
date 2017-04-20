@@ -226,12 +226,20 @@ public:
     size_t getNumTokens(const std::string& _col);
 
     /**
+     * Checks if there are 3 tokens of any color in a row. In a 3x3 board there
+     * are 8 possible combinations to get 3 tokens in a row. We explore all of them.
+     *
+     * @return True in case of a 3 token row is found, false otherwise.
+     **/
+    bool threeInARow();
+
+    /**
      * Checks if there are 3 tokens of the same color in a row. In a 3x3 board there
      * are 8 possible combinations to get 3 tokens in a row. We explore all of them.
      *
      * @param _col  The color of tokens we are searching for.
      *
-     * @return True in case of a 3 token row is found, false otherwise.
+     * @return True in case of a 3 token row of the specific color is found.
      **/
     bool threeInARow(const std::string& _col);
 

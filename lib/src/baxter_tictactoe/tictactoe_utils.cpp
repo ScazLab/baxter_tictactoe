@@ -355,6 +355,11 @@ size_t Board::getNumTokens(const std::string& _col)
     return cnt;
 }
 
+bool Board::threeInARow()
+{
+    return threeInARow(COL_RED) || threeInARow(COL_BLUE);
+}
+
 bool Board::threeInARow(const std::string& _col)
 {
     if(_col!=COL_BLUE && _col!=COL_RED) { return false; }

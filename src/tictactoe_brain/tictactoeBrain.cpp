@@ -148,8 +148,6 @@ void tictactoeBrain::playOneGame()
 
     saySentence("I start the game.",2);
 
-    // ROS_WARN("PRESS ENTER TO START THE GAME");
-    // std::cin.get();
     n_robot_tokens=0;
     n_human_tokens=0;
 

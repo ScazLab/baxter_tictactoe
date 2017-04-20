@@ -161,6 +161,45 @@ TEST(UtilsLib, testBoardClass)
     EXPECT_TRUE(b.isFull());
 }
 
+TEST(UtilsLib, testBoardStates)
+{
+    Board a(9);
+
+    a.setCellState(0, COL_RED);
+    a.setCellState(1, COL_RED);
+    a.setCellState(2, COL_RED);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+
+    a.setCellState(1, COL_BLUE);
+    EXPECT_FALSE(a.threeInARow());
+    EXPECT_FALSE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+
+    a.setCellState(4, COL_BLUE);
+    a.setCellState(7, COL_BLUE);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_BLUE));
+
+    a.setCellState(3, COL_RED);
+    a.setCellState(6, COL_RED);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_TRUE(a.threeInARow(COL_BLUE));
+
+    a.setCellState(4, COL_RED);
+    a.setCellState(3, COL_EMPTY);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+
+    a.setCellState(8, COL_RED);
+    a.setCellState(6, COL_EMPTY);
+    EXPECT_TRUE(a.threeInARow());
+    EXPECT_TRUE(a.threeInARow(COL_RED));
+    EXPECT_FALSE(a.threeInARow(COL_BLUE));
+}
+
 // Run all the tests that were declared with TEST()
 int main(int argc, char **argv)
 {
