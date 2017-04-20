@@ -134,6 +134,9 @@ TEST(UtilsLib, testBoardClass)
         b.setCell(i, Cell(COL_RED));
     }
 
+    EXPECT_EQ(b.getNumTokens(),        b.getNumCells());
+    EXPECT_EQ(b.getNumTokens(COL_RED), b.getNumCells());
+
     EXPECT_FALSE(b.isEmpty());
     EXPECT_TRUE(b.isFull());
 

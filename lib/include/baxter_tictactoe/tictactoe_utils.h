@@ -26,10 +26,10 @@ namespace ttt
 #define CHEATING_GAME_B     3
 
 #define COL_RED       "red"
-#define COL_BLUE      "blue"
-#define COL_EMPTY     "empty"
+#define COL_BLUE     "blue"
+#define COL_EMPTY   "empty"
 
-#define VOICE       "voice_kal_diphone"
+#define VOICE   "voice_kal_diphone"
 
 typedef std::vector<cv::Point>  Contour;
 typedef std::vector<Contour>    Contours;
@@ -208,6 +208,32 @@ public:
      * @return  true/false if empty or not
      **/
     bool isEmpty();
+
+    /**
+     * Counts the total number of tokens on the board.
+     * That is, the number of cells that are not empty or undefined.
+     *
+     * @return The number of cells where there is a red or blue token.
+     **/
+    size_t getNumTokens();
+
+    /**
+     * Counts the number of tokens of a particular color on the board.
+     *
+     * @param _col  The color of tokens we are counting
+     * @return      The number of cells where there is a _col token.
+     **/
+    size_t getNumTokens(const std::string& _col);
+
+    /**
+     * Checks if there are 3 tokens of the same color in a row. In a 3x3 board there
+     * are 8 possible combinations to get 3 tokens in a row. We explore all of them.
+     *
+     * @param _col  The color of tokens we are searching for.
+     *
+     * @return True in case of a 3 token row is found, false otherwise.
+     **/
+    bool threeInARow(const std::string& _col);
 
     /**
      * Converts a MsgBoard object to the board.

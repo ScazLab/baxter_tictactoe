@@ -147,32 +147,6 @@ public:
     int getNextMove();
 
     /**
-     * This function counts the total number of tokens on the board.
-     * That is, the number of cells that are not empty or undefined.
-     * @return The number of cells where there is a red or blue token.
-     **/
-    unsigned short int getNumTokens();
-
-    /**
-     * This function counts the number of a particular type of tokens
-     * on the board. That is, the number of cells that occupied by these kind of tokens.
-     * @param token_type The kind of tokens we are counting
-     * @return The number of cells where there is a token_type token.
-     **/
-    unsigned short int getNumTokens(const std::string& token_type);
-
-    /**
-     * This function checks if there are 3 cell_color tokens in a row, which means that the game is over.
-     * In a 3x3 board there are 8 possible combinations to get 3 tokens in a row. We explore all of them.
-     *
-     * @param color It represents the color of the tokens in the row we are searching for.
-     * @param b   TTT board where searching for three tokens of the same color in a row.
-     *
-     * @return True in case of a 3 token row is found, false otherwise.
-     **/
-    bool threeInARow(const std::string& col, ttt::Board &b);
-
-    /**
      * This function returns the winner of the game.
      * @return 0 if there is not winner, 1 if the winner is the robot, or 2 if the winner is the opponent.
      **/
@@ -186,18 +160,6 @@ public:
      * @param number of opponent's token at the beginning
      **/
     void waitForOpponentTurn(const size_t& n_robot_tokens);
-
-    /**
-     * Indicates if the board is full.
-     * @return  true/false if full or not
-     **/
-    bool isBoardFull();
-
-    /**
-     * Indicates if the board is empty.
-     * @return  true/false if empty or not
-     **/
-    bool isBoardEmpty();
 
     /**
      * This function synthesizes sentence and waits t seconds.

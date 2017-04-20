@@ -336,6 +336,44 @@ bool Board::isEmpty()
     return true;
 }
 
+size_t Board::getNumTokens()
+{
+    return getNumTokens(COL_RED) + getNumTokens(COL_BLUE);
+}
+
+size_t Board::getNumTokens(const std::string& _col)
+{
+    if (_col != COL_RED && _col != COL_BLUE) { return 0; }
+
+    size_t cnt = 0;
+
+    for (size_t i = 0; i < getNumCells(); i++)
+    {
+        if(getCellState(i)==_col) ++cnt;
+    }
+
+    return cnt;
+}
+
+bool Board::threeInARow(const std::string& _col)
+{
+    if(_col!=COL_BLUE && _col!=COL_RED) { return false; }
+
+    // Rows
+    if(getCellState(0)==_col && getCellState(1)==_col && getCellState(2)==_col) { return true; }
+    if(getCellState(3)==_col && getCellState(4)==_col && getCellState(5)==_col) { return true; }
+    if(getCellState(6)==_col && getCellState(7)==_col && getCellState(8)==_col) { return true; }
+    // Columns
+    if(getCellState(0)==_col && getCellState(3)==_col && getCellState(6)==_col) { return true; }
+    if(getCellState(1)==_col && getCellState(4)==_col && getCellState(7)==_col) { return true; }
+    if(getCellState(2)==_col && getCellState(5)==_col && getCellState(8)==_col) { return true; }
+    // Diagonals
+    if(getCellState(0)==_col && getCellState(4)==_col && getCellState(8)==_col) { return true; }
+    if(getCellState(2)==_col && getCellState(4)==_col && getCellState(6)==_col) { return true; }
+
+    return false;
+}
+
 void Board::fromMsgBoard(const baxter_tictactoe::MsgBoard &msgb)
 {
     resetBoard();
