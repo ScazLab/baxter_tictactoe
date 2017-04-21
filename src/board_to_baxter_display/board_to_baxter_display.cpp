@@ -6,11 +6,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include "baxter_tictactoe/tictactoe_utils.h"
 #include "baxter_tictactoe/MsgBoard.h"
 
 using namespace baxter_tictactoe;
 
-class BoardToBaxterDisplay
+class BaxterDisplay
 {
 private:
     ros::NodeHandle nh_;
@@ -37,40 +38,29 @@ private:
 
     std::string yale_logo_file;
 
-    cv::Mat drawBoard(const MsgBoard::ConstPtr& msg)
+    cv::Mat drawBoard(const MsgBoard& msg)
     {
-        ROS_DEBUG("@display_board");
-
         cv::Mat img(height,width,CV_8UC3,white);
-
-        // 3x3 tic tac toe board
-        unsigned short int col, row;
-
         drawLines(img);
 
-        for (size_t i = 0; i < msg->cells.size(); ++i)
+        for (size_t i = 0; i < msg.cells.size(); ++i)
         {
-            if(msg->cells[i].state != "empty")
+            if (msg.cells[i].state != MsgCell::EMPTY)
             {
-                col=i%n_cols;
-                row=i/n_rows;
-                cv::Point center_cell(cols_cell_img/2 + cols_cell_img*col, rows_cell_img/2 + rows_cell_img*row);
-                cv::Point bottom_left_corner;
-                cv::Point top_right_corner(cols_cell_img*5/6 + cols_cell_img*col, rows_cell_img*5/6 + rows_cell_img*row);
-                ROS_DEBUG_STREAM("Center point in cell " << i << " (" << center_cell.x << "," << center_cell.y << ")");
-
-                drawCell(img, i, msg->cells[i].state);
+                drawCell(img, i, msg.cells[i].state);
             }
         }
+
         return img;
     }
 
     void drawCell(cv::Mat& img, size_t cell_number, const std::string &cell_data)
     {
-        cv::Point top_left =computeTopLeftCorner(cell_number);
+        cv::Point top_left =topLeftCorner(cell_number);
         cv::Point diag_incr(cols_cell_img*1/12,rows_cell_img*1/12);
 
-        cv::rectangle(img,top_left+2*diag_incr,top_left+10*diag_incr,cell_data==MsgCell::RED?red:blue,CV_FILLED);
+        cv::rectangle(img,top_left+2*diag_incr,top_left+10*diag_incr,
+                      cell_data==MsgCell::RED?red:blue,CV_FILLED);
 
         if (cell_data==MsgCell::RED)
         {
@@ -89,11 +79,12 @@ private:
         }
     }
 
-    cv::Point computeTopLeftCorner(int cell_number)
+    cv::Point topLeftCorner(int cell_number)
     {
         unsigned short int col=cell_number%n_cols;
         unsigned short int row=cell_number/n_rows;
-        cv::Point result(cols_cell_img*col+board_bottom_left.x, rows_cell_img*row+board_bottom_left.y);
+        cv::Point result(cols_cell_img*col+board_bottom_left.x,
+                         rows_cell_img*row+board_bottom_left.y);
 
         ROS_DEBUG("Cell #%i bottom left corner: %i %i\n",cell_number,result.x,result.y);
 
@@ -102,15 +93,15 @@ private:
 
     void drawLines(cv::Mat& img)
     {
-        cv::line(img,computeTopLeftCorner(3),computeTopLeftCorner(5)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
-        cv::line(img,computeTopLeftCorner(6),computeTopLeftCorner(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
-        cv::line(img,computeTopLeftCorner(1),computeTopLeftCorner(7)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
-        cv::line(img,computeTopLeftCorner(2),computeTopLeftCorner(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
+        cv::line(img,topLeftCorner(3),topLeftCorner(5)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
+        cv::line(img,topLeftCorner(6),topLeftCorner(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
+        cv::line(img,topLeftCorner(1),topLeftCorner(7)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
+        cv::line(img,topLeftCorner(2),topLeftCorner(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
 
         return;
     }
 
-    void newBoardCb(const MsgBoard::ConstPtr& msg)
+    void newBoardCb(const MsgBoard& msg)
     {
         cv::Mat img_board = drawBoard(msg);
         publishImage(img_board);
@@ -121,9 +112,10 @@ private:
     void publishImage(cv::Mat _img)
     {
         cv_bridge::CvImage out_msg;
-        out_msg.header   = std_msgs::Header();
-        out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Or whatever
-        out_msg.image    = _img; // Your cv::Mat
+        out_msg.header       = std_msgs::Header();
+        out_msg.header.stamp = ros::Time::now();
+        out_msg.encoding     = sensor_msgs::image_encodings::BGR8; // Or whatever
+        out_msg.image        = _img; // Your cv::Mat
 
         image_pub_.publish(out_msg.toImageMsg());
 
@@ -134,14 +126,18 @@ private:
     {
         if (yale_logo_file != "")
         {
+            ROS_INFO("Publishing Yale logo..");
             cv::Mat img;
             img = cv::imread(yale_logo_file, CV_LOAD_IMAGE_COLOR);   // Read the file
 
-            if(not img.data )                              // Check for invalid input
+            if(not img.data )  // Check for invalid input
             {
                 ROS_ERROR("Yale logo file not found: %s", yale_logo_file.c_str());
                 return;
             }
+
+            // cv::imshow("test", img);
+            // cv::waitKey(39);
 
             publishImage(img);
         }
@@ -151,10 +147,10 @@ private:
 
 public:
 
-    BoardToBaxterDisplay(std::string channel) : it_(nh_)
+    BaxterDisplay() : it_(nh_)
     {
-        image_pub_ = it_.advertise(channel.c_str(), 1);
-        board_sub  = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardToBaxterDisplay::newBoardCb, this);
+        image_pub_ = it_.advertise("baxter_display", 3);
+        board_sub  = nh_.subscribe("board_state", 3, &BaxterDisplay::newBoardCb, this);
 
         nh_.param<std::string>("baxter_tictactoe/yale_logo_file", yale_logo_file, "");
 
@@ -181,7 +177,7 @@ public:
         drawYaleLogo();
     }
 
-    ~BoardToBaxterDisplay()
+    ~BaxterDisplay()
     {
         drawYaleLogo();
     }
@@ -190,14 +186,8 @@ public:
 
 int main(int argc, char** argv)
 {
-    std::string channel = "/board_scheme";
-    if (argc>1)
-    {
-        channel=std::string(argv[1]);
-    }
-
-    ros::init(argc, argv, "board_display");
-    BoardToBaxterDisplay bd(channel);
+    ros::init(argc, argv, "baxter_display");
+    BaxterDisplay bd;
     ros::spin();
     return 0;
 }
