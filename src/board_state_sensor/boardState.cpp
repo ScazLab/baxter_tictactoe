@@ -4,23 +4,6 @@ using namespace ttt;
 using namespace baxter_tictactoe;
 using namespace std;
 
-bool operator==(MsgBoard board1, MsgBoard board2)
-{
-    if (board1.cells.size()!=board2.cells.size()) { return false; }
-
-    for (size_t i = 0; i < board1.cells.size(); ++i)
-    {
-        if (board1.cells[i].state!=board2.cells[i].state) { return false; }
-    }
-
-    return true;
-}
-
-bool operator!=(MsgBoard board1, MsgBoard board2)
-{
-    return not (board1==board2);
-}
-
 BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
                doShow(_show), board_state(STATE_INIT), brain_state(-1)
 {
