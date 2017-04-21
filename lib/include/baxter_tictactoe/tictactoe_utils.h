@@ -9,7 +9,7 @@
 
 namespace enc = sensor_msgs::image_encodings;
 
-namespace ttt
+namespace baxter_tictactoe
 {
 
 #define ACTION_SCAN         "scan"

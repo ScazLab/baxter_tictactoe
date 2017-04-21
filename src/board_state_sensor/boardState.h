@@ -31,8 +31,8 @@ private:
     ros::Subscriber         brain_state_sub;
     image_transport::Publisher      img_pub;
 
-    ttt::Board board;
-    ttt::Cell cell;
+    baxter_tictactoe::Board board;
+    baxter_tictactoe::Cell   cell;
 
     double area_threshold;
 
@@ -55,13 +55,13 @@ private:
      *
      * @return     index of the contour with the largest area or the next largest area
      */
-    int getIthIndex(ttt::Contours contours, int ith);
+    int getIthIndex(baxter_tictactoe::Contours contours, int ith);
 
     std::string intToString( const int a );
 
-    static bool ascendingY(ttt::Contour i, ttt::Contour j);
+    static bool ascendingY(baxter_tictactoe::Contour i, baxter_tictactoe::Contour j);
 
-    static bool ascendingX(ttt::Contour i, ttt::Contour j);
+    static bool ascendingX(baxter_tictactoe::Contour i, baxter_tictactoe::Contour j);
 
     /**
      * Callback to get the state of the demo.

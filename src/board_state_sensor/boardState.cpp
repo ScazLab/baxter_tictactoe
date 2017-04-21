@@ -1,8 +1,7 @@
 #include "boardState.h"
 
-using namespace ttt;
-using namespace baxter_tictactoe;
 using namespace std;
+using namespace baxter_tictactoe;
 
 BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
                doShow(_show), board_state(STATE_INIT), brain_state(-1)
@@ -209,7 +208,7 @@ void BoardState::InternalThreadEntry()
                         if (board.getCellState(i) ==  COL_RED) { col =  col_red; }
                         if (board.getCellState(i) == COL_BLUE) { col = col_blue; }
 
-                        ttt::Contours contours;
+                        Contours contours;
                         contours.push_back(board.getCellContour(i));
 
                         cv::drawContours(img_out, contours,-1, col, CV_FILLED); // drawing just the borders

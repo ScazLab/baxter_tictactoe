@@ -2,7 +2,7 @@
 
 #include "baxter_tictactoe/tictactoe_utils.h"
 
-using namespace ttt;
+using namespace baxter_tictactoe;
 
 // Declare a test
 TEST(UtilsLib, testCellClass)

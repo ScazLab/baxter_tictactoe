@@ -2,7 +2,6 @@
 
 #include <stdlib.h> // srand, rand
 
-using namespace ttt;
 using namespace std;
 using namespace baxter_tictactoe;
 
@@ -212,9 +211,9 @@ void tictactoeBrain::playOneGame()
     return;
 }
 
-ttt::Board tictactoeBrain::getCurrBoard()
+Board tictactoeBrain::getCurrBoard()
 {
-    ttt::Board res;
+    Board res;
 
     pthread_mutex_lock(&mutex_curr_board);
     res = curr_board;
@@ -268,7 +267,7 @@ void tictactoeBrain::boardStateCb(const baxter_tictactoe::MsgBoard &msg)
 int tictactoeBrain::randomStrategyMove()
 {
     int r;
-    ttt::Board aux = internal_board;
+    Board aux = internal_board;
     do {
         r = rand() % NUMBER_OF_CELLS + 1; //random number between 1 and NUMBER_OF_CELLS
         ROS_DEBUG("Cell %d is in state %s ==? %s", r, aux.getCellState(r-1).c_str(),
@@ -300,7 +299,7 @@ int tictactoeBrain::smartStrategyMove()
 bool tictactoeBrain::cheatingMove(int &cell_id)
 {
     cell_id = -1;
-    ttt::Board aux = internal_board;
+    Board aux = internal_board;
     string cell_state = COL_EMPTY;
 
     for (size_t i = 0; i < aux.getNumCells(); ++i)
@@ -329,7 +328,7 @@ bool tictactoeBrain::cheatingMove(int &cell_id)
 bool tictactoeBrain::defensiveMove(int &cell_id)
 {
     cell_id = -1;
-    ttt::Board aux = internal_board;
+    Board aux = internal_board;
     string cell_state = COL_EMPTY;
 
     for (size_t i = 0; i < aux.getNumCells(); ++i)
@@ -355,7 +354,7 @@ bool tictactoeBrain::defensiveMove(int &cell_id)
 bool tictactoeBrain::victoryMove(int &cell_id)
 {
     cell_id = -1;
-    ttt::Board aux = internal_board;
+    Board aux = internal_board;
     string cell_state = COL_EMPTY;
 
     for (size_t i = 0; i < aux.getNumCells(); ++i)

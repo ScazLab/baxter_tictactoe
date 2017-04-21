@@ -11,13 +11,13 @@
 
 #include <pthread.h>
 
+namespace baxter_tictactoe
+{
+
 #define WIN_NONE    0
 #define WIN_ROBOT   1
 #define WIN_OPP     2
 #define WIN_TIE     3
-
-namespace ttt
-{
 
 class tictactoeBrain : public ROSThread
 {
@@ -36,8 +36,9 @@ private:
     std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
 
     /* STATE OF THE BOARD */
-    ttt::Board            curr_board; // Board as read from the board state sensor
-    ttt::Board        internal_board; // Internal model of the state of the world
+    baxter_tictactoe::Board      curr_board; // Board as read from the board state sensor
+    baxter_tictactoe::Board  internal_board; // Internal model of the state of the world
+
     ros::Subscriber   boardState_sub; // subscriber to receive the state of the board
     pthread_mutex_t mutex_curr_board;
     bool          _is_board_detected;
@@ -134,7 +135,7 @@ protected:
 
 public:
 
-    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="random",
+    tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="smart",
                    bool legacy_code = false);
 
     ~tictactoeBrain();
@@ -175,10 +176,22 @@ public:
     void playOneGame();
 
     /* GETTERS */
-    ttt::Board  getCurrBoard();
     std::string getRobotColor()        { return    _robot_color; };
     std::string getOpponentColor()     { return _opponent_color; };
-    int         getBrainState();
+
+    /**
+     * Thread-safe method to retrieve the state of the tictactoeBrain
+     *
+     * @return the state of the tictactoeBrain
+     */
+    int getBrainState();
+
+    /**
+     * Thread-safe method to retrieve the latest board published by boardstate
+     *
+     * @return the latest board published by boardstate
+     */
+    baxter_tictactoe::Board  getCurrBoard();
 
     /* SETTERS */
     void setStrategy(std::string strategy);

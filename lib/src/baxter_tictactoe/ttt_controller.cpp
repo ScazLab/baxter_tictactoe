@@ -2,6 +2,7 @@
 
 using namespace std;
 using namespace baxter_core_msgs;
+using namespace baxter_tictactoe;
 using namespace geometry_msgs;
 using namespace sensor_msgs;
 using namespace cv;
@@ -215,7 +216,7 @@ bool TTTController::computeTokenOffset(cv::Point &offset)
 
     bool res = false;
 
-    ttt::Contours contours;
+    Contours contours;
     vector<cv::Vec4i> hierarchy;
     findContours(token, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
 
@@ -284,7 +285,7 @@ cv::Mat TTTController::detectPool()
     // imshow("black", black);
 
     vector<cv::Vec4i> hierarchy;
-    ttt::Contours contours;
+    Contours contours;
 
     // find outer board contours
     findContours(black, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
@@ -368,7 +369,7 @@ void TTTController::processImage(float dist)
     createCVWindows();
     while(RobotInterface::ok())
     {
-        ttt::Contours contours;
+        Contours contours;
         vector<cv::Point> centroids, board_corners, cell_to_corner;
 
         Mat binary, board;
@@ -459,7 +460,7 @@ void TTTController::isolateBlue(Mat &output)
     output = hsvThreshold(hsv, hsv_blue);
 }
 
-void TTTController::isolateBoard(ttt::Contours &contours, int &board_area,
+void TTTController::isolateBoard(Contours &contours, int &board_area,
                                  vector<cv::Point> &board_corners, Mat input, Mat &output)
 {
     output = Mat::zeros(_img_size, CV_8UC1);
@@ -553,7 +554,7 @@ bool TTTController::descendingX(vector<cv::Point> i, vector<cv::Point> j)
     return x_i > x_j;
 }
 
-void TTTController::setOffsets(int board_area, ttt::Contours contours, float dist, Mat &output, vector<cv::Point> &centroids)
+void TTTController::setOffsets(int board_area, Contours contours, float dist, Mat &output, vector<cv::Point> &centroids)
 {
     cv::Point center(_img_size.width / 2, _img_size.height / 2);
 
@@ -586,7 +587,7 @@ void TTTController::setOffsets(int board_area, ttt::Contours contours, float dis
     }
 }
 
-void TTTController::setZone(ttt::Contours contours, float dist, vector<cv::Point> board_corners,
+void TTTController::setZone(Contours contours, float dist, vector<cv::Point> board_corners,
                             vector<cv::Point> c, vector<cv::Point> &cell_to_corner)
 {
     cell_to_corner.resize(4);

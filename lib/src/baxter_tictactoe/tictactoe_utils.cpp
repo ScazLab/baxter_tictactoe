@@ -12,7 +12,7 @@
 #include <QApplication>
 
 using namespace std;
-using namespace ttt;
+using namespace baxter_tictactoe;
 
 /**************************************************************************/
 /**                        CELL                                          **/
