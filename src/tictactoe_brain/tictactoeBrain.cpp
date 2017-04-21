@@ -52,10 +52,8 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
     ROS_INFO("Number of games: %i; Cheating games: %s",
               num_games, cheating_games_str.str().c_str());
 
-    string robot_col = "";
-    _nh.param<string>("robot_color", robot_col, "blue");
-
-    _robot_color    =  robot_col  ==COL_BLUE?COL_BLUE:COL_RED;
+    _nh.param<string>("robot_color", _robot_color, "blue");
+    _robot_color    = _robot_color==COL_BLUE?COL_BLUE:COL_RED;
     _opponent_color = _robot_color==COL_BLUE?COL_RED:COL_BLUE;
 
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
