@@ -35,6 +35,8 @@ private:
     cv::Scalar   red;
     cv::Scalar  blue;
 
+    std::string yale_logo_file;
+
     cv::Mat drawBoard(const MsgBoard::ConstPtr& msg)
     {
         ROS_DEBUG("@display_board");
@@ -104,18 +106,47 @@ private:
         cv::line(img,computeTopLeftCorner(6),computeTopLeftCorner(8)+cv::Point(cols_cell_img,0),cv::Scalar(0),8);
         cv::line(img,computeTopLeftCorner(1),computeTopLeftCorner(7)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
         cv::line(img,computeTopLeftCorner(2),computeTopLeftCorner(8)+cv::Point(0,rows_cell_img),cv::Scalar(0),8);
+
+        return;
     }
 
     void newBoardCb(const MsgBoard::ConstPtr& msg)
     {
         cv::Mat img_board = drawBoard(msg);
+        publishImage(img_board);
 
+        return;
+    }
+
+    void publishImage(cv::Mat _img)
+    {
         cv_bridge::CvImage out_msg;
-        out_msg.header   = msg->header; // Same timestamp and tf frame as input image
+        out_msg.header   = std_msgs::Header();
         out_msg.encoding = sensor_msgs::image_encodings::BGR8; // Or whatever
-        out_msg.image    = img_board; // Your cv::Mat
+        out_msg.image    = _img; // Your cv::Mat
 
         image_pub_.publish(out_msg.toImageMsg());
+
+        return;
+    }
+
+    void drawYaleLogo()
+    {
+        if (yale_logo_file != "")
+        {
+            cv::Mat img;
+            img = cv::imread(yale_logo_file, CV_LOAD_IMAGE_COLOR);   // Read the file
+
+            if(not img.data )                              // Check for invalid input
+            {
+                ROS_ERROR("Yale logo file not found: %s", yale_logo_file.c_str());
+                return;
+            }
+
+            publishImage(img);
+        }
+
+        return;
     }
 
 public:
@@ -124,6 +155,8 @@ public:
     {
         image_pub_ = it_.advertise(channel.c_str(), 1);
         board_sub  = nh_.subscribe("baxter_tictactoe/board_state", 1, &BoardToBaxterDisplay::newBoardCb, this);
+
+        nh_.param<std::string>("baxter_tictactoe/yale_logo_file", yale_logo_file, "");
 
         height=600;
         width =1024;
@@ -145,6 +178,12 @@ public:
         blue  = cv::Scalar(180, 40, 40);  // REMEMBER that this is in BGR color code!!
         red   = cv::Scalar( 40, 40,150);  // REMEMBER that this is in BGR color code!!
 
+        drawYaleLogo();
+    }
+
+    ~BoardToBaxterDisplay()
+    {
+        drawYaleLogo();
     }
 };
 

@@ -18,6 +18,8 @@
         V: [ 70, 256]
     </rosparam>
 
+    <param name="baxter_tictactoe/yale_logo_file" value="$(find baxter_tictactoe)/img/yale_logo.png"/>
+
     <!-- If show is set to true, then the board state sensing will show the board with the hsv-color filtering for red and blue.-->
     <arg name="show" default="false" />
 
