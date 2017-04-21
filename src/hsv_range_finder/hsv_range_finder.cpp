@@ -23,8 +23,8 @@ private:
     hsvColorRange hsv;
 
 public:
-    HsvRangeFinder(std::string _name) : node_handle(_name), image_transport(node_handle), window_name(_name),
-                                        hsv(colorRange(60, 130), colorRange(90,256), colorRange(10,256))
+    explicit HsvRangeFinder(std::string _name) : node_handle(_name), image_transport(node_handle), window_name(_name),
+                                                 hsv(colorRange(60, 130), colorRange(90,256), colorRange(10,256))
     {
         // left hand camera
         image_subscriber = image_transport.subscribe("/image_in", 1,
