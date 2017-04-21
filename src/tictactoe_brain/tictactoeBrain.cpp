@@ -30,7 +30,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
 
     brainstate_timer = _nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainState, this, false);
 
-    _nh.param<string>("ttt_brain/voice", _voice_type, VOICE);
+    _nh.param<string>("voice", _voice_type, VOICE);
     ROS_INFO("Using voice %s", _voice_type.c_str());
 
     _nh.param<int>("num_games", num_games, NUM_GAMES);
@@ -52,12 +52,11 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
     ROS_INFO("Number of games: %i; Cheating games: %s",
               num_games, cheating_games_str.str().c_str());
 
-    string robot_col;
-    _nh.param<string>("ttt_brain/robot_color", robot_col, "blue");
-    // ROS_ASSERT_MSG(robot_col=="blue", "robot_color should be set to blue in the parameter server. "
-    //                           "If you want to use red, be willing to spend some time in coding it!");
-    _robot_color=COL_BLUE;
-    _opponent_color=_robot_color==COL_BLUE?COL_RED:COL_BLUE;
+    string robot_col = "";
+    _nh.param<string>("robot_color", robot_col, "blue");
+
+    _robot_color    =  robot_col  ==COL_BLUE?COL_BLUE:COL_RED;
+    _opponent_color = _robot_color==COL_BLUE?COL_RED:COL_BLUE;
 
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
               getRobotColor().c_str(), getOpponentColor().c_str());
