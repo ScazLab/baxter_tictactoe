@@ -112,8 +112,6 @@ private:
     void publishImage(cv::Mat _img)
     {
         cv_bridge::CvImage out_msg;
-        out_msg.header       = std_msgs::Header();
-        out_msg.header.stamp = ros::Time::now();
         out_msg.encoding     = sensor_msgs::image_encodings::BGR8; // Or whatever
         out_msg.image        = _img; // Your cv::Mat
 

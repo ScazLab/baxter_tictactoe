@@ -31,7 +31,7 @@
         <remap from="/baxter_tictactoe/image" to="/usb_cam/image_raw"/>
     </node>
 
-    <node name="board_to_baxter_display" pkg="baxter_tictactoe" type="board_to_baxter_display" respawn="false" output="screen">
+    <node name="baxterDisplay" pkg="baxter_tictactoe" type="baxterDisplay" respawn="false" output="screen">
         <remap from="baxter_display" to="/robot/xdisplay"/>
         <remap from="board_state"    to="/baxter_tictactoe/board_state"/>
     </node>
