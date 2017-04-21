@@ -203,7 +203,7 @@ int main(int argc, char** argv)
     // This must be set after the first NodeHandle is created.
     signal(SIGINT, mySigintHandler);
 
-    ros::Rate r(20.0);
+    ros::Rate r(50.0);
 
     while (true)
     {
