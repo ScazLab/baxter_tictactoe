@@ -7,7 +7,7 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
-    string name = "test_ttt_controller";
+    string name = "ttt_controller";
     bool legacy_code = false;
 
     ros::init(argc, argv, name);

@@ -166,8 +166,8 @@ target_link_libraries(board_state_sensor   baxter_tictactoe
 
 # Compile tests if required
 IF(COMPILE_TESTS STREQUAL true)
-    add_executable(test_vacuum_gripper          src/test/test_vacuum_gripper.cpp)
-    add_executable(test_ttt_controller          src/test/test_ttt_controller.cpp)
+    add_executable(test_vacuum_gripper          test/test_vacuum_gripper.cpp)
+    add_executable(test_ttt_controller          test/test_ttt_controller.cpp)
 
     add_dependencies(test_vacuum_gripper        baxter_tictactoe_generate_messages_cpp)
     add_dependencies(test_ttt_controller        baxter_tictactoe_generate_messages_cpp)
