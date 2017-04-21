@@ -12,6 +12,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
                                leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
 {
+    printf("\n");
     ROS_INFO("Legacy code %s enabled.", legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
 
@@ -24,7 +25,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
     pthread_mutex_init(&_mutex_brain, &_mutex_attr);
     pthread_mutex_init(&mutex_curr_board, &_mutex_attr);
 
-    printf("\n");
     boardState_sub = _nh.subscribe("/baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
                                     &tictactoeBrain::boardStateCb, this);
     tttBrain_pub   = _nh.advertise<TTTBrainState>("/baxter_tictactoe/ttt_brain_state", 1);

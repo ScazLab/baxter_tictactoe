@@ -1,3 +1,5 @@
+#include <signal.h>
+
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <image_transport/image_transport.h>
@@ -120,6 +122,8 @@ private:
         return;
     }
 
+public:
+
     void drawYaleLogo()
     {
         if (yale_logo_file != "")
@@ -143,11 +147,9 @@ private:
         return;
     }
 
-public:
-
     BaxterDisplay() : it_(nh_)
     {
-        image_pub_ = it_.advertise("baxter_display", 3);
+        image_pub_ = it_.advertise("baxter_display", 3, true);
         board_sub  = nh_.subscribe("board_state", 3, &BaxterDisplay::newBoardCb, this);
 
         nh_.param<std::string>("baxter_tictactoe/yale_logo_file", yale_logo_file, "");
@@ -166,26 +168,57 @@ public:
 
         cols_cell_img = minimum/n_cols;
         rows_cell_img = minimum/n_rows;
-        ROS_DEBUG_STREAM("cols_cell_img=" << cols_cell_img << " rows_cell_img=" << rows_cell_img);
+        ROS_DEBUG("Cols_cell_img = %u\t Rows_cell_img = %u", cols_cell_img, rows_cell_img);
 
         white = cv::Scalar(255,255,255);
         blue  = cv::Scalar(180, 40, 40);  // REMEMBER that this is in BGR color code!!
         red   = cv::Scalar( 40, 40,150);  // REMEMBER that this is in BGR color code!!
 
+        // This delay is there to be able to publish the yale logo
+        ros::Duration(0.1).sleep();
         drawYaleLogo();
     }
 
     ~BaxterDisplay()
     {
-        drawYaleLogo();
+
     }
 };
 
+sig_atomic_t sigflag = 0;
+
+void mySigintHandler(int sig)
+{
+    // putting this flag to true will break the while loop in the main function,
+    // and will publish one last message from the baxter display.
+    sigflag = 1;
+}
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "baxter_display");
+    ros::init(argc, argv, "baxter_display", ros::init_options::NoSigintHandler);
     BaxterDisplay bd;
-    ros::spin();
+
+    // Override the default ros sigint handler.
+    // This must be set after the first NodeHandle is created.
+    signal(SIGINT, mySigintHandler);
+
+    ros::Rate r(20.0);
+
+    while (true)
+    {
+        if (sigflag == 1)
+        {
+            bd.drawYaleLogo();
+            break;
+        }
+        ros::spinOnce();
+        r.sleep();
+    }
+
+    // All the default sigint handler does is call shutdown().
+    // We call it here after the yale logo has been published.
+    ros::shutdown();
+
     return 0;
 }

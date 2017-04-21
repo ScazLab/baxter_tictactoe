@@ -251,7 +251,7 @@ bool BoardState::isBoardSane()
         int cell_area = board.getCellArea(i);
         if ( cell_area < area_threshold)
         {
-            ROS_WARN("Cell #%lu has area %i (smaller than area_threshold)", i, cell_area);
+            ROS_WARN_THROTTLE(1, "Cell #%lu has area %i (smaller than area_threshold)", i, cell_area);
             return false;
         }
 
