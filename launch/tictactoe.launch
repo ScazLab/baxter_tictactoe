@@ -27,17 +27,13 @@
         BL: [0.5179, 0.3762, -0.1879]
     </rosparam>
 
-    <!-- Red is not working as of now -->
     <rosparam param="ttt_controller/num_games">3</rosparam>
     <rosparam param="ttt_controller/cheating_games">[2, 3]</rosparam>
-
-    <!--<param name="voice" type="str" value="voice_cmu_us_jmk_arctic_clunits" /> --> <!-- A human-like voice -->
-    <!-- A robotic voice -->
+    <!-- <param name="ttt_controller/voice"       type="str" value="voice_cmu_us_jmk_arctic_clunits" /> -->
     <param name="ttt_controller/voice"       type="str" value="voice_kal_diphone" />
     <param name="ttt_controller/robot_color" type="str" value=             "blue" />
 
-    <!-- <include file="$(find sound_play)/soundplay_node.launch" /> We don't use the existing launch file because we want this node to be a must, i.e.required="true"-->
-    <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
-
     <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
+
+    <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py" required="true"/>
 </launch>
