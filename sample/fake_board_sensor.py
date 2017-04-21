@@ -1,11 +1,11 @@
-PACKAGE = 'ttt_board_sensor'
+PACKAGE = 'baxter_tictactoe'
 
 import rospy
 import roslib
 import std_msgs.msg
 roslib.load_manifest(PACKAGE)
 
-from ttt_board_sensor.msg import ttt_board as BoardMsg
+from baxter_tictactoe.msg import ttt_board as BoardMsg
 
 rospy.init_node('fake_board_sensor')
 
