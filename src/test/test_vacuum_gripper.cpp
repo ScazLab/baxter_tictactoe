@@ -1,12 +1,12 @@
 #include "robot_interface/gripper.h"
 
 int main(int argc, char** argv)
-{    
-    ros::init(argc, argv,"test_gripper");
+{
+    ros::init(argc, argv,"test_vacuum_gripper");
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ttt::Gripper *vg=NULL;
+    Gripper *vg=NULL;
     ROS_INFO("Right or left vacuum gripper?[l,r]");
     char c=std::cin.get();
     std::cin.ignore();
@@ -14,10 +14,10 @@ int main(int argc, char** argv)
     switch(c)
     {
     case 'l':
-        vg=new ttt::Gripper("left");
+        vg=new Gripper("left");
         break;
     case 'r':
-        vg=new ttt::Gripper("right");
+        vg=new Gripper("right");
         break;
     default:
         ROS_WARN("Wrong option. Run it again.");
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
     while(ros::ok())
     {
-        ROS_INFO("Choose the command to send to the %s", vg->get_type().c_str());
+        ROS_INFO("Choose the command to send to the %s", vg->getGripperLimb().c_str());
         ROS_INFO("1.Suck");
         ROS_INFO("2.Blow");
         ROS_INFO("3.Is enabled?");
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         c=std::cin.get();
         ROS_INFO("Option selected: %c", c);
         std::cin.ignore();
-        
+
         switch(c)
         {
         case '1':
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
             ROS_INFO("Is gripping? %s", vg->is_gripping()? "Yes" : "No");
             break;
         case '0':
-            ROS_INFO("Gripper: %s", vg->get_type().c_str());
+            ROS_INFO("Gripper: %s", vg->getGripperLimb().c_str());
             break;
         case 'e':
         case 'E':

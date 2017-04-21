@@ -167,13 +167,13 @@ target_link_libraries(board_state_sensor   baxter_tictactoe
 # Compile tests if required
 IF(COMPILE_TESTS STREQUAL true)
     add_executable(test_vacuum_gripper          src/test/test_vacuum_gripper.cpp)
-    add_executable(test_arm_controller          src/test/test_arm_controller.cpp)
+    add_executable(test_ttt_controller          src/test/test_ttt_controller.cpp)
 
     add_dependencies(test_vacuum_gripper        baxter_tictactoe_generate_messages_cpp)
-    add_dependencies(test_arm_controller        baxter_tictactoe_generate_messages_cpp)
+    add_dependencies(test_ttt_controller        baxter_tictactoe_generate_messages_cpp)
 
-    target_link_libraries(test_vacuum_gripper                   ${catkin_LIBRARIES})
-    target_link_libraries(test_arm_controller   ${OpenCV_LIBS}  ${catkin_LIBRARIES})
+    target_link_libraries(test_vacuum_gripper                     ${catkin_LIBRARIES})
+    target_link_libraries(test_ttt_controller   baxter_tictactoe  ${catkin_LIBRARIES})
 #ELSE()
 #    message(${PROJECT_NAME} ": Tests will not be compiled")
 ENDIF()
