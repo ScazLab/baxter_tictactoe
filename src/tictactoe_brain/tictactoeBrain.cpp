@@ -7,7 +7,7 @@ using namespace baxter_tictactoe;
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool legacy_code) : _nh(_name),
                                spinner(4), r(100), _legacy_code(legacy_code), num_games(NUM_GAMES), curr_game(0),
-                               curr_board(9), internal_board(9), _is_board_detected(false),
+                               wins(3,0), curr_board(9), internal_board(9), _is_board_detected(false),
                                leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
 {
@@ -45,12 +45,8 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
         cheating_games.push_back(CHEATING_GAME_B);
     }
 
-    std::stringstream cheating_games_str;
-    std::copy(cheating_games.begin(), cheating_games.end(),
-              std::ostream_iterator<int>(cheating_games_str, " "));
-
     ROS_INFO("Number of games: %i; Cheating games: %s",
-              num_games, cheating_games_str.str().c_str());
+              num_games, toString(cheating_games).c_str());
 
     _nh.param<string>("robot_color", _robot_color, "blue");
     _robot_color    = _robot_color==COL_BLUE?COL_BLUE:COL_RED;
@@ -58,11 +54,6 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
 
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
               getRobotColor().c_str(), getOpponentColor().c_str());
-
-    // Let's initialize the array of wins [robot, human, tie]
-    wins.push_back(0);
-    wins.push_back(0);
-    wins.push_back(0);
 
     startInternalThread();
 }

@@ -57,10 +57,15 @@ private:
      */
     int getIthIndex(baxter_tictactoe::Contours contours, int ith);
 
-    std::string intToString( const int a );
-
+    /**
+     * TODO
+     *
+     * @param i [description]
+     * @param j [description]
+     *
+     * @return [description]
+     */
     static bool ascendingY(baxter_tictactoe::Contour i, baxter_tictactoe::Contour j);
-
     static bool ascendingX(baxter_tictactoe::Contour i, baxter_tictactoe::Contour j);
 
     /**

@@ -213,7 +213,7 @@ void BoardState::InternalThreadEntry()
                         contours.push_back(board.getCellContour(i));
 
                         cv::drawContours(img_out, contours,-1, col, CV_FILLED); // drawing just the borders
-                        cv::putText(img_out, intToString(i+1), board.getCellCentroid(i),
+                        cv::putText(img_out, toString(int(i+1)), board.getCellCentroid(i),
                                              cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar::all(255), 2);
                     }
 
@@ -297,13 +297,6 @@ int BoardState::getIthIndex(Contours contours, int ith)
     }
 
     return ith==LARGEST_IDX?largest_idx:next_largest_idx;
-}
-
-std::string BoardState::intToString( const int a )
-{
-    stringstream ss;
-    ss << a;
-    return ss.str();
 }
 
 bool BoardState::ascendingY(Contour i, Contour j)
