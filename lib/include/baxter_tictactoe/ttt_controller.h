@@ -217,7 +217,7 @@ private:
 
 public:
     TTTController(std::string name, std::string limb, bool legacy_code = false,
-                  bool no_robot = false, bool use_forces = false);
+                  bool _use_robot = true, bool use_forces = false);
     ~TTTController();
 
     /*

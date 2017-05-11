@@ -11,8 +11,8 @@ using namespace cv;
 /*                            TTTController                               */
 /**************************************************************************/
 
-TTTController::TTTController(string name, string limb, bool legacy_code, bool no_robot, bool use_forces):
-                             ArmCtrl(name, limb, no_robot, use_forces, false, false),
+TTTController::TTTController(string name, string limb, bool legacy_code, bool use_robot, bool use_forces):
+                             ArmCtrl(name, limb, use_robot, use_forces, false, false),
                              r(100), _img_trp(_n), _legacy_code(legacy_code), _is_img_empty(true)
 {
     pthread_mutexattr_t _mutex_attr;
