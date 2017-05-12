@@ -2,7 +2,7 @@
 
 Playing TicTacToe with the Baxter collaborative robot.
 
-![setup](https://cloud.githubusercontent.com/assets/4378663/26005216/64842666-3706-11e7-9691-1301d3424b2d.jpg)
+![setup](https://cloud.githubusercontent.com/assets/4378663/26005307/ac35d298-3706-11e7-84c7-c278a01fe3b7.jpg)
 
 This code is released under a GNU GPL v2 license (see LICENSE file for more information).
 
