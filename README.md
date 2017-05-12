@@ -1,6 +1,9 @@
 # Baxter TicTacToe [![Build Status](https://travis-ci.org/ScazLab/baxter_tictactoe.svg?branch=master)](https://travis-ci.org/ScazLab/baxter_tictactoe) [![Issues](https://img.shields.io/github/issues/ScazLab/baxter_tictactoe.svg?label=Issues)](https://github.com/ScazLab/baxter_tictactoe/issues) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/0d9745ef739e4a399abb58b025d9fc19)](https://www.codacy.com/app/Baxter-collaboration/baxter_tictactoe?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ScazLab/baxter_tictactoe&amp;utm_campaign=Badge_Grade)
 
 Playing TicTacToe with the Baxter collaborative robot.
+
+![setup](https://cloud.githubusercontent.com/assets/4378663/26005216/64842666-3706-11e7-9691-1301d3424b2d.jpg)
+
 This code is released under a GNU GPL v2 license (see LICENSE file for more information).
 
 ## Requirements
