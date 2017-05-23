@@ -11,18 +11,18 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool le
                                leftArmCtrl(_name, "left", legacy_code), rightArmCtrl(_name, "right", legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
 {
+    pthread_mutexattr_t _mutex_attr;
+    pthread_mutexattr_init(&_mutex_attr);
+    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(&_mutex_brain, &_mutex_attr);
+    pthread_mutex_init(&mutex_curr_board, &_mutex_attr);
+
     printf("\n");
     ROS_INFO("Legacy code %s enabled.", legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
 
     srand(ros::Time::now().nsec);
     setStrategy(_strategy);
-
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_brain, &_mutex_attr);
-    pthread_mutex_init(&mutex_curr_board, &_mutex_attr);
 
     boardState_sub = _nh.subscribe("/baxter_tictactoe/board_state", SUBSCRIBER_BUFFER,
                                     &tictactoeBrain::boardStateCb, this);
