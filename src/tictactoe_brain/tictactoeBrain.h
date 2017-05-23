@@ -22,18 +22,19 @@ namespace baxter_tictactoe
 class tictactoeBrain : public ROSThread
 {
 private:
-    ros::NodeHandle _nh;        // ROS node handle
+    ros::NodeHandle        nh;  // ROS node handle
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     ros::Rate r;
 
-    bool _legacy_code;   // Flag to enable the legacy code [who does not work]
+    bool legacy_code;   // Flag to enable the legacy code [who does not work]
 
     int    num_games;
     int    curr_game;
 
     std::vector<int> cheating_games; // vector that stores which of the games will be a cheating one.
-    std::vector<int>           wins; // vector of three elements to count the wins (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
+    std::vector<int>           wins; // vector of three elements to count the wins
+                                     // (wins[0]->robot, wins[1]->opponent, wins[2]->ties)
 
     /* STATE OF THE BOARD */
     baxter_tictactoe::Board      curr_board; // Board as read from the board state sensor
@@ -41,7 +42,7 @@ private:
 
     ros::Subscriber   boardState_sub; // subscriber to receive the state of the board
     pthread_mutex_t mutex_curr_board;
-    bool          _is_board_detected;
+    bool           is_board_detected;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system
@@ -51,17 +52,17 @@ private:
     pthread_mutex_t _mutex_brain;   // mutex to protect the state of the system
 
     /* MISC */
-    std::string    _robot_color;  // Color of the tokens the robot    is playing with.
-    std::string _opponent_color;  // Color of the tokens the opponent is playing with.
+    std::string    robot_color;  // Color of the tokens the robot    is playing with.
+    std::string opponent_color;  // Color of the tokens the opponent is playing with.
 
-    sound_play::SoundClient _voice_synthesizer;
-    std::string                    _voice_type; // Type of voice.
+    sound_play::SoundClient voice_synthesizer;
+    std::string                    voice_type; // Type of voice.
 
     // Pointer to the function that chooses the next move
-    int (tictactoeBrain::*_choose_next_move)();
+    int (tictactoeBrain::*choose_next_move)();
 
-    TTTController  leftArmCtrl;
-    TTTController rightArmCtrl;
+    TTTController  left_ttt_ctrl;
+    TTTController right_ttt_ctrl;
 
     bool has_cheated;
 
@@ -78,7 +79,7 @@ private:
      *
      * \param msg the message with the new the state of each of the cells
      **/
-    void boardStateCb(const baxter_tictactoe::MsgBoard &msg);
+    void boardStateCb(const baxter_tictactoe::MsgBoard &_msg);
 
     /**
      * It determines randomly the next empty cell to place a token.
@@ -111,7 +112,7 @@ private:
      * @param       id of the cell to move to if the action was successful (-1 if not)
      * @return      true/false if success/failure
      */
-    bool cheatingMove(int &cell_id);
+    bool cheatingMove(int &_id);
 
     /**
      * It determines if the opponent can win in the next move.
@@ -119,7 +120,7 @@ private:
      * @param       id of the cell to move to if the action was successful (-1 if not)
      * @return      true/false if success/failure
      **/
-    bool defensiveMove(int &cell_id);
+    bool defensiveMove(int &_id);
 
     /**
      * It determines if the robot can win in the next move.
@@ -127,7 +128,7 @@ private:
      * @param       id of the cell to move to if the action was successful (-1 if not)
      * @return      true/false if success/failure
      **/
-    bool victoryMove(int &cell_id);
+    bool victoryMove(int &_id);
 
 protected:
 
@@ -136,7 +137,7 @@ protected:
 public:
 
     tictactoeBrain(std::string _name="ttt_brain", std::string _strategy="smart",
-                   bool legacy_code = false);
+                   bool _legacy_code = false);
 
     ~tictactoeBrain();
 
@@ -159,16 +160,15 @@ public:
      * This is detected considering the number of the opponent's
      * tokens on the board. The function waits until the number
      * of opponent's tokens in the board increases.
-     * @param number of opponent's token at the beginning
      **/
-    void waitForOpponentTurn(const size_t& n_robot_tokens);
+    void waitForOpponentTurn();
 
     /**
      * This function synthesizes sentence and waits t seconds.
-     * @param sentence string corresponding with the sentence to synthesize.
-     * @param t number of seconds to block.
+     * @param _sentence string corresponding with the sentence to synthesize.
+     * @param        _t number of seconds to block.
      **/
-    void saySentence(std::string sentence, double t);
+    void saySentence(std::string _sentence, double _t);
 
     /**
      * Plays one game
@@ -176,8 +176,8 @@ public:
     void playOneGame();
 
     /* GETTERS */
-    std::string getRobotColor()        { return    _robot_color; };
-    std::string getOpponentColor()     { return _opponent_color; };
+    std::string getRobotColor()        { return    robot_color; };
+    std::string getOpponentColor()     { return opponent_color; };
 
     /**
      * Thread-safe method to retrieve the state of the tictactoeBrain
@@ -194,8 +194,8 @@ public:
     baxter_tictactoe::Board  getCurrBoard();
 
     /* SETTERS */
-    void setStrategy(std::string strategy);
-    void setBrainState(int state);
+    void setStrategy(std::string _strategy);
+    void setBrainState(int _state);
 };
 
 }
