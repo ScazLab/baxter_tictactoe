@@ -13,7 +13,7 @@ using namespace cv;
 
 TTTController::TTTController(string name, string limb, bool legacy_code, bool use_robot, bool use_forces):
                              ArmCtrl(name, limb, use_robot, use_forces, false, false),
-                             r(100), _img_trp(_n), _legacy_code(legacy_code), _is_img_empty(true)
+                             r(100), _img_trp(nh), _legacy_code(legacy_code), _is_img_empty(true)
 {
     pthread_mutexattr_t _mutex_attr;
     pthread_mutexattr_init(&_mutex_attr);
@@ -23,19 +23,19 @@ TTTController::TTTController(string name, string limb, bool legacy_code, bool us
     if (getLimb() == "left")
     {
         XmlRpc::XmlRpcValue hsv_red_symbols;
-        ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+        ROS_ASSERT_MSG(nh.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
         hsv_red=hsvColorRange(hsv_red_symbols);
 
         XmlRpc::XmlRpcValue hsv_blue_symbols;
-        ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+        ROS_ASSERT_MSG(nh.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
         hsv_blue=hsvColorRange(hsv_blue_symbols);
 
         XmlRpc::XmlRpcValue tiles_pile_pos;
-        ROS_ASSERT_MSG(_n.getParam("tile_pile_position",tiles_pile_pos), "No 3D position of the pile of tiles!");
+        ROS_ASSERT_MSG(nh.getParam("tile_pile_position",tiles_pile_pos), "No 3D position of the pile of tiles!");
         tilesPilePosFromParam(tiles_pile_pos);
 
         XmlRpc::XmlRpcValue board_corner_poss;
-        ROS_ASSERT_MSG(_n.getParam("board_corner_poss",board_corner_poss), "No 3D position of the board!");
+        ROS_ASSERT_MSG(nh.getParam("board_corner_poss",board_corner_poss), "No 3D position of the board!");
         boardPossFromParam(board_corner_poss);
 
         insertAction(ACTION_SCAN,    static_cast<f_action>(&TTTController::scanBoardImpl));
