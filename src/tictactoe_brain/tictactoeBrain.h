@@ -1,15 +1,14 @@
 #include <ros/ros.h>
 #include <sound_play/sound_play.h>
 
-#include <robot_utils/ros_thread.h>
-
 #include <baxter_tictactoe/MsgBoard.h>
 #include <baxter_tictactoe/TTTBrainState.h>
 
 #include "baxter_tictactoe/ttt_controller.h"
 #include "baxter_tictactoe/tictactoe_utils.h"
 
-#include <pthread.h>
+#include <thread>
+#include <mutex>
 
 namespace baxter_tictactoe
 {
@@ -19,9 +18,13 @@ namespace baxter_tictactoe
 #define WIN_OPP     2
 #define WIN_TIE     3
 
-class tictactoeBrain : public ROSThread
+class tictactoeBrain
 {
 private:
+    std::thread brain_thread; // internal thread functionality
+    bool brain_thread_close_flag; // flag to close the thread entry function
+    std::mutex mutex_brain_thread_close_flag; // mutex to protect the thread close flag
+
     ros::NodeHandle        nh;  // ROS node handle
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
@@ -41,7 +44,7 @@ private:
     baxter_tictactoe::Board  internal_board; // Internal model of the state of the world
 
     ros::Subscriber   boardState_sub; // subscriber to receive the state of the board
-    pthread_mutex_t mutex_curr_board;
+    std::mutex mutex_curr_board;
     bool           is_board_detected;
 
     /* STATE OF THE TTT DEMO */
@@ -49,7 +52,7 @@ private:
     ros::Timer          brainstate_timer; // timer to publish the state of the system at a specific rate
 
     ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
-    pthread_mutex_t _mutex_brain;   // mutex to protect the state of the system
+    std::mutex mutex_brain; // mutex to protect the state of the system
 
     /* MISC */
     std::string    robot_color;  // Color of the tokens the robot    is playing with.
@@ -142,6 +145,11 @@ public:
     ~tictactoeBrain();
 
     /**
+     * Starts thread that executes the control server.
+     */
+    bool startInternalThread();
+
+    /**
      * Returns the cell where the next token is gonna be placed.
      * @param cheating It indicates if cheating happens
      * @return The return value is between 1 (first row, first column)
@@ -196,6 +204,12 @@ public:
     /* SETTERS */
     void setStrategy(std::string _strategy);
     void setBrainState(int _state);
+
+    /**
+    * Safely manipulate the boolean needed to kill the thread entry
+    */
+    void setBrainThreadCloseFlag(bool arg);
+    bool getBrainThreadCloseFlag();
 };
 
 }
