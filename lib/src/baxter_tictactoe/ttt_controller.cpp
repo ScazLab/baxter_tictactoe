@@ -15,10 +15,6 @@ TTTController::TTTController(string name, string limb, bool legacy_code, bool us
                              ArmCtrl(name, limb, use_robot, use_forces, false, false),
                              r(100), _img_trp(nh), _legacy_code(legacy_code), _is_img_empty(true)
 {
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_img, &_mutex_attr);
 
     if (getLimb() == "left")
     {
@@ -443,9 +439,8 @@ void TTTController::processImage(float dist)
 void TTTController::isolateBlack(Mat &output)
 {
     Mat gray;
-    pthread_mutex_lock(&_mutex_img);
+    std::lock_guard<std::mutex> lock(mutex_img);
     cvtColor(_curr_img, gray, CV_BGR2GRAY);
-    pthread_mutex_unlock(&_mutex_img);
     threshold(gray, output, 55, 255, cv::THRESH_BINARY);
 }
 
@@ -453,9 +448,8 @@ void TTTController::isolateBlue(Mat &output)
 {
     Mat hsv(_img_size, CV_8UC1);
 
-    pthread_mutex_lock(&_mutex_img);
+    std::lock_guard<std::mutex> lock(mutex_img);
     cvtColor(_curr_img, hsv, CV_BGR2HSV);
-    pthread_mutex_unlock(&_mutex_img);
 
     output = hsvThreshold(hsv, hsv_blue);
 }
@@ -850,17 +844,15 @@ void TTTController::imageCb(const sensor_msgs::ImageConstPtr& msg)
         return;
     }
 
-    pthread_mutex_lock(&_mutex_img);
+    std::lock_guard<std::mutex> lock(mutex_img);
     _curr_img     = cv_ptr->image.clone();
     _img_size     =      _curr_img.size();
     _is_img_empty =     _curr_img.empty();
     imshow("Hand Camera", _curr_img.clone());
-    pthread_mutex_unlock(&_mutex_img);
 }
 
 TTTController::~TTTController()
 {
     destroyCVWindows();
 
-    pthread_mutex_destroy(&_mutex_img);
 }
