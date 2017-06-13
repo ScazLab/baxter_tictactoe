@@ -5,8 +5,8 @@
 using namespace std;
 using namespace baxter_tictactoe;
 
-tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _legacy_code) : brain_thread_close_flag(false),
-                               nh(_name), spinner(4), r(100), legacy_code(_legacy_code), num_games(NUM_GAMES), curr_game(0),
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _legacy_code) : nh(_name),
+                               spinner(4), r(100), is_closing(false), legacy_code(_legacy_code), num_games(NUM_GAMES), curr_game(0),
                                wins(3,0), curr_board(9), internal_board(9), is_board_detected(false),
                                left_ttt_ctrl(_name, "left", _legacy_code), right_ttt_ctrl(_name, "right", _legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
@@ -50,10 +50,10 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
               getRobotColor().c_str(), getOpponentColor().c_str());
 
-    startInternalThread();
+    startThread();
 }
 
-bool tictactoeBrain::startInternalThread()
+bool tictactoeBrain::startThread()
 {
     brain_thread = std::thread(&tictactoeBrain::InternalThreadEntry, this);
     return brain_thread.joinable();
@@ -62,7 +62,7 @@ bool tictactoeBrain::startInternalThread()
 void tictactoeBrain::InternalThreadEntry()
 {
     bool wipe_out_board_message = true;
-    while (ros::ok() && not getBrainThreadCloseFlag())
+    while (ros::ok() && not getIsClosing())
     {
         if      (getBrainState() == TTTBrainState::INIT)
         {
@@ -117,16 +117,16 @@ void tictactoeBrain::InternalThreadEntry()
     }
 }
 
-bool tictactoeBrain::getBrainThreadCloseFlag()
+bool tictactoeBrain::getIsClosing()
 {
-    std::lock_guard<std::mutex> lck(mutex_brain_thread_close_flag);
-    return brain_thread_close_flag;
+    std::lock_guard<std::mutex> lck(mutex_is_closing);
+    return is_closing;
 }
 
-void tictactoeBrain::setBrainThreadCloseFlag(bool arg)
+void tictactoeBrain::setIsClosing(bool arg)
 {
-    std::lock_guard<std::mutex> lck(mutex_brain_thread_close_flag);
-    brain_thread_close_flag = arg;
+    std::lock_guard<std::mutex> lck(mutex_is_closing);
+    is_closing = arg;
 }
 
 void tictactoeBrain::playOneGame()
@@ -459,7 +459,7 @@ void tictactoeBrain::setStrategy(std::string _strategy)
 
 tictactoeBrain::~tictactoeBrain()
 {
-    setBrainThreadCloseFlag(true);
+    setIsClosing(true);
     if (brain_thread.joinable())
     {
         brain_thread.join();

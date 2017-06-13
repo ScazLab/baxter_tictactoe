@@ -21,14 +21,14 @@ namespace baxter_tictactoe
 class tictactoeBrain
 {
 private:
-    std::thread brain_thread; // internal thread functionality
-    bool brain_thread_close_flag; // flag to close the thread entry function
-    std::mutex mutex_brain_thread_close_flag; // mutex to protect the thread close flag
-
     ros::NodeHandle        nh;  // ROS node handle
     ros::AsyncSpinner spinner;  // AsyncSpinner to handle callbacks
 
     ros::Rate r;
+
+    std::thread brain_thread; // internal thread functionality
+    bool is_closing; // flag to close the thread entry function
+    std::mutex mutex_is_closing; // mutex to protect the thread close flag
 
     bool legacy_code;   // Flag to enable the legacy code [who does not work]
 
@@ -147,7 +147,7 @@ public:
     /**
      * Starts thread that executes the control server.
      */
-    bool startInternalThread();
+    bool startThread();
 
     /**
      * Returns the cell where the next token is gonna be placed.
@@ -208,8 +208,8 @@ public:
     /**
     * Safely manipulate the boolean needed to kill the thread entry
     */
-    void setBrainThreadCloseFlag(bool arg);
-    bool getBrainThreadCloseFlag();
+    void setIsClosing(bool arg);
+    bool getIsClosing();
 };
 
 }
