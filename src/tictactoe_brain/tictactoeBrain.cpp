@@ -123,7 +123,7 @@ bool tictactoeBrain::getIsClosing()
     return is_closing;
 }
 
-void tictactoeBrain::setIsClosing(bool arg)
+void tictactoeBrain::setIsClosing(bool _arg)
 {
     std::lock_guard<std::mutex> lck(mutex_is_closing);
     is_closing = arg;
@@ -460,9 +460,11 @@ void tictactoeBrain::setStrategy(std::string _strategy)
 tictactoeBrain::~tictactoeBrain()
 {
     setIsClosing(true);
+
     if (brain_thread.joinable())
     {
         brain_thread.join();
     }
+
     brainstate_timer.stop();
 }

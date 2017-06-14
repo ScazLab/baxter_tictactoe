@@ -26,8 +26,8 @@ private:
 
     ros::Rate r;
 
-    std::thread brain_thread; // internal thread functionality
-    bool is_closing; // flag to close the thread entry function
+    std::thread    brain_thread; // internal thread functionality
+    bool             is_closing; // flag to close the thread entry function
     std::mutex mutex_is_closing; // mutex to protect the thread close flag
 
     bool legacy_code;   // Flag to enable the legacy code [who does not work]
@@ -44,15 +44,15 @@ private:
     baxter_tictactoe::Board  internal_board; // Internal model of the state of the world
 
     ros::Subscriber   boardState_sub; // subscriber to receive the state of the board
-    std::mutex mutex_curr_board;
+    std::mutex      mutex_curr_board;
     bool           is_board_detected;
 
     /* STATE OF THE TTT DEMO */
     baxter_tictactoe::TTTBrainState    s; // state of the system
     ros::Timer          brainstate_timer; // timer to publish the state of the system at a specific rate
 
-    ros::Publisher  tttBrain_pub;   // publisher to publish state of the system
-    std::mutex mutex_brain; // mutex to protect the state of the system
+    ros::Publisher  tttBrain_pub; // publisher to publish state of the system
+    std::mutex       mutex_brain; // mutex to protect the state of the system
 
     /* MISC */
     std::string    robot_color;  // Color of the tokens the robot    is playing with.
@@ -208,7 +208,7 @@ public:
     /**
     * Safely manipulate the boolean needed to kill the thread entry
     */
-    void setIsClosing(bool arg);
+    void setIsClosing(bool _arg);
     bool getIsClosing();
 };
 
