@@ -79,7 +79,7 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::MATCH_STARTED)
         {
-            saySentence("Welcome! Let's play Tic Tac Toe.", 3);
+            saySentence("Welcome! Let's play Tic Tac Toe.", 3.5);
             saySentence("Do not grasp your token before I say that it is your turn", 4);
             curr_game = 1;
             setBrainState(TTTBrainState::GAME_STARTED);
@@ -193,7 +193,7 @@ void tictactoeBrain::playOneGame()
             break;
         default:
             ROS_INFO("TIE");
-            saySentence("That's a tie. I will win next time.", 3);
+            saySentence("That's a tie. I will win next time.", 3.5);
             winner = WIN_TIE;
     }
 
