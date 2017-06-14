@@ -6,16 +6,11 @@ using namespace std;
 using namespace baxter_tictactoe;
 
 tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _legacy_code) : nh(_name),
-                               spinner(4), r(100), legacy_code(_legacy_code), num_games(NUM_GAMES), curr_game(0),
+                               spinner(4), r(100), is_closing(false), legacy_code(_legacy_code), num_games(NUM_GAMES), curr_game(0),
                                wins(3,0), curr_board(9), internal_board(9), is_board_detected(false),
                                left_ttt_ctrl(_name, "left", _legacy_code), right_ttt_ctrl(_name, "right", _legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
 {
-    pthread_mutexattr_t _mutex_attr;
-    pthread_mutexattr_init(&_mutex_attr);
-    pthread_mutexattr_settype(&_mutex_attr, PTHREAD_MUTEX_RECURSIVE_NP);
-    pthread_mutex_init(&_mutex_brain, &_mutex_attr);
-    pthread_mutex_init(&mutex_curr_board, &_mutex_attr);
 
     printf("\n");
     ROS_INFO("Legacy code %s enabled.", _legacy_code?"is":"is not");
@@ -55,13 +50,19 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
     ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
               getRobotColor().c_str(), getOpponentColor().c_str());
 
-    startInternalThread();
+    startThread();
+}
+
+bool tictactoeBrain::startThread()
+{
+    brain_thread = std::thread(&tictactoeBrain::InternalThreadEntry, this);
+    return brain_thread.joinable();
 }
 
 void tictactoeBrain::InternalThreadEntry()
 {
     bool wipe_out_board_message = true;
-    while (ros::ok())
+    while (ros::ok() && not getIsClosing())
     {
         if      (getBrainState() == TTTBrainState::INIT)
         {
@@ -78,7 +79,7 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::MATCH_STARTED)
         {
-            saySentence("Welcome! Let's play Tic Tac Toe.", 3);
+            saySentence("Welcome! Let's play Tic Tac Toe.", 3.5);
             saySentence("Do not grasp your token before I say that it is your turn", 4);
             curr_game = 1;
             setBrainState(TTTBrainState::GAME_STARTED);
@@ -114,6 +115,18 @@ void tictactoeBrain::InternalThreadEntry()
 
         r.sleep();
     }
+}
+
+bool tictactoeBrain::getIsClosing()
+{
+    std::lock_guard<std::mutex> lck(mutex_is_closing);
+    return is_closing;
+}
+
+void tictactoeBrain::setIsClosing(bool _arg)
+{
+    std::lock_guard<std::mutex> lck(mutex_is_closing);
+    is_closing = _arg;
 }
 
 void tictactoeBrain::playOneGame()
@@ -180,7 +193,7 @@ void tictactoeBrain::playOneGame()
             break;
         default:
             ROS_INFO("TIE");
-            saySentence("That's a tie. I will win next time.", 3);
+            saySentence("That's a tie. I will win next time.", 3.5);
             winner = WIN_TIE;
     }
 
@@ -203,26 +216,23 @@ Board tictactoeBrain::getCurrBoard()
 {
     Board res;
 
-    pthread_mutex_lock(&mutex_curr_board);
+    std::lock_guard<std::mutex> lck(mutex_curr_board);
     res = curr_board;
-    pthread_mutex_unlock(&mutex_curr_board);
 
     return res;
 }
 
 void tictactoeBrain::publishTTTBrainState(const ros::TimerEvent&)
 {
-    pthread_mutex_lock(&_mutex_brain);
+    std::lock_guard<std::mutex> lck(mutex_brain);
     tttBrain_pub.publish(s);
-    pthread_mutex_unlock(&_mutex_brain);
 }
 
 int tictactoeBrain::getBrainState()
 {
     int state;
-    pthread_mutex_lock(&_mutex_brain);
+    std::lock_guard<std::mutex> lck(mutex_brain);
     state = s.state;
-    pthread_mutex_unlock(&_mutex_brain);
 
     return state;
 }
@@ -231,9 +241,8 @@ void tictactoeBrain::setBrainState(int _state)
 {
     if (_state != getBrainState())
     {
-        pthread_mutex_lock(&_mutex_brain);
+        std::lock_guard<std::mutex> lck(mutex_brain);
         s.state = _state;
-        pthread_mutex_unlock(&_mutex_brain);
         ROS_WARN("New state [%i]", _state);
     }
 
@@ -246,9 +255,8 @@ void tictactoeBrain::setBrainState(int _state)
 void tictactoeBrain::boardStateCb(const baxter_tictactoe::MsgBoard &_msg)
 {
     ROS_DEBUG("New TTT board state received");
-    pthread_mutex_lock(&mutex_curr_board);
+    std::lock_guard<std::mutex> lck(mutex_curr_board);
     curr_board.fromMsgBoard(_msg);
-    pthread_mutex_unlock(&mutex_curr_board);
     is_board_detected = true;
 }
 
@@ -451,7 +459,12 @@ void tictactoeBrain::setStrategy(std::string _strategy)
 
 tictactoeBrain::~tictactoeBrain()
 {
-    pthread_mutex_destroy(&_mutex_brain);
-    pthread_mutex_destroy(&mutex_curr_board);
+    setIsClosing(true);
+
+    if (brain_thread.joinable())
+    {
+        brain_thread.join();
+    }
+
     brainstate_timer.stop();
 }

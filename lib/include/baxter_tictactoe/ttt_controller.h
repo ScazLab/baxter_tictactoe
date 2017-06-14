@@ -1,6 +1,8 @@
 #ifndef __TTT_CONTROLLERS_H__
 #define __TTT_CONTROLLERS_H__
 
+#include <mutex>
+
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -43,7 +45,7 @@ private:
     cv::Size _img_size;
     bool _is_img_empty;
 
-    pthread_mutex_t _mutex_img;
+    std::mutex mutex_img;
 
     bool createCVWindows();
 

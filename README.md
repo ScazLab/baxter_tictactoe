@@ -10,6 +10,7 @@ This code is released under a GNU GPL v2 license (see LICENSE file for more info
 
  * a Baxter robot
  * a usb camera
+ * sudo apt-get install festival v4l-utils
 
 ## Usage
 
