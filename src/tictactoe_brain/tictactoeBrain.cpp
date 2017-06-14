@@ -126,7 +126,7 @@ bool tictactoeBrain::getIsClosing()
 void tictactoeBrain::setIsClosing(bool _arg)
 {
     std::lock_guard<std::mutex> lck(mutex_is_closing);
-    is_closing = arg;
+    is_closing = _arg;
 }
 
 void tictactoeBrain::playOneGame()
