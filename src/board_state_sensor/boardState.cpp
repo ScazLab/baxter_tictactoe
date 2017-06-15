@@ -40,15 +40,14 @@ BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
 
 void BoardState::InternalThreadEntry()
 {
-    while(ros::ok())
+    while(ros::ok() && not isClosing())
     {
         cv::Mat img_in;
         cv::Mat img_out;
         if (not _img_empty)
         {
-            pthread_mutex_lock(&_mutex_img);
+            std::lock_guard<std::mutex> lock(mutex_img);
             img_in=_curr_img;
-            pthread_mutex_unlock(&_mutex_img);
             img_out = img_in.clone();
         }
 
