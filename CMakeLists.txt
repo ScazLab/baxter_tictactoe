@@ -27,7 +27,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 find_package(OpenCV 2.4 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
 find_package(Threads)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
