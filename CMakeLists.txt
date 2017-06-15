@@ -27,8 +27,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 find_package(OpenCV 2.4 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
-find_package(Threads)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -156,8 +154,7 @@ add_dependencies(board_state_sensor       baxter_tictactoe_generate_messages_cpp
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(tictactoe_brain      baxter_tictactoe
-                                           ${catkin_LIBRARIES}
-                                           ${CMAKE_THREAD_LIBS_INIT})
+                                           ${catkin_LIBRARIES})
 target_link_libraries(hsv_range_finder     baxter_tictactoe
                                            ${OpenCV_LIBS}
                                            ${catkin_LIBRARIES})
