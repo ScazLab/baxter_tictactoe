@@ -3,23 +3,23 @@
 using namespace std;
 using namespace baxter_tictactoe;
 
-BoardState::BoardState(string name, bool _show) : ROSThreadImage(name),
+BoardState::BoardState(string _name, bool _show) : ROSThreadImage(_name),
                doShow(_show), board_state(STATE_INIT), brain_state(-1)
 {
-    board_state_pub = _n.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
-    brain_state_sub = _n.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
+    board_state_pub = nh.advertise<MsgBoard>("/baxter_tictactoe/board_state", 1);
+    brain_state_sub = nh.subscribe("/baxter_tictactoe/ttt_brain_state", SUBSCRIBER_BUFFER,
                                    &BoardState::brainStateCb, this);
-    img_pub         = _img_trp.advertise("/baxter_tictactoe/board_state_img", 1);
+    img_pub         = img_trp.advertise("/baxter_tictactoe/board_state_img", 1);
 
     XmlRpc::XmlRpcValue hsv_red_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
+    ROS_ASSERT_MSG(nh.getParam("hsv_red",hsv_red_symbols), "No HSV params for RED!");
     hsv_red=hsvColorRange(hsv_red_symbols);
 
     XmlRpc::XmlRpcValue hsv_blue_symbols;
-    ROS_ASSERT_MSG(_n.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
+    ROS_ASSERT_MSG(nh.getParam("hsv_blue",hsv_blue_symbols), "No HSV params for BLUE!");
     hsv_blue=hsvColorRange(hsv_blue_symbols);
 
-    ROS_ASSERT_MSG(_n.getParam("area_threshold",area_threshold), "No area threshold!");
+    ROS_ASSERT_MSG(nh.getParam("area_threshold",area_threshold), "No area threshold!");
 
     col_red   = cv::Scalar(  40,  40, 150);  // BGR color code
     col_empty = cv::Scalar(  60, 160,  60);
@@ -44,10 +44,10 @@ void BoardState::InternalThreadEntry()
     {
         cv::Mat img_in;
         cv::Mat img_out;
-        if (not _img_empty)
+        if (not img_empty)
         {
             std::lock_guard<std::mutex> lock(mutex_img);
-            img_in=_curr_img;
+            img_in=curr_img;
             img_out = img_in.clone();
         }
 
@@ -60,7 +60,7 @@ void BoardState::InternalThreadEntry()
         else if (board_state == STATE_CALIB && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1,"[%i] Calibrating board..", board_state);
-            if (not _img_empty)
+            if (not img_empty)
             {
                 cv::Mat img_gray;
                 cv::Mat img_binary;
@@ -155,7 +155,7 @@ void BoardState::InternalThreadEntry()
         else if (board_state == STATE_READY && not ros::isShuttingDown())
         {
             ROS_DEBUG_THROTTLE(1, "[%i] Detecting Board State.. NumCells %lu", board_state, board.getNumCells());
-            if (not _img_empty)
+            if (not img_empty)
             {
                 board.resetCellStates();
                 cv::Mat img_copy = img_in.clone();
@@ -222,7 +222,7 @@ void BoardState::InternalThreadEntry()
             }
         }
 
-        if (not _img_empty)
+        if (not img_empty)
         {
             sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img_out).toImageMsg();
             img_pub.publish(msg);
