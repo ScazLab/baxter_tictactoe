@@ -82,7 +82,7 @@ private:
     bool isBoardSane();
 
 protected:
-    void InternalThreadEntry();
+    void internalThread();
 
 public:
     BoardState(std::string _name, bool _show = "false");

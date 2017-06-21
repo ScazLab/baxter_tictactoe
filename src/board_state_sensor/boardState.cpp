@@ -38,7 +38,7 @@ BoardState::BoardState(string _name, bool _show) : ROSThreadImage(_name),
     }
 }
 
-void BoardState::InternalThreadEntry()
+void BoardState::internalThread()
 {
     while(ros::ok() && not isClosing())
     {
