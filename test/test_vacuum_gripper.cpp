@@ -45,11 +45,11 @@ int main(int argc, char** argv)
         {
         case '1':
             ROS_INFO("Sucking");
-            vg->gripObject();
+            vg->close();
             break;
         case '2':
             ROS_INFO("Blowing");
-            vg->releaseObject();
+            vg->open();
             break;
         case '3':
             ROS_INFO("Is enabled? %s", (vg->is_enabled()? "Yes" : "No"));
