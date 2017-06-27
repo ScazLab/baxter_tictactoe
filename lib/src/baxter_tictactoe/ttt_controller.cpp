@@ -188,7 +188,7 @@ bool TTTController::gripToken()
             ROS_WARN("I went too low! Exiting.");
 
             if (_legacy_code == true) { destroyCVWindows(); }
-            gripObject();
+            close();
 
             return false;
         }
@@ -198,7 +198,7 @@ bool TTTController::gripToken()
     }
 
     if (_legacy_code == true) { destroyCVWindows(); }
-    gripObject();
+    close();
     return true;
 }
 
@@ -823,7 +823,7 @@ bool TTTController::putDownTokenImpl()
     if (!hoverAboveCenterOfBoard()) return false;
     if (!hoverAboveCell()) return false;
     ros::Duration(0.1).sleep();
-    if (!releaseObject()) return false;
+    if (!open()) return false;
     if (!hoverAboveCenterOfBoard()) return false;
     hoverAboveTokens(Z_LOW);
 
