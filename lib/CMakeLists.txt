@@ -1,6 +1,6 @@
-# Copyright: (C) 2016 Social Robotics Lab - Yale University
-# Authors: Álvaro Castro González, Olivier Mangin, Alessandro Roncone
-# CopyPolicy: Released under the terms of the GNU GPL v3.0.
+# Copyright: (C) 2017 Social Robotics Lab - Yale University
+# Authors: Alessandro Roncone, Olivier Mangin, Álvaro Castro González
+# CopyPolicy: Released under the terms of the LGPLv2.1.
 
 cmake_minimum_required(VERSION 2.8.3)
 # project(baxter_tictactoe)
