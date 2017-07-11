@@ -54,6 +54,8 @@ cache:
 notifications:
   slack:
     secure: bjQ+kAMNjk3GkbSCpl4twNcJndaaaFbhX6oa3WubK9V8qvExL0DDGRU+J66GLl2SIWmZl4AXuV5Q3Hopj7nvY8JPvr2dlkTcmHNS5hAoD99ByjOTFzbtNY/UiqVCGKZIUQ+X2QofMf+pGecORTyXyx6rQSvuqEZEjW8fZs0D7G4zc5RERDMMxTziUvE8xI1Gb5aJ/BuiieLCzGBLVY1wb+QP7iVtJll6jT5yPjFA6us60ntACSShYmzNKLnlEmCVDzzga4zscOALWRem8UR6/ghNZLfaGwdnfbtLeBv6eS82sOcTFcU68XvfQnEXAxcRbf7B5XbrovnCqi1N/DIHRM0ZHHoqK/W0UxzNgPDRhsjB/yj9hMQxRvIt5pCzFBZ4o1LvKm4tmMPu/y1FvhABFS5gK/JptykgMwytG7XXOtVAqYAC4tjXNM2Pa8+w7jyRtjLTZJzmb/1R9KXQu4pTOvHojE8MUZZ/Gcq8HYpNcUBMwc49DfYLeKFE51ZN8LkhGTyf8Wi5kLhWMxAUCzQjL/mILnQx61r/XtmHaIodk7IKn1Me3Uwd7hJy5X3DGUn0J7rAoKPkdCIkKIR1hGW8zmbXfUX8XMA40IASRuy+uXsDUP4OLjFUDzOq3SBkyizI6zbstZhF/ZEFYYbna5gBoVWDfa54bVZvY6JQnVApYv4=
+    on_success: change
+    on_failure: always
 
 # Configuration variables. All variables are global now, but this can be used to
 # trigger a build matrix for different ROS distributions if desired.
