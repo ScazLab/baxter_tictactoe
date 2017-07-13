@@ -700,8 +700,8 @@ void TTTController::setHomeConfiguration()
 
 bool TTTController::startAction(string a, int o)
 {
-    baxter_collaboration_msgs::DoAction::Request  req;
-    baxter_collaboration_msgs::DoAction::Response res;
+    human_robot_collaboration_msgs::DoAction::Request  req;
+    human_robot_collaboration_msgs::DoAction::Response res;
     req.action = a;
     req.objects.push_back(o);
 

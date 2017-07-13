@@ -54,8 +54,8 @@
   <build_depend>roscpp</build_depend>
   <build_depend>message_generation</build_depend>
 
-  <depend>baxter_collaboration_lib</depend>
-  <depend>baxter_collaboration_msgs</depend>
+  <depend>human_robot_collaboration_lib</depend>
+  <depend>human_robot_collaboration_msgs</depend>
   <depend>std_msgs</depend>
   <depend>rosconsole</depend>
   <depend>baxter_core_msgs</depend>

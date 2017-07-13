@@ -14,8 +14,8 @@ set(COMPILE_TESTS  false)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-             baxter_collaboration_lib
-             baxter_collaboration_msgs
+             human_robot_collaboration_lib
+             human_robot_collaboration_msgs
              baxter_core_msgs
              cv_bridge
              image_transport

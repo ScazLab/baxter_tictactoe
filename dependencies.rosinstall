@@ -17,5 +17,5 @@
     uri: https://bitbucket.org/alecive/trac_ik.git
 
 - git:
-    local-name: baxter_collaboration
-    uri: https://github.com/scazlab/baxter_collaboration.git
+    local-name: human_robot_collaboration
+    uri: https://github.com/scazlab/human_robot_collaboration.git
