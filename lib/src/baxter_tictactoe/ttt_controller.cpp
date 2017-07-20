@@ -616,7 +616,7 @@ bool TTTController::offsetsReachable()
         double py = getPos().y + _offsets[i].y;
         double pz = getPos().z - _offsets[i].z;
 
-        vector<double> joint_angles;
+        Eigen::VectorXd joint_angles;
         if (!computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles))
         {
             ROS_INFO("Offset number %lu not reachable", i);
@@ -641,7 +641,7 @@ bool TTTController::pointReachable(cv::Point centroid, float dist)
     double py = HOVER_BOARD_Y + offset.y;
     double pz = HOVER_BOARD_Z - offset.z;
 
-    vector<double> joint_angles;
+    Eigen::VectorXd joint_angles;
     return computeIK(px,py,pz,VERTICAL_ORI_L,joint_angles);
 }
 
