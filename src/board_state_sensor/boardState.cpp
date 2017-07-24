@@ -36,6 +36,8 @@ BoardState::BoardState(string _name, bool _show) : ROSThreadImage(_name),
         cv::namedWindow("[Board_State_Sensor] red  mask of the board");
         cv::namedWindow("[Board_State_Sensor] blue mask of the board");
     }
+
+    startThread();
 }
 
 void BoardState::internalThread()
@@ -70,7 +72,7 @@ void BoardState::internalThread()
 
                 // convert grayscale image to binary image, using 155 threshold value to
                 // isolate white-colored board
-                cv::threshold(img_gray, img_binary, 70, 255, cv::THRESH_BINARY);
+                cv::threshold(img_gray, img_binary, 100, 255, cv::THRESH_BINARY);
 
                 // a contour is an array of x-y coordinates describing the boundaries of an object
                 Contours contours;
