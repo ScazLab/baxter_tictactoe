@@ -32,6 +32,8 @@ private:
 
     bool legacy_code;   // Flag to enable the legacy code [who does not work]
 
+    int print_level;    // Print level to be used throughout the code
+
     int    num_games;
     int    curr_game;
 

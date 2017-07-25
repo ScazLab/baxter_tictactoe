@@ -711,14 +711,14 @@ bool TTTController::startAction(string a, int o)
 
 bool TTTController::hoverAboveBoard()
 {
-    ROS_DEBUG("Hovering above board..");
+    ROS_INFO_COND(print_level>=2, "Hovering above board..");
     // return goToPose(HOVER_BOARD_X, 0.220, HOVER_BOARD_Z, 0.0,  1.0,  0.0,  0.0);
     return goToPose(HOVER_BOARD_X, HOVER_BOARD_Y, HOVER_BOARD_Z, 1.0, -0.03, 0, 0);
 }
 
 bool TTTController::hoverAboveCenterOfBoard()
 {
-    ROS_DEBUG("Hovering above center of board..");
+    ROS_INFO_COND(print_level>=2, "Hovering above center of board..");
 
     if (_legacy_code == true)
     {
@@ -738,7 +738,7 @@ bool TTTController::hoverAboveCenterOfBoard()
 
 bool TTTController::hoverAboveCell()
 {
-    ROS_DEBUG("Hovering above cell..");
+    ROS_INFO_COND(print_level>=2, "Hovering above cell..");
 
     if (_legacy_code == true)
     {
@@ -768,7 +768,7 @@ bool TTTController::scanBoardImpl()
         return true;
     }
 
-    ROS_DEBUG("Scanning depth..");
+    ROS_INFO_COND(print_level>=2, "Scanning depth..");
     if (!hoverAboveBoard()) return false;
 
     // wait for image callback
@@ -784,7 +784,7 @@ bool TTTController::scanBoardImpl()
     if (!hoverAboveBoard()) return false;
     processImage(dist);
 
-    ROS_DEBUG("Hovering above tokens..");
+    ROS_INFO_COND(print_level>=2, "Hovering above tokens..");
     hoverAboveTokens(Z_LOW);
 
     return true;
@@ -792,7 +792,7 @@ bool TTTController::scanBoardImpl()
 
 bool TTTController::pickUpTokenImpl()
 {
-    ROS_DEBUG("Picking up token..");
+    ROS_INFO_COND(print_level>=2, "Picking up token..");
     setTracIK(true);
 
     while(RobotInterface::ok())
@@ -812,19 +812,19 @@ bool TTTController::pickUpTokenImpl()
     gripToken();
     hoverAboveTokens(Z_LOW);
 
-    setTracIK(false);
+    // setTracIK(false);
 
     return true;
 }
 
 bool TTTController::putDownTokenImpl()
 {
-    ROS_DEBUG("Putting down token..");
-    if (!hoverAboveCenterOfBoard()) return false;
-    if (!hoverAboveCell()) return false;
-    ros::Duration(0.1).sleep();
-    if (!open()) return false;
-    if (!hoverAboveCenterOfBoard()) return false;
+    ROS_INFO_COND(print_level>=2, "Putting down token..");
+    if (!hoverAboveCenterOfBoard()) { return false; }
+    if (!hoverAboveCell())          { return false; }
+    ros::Duration(0.2).sleep();
+    if (!open())                    { return false; }
+    if (!hoverAboveCenterOfBoard()) { return false; }
     hoverAboveTokens(Z_LOW);
 
     return true;

@@ -36,7 +36,7 @@ private:
 
     geometry_msgs::Point _tiles_pile_pos;
 
-    std::vector<geometry_msgs::Point>       _offsets;   // Legacy, it does not work
+    std::vector<geometry_msgs::Point>  _offsets;   // Legacy, it does not work
 
     std::vector<geometry_msgs::Point> _board_centers_poss;
     std::vector<geometry_msgs::Point> _board_corners_poss;

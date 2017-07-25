@@ -5,15 +5,17 @@
 using namespace std;
 using namespace baxter_tictactoe;
 
-tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _legacy_code) : nh(_name),
-                               spinner(4), r(100), is_closing(false), legacy_code(_legacy_code), num_games(NUM_GAMES), curr_game(0),
-                               wins(3,0), curr_board(9), internal_board(9), is_board_detected(false),
-                               left_ttt_ctrl(_name, "left", _legacy_code), right_ttt_ctrl(_name, "right", _legacy_code),
+tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _legacy_code) :
+                               nh(_name), spinner(4), r(100), is_closing(false),
+                               legacy_code(_legacy_code), print_level(0), num_games(NUM_GAMES),
+                               curr_game(0), wins(3,0), curr_board(9),
+                               internal_board(9), is_board_detected(false),
+                               left_ttt_ctrl(_name, "left", _legacy_code),
+                               right_ttt_ctrl(_name, "right", _legacy_code),
                                n_robot_tokens(0), n_human_tokens(0)
 {
-
     printf("\n");
-    ROS_INFO("Legacy code %s enabled.", _legacy_code?"is":"is not");
+    ROS_INFO_COND(print_level>=1, "Legacy code %s enabled.", _legacy_code?"is":"is not");
     setBrainState(TTTBrainState::INIT);
 
     srand(ros::Time::now().nsec);
@@ -26,7 +28,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
     brainstate_timer = nh.createTimer(ros::Duration(0.1), &tictactoeBrain::publishTTTBrainState, this, false);
 
     nh.param<string>("voice", voice_type, VOICE);
-    ROS_INFO("Using voice %s", voice_type.c_str());
+    ROS_INFO_COND(print_level>=1, "Using voice %s", voice_type.c_str());
 
     nh.param<int>("num_games", num_games, NUM_GAMES);
 
@@ -40,14 +42,14 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
         cheating_games.push_back(CHEATING_GAME_B);
     }
 
-    ROS_INFO("Number of games: %i; Cheating games: %s",
+    ROS_INFO_COND(print_level>=1, "Number of games: %i; Cheating games: %s",
               num_games, toString(cheating_games).c_str());
 
     nh.param<string>("robot_color", robot_color, "blue");
     robot_color    = robot_color==COL_BLUE?COL_BLUE:COL_RED;
     opponent_color = robot_color==COL_BLUE?COL_RED:COL_BLUE;
 
-    ROS_INFO("Robot plays with %s tokens and the opponent with %s tokens.",
+    ROS_INFO_COND(print_level>=1, "Robot plays with %s tokens and the opponent with %s tokens.",
               getRobotColor().c_str(), getOpponentColor().c_str());
 
     startThread();
@@ -99,7 +101,7 @@ void tictactoeBrain::InternalThreadEntry()
         }
         else if (getBrainState() == TTTBrainState::GAME_RUNNING)
         {
-            ROS_WARN("GAME #%i", curr_game);
+            ROS_INFO("GAME #%i", curr_game);
 
             playOneGame();
 
@@ -159,7 +161,7 @@ void tictactoeBrain::playOneGame()
             if (n_robot_tokens != 0) { saySentence("It is my turn", 0.3); }
 
             int cell_toMove = getNextMove();    // This should be from 1 to 9
-            ROS_INFO("Moving to cell %i", cell_toMove);
+            ROS_INFO_COND(print_level>=2, "Moving to cell %i", cell_toMove);
 
             left_ttt_ctrl.startAction(ACTION_PICKUP);
             left_ttt_ctrl.startAction(ACTION_PUTDOWN, cell_toMove);
@@ -243,7 +245,7 @@ void tictactoeBrain::setBrainState(int _state)
     {
         std::lock_guard<std::mutex> lck(mutex_brain);
         s.state = _state;
-        ROS_WARN("New state [%i]", _state);
+        ROS_WARN_COND(print_level>=2, "New state [%i]", _state);
     }
 
     if (_state == TTTBrainState::GAME_FINISHED)
@@ -388,10 +390,11 @@ unsigned short int tictactoeBrain::getWinner()
 
 void tictactoeBrain::waitForOpponentTurn()
 {
-    ROS_INFO("Waiting for the participant's move. "
-             "I am expecting %lu token%s from myself and %lu token%s from my opponent",
-             n_robot_tokens, n_robot_tokens==1?"":"s",
-             n_human_tokens+1, n_human_tokens+1==1?"":"s");
+    ROS_INFO_COND(print_level>=1, "Waiting for the participant's move. "
+                                  "I am expecting %lu token%s from myself "
+                                  "and %lu token%s from my opponent",
+                                   n_robot_tokens, n_robot_tokens==1?"":"s",
+                                   n_human_tokens+1, n_human_tokens+1==1?"":"s");
 
     int cnt = 0;
     bool say_it_is_your_turn = true;
@@ -429,7 +432,7 @@ void tictactoeBrain::waitForOpponentTurn()
 
 void tictactoeBrain::saySentence(std::string _sentence, double _t)
 {
-    ROS_INFO("saySentence: %s", _sentence.c_str());
+    ROS_INFO_COND(print_level>=2, "saySentence: %s", _sentence.c_str());
     voice_synthesizer.say(_sentence, voice_type);
     ros::Duration(_t).sleep();
 }
