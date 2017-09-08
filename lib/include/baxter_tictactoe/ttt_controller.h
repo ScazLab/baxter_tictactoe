@@ -172,11 +172,11 @@ private:
 
     /* PICKUP TOKEN */
         /*
-         * move arm downwards and suck token upon collision
+         * Picks up the token from the pile of tokens
          *
          * @return     true/false if success/failure
          */
-        bool gripToken();
+        bool pickUpToken();
 
         /*
          * identifies token and calculates offset distance required to move hand camera

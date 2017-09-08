@@ -43,6 +43,8 @@ TTTController::TTTController(string name, string limb, bool legacy_code, bool us
     }
 
     setHomeConfiguration();
+    setArmSpeed(getArmSpeed() + 0.2);
+
     if (!callAction(ACTION_HOME)) setState(ERROR);
 }
 
@@ -138,7 +140,7 @@ bool TTTController::boardPossFromParam(XmlRpc::XmlRpcValue _params)
 /**************************************************************************/
 /*                         PickUpToken                                    */
 /**************************************************************************/
-bool TTTController::gripToken()
+bool TTTController::pickUpToken()
 {
     if (_legacy_code == true)
     {
@@ -342,7 +344,7 @@ void TTTController::setDepth(float &dist)
     {
         double px = init_pos.x;
         double py = init_pos.y;
-        double pz = init_pos.z - (ARM_SPEED+0.2) * (ros::Time::now() - start_time).toSec();
+        double pz = init_pos.z - getArmSpeed() * (ros::Time::now() - start_time).toSec();
 
         double ox =   1.0;
         double oy = -0.03;
@@ -758,7 +760,7 @@ bool TTTController::hoverAboveCell()
 
 bool TTTController::hoverAboveTokens(double height)
 {
-    return goToPose(0.540, 0.570, height, VERTICAL_ORI_L);
+    return goToPose(_tiles_pile_pos.x, _tiles_pile_pos.y, height, VERTICAL_ORI_L);
 }
 
 bool TTTController::scanBoardImpl()
@@ -809,7 +811,7 @@ bool TTTController::pickUpTokenImpl()
     }
 
     hoverAboveTokens(Z_LOW);
-    gripToken();
+    pickUpToken();
     hoverAboveTokens(Z_LOW);
 
     // setTracIK(false);
