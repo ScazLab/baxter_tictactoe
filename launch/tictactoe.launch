@@ -32,7 +32,7 @@
     <rosparam param="ttt_controller/cheating_games">[2, 3]</rosparam>
     <!-- <param name="ttt_controller/voice"       type="str" value="voice_cmu_us_jmk_arctic_clunits" /> -->
     <param name="ttt_controller/voice"       type="str" value="voice_kal_diphone" />
-    <param name="ttt_controller/robot_color" type="str" value=             "blue" />
+    <param name="ttt_controller/robot_color" type="str" value=             "red" />
 
     <node name="tictactoe_brain" pkg="baxter_tictactoe" type="tictactoe_brain" respawn="false" output="screen" required="true"/>
 
