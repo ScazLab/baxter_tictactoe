@@ -27,7 +27,21 @@
         BL: [0.45, 0.63, -0.18]
     </rosparam>
 
-    <rosparam param="ttt_controller/print_level">0</rosparam>
+    <!-- Objects database for the left arm -->
+    <rosparam param = "ttt_controller/objects_left">
+        "no_obj" : -1
+        "tile_1" :  1
+        "tile_2" :  2
+        "tile_3" :  3
+        "tile_4" :  4
+        "tile_5" :  5
+        "tile_6" :  6
+        "tile_7" :  7
+        "tile_8" :  8
+        "tile_9" :  9
+    </rosparam>
+
+    <rosparam param="/print_level">3</rosparam>
     <rosparam param="ttt_controller/num_games">3</rosparam>
     <rosparam param="ttt_controller/cheating_games">[2, 3]</rosparam>
     <!-- <param name="ttt_controller/voice"       type="str" value="voice_cmu_us_jmk_arctic_clunits" /> -->
