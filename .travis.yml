@@ -59,13 +59,13 @@ notifications:
 # trigger a build matrix for different ROS distributions if desired.
 env:
   global:
-    - ROS_CI_DESKTOP="`lsb_release -cs`"  # e.g. [precise|trusty|...]
-    - CI_SOURCE_PATH=$(pwd)
-    - ROSINSTALL_FILE=$CI_SOURCE_PATH/dependencies.rosinstall
-    - CATKIN_OPTIONS=$CI_SOURCE_PATH/catkin.options
-    - ROS_PARALLEL_JOBS='-j8 -l6'
-    - REPO_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d"/" -f2) # if you have multiple packages per repo, change this variable accordingly
-
+  - ROS_CI_DESKTOP="`lsb_release -cs`"  # e.g. [precise|trusty|...]
+  - CI_SOURCE_PATH=$(pwd)
+  - ROSINSTALL_FILE=$CI_SOURCE_PATH/dependencies.rosinstall
+  - CATKIN_OPTIONS=$CI_SOURCE_PATH/catkin.options
+  - ROS_PARALLEL_JOBS='-j8 -l6'
+  - REPO_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d"/" -f2) # if you have multiple packages per repo, change this variable accordingly
+  - secure: C9vovDe0+gtu/AB95LT8M9lBUj8Kuc0wzuSXV4B6RbSEgzh4gH7+7XWdt9dg1vKY3+MS+1Y14eYFkhv8WgiZ+YCgSgmXtcPKtB4t698UIcfS5Zy7Tdf9upjca6obIioF1lUInh9G+yK1TVl/mpRpYHiAjCoEjWOEonpUG5FqHKm/wYmAXKVz4fGikDS01m1fiVUsfUTF1wG5RCJ6J/+zP8EwdTMmxp11UW1TkiH3RnnLhLlsx17N+Fjx+Xg+Y0d/esZIcJ4fum5NB6KDVrMpiQaNrxblnaoPum/A8Al4vD3WJm3Q5czcVy+NV43bg1hV35Q4COtzujxVbSBdOV7YJcB4U5vkwDgMUwjbwno1ot7AumbOX6L1VwKmIjoZn79kR0j8ocKgsMPMndD1DUsepUyBflqbCu9pwP593naJlPqZzzLNp+Se+IzZlp+pC7DEfDv+yjQpmz0GxbrLIHDk6iuZ4rLJ9aifBvUJgwe3ZHys0+UVdYF6EcSmf7asbI7qIXd/3NjAVa2hKv6k2MoLMtwz/Hskh0IWNXZTrRx7NnkbUgZNSyt4GHirwoOlzaEMlAdUAmBBzyZXpFi5KMx+muZYMj2bHu7vLMInP6Gx0cku9zTqbuelwx3EZBiDgPZdAJkpVyKCKlrSYua816hbCddljZ6MVXZu8I8D6yZEnNs=
 matrix:
   include:
   - os: linux
@@ -159,3 +159,8 @@ script:
   - source devel/setup.bash
   - catkin build $REPO_NAME --catkin-make-args run_tests
   - catkin_test_results build/$REPO_NAME || (cat build/$REPO_NAME/test_results/$REPO_NAME/*.xml ; false)
+
+after_success:
+  # Run build on Docker Hub
+  - |-
+    curl -H "Content-Type: application/json" --data '{"source_type": "Branch", "source_name": "'$TRAVIS_BRANCH'"}' -X POST $DOCKER_PUSH_URL
