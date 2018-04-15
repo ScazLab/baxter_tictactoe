@@ -17,5 +17,9 @@
     uri: https://bitbucket.org/alecive/trac_ik.git
 
 - git:
+    local-name: ros_speech2text
+    uri: https://github.com/scazlab/ros_speech2text.git
+
+- git:
     local-name: human_robot_collaboration
     uri: https://github.com/scazlab/human_robot_collaboration.git
