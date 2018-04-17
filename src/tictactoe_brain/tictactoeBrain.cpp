@@ -12,6 +12,7 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
                                internal_board(9), is_board_detected(false),
                                left_ttt_ctrl(_name, "left", _legacy_code),
                                right_ttt_ctrl(_name, "right", _legacy_code),
+                               head_ttt_ctrl(nh),
                                n_robot_tokens(0), n_human_tokens(0)
 {
     printf("\n");
@@ -29,6 +30,10 @@ tictactoeBrain::tictactoeBrain(std::string _name, std::string _strategy, bool _l
 
     nh.param<string>("voice", voice_type, VOICE);
     ROS_INFO_COND(print_level>=1, "Using voice %s", voice_type.c_str());
+
+    float pan;
+    nh.param<float>("pan_head", pan, 0.);
+    head_ttt_ctrl.set_pan(pan);
 
     nh.param<int>("num_games", num_games, NUM_GAMES);
 
@@ -150,6 +155,7 @@ void tictactoeBrain::playOneGame()
     else                { setStrategy(   "smart"); }
 
     saySentence("I start the game.",2);
+    head_ttt_ctrl.pan(); // Pan head (look at the board)
 
     n_robot_tokens=0;
     n_human_tokens=0;
@@ -178,6 +184,8 @@ void tictactoeBrain::playOneGame()
     }
 
     setBrainState(TTTBrainState::GAME_FINISHED);
+
+    head_ttt_ctrl.center(); // Look straight before speaking
 
     switch(winner)
     {

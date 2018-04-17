@@ -5,6 +5,7 @@
 #include <baxter_tictactoe/TTTBrainState.h>
 
 #include "baxter_tictactoe/ttt_controller.h"
+#include "baxter_tictactoe/ttt_head_controller.h"
 #include "baxter_tictactoe/tictactoe_utils.h"
 
 #include <thread>
@@ -66,8 +67,9 @@ private:
     // Pointer to the function that chooses the next move
     int (tictactoeBrain::*choose_next_move)();
 
-    TTTController  left_ttt_ctrl;
-    TTTController right_ttt_ctrl;
+    TTTController      left_ttt_ctrl;
+    TTTController     right_ttt_ctrl;
+    TTTHeadController  head_ttt_ctrl;
 
     bool has_cheated;
 

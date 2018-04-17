@@ -10,7 +10,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 ## Declare a C++ library
 add_library(${PROJECT_NAME}   include/${PROJECT_NAME}/tictactoe_utils.h
                               include/${PROJECT_NAME}/ttt_controller.h
+                              include/${PROJECT_NAME}/ttt_head_controller.h
                               src/${PROJECT_NAME}/tictactoe_utils.cpp
+                              src/${PROJECT_NAME}/ttt_head_controller.cpp
                               src/${PROJECT_NAME}/ttt_controller.cpp)
 
 ## Add cmake target dependencies of the library

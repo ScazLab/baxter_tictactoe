@@ -41,6 +41,9 @@
         "tile_9" :  9
     </rosparam>
 
+    <!-- Pan robot head while playing (default to 0, position set to 0 between games) -->
+    <rosparam param = "ttt_controller/pan_head">0.2</rosparam>
+
     <rosparam param="/print_level">3</rosparam>
     <rosparam param="ttt_controller/num_games">3</rosparam>
     <rosparam param="ttt_controller/cheating_games">[2, 3]</rosparam>
